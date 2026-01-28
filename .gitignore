@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build output
+dist/
+build/
+.next/
+
+# Environment variables (NEVER commit)
+.env
+.env.local
+.env.staging
+.env.production
+
+# Claude Code configuration (NEVER commit to GitHub)
+CLAUDE.md
+
+# Local Chinese documentation
+*_CN.md
+*.cn.md
+
+# IDE and OS files
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Docker volumes
+docker-data/
+
+# Log files
+*.log
+logs/
+
+# Keys and certificates
+*.pem
+*.key
+*.crt
+
+# Database files
+*.db
+*.sqlite3
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Prisma
+backend/prisma/migrations/migration_lock.toml
+
+# Temporary files
+tmp/
+temp/
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
