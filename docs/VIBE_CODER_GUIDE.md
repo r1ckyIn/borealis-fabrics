@@ -163,7 +163,7 @@ docker compose -f backend/docker-compose.yml down -v
 | **审查 Claude 的计划** | 每个功能开始前 | 看计划是否符合业务需求 |
 | **审查代码变更** | 每个功能完成后 | 看 `git diff` 或 Claude 的摘要 |
 | **手动测试 API** | 模块完成后（可选） | 用 Prisma Studio 或 curl 验证数据 |
-| **体验前端 UI** | 阶段 4 | 在手机浏览器打开 localhost:5173 |
+| **体验前端 UI** | 阶段 4 | 在桌面浏览器打开 localhost:5173 |
 | **提供业务反馈** | 随时 | 告诉 Claude 哪里不符合实际业务 |
 
 ### 你不需要做的事情
@@ -214,7 +214,7 @@ docker compose -f backend/docker-compose.yml down -v
 
 ### 阶段 4：前端开发
 
-**Claude 做什么**：实现所有移动端页面（工作台、面料、供应商、客户、订单、报价、导入）。
+**Claude 做什么**：实现所有桌面端页面（工作台、面料、供应商、客户、订单、报价、导入），使用 Ant Design 组件库（桌面端为主，响应式兼顾移动端）。
 
 **你需要做什么**：
 
@@ -222,14 +222,15 @@ docker compose -f backend/docker-compose.yml down -v
    ```bash
    cd frontend && pnpm dev
    ```
-2. **在手机浏览器测试**：
-   - 打开 `http://<你电脑的局域网IP>:5173`
-   - 或者用 Chrome DevTools 的移动端模拟器
+2. **在桌面浏览器测试**：
+   - 打开 `http://localhost:5173`
+   - 系统以桌面端为主要使用场景，直接在电脑浏览器中体验即可
 3. **提供 UI/UX 反馈**：
-   - 布局是否合理
+   - 表格布局、列宽是否合理
    - 操作流程是否顺畅
    - 中文文案是否恰当
    - 是否缺少某些操作入口
+   - 表单字段顺序和分组是否符合实际工作习惯
 
 **这是你最需要参与的阶段** - 因为 UI 体验需要人工判断。
 

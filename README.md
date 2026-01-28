@@ -3,7 +3,7 @@
 <div align="center">
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
-[![NestJS](https://img.shields.io/badge/NestJS-10-E0234E?style=flat-square&logo=nestjs)](https://nestjs.com/)
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=flat-square&logo=nestjs)](https://nestjs.com/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 
@@ -36,7 +36,7 @@ Borealis Fabrics is a digital management system designed for fabric trading inte
 | Layer | Technology |
 |-------|-----------|
 | Backend | Node.js + NestJS + TypeScript (strict) |
-| Frontend | React + TypeScript + Ant Design Mobile |
+| Frontend | React + TypeScript + Ant Design |
 | Database | MySQL (Tencent Cloud CDB) |
 | ORM | Prisma |
 | Cache | Redis |
@@ -52,7 +52,7 @@ git clone git@github.com:r1ckyIn/borealis-fabrics.git
 cd borealis-fabrics
 
 # Start local development environment
-docker-compose -f backend/docker-compose.yml up -d
+docker compose -f backend/docker-compose.yml up -d
 
 # Backend setup
 cd backend
@@ -75,7 +75,7 @@ borealis-fabrics/
 │   ├── src/               # Source code
 │   ├── prisma/            # Database schema and migrations
 │   └── test/              # Tests (unit + integration)
-├── frontend/              # React H5 frontend
+├── frontend/              # React Web frontend (desktop-first)
 │   └── src/               # Source code
 └── .github/workflows/     # CI/CD pipeline
 ```
@@ -106,7 +106,7 @@ git clone git@github.com:r1ckyIn/borealis-fabrics.git
 cd borealis-fabrics
 
 # 启动本地开发环境
-docker-compose -f backend/docker-compose.yml up -d
+docker compose -f backend/docker-compose.yml up -d
 
 # 后端启动
 cd backend
