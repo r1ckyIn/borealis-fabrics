@@ -40,7 +40,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Unit tests
-        run: pnpm test -- --passWithNoTests
+        run: pnpm exec jest --passWithNoTests
 
       - name: Build
         run: pnpm build
