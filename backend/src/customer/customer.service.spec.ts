@@ -578,4 +578,110 @@ describe('CustomerService', () => {
       });
     });
   });
+
+  // ============================================================
+  // 2.2.7 Get Customer Pricing List Tests
+  // ============================================================
+  describe('findPricing', () => {
+    const mockCustomer = {
+      id: 1,
+      companyName: 'XYZ Furniture Co.',
+      contactName: 'Li Ming',
+      phone: '13800138000',
+      wechat: null,
+      email: null,
+      addresses: null,
+      creditType: 'prepay',
+      creditDays: null,
+      notes: null,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockPricingList = [
+      {
+        id: 1,
+        customerId: 1,
+        fabricId: 10,
+        specialPrice: 89.99,
+        createdAt: new Date('2025-01-15'),
+        updatedAt: new Date('2025-01-15'),
+        fabric: {
+          id: 10,
+          fabricCode: 'BF-2501-0001',
+          name: 'Premium Cotton',
+          defaultPrice: 99.99,
+        },
+      },
+      {
+        id: 2,
+        customerId: 1,
+        fabricId: 20,
+        specialPrice: 149.99,
+        createdAt: new Date('2025-01-10'),
+        updatedAt: new Date('2025-01-10'),
+        fabric: {
+          id: 20,
+          fabricCode: 'BF-2501-0002',
+          name: 'Silk Blend',
+          defaultPrice: 179.99,
+        },
+      },
+    ];
+
+    it('should return customer pricing list with fabric details', async () => {
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      customerPricingMock.findMany.mockResolvedValue(mockPricingList);
+
+      const result = await service.findPricing(1);
+
+      expect(customerMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(customerPricingMock.findMany).toHaveBeenCalledWith({
+        where: { customerId: 1 },
+        include: {
+          fabric: {
+            select: {
+              id: true,
+              fabricCode: true,
+              name: true,
+              defaultPrice: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result).toEqual(mockPricingList);
+      expect(result).toHaveLength(2);
+    });
+
+    it('should return empty array when customer has no special pricing', async () => {
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      customerPricingMock.findMany.mockResolvedValue([]);
+
+      const result = await service.findPricing(1);
+
+      expect(result).toEqual([]);
+      expect(result).toHaveLength(0);
+    });
+
+    it('should throw NotFoundException when customer not found', async () => {
+      customerMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.findPricing(999)).rejects.toThrow(NotFoundException);
+      await expect(service.findPricing(999)).rejects.toThrow(
+        'Customer with ID 999 not found',
+      );
+      expect(customerPricingMock.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException for soft-deleted customer', async () => {
+      customerMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.findPricing(1)).rejects.toThrow(NotFoundException);
+      expect(customerPricingMock.findMany).not.toHaveBeenCalled();
+    });
+  });
 });

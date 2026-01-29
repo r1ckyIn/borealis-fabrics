@@ -52,6 +52,31 @@ export class CustomerService {
   }
 
   /**
+   * Find all special pricing records for a customer.
+   * Returns pricing list with fabric details, ordered by createdAt desc.
+   * Throws NotFoundException if customer not found or soft-deleted.
+   */
+  async findPricing(customerId: number) {
+    // Ensure customer exists and is active
+    await this.findOne(customerId);
+
+    return this.prisma.customerPricing.findMany({
+      where: { customerId },
+      include: {
+        fabric: {
+          select: {
+            id: true,
+            fabricCode: true,
+            name: true,
+            defaultPrice: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
    * Find all customers with optional filtering and pagination.
    */
   async findAll(query: QueryCustomerDto): Promise<PaginatedResult<Customer>> {

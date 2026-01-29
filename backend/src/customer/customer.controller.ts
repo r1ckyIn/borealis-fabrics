@@ -61,6 +61,18 @@ export class CustomerController {
     return this.customerService.findAll(query);
   }
 
+  @Get(':id/pricing')
+  @ApiOperation({ summary: 'Get customer special pricing list' })
+  @ApiParam({ name: 'id', description: 'Customer ID', type: Number })
+  @ApiResponse({
+    status: 200,
+    description: 'Customer pricing list retrieved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  getPricing(@Param('id', ParseIntPipe) id: number) {
+    return this.customerService.findPricing(id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get a customer by ID' })
   @ApiParam({ name: 'id', description: 'Customer ID', type: Number })
