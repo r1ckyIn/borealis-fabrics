@@ -254,4 +254,47 @@ describe('SupplierController', () => {
       );
     });
   });
+
+  // ============================================================
+  // 2.1.7 Delete Supplier Controller Tests
+  // ============================================================
+  describe('remove (DELETE /:id)', () => {
+    it('should delete a supplier successfully (physical delete)', async () => {
+      mockSupplierService.remove.mockResolvedValue(undefined);
+
+      await controller.remove(1, false);
+
+      expect(mockSupplierService.remove).toHaveBeenCalledWith(1, false);
+    });
+
+    it('should soft delete a supplier with force=true', async () => {
+      mockSupplierService.remove.mockResolvedValue(undefined);
+
+      await controller.remove(1, true);
+
+      expect(mockSupplierService.remove).toHaveBeenCalledWith(1, true);
+    });
+
+    it('should pass NotFoundException from service', async () => {
+      mockSupplierService.remove.mockRejectedValue(
+        new NotFoundException('Supplier with ID 999 not found'),
+      );
+
+      await expect(controller.remove(999, false)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should pass ConflictException from service', async () => {
+      mockSupplierService.remove.mockRejectedValue(
+        new ConflictException(
+          'Cannot delete supplier. Related data exists: 2 fabric supplier records.',
+        ),
+      );
+
+      await expect(controller.remove(1, false)).rejects.toThrow(
+        ConflictException,
+      );
+    });
+  });
 });

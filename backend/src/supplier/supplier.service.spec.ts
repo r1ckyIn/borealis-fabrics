@@ -496,4 +496,97 @@ describe('SupplierService', () => {
       expect(result.contactName).toBe('Updated Contact');
     });
   });
+
+  // ============================================================
+  // 2.1.7 Delete Supplier Tests
+  // ============================================================
+  describe('remove', () => {
+    const existingSupplier = {
+      id: 1,
+      companyName: 'ABC Textiles',
+      contactName: 'John Doe',
+      phone: '13800138000',
+      wechat: null,
+      email: null,
+      address: null,
+      status: 'active',
+      billReceiveType: null,
+      settleType: 'prepay',
+      creditDays: null,
+      notes: null,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should physically delete a supplier with no relations', async () => {
+      mockPrismaService.supplier.findUnique.mockResolvedValue(existingSupplier);
+      mockPrismaService.fabricSupplier.count.mockResolvedValue(0);
+      mockPrismaService.orderItem.count.mockResolvedValue(0);
+      mockPrismaService.supplierPayment.count.mockResolvedValue(0);
+      mockPrismaService.paymentRecord.count.mockResolvedValue(0);
+      mockPrismaService.supplier.delete.mockResolvedValue(existingSupplier);
+
+      await service.remove(1, false);
+
+      expect(mockPrismaService.supplier.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+    });
+
+    it('should throw NotFoundException when supplier not found', async () => {
+      mockPrismaService.supplier.findUnique.mockResolvedValue(null);
+
+      await expect(service.remove(999, false)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockPrismaService.supplier.delete).not.toHaveBeenCalled();
+      expect(mockPrismaService.supplier.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException when supplier has relations and force=false', async () => {
+      mockPrismaService.supplier.findUnique.mockResolvedValue(existingSupplier);
+      mockPrismaService.fabricSupplier.count.mockResolvedValue(2);
+      mockPrismaService.orderItem.count.mockResolvedValue(5);
+      mockPrismaService.supplierPayment.count.mockResolvedValue(1);
+      mockPrismaService.paymentRecord.count.mockResolvedValue(3);
+
+      await expect(service.remove(1, false)).rejects.toThrow(ConflictException);
+      expect(mockPrismaService.supplier.delete).not.toHaveBeenCalled();
+      expect(mockPrismaService.supplier.update).not.toHaveBeenCalled();
+    });
+
+    it('should soft delete a supplier with relations when force=true', async () => {
+      const softDeletedSupplier = { ...existingSupplier, isActive: false };
+      mockPrismaService.supplier.findUnique.mockResolvedValue(existingSupplier);
+      mockPrismaService.fabricSupplier.count.mockResolvedValue(2);
+      mockPrismaService.orderItem.count.mockResolvedValue(5);
+      mockPrismaService.supplierPayment.count.mockResolvedValue(1);
+      mockPrismaService.paymentRecord.count.mockResolvedValue(3);
+      mockPrismaService.supplier.update.mockResolvedValue(softDeletedSupplier);
+
+      await service.remove(1, true);
+
+      expect(mockPrismaService.supplier.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { isActive: false },
+      });
+      expect(mockPrismaService.supplier.delete).not.toHaveBeenCalled();
+    });
+
+    it('should physically delete even with force=true when no relations exist', async () => {
+      mockPrismaService.supplier.findUnique.mockResolvedValue(existingSupplier);
+      mockPrismaService.fabricSupplier.count.mockResolvedValue(0);
+      mockPrismaService.orderItem.count.mockResolvedValue(0);
+      mockPrismaService.supplierPayment.count.mockResolvedValue(0);
+      mockPrismaService.paymentRecord.count.mockResolvedValue(0);
+      mockPrismaService.supplier.delete.mockResolvedValue(existingSupplier);
+
+      await service.remove(1, true);
+
+      expect(mockPrismaService.supplier.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+    });
+  });
 });

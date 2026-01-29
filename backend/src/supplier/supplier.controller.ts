@@ -3,10 +3,12 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
   ParseIntPipe,
+  ParseBoolPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -83,5 +85,33 @@ export class SupplierController {
     @Body() updateSupplierDto: UpdateSupplierDto,
   ) {
     return this.supplierService.update(id, updateSupplierDto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete a supplier by ID',
+    description:
+      'Physical delete if no relations, 409 if relations exist. ' +
+      'Use ?force=true to soft delete when relations exist.',
+  })
+  @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
+  @ApiQuery({
+    name: 'force',
+    required: false,
+    type: Boolean,
+    description: 'Force soft delete when relations exist',
+  })
+  @ApiResponse({ status: 204, description: 'Supplier deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Supplier not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Supplier has related data, use ?force=true to soft delete',
+  })
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('force', new ParseBoolPipe({ optional: true })) force?: boolean,
+  ) {
+    return this.supplierService.remove(id, force ?? false);
   }
 }
