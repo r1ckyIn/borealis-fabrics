@@ -36,6 +36,43 @@ const ALLOWED_MIME_TYPES = [
 // Maximum file size (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
+// Maximum filename length
+const MAX_FILENAME_LENGTH = 255;
+
+/**
+ * Validate filename for security issues.
+ * Checks for path traversal, null bytes, and other malicious patterns.
+ */
+function validateFilename(filename: string): void {
+  // Check for null bytes
+  if (filename.includes('\x00')) {
+    throw new BadRequestException('Invalid filename: contains null byte');
+  }
+
+  // Check for path traversal characters
+  if (
+    filename.includes('..') ||
+    filename.includes('/') ||
+    filename.includes('\\')
+  ) {
+    throw new BadRequestException(
+      'Invalid filename: contains path traversal characters',
+    );
+  }
+
+  // Check filename length
+  if (filename.length > MAX_FILENAME_LENGTH) {
+    throw new BadRequestException(
+      `Filename too long. Maximum length is ${MAX_FILENAME_LENGTH} characters`,
+    );
+  }
+
+  // Check for filenames that are only dots
+  if (/^\.+$/.test(filename.replace(/\.[^.]+$/, ''))) {
+    throw new BadRequestException('Invalid filename: cannot be only dots');
+  }
+}
+
 @ApiTags('files')
 @Controller('api/v1/files')
 export class FileController {
@@ -69,6 +106,9 @@ export class FileController {
     if (!file) {
       throw new BadRequestException('No file provided');
     }
+
+    // Validate filename for security issues
+    validateFilename(file.originalname);
 
     // Validate MIME type
     if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
