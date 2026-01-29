@@ -67,7 +67,12 @@ describe('FabricService', () => {
     delete: jest.fn(),
   };
 
-  const fabricImageMock = { count: jest.fn(), create: jest.fn() };
+  const fabricImageMock = {
+    count: jest.fn(),
+    create: jest.fn(),
+    findFirst: jest.fn(),
+    delete: jest.fn(),
+  };
   const fabricSupplierMock = { count: jest.fn() };
   const customerPricingMock = { count: jest.fn() };
   const orderItemMock = { count: jest.fn() };
@@ -90,6 +95,7 @@ describe('FabricService', () => {
   // Mock FileService
   const mockFileService = {
     upload: jest.fn(),
+    removeByKey: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -697,6 +703,151 @@ describe('FabricService', () => {
       await service.uploadImage(1, exactLimitFile);
 
       expect(mockFileService.upload).toHaveBeenCalled();
+    });
+  });
+
+  // ========================================
+  // DELETE IMAGE Tests (2.3.8)
+  // ========================================
+  describe('deleteImage', () => {
+    const mockFabricImageForDelete = {
+      id: 10,
+      fabricId: 1,
+      url: 'http://localhost:3000/uploads/uuid-123.jpg',
+      sortOrder: 0,
+      createdAt: new Date(),
+    };
+
+    beforeEach(() => {
+      // Reset fabricImage mock methods for deleteImage tests
+      fabricImageMock.findFirst = jest.fn();
+      fabricImageMock.delete = jest.fn();
+      mockPrismaService.fabricImage.findFirst = fabricImageMock.findFirst;
+      mockPrismaService.fabricImage.delete = fabricImageMock.delete;
+    });
+
+    it('should successfully delete an image for an active fabric', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricImageMock.findFirst.mockResolvedValue(mockFabricImageForDelete);
+      fabricImageMock.delete.mockResolvedValue(mockFabricImageForDelete);
+      mockFileService.removeByKey.mockResolvedValue(undefined);
+
+      await service.deleteImage(1, 10);
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(fabricImageMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 10, fabricId: 1 },
+      });
+      expect(fabricImageMock.delete).toHaveBeenCalledWith({
+        where: { id: 10 },
+      });
+      expect(mockFileService.removeByKey).toHaveBeenCalledWith('uuid-123.jpg');
+    });
+
+    it('should throw NotFoundException if fabric does not exist', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.deleteImage(999, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.deleteImage(999, 10)).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+      expect(fabricImageMock.findFirst).not.toHaveBeenCalled();
+      expect(fabricImageMock.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.deleteImage(1, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if image does not exist', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricImageMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.deleteImage(1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.deleteImage(1, 999)).rejects.toThrow(
+        'Fabric image with ID 999 not found',
+      );
+      expect(fabricImageMock.delete).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if image does not belong to the fabric', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      // findFirst with fabricId constraint returns null
+      fabricImageMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.deleteImage(1, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricImageMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 10, fabricId: 1 },
+      });
+    });
+
+    it('should still delete FabricImage when FileService.removeByKey fails', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricImageMock.findFirst.mockResolvedValue(mockFabricImageForDelete);
+      fabricImageMock.delete.mockResolvedValue(mockFabricImageForDelete);
+      mockFileService.removeByKey.mockRejectedValue(
+        new NotFoundException('File not found'),
+      );
+
+      // Should not throw, just log warning
+      await expect(service.deleteImage(1, 10)).resolves.not.toThrow();
+
+      expect(fabricImageMock.delete).toHaveBeenCalledWith({
+        where: { id: 10 },
+      });
+    });
+
+    it('should extract key correctly from URL with /uploads/ path', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      const imageWithDifferentUrl = {
+        ...mockFabricImageForDelete,
+        url: 'http://example.com/uploads/different-uuid.png',
+      };
+      fabricImageMock.findFirst.mockResolvedValue(imageWithDifferentUrl);
+      fabricImageMock.delete.mockResolvedValue(imageWithDifferentUrl);
+      mockFileService.removeByKey.mockResolvedValue(undefined);
+
+      await service.deleteImage(1, 10);
+
+      expect(mockFileService.removeByKey).toHaveBeenCalledWith(
+        'different-uuid.png',
+      );
+    });
+
+    it('should handle URL without /uploads/ path gracefully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      const imageWithExternalUrl = {
+        ...mockFabricImageForDelete,
+        url: 'https://cdn.example.com/images/external-image.jpg',
+      };
+      fabricImageMock.findFirst.mockResolvedValue(imageWithExternalUrl);
+      fabricImageMock.delete.mockResolvedValue(imageWithExternalUrl);
+      // removeByKey should not be called for external URLs
+      mockFileService.removeByKey.mockResolvedValue(undefined);
+
+      await service.deleteImage(1, 10);
+
+      // FabricImage should still be deleted
+      expect(fabricImageMock.delete).toHaveBeenCalledWith({
+        where: { id: 10 },
+      });
+      // removeByKey should not be called for external URLs
+      expect(mockFileService.removeByKey).not.toHaveBeenCalled();
     });
   });
 });

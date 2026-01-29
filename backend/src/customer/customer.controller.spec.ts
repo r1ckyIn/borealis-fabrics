@@ -17,6 +17,7 @@ describe('CustomerController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
+    findPricing: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
   };
@@ -137,6 +138,71 @@ describe('CustomerController', () => {
       );
 
       await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ============================================================
+  // 2.2.7 Get Customer Pricing List Controller Tests
+  // ============================================================
+  describe('getPricing (GET /:id/pricing)', () => {
+    const mockPricingList = [
+      {
+        id: 1,
+        customerId: 1,
+        fabricId: 10,
+        specialPrice: 89.99,
+        createdAt: new Date('2025-01-15'),
+        updatedAt: new Date('2025-01-15'),
+        fabric: {
+          id: 10,
+          fabricCode: 'BF-2501-0001',
+          name: 'Premium Cotton',
+          defaultPrice: 99.99,
+        },
+      },
+      {
+        id: 2,
+        customerId: 1,
+        fabricId: 20,
+        specialPrice: 149.99,
+        createdAt: new Date('2025-01-10'),
+        updatedAt: new Date('2025-01-10'),
+        fabric: {
+          id: 20,
+          fabricCode: 'BF-2501-0002',
+          name: 'Silk Blend',
+          defaultPrice: 179.99,
+        },
+      },
+    ];
+
+    it('should return customer pricing list', async () => {
+      mockCustomerService.findPricing.mockResolvedValue(mockPricingList);
+
+      const result = await controller.getPricing(1);
+
+      expect(mockCustomerService.findPricing).toHaveBeenCalledWith(1);
+      expect(result).toEqual(mockPricingList);
+      expect(result).toHaveLength(2);
+    });
+
+    it('should return empty array when no pricing exists', async () => {
+      mockCustomerService.findPricing.mockResolvedValue([]);
+
+      const result = await controller.getPricing(1);
+
+      expect(mockCustomerService.findPricing).toHaveBeenCalledWith(1);
+      expect(result).toEqual([]);
+    });
+
+    it('should pass NotFoundException from service', async () => {
+      mockCustomerService.findPricing.mockRejectedValue(
+        new NotFoundException('Customer with ID 999 not found'),
+      );
+
+      await expect(controller.getPricing(999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 

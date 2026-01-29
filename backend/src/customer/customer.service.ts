@@ -4,8 +4,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateCustomerDto, QueryCustomerDto, UpdateCustomerDto } from './dto';
-import { Customer, Prisma } from '@prisma/client';
+import {
+  CreateCustomerDto,
+  CreateCustomerPricingDto,
+  QueryCustomerDto,
+  UpdateCustomerDto,
+  UpdateCustomerPricingDto,
+} from './dto';
+import { Customer, CustomerPricing, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
   buildPaginatedResult,
@@ -49,6 +55,31 @@ export class CustomerService {
     }
 
     return customer;
+  }
+
+  /**
+   * Find all special pricing records for a customer.
+   * Returns pricing list with fabric details, ordered by createdAt desc.
+   * Throws NotFoundException if customer not found or soft-deleted.
+   */
+  async findPricing(customerId: number) {
+    // Ensure customer exists and is active
+    await this.findOne(customerId);
+
+    return this.prisma.customerPricing.findMany({
+      where: { customerId },
+      include: {
+        fabric: {
+          select: {
+            id: true,
+            fabricCode: true,
+            name: true,
+            defaultPrice: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   /**
@@ -177,6 +208,134 @@ export class CustomerService {
     await this.prisma.customer.update({
       where: { id },
       data: { isActive: false },
+    });
+  }
+
+  /**
+   * Create a special pricing record for a customer-fabric pair.
+   * Uses transaction to ensure atomic validation and creation.
+   * Throws NotFoundException if customer or fabric not found.
+   * Throws ConflictException if pricing already exists for the pair.
+   */
+  async createPricing(
+    customerId: number,
+    createDto: CreateCustomerPricingDto,
+  ): Promise<CustomerPricing> {
+    return this.prisma.$transaction(async (tx) => {
+      // Verify customer exists and is active
+      const customer = await tx.customer.findFirst({
+        where: { id: customerId, isActive: true },
+      });
+      if (!customer) {
+        throw new NotFoundException(`Customer with ID ${customerId} not found`);
+      }
+
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: createDto.fabricId, isActive: true },
+      });
+      if (!fabric) {
+        throw new NotFoundException(
+          `Fabric with ID ${createDto.fabricId} not found`,
+        );
+      }
+
+      // Create pricing record (handle unique constraint violation)
+      try {
+        return await tx.customerPricing.create({
+          data: {
+            customerId,
+            fabricId: createDto.fabricId,
+            specialPrice: createDto.specialPrice,
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictException(
+            `Customer already has special pricing for fabric ID ${createDto.fabricId}`,
+          );
+        }
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Update a special pricing record.
+   * Uses transaction to ensure atomic validation and update.
+   * Throws NotFoundException if customer or pricing not found.
+   * Throws NotFoundException if pricing does not belong to the customer.
+   */
+  async updatePricing(
+    customerId: number,
+    pricingId: number,
+    updateDto: UpdateCustomerPricingDto,
+  ): Promise<CustomerPricing> {
+    return this.prisma.$transaction(async (tx) => {
+      // Verify customer exists and is active
+      const customer = await tx.customer.findFirst({
+        where: { id: customerId, isActive: true },
+      });
+      if (!customer) {
+        throw new NotFoundException(`Customer with ID ${customerId} not found`);
+      }
+
+      // Verify pricing exists and belongs to this customer
+      const pricing = await tx.customerPricing.findUnique({
+        where: { id: pricingId },
+      });
+      if (!pricing || pricing.customerId !== customerId) {
+        throw new NotFoundException(
+          `Customer pricing with ID ${pricingId} not found`,
+        );
+      }
+
+      // Build update data
+      const data: Prisma.CustomerPricingUpdateInput = {};
+      if (updateDto.specialPrice !== undefined) {
+        data.specialPrice = updateDto.specialPrice;
+      }
+
+      return tx.customerPricing.update({
+        where: { id: pricingId },
+        data,
+      });
+    });
+  }
+
+  /**
+   * Delete a special pricing record.
+   * Uses transaction to ensure atomic validation and deletion.
+   * Throws NotFoundException if customer or pricing not found.
+   * Throws NotFoundException if pricing does not belong to the customer.
+   */
+  async removePricing(customerId: number, pricingId: number): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Verify customer exists and is active
+      const customer = await tx.customer.findFirst({
+        where: { id: customerId, isActive: true },
+      });
+      if (!customer) {
+        throw new NotFoundException(`Customer with ID ${customerId} not found`);
+      }
+
+      // Verify pricing exists and belongs to this customer
+      const pricing = await tx.customerPricing.findUnique({
+        where: { id: pricingId },
+      });
+      if (!pricing || pricing.customerId !== customerId) {
+        throw new NotFoundException(
+          `Customer pricing with ID ${pricingId} not found`,
+        );
+      }
+
+      // Delete the pricing record
+      await tx.customerPricing.delete({
+        where: { id: pricingId },
+      });
     });
   }
 }
