@@ -8,6 +8,7 @@ import {
   UpdateSupplierDto,
   SupplierStatus,
   SettleType,
+  SupplierSortField,
 } from './dto';
 
 describe('SupplierService', () => {
@@ -349,7 +350,7 @@ describe('SupplierService', () => {
       const query: QuerySupplierDto = {
         page: 2,
         pageSize: 10,
-        sortBy: 'companyName',
+        sortBy: SupplierSortField.companyName,
         sortOrder: 'asc',
       };
       mockPrismaService.supplier.findMany.mockResolvedValue([]);

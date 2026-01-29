@@ -4,7 +4,27 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
 import { SupplierStatus, SettleType } from './create-supplier.dto';
 
+/**
+ * Allowed sort fields for Supplier queries.
+ * Whitelist validation to prevent Prisma query failures.
+ */
+export enum SupplierSortField {
+  createdAt = 'createdAt',
+  updatedAt = 'updatedAt',
+  companyName = 'companyName',
+  status = 'status',
+  settleType = 'settleType',
+}
+
 export class QuerySupplierDto extends PaginationDto {
+  @ApiPropertyOptional({
+    description: 'Field to sort by',
+    enum: SupplierSortField,
+    default: SupplierSortField.createdAt,
+  })
+  @IsOptional()
+  @IsEnum(SupplierSortField)
+  sortBy?: SupplierSortField = SupplierSortField.createdAt;
   @ApiPropertyOptional({
     description: 'Filter by company name (fuzzy search)',
     example: 'Textiles',
