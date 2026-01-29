@@ -6,6 +6,7 @@ import {
   IsInt,
   Min,
   MaxLength,
+  IsNotEmpty,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -26,6 +27,7 @@ export class CreateSupplierDto {
     example: 'ABC Textiles',
   })
   @IsString()
+  @IsNotEmpty()
   @MaxLength(200)
   companyName!: string;
 
