@@ -202,7 +202,7 @@ describe('SupplierController (e2e)', () => {
   // ============================================================
   describe('GET /api/v1/suppliers/:id', () => {
     it('should return a supplier when found', async () => {
-      mockPrismaService.supplier.findUnique.mockResolvedValue(mockSupplier);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
 
       const response = await request(app.getHttpServer())
         .get('/api/v1/suppliers/1')
@@ -216,7 +216,7 @@ describe('SupplierController (e2e)', () => {
     });
 
     it('should return 404 when supplier not found', async () => {
-      mockPrismaService.supplier.findUnique.mockResolvedValue(null);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .get('/api/v1/suppliers/999')
@@ -476,11 +476,104 @@ describe('SupplierController (e2e)', () => {
   });
 
   // ============================================================
+  // DTO Validation Boundary Tests
+  // ============================================================
+  describe('DTO Validation Boundaries', () => {
+    describe('sortBy validation', () => {
+      it('should reject invalid sortBy field', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/suppliers?sortBy=invalidField')
+          .expect(400);
+
+        const body = response.body as ApiErrorResponse;
+        expect(body.code).toBe(400);
+        expect(body.message).toBeDefined();
+      });
+
+      it('should accept valid sortBy field (companyName)', async () => {
+        mockPrismaService.supplier.findMany.mockResolvedValue([mockSupplier]);
+        mockPrismaService.supplier.count.mockResolvedValue(1);
+
+        await request(app.getHttpServer())
+          .get('/api/v1/suppliers?sortBy=companyName')
+          .expect(200);
+      });
+
+      it('should accept valid sortBy field (updatedAt)', async () => {
+        mockPrismaService.supplier.findMany.mockResolvedValue([mockSupplier]);
+        mockPrismaService.supplier.count.mockResolvedValue(1);
+
+        await request(app.getHttpServer())
+          .get('/api/v1/suppliers?sortBy=updatedAt')
+          .expect(200);
+      });
+    });
+
+    describe('sortOrder validation', () => {
+      it('should reject invalid sortOrder value', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/api/v1/suppliers?sortOrder=invalid')
+          .expect(400);
+
+        const body = response.body as ApiErrorResponse;
+        expect(body.code).toBe(400);
+        expect(body.message).toBeDefined();
+      });
+
+      it('should accept valid sortOrder (asc)', async () => {
+        mockPrismaService.supplier.findMany.mockResolvedValue([mockSupplier]);
+        mockPrismaService.supplier.count.mockResolvedValue(1);
+
+        await request(app.getHttpServer())
+          .get('/api/v1/suppliers?sortOrder=asc')
+          .expect(200);
+      });
+
+      it('should accept valid sortOrder (desc)', async () => {
+        mockPrismaService.supplier.findMany.mockResolvedValue([mockSupplier]);
+        mockPrismaService.supplier.count.mockResolvedValue(1);
+
+        await request(app.getHttpServer())
+          .get('/api/v1/suppliers?sortOrder=desc')
+          .expect(200);
+      });
+    });
+
+    describe('companyName length validation', () => {
+      it('should reject companyName exceeding 200 characters', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({ companyName: 'A'.repeat(201) })
+          .expect(400);
+
+        const body = response.body as ApiErrorResponse;
+        expect(body.code).toBe(400);
+        expect(body.message).toBeDefined();
+      });
+
+      it('should accept companyName at exactly 200 characters', async () => {
+        const companyName = 'A'.repeat(200);
+        const createdSupplier = { ...mockSupplier, companyName };
+        mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+        mockPrismaService.supplier.create.mockResolvedValue(createdSupplier);
+
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({ companyName })
+          .expect(201);
+
+        const body = response.body as ApiSuccessResponse<SupplierData>;
+        expect(body.code).toBe(201);
+      });
+    });
+  });
+
+  // ============================================================
   // Response Format Validation
   // ============================================================
   describe('Response Format', () => {
     it('should wrap successful response with code, message, and data', async () => {
-      mockPrismaService.supplier.findUnique.mockResolvedValue(mockSupplier);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
 
       const response = await request(app.getHttpServer())
         .get('/api/v1/suppliers/1')
@@ -492,7 +585,7 @@ describe('SupplierController (e2e)', () => {
     });
 
     it('should wrap error response with code, message, path, and timestamp', async () => {
-      mockPrismaService.supplier.findUnique.mockResolvedValue(null);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .get('/api/v1/suppliers/999')
