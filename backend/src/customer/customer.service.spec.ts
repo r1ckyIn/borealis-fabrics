@@ -428,13 +428,13 @@ describe('CustomerService', () => {
       const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
       const updatedCustomer = { ...existingCustomer, contactName: 'Wang Wei' };
 
-      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.findFirst.mockResolvedValueOnce(existingCustomer);
       customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
 
-      expect(customerMock.findUnique).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(customerMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
       });
       expect(customerMock.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -468,7 +468,7 @@ describe('CustomerService', () => {
       };
       const updatedCustomer = { ...existingCustomer, ...updateDto };
 
-      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.findFirst.mockResolvedValueOnce(existingCustomer);
       customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
@@ -478,9 +478,19 @@ describe('CustomerService', () => {
 
     it('should throw NotFoundException when customer not found', async () => {
       const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
-      customerMock.findUnique.mockResolvedValue(null);
+      customerMock.findFirst.mockResolvedValueOnce(null);
 
       await expect(service.update(999, updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(customerMock.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when customer is soft deleted', async () => {
+      const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
+      customerMock.findFirst.mockResolvedValueOnce(null);
+
+      await expect(service.update(1, updateDto)).rejects.toThrow(
         NotFoundException,
       );
       expect(customerMock.update).not.toHaveBeenCalled();
@@ -494,14 +504,12 @@ describe('CustomerService', () => {
         companyName: 'ABC Home Decor',
       };
 
-      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.findFirst.mockResolvedValueOnce(existingCustomer);
       customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
 
       expect(result.companyName).toBe('ABC Home Decor');
-      // No findFirst call for conflict check
-      expect(customerMock.findFirst).not.toHaveBeenCalled();
     });
   });
 

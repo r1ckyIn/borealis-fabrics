@@ -140,9 +140,9 @@ export class FabricService {
    */
   async update(id: number, updateFabricDto: UpdateFabricDto): Promise<Fabric> {
     return this.prisma.$transaction(async (tx) => {
-      // Check if fabric exists
-      const existing = await tx.fabric.findUnique({
-        where: { id },
+      // Check if fabric exists and is active
+      const existing = await tx.fabric.findFirst({
+        where: { id, isActive: true },
       });
 
       if (!existing) {

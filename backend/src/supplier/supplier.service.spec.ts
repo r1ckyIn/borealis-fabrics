@@ -404,13 +404,14 @@ describe('SupplierService', () => {
       const updateDto: UpdateSupplierDto = { contactName: 'Jane Doe' };
       const updatedSupplier = { ...existingSupplier, contactName: 'Jane Doe' };
 
-      supplierMock.findUnique.mockResolvedValue(existingSupplier);
+      // First findFirst for existence check (with isActive: true)
+      supplierMock.findFirst.mockResolvedValueOnce(existingSupplier);
       supplierMock.update.mockResolvedValue(updatedSupplier);
 
       const result = await service.update(1, updateDto);
 
-      expect(supplierMock.findUnique).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
       });
       expect(supplierMock.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -420,19 +421,29 @@ describe('SupplierService', () => {
     });
 
     it('should throw NotFoundException if supplier not found', async () => {
-      supplierMock.findUnique.mockResolvedValue(null);
+      supplierMock.findFirst.mockResolvedValueOnce(null);
 
       await expect(
         service.update(999, { contactName: 'Jane' }),
       ).rejects.toThrow(NotFoundException);
     });
 
+    it('should throw NotFoundException if supplier is soft deleted', async () => {
+      supplierMock.findFirst.mockResolvedValueOnce(null);
+
+      await expect(service.update(1, { contactName: 'Jane' })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
     it('should check companyName uniqueness when updating companyName', async () => {
       const updateDto: UpdateSupplierDto = { companyName: 'New Name' };
       const conflictSupplier = { id: 2, companyName: 'New Name' };
 
-      supplierMock.findUnique.mockResolvedValue(existingSupplier);
-      supplierMock.findFirst.mockResolvedValue(conflictSupplier);
+      // First findFirst for existence check, second for conflict check
+      supplierMock.findFirst
+        .mockResolvedValueOnce(existingSupplier)
+        .mockResolvedValueOnce(conflictSupplier);
 
       await expect(service.update(1, updateDto)).rejects.toThrow(
         ConflictException,
@@ -442,8 +453,10 @@ describe('SupplierService', () => {
     it('should allow updating companyName to its original value', async () => {
       const updateDto: UpdateSupplierDto = { companyName: 'ABC Textiles' };
 
-      supplierMock.findUnique.mockResolvedValue(existingSupplier);
-      supplierMock.findFirst.mockResolvedValue(existingSupplier);
+      // First findFirst for existence check, second for conflict check (returns self)
+      supplierMock.findFirst
+        .mockResolvedValueOnce(existingSupplier)
+        .mockResolvedValueOnce(existingSupplier);
       supplierMock.update.mockResolvedValue(existingSupplier);
 
       const result = await service.update(1, updateDto);
@@ -458,8 +471,10 @@ describe('SupplierService', () => {
         companyName: 'New Unique Name',
       };
 
-      supplierMock.findUnique.mockResolvedValue(existingSupplier);
-      supplierMock.findFirst.mockResolvedValue(null);
+      // First findFirst for existence check, second for conflict check (no conflict)
+      supplierMock.findFirst
+        .mockResolvedValueOnce(existingSupplier)
+        .mockResolvedValueOnce(null);
       supplierMock.update.mockResolvedValue(updatedSupplier);
 
       const result = await service.update(1, updateDto);

@@ -131,9 +131,9 @@ export class CustomerService {
     updateCustomerDto: UpdateCustomerDto,
   ): Promise<Customer> {
     return this.prisma.$transaction(async (tx) => {
-      // Check if customer exists
-      const existing = await tx.customer.findUnique({
-        where: { id },
+      // Check if customer exists and is active
+      const existing = await tx.customer.findFirst({
+        where: { id, isActive: true },
       });
 
       if (!existing) {

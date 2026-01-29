@@ -115,9 +115,9 @@ export class SupplierService {
     updateSupplierDto: UpdateSupplierDto,
   ): Promise<Supplier> {
     return this.prisma.$transaction(async (tx) => {
-      // Check if supplier exists
-      const existing = await tx.supplier.findUnique({
-        where: { id },
+      // Check if supplier exists and is active
+      const existing = await tx.supplier.findFirst({
+        where: { id, isActive: true },
       });
 
       if (!existing) {
