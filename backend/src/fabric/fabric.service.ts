@@ -524,6 +524,39 @@ export class FabricService {
       });
     });
   }
+
+  /**
+   * Remove a fabric-supplier association.
+   * Validates fabric exists and is active, and association exists.
+   */
+  async removeSupplier(fabricId: number, supplierId: number): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify association exists
+      const existingAssociation = await tx.fabricSupplier.findFirst({
+        where: { fabricId, supplierId },
+      });
+
+      if (!existingAssociation) {
+        throw new NotFoundException(
+          `Supplier with ID ${supplierId} is not associated with fabric ID ${fabricId}`,
+        );
+      }
+
+      // Delete the association
+      await tx.fabricSupplier.delete({
+        where: { id: existingAssociation.id },
+      });
+    });
+  }
 }
 
 /**

@@ -79,6 +79,7 @@ describe('FabricService', () => {
     create: jest.fn(),
     findFirst: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
   };
   const customerPricingMock = { count: jest.fn() };
   const orderItemMock = { count: jest.fn() };
@@ -1300,6 +1301,88 @@ describe('FabricService', () => {
       ).rejects.toThrow(
         'Supplier with ID 999 is not associated with fabric ID 1',
       );
+    });
+  });
+
+  // ========================================
+  // removeSupplier Tests (2.3.12)
+  // ========================================
+  describe('removeSupplier', () => {
+    const mockFabricSupplier = {
+      id: 1,
+      fabricId: 1,
+      supplierId: 10,
+      purchasePrice: new Decimal(45.0),
+      minOrderQty: new Decimal(100),
+      leadTimeDays: 7,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should delete a fabric-supplier association successfully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findFirst.mockResolvedValue(mockFabricSupplier);
+      fabricSupplierMock.delete.mockResolvedValue(mockFabricSupplier);
+
+      await service.removeSupplier(1, 10);
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(fabricSupplierMock.findFirst).toHaveBeenCalledWith({
+        where: { fabricId: 1, supplierId: 10 },
+      });
+      expect(fabricSupplierMock.delete).toHaveBeenCalledWith({
+        where: { id: mockFabricSupplier.id },
+      });
+    });
+
+    it('should throw NotFoundException if fabric not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removeSupplier(999, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.removeSupplier(999, 10)).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removeSupplier(1, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if association not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removeSupplier(1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.removeSupplier(1, 999)).rejects.toThrow(
+        'Supplier with ID 999 is not associated with fabric ID 1',
+      );
+    });
+
+    it('should use transaction for atomic deletion', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findFirst.mockResolvedValue(mockFabricSupplier);
+      fabricSupplierMock.delete.mockResolvedValue(mockFabricSupplier);
+
+      await service.removeSupplier(1, 10);
+
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
     });
   });
 });

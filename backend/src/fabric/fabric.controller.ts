@@ -283,4 +283,24 @@ export class FabricController {
   ) {
     return this.fabricService.updateSupplier(id, supplierId, updateDto);
   }
+
+  @Delete(':id/suppliers/:supplierId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Remove a fabric-supplier association',
+    description: 'Removes an existing fabric-supplier association',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiParam({ name: 'supplierId', description: 'Supplier ID', type: Number })
+  @ApiResponse({
+    status: 204,
+    description: 'Association removed successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Fabric or association not found' })
+  removeSupplier(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('supplierId', ParseIntPipe) supplierId: number,
+  ) {
+    return this.fabricService.removeSupplier(id, supplierId);
+  }
 }
