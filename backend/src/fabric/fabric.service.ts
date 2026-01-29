@@ -489,7 +489,7 @@ export class FabricService {
 
   /**
    * Update a fabric-supplier association.
-   * Validates fabric exists and is active, and association exists.
+   * Validates fabric exists and is active, supplier is active, and association exists.
    */
   async updateSupplier(
     fabricId: number,
@@ -504,6 +504,15 @@ export class FabricService {
 
       if (!fabric) {
         throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify supplier exists and is active
+      const supplier = await tx.supplier.findFirst({
+        where: { id: supplierId, isActive: true },
+      });
+
+      if (!supplier) {
+        throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
       }
 
       // Verify association exists
@@ -527,7 +536,7 @@ export class FabricService {
 
   /**
    * Remove a fabric-supplier association.
-   * Validates fabric exists and is active, and association exists.
+   * Validates fabric exists and is active, supplier is active, and association exists.
    */
   async removeSupplier(fabricId: number, supplierId: number): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
@@ -538,6 +547,15 @@ export class FabricService {
 
       if (!fabric) {
         throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify supplier exists and is active
+      const supplier = await tx.supplier.findFirst({
+        where: { id: supplierId, isActive: true },
+      });
+
+      if (!supplier) {
+        throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
       }
 
       // Verify association exists

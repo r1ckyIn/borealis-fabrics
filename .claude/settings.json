@@ -1,0 +1,18 @@
+{
+  "enabledPlugins": {
+    "vtsls@claude-code-lsps": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-init.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
