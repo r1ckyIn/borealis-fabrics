@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { SupplierController } from './supplier.controller';
 import { SupplierService } from './supplier.service';
-import { CreateSupplierDto, SupplierStatus, SettleType } from './dto';
+import {
+  CreateSupplierDto,
+  QuerySupplierDto,
+  SupplierStatus,
+  SettleType,
+} from './dto';
 
 describe('SupplierController', () => {
   let controller: SupplierController;
@@ -126,6 +131,68 @@ describe('SupplierController', () => {
       );
 
       await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ============================================================
+  // 2.1.5 List Suppliers Controller Tests
+  // ============================================================
+  describe('findAll (GET /)', () => {
+    const mockSuppliers = [
+      {
+        id: 1,
+        companyName: 'ABC Textiles',
+        contactName: 'John Doe',
+        phone: '13800138000',
+        wechat: null,
+        email: null,
+        address: null,
+        status: 'active',
+        billReceiveType: null,
+        settleType: 'prepay',
+        creditDays: null,
+        notes: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    const mockPaginatedResult = {
+      items: mockSuppliers,
+      pagination: {
+        page: 1,
+        pageSize: 20,
+        total: 1,
+        totalPages: 1,
+      },
+    };
+
+    it('should return paginated suppliers', async () => {
+      const query: QuerySupplierDto = {};
+      mockSupplierService.findAll.mockResolvedValue(mockPaginatedResult);
+
+      const result = await controller.findAll(query);
+
+      expect(mockSupplierService.findAll).toHaveBeenCalledWith(query);
+      expect(result).toEqual(mockPaginatedResult);
+    });
+
+    it('should pass query parameters to service', async () => {
+      const query: QuerySupplierDto = {
+        companyName: 'ABC',
+        status: SupplierStatus.ACTIVE,
+        page: 2,
+        pageSize: 10,
+      };
+      mockSupplierService.findAll.mockResolvedValue({
+        items: [],
+        pagination: { page: 2, pageSize: 10, total: 0, totalPages: 0 },
+      });
+
+      await controller.findAll(query);
+
+      expect(mockSupplierService.findAll).toHaveBeenCalledWith(query);
     });
   });
 });

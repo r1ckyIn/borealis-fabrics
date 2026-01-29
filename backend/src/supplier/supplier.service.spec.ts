@@ -2,7 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { SupplierService } from './supplier.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateSupplierDto, SupplierStatus, SettleType } from './dto';
+import {
+  CreateSupplierDto,
+  QuerySupplierDto,
+  SupplierStatus,
+  SettleType,
+} from './dto';
 
 describe('SupplierService', () => {
   let service: SupplierService;
@@ -193,6 +198,182 @@ describe('SupplierService', () => {
       await expect(service.findOne(999)).rejects.toThrow(
         'Supplier with ID 999 not found',
       );
+    });
+  });
+
+  // ============================================================
+  // 2.1.5 List Suppliers Tests
+  // ============================================================
+  describe('findAll', () => {
+    const mockSuppliers = [
+      {
+        id: 1,
+        companyName: 'ABC Textiles',
+        contactName: 'John Doe',
+        phone: '13800138000',
+        wechat: null,
+        email: null,
+        address: null,
+        status: 'active',
+        billReceiveType: null,
+        settleType: 'prepay',
+        creditDays: null,
+        notes: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 2,
+        companyName: 'XYZ Fabrics',
+        contactName: 'Jane Smith',
+        phone: '13900139000',
+        wechat: null,
+        email: null,
+        address: null,
+        status: 'active',
+        billReceiveType: null,
+        settleType: 'credit',
+        creditDays: 30,
+        notes: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    it('should return paginated suppliers with default isActive=true', async () => {
+      const query: QuerySupplierDto = {};
+      mockPrismaService.supplier.findMany.mockResolvedValue(mockSuppliers);
+      mockPrismaService.supplier.count.mockResolvedValue(2);
+
+      const result = await service.findAll(query);
+
+      expect(mockPrismaService.supplier.findMany).toHaveBeenCalledWith({
+        where: { isActive: true },
+        skip: 0,
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.items).toEqual(mockSuppliers);
+      expect(result.pagination).toEqual({
+        page: 1,
+        pageSize: 20,
+        total: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('should filter by companyName (fuzzy search)', async () => {
+      const query: QuerySupplierDto = { companyName: 'ABC' };
+      mockPrismaService.supplier.findMany.mockResolvedValue([mockSuppliers[0]]);
+      mockPrismaService.supplier.count.mockResolvedValue(1);
+
+      const result = await service.findAll(query);
+
+      expect(mockPrismaService.supplier.findMany).toHaveBeenCalledWith({
+        where: {
+          isActive: true,
+          companyName: { contains: 'ABC' },
+        },
+        skip: 0,
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should filter by status', async () => {
+      const query: QuerySupplierDto = { status: SupplierStatus.ACTIVE };
+      mockPrismaService.supplier.findMany.mockResolvedValue(mockSuppliers);
+      mockPrismaService.supplier.count.mockResolvedValue(2);
+
+      const result = await service.findAll(query);
+
+      expect(mockPrismaService.supplier.findMany).toHaveBeenCalledWith({
+        where: {
+          isActive: true,
+          status: 'active',
+        },
+        skip: 0,
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.items).toHaveLength(2);
+    });
+
+    it('should filter by settleType', async () => {
+      const query: QuerySupplierDto = { settleType: SettleType.CREDIT };
+      mockPrismaService.supplier.findMany.mockResolvedValue([mockSuppliers[1]]);
+      mockPrismaService.supplier.count.mockResolvedValue(1);
+
+      const result = await service.findAll(query);
+
+      expect(mockPrismaService.supplier.findMany).toHaveBeenCalledWith({
+        where: {
+          isActive: true,
+          settleType: 'credit',
+        },
+        skip: 0,
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should filter soft-deleted records with isActive=false', async () => {
+      const deletedSupplier = { ...mockSuppliers[0], isActive: false };
+      const query: QuerySupplierDto = { isActive: false };
+      mockPrismaService.supplier.findMany.mockResolvedValue([deletedSupplier]);
+      mockPrismaService.supplier.count.mockResolvedValue(1);
+
+      const result = await service.findAll(query);
+
+      expect(mockPrismaService.supplier.findMany).toHaveBeenCalledWith({
+        where: { isActive: false },
+        skip: 0,
+        take: 20,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.items[0].isActive).toBe(false);
+    });
+
+    it('should support custom pagination and sorting', async () => {
+      const query: QuerySupplierDto = {
+        page: 2,
+        pageSize: 10,
+        sortBy: 'companyName',
+        sortOrder: 'asc',
+      };
+      mockPrismaService.supplier.findMany.mockResolvedValue([]);
+      mockPrismaService.supplier.count.mockResolvedValue(15);
+
+      const result = await service.findAll(query);
+
+      expect(mockPrismaService.supplier.findMany).toHaveBeenCalledWith({
+        where: { isActive: true },
+        skip: 10,
+        take: 10,
+        orderBy: { companyName: 'asc' },
+      });
+      expect(result.pagination).toEqual({
+        page: 2,
+        pageSize: 10,
+        total: 15,
+        totalPages: 2,
+      });
+    });
+
+    it('should return empty results when no matches', async () => {
+      const query: QuerySupplierDto = { companyName: 'NonExistent' };
+      mockPrismaService.supplier.findMany.mockResolvedValue([]);
+      mockPrismaService.supplier.count.mockResolvedValue(0);
+
+      const result = await service.findAll(query);
+
+      expect(result.items).toEqual([]);
+      expect(result.pagination.total).toBe(0);
+      expect(result.pagination.totalPages).toBe(0);
     });
   });
 });

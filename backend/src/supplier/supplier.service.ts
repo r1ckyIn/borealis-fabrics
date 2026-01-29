@@ -4,8 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateSupplierDto } from './dto';
-import { Supplier } from '@prisma/client';
+import { CreateSupplierDto, QuerySupplierDto } from './dto';
+import { Supplier, Prisma } from '@prisma/client';
+import {
+  buildPaginationArgs,
+  buildPaginatedResult,
+  PaginatedResult,
+} from '../common/utils/pagination';
 
 @Injectable()
 export class SupplierService {
@@ -46,5 +51,47 @@ export class SupplierService {
     }
 
     return supplier;
+  }
+
+  /**
+   * Find all suppliers with optional filtering and pagination.
+   */
+  async findAll(query: QuerySupplierDto): Promise<PaginatedResult<Supplier>> {
+    // Build where clause
+    const where: Prisma.SupplierWhereInput = {
+      isActive: query.isActive ?? true,
+    };
+
+    if (query.companyName) {
+      where.companyName = { contains: query.companyName };
+    }
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    if (query.settleType) {
+      where.settleType = query.settleType;
+    }
+
+    // Build pagination args
+    const paginationArgs = buildPaginationArgs(query);
+
+    // Build sort order
+    const sortBy = query.sortBy ?? 'createdAt';
+    const sortOrder = query.sortOrder ?? 'desc';
+    const orderBy = { [sortBy]: sortOrder };
+
+    // Execute queries
+    const [items, total] = await Promise.all([
+      this.prisma.supplier.findMany({
+        where,
+        ...paginationArgs,
+        orderBy,
+      }),
+      this.prisma.supplier.count({ where }),
+    ]);
+
+    return buildPaginatedResult(items, total, query);
   }
 }
