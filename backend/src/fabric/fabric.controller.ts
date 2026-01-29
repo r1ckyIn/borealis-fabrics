@@ -32,6 +32,7 @@ import {
   UpdateFabricDto,
   UploadFabricImageDto,
   FabricImageResponseDto,
+  QueryFabricSuppliersDto,
 } from './dto';
 
 // Allowed image MIME types for fabric images
@@ -198,5 +199,40 @@ export class FabricController {
     @Param('imageId', ParseIntPipe) imageId: number,
   ) {
     return this.fabricService.deleteImage(id, imageId);
+  }
+
+  // ========================================
+  // Fabric-Supplier Association Endpoints
+  // ========================================
+
+  @Get(':id/suppliers')
+  @ApiOperation({
+    summary: 'List suppliers associated with a fabric',
+    description:
+      'Returns paginated list of suppliers with pricing and lead time info',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 20 })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'createdAt',
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({
+    name: 'supplierName',
+    required: false,
+    type: String,
+    description: 'Filter by supplier company name (fuzzy search)',
+  })
+  @ApiResponse({ status: 200, description: 'Paginated supplier list' })
+  @ApiResponse({ status: 404, description: 'Fabric not found' })
+  findSuppliers(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: QueryFabricSuppliersDto,
+  ) {
+    return this.fabricService.findSuppliers(id, query);
   }
 }

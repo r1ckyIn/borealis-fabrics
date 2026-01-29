@@ -6,7 +6,13 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileService, UploadedFile } from '../file/file.service';
-import { CreateFabricDto, QueryFabricDto, UpdateFabricDto } from './dto';
+import {
+  CreateFabricDto,
+  QueryFabricDto,
+  UpdateFabricDto,
+  QueryFabricSuppliersDto,
+  FabricSupplierSortField,
+} from './dto';
 import { Fabric, FabricImage, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
@@ -330,4 +336,113 @@ export class FabricService {
     // If URL doesn't contain /uploads/, it's likely an external URL
     // Skip file deletion in this case
   }
+
+  /**
+   * Find all suppliers associated with a fabric.
+   * Returns paginated list with supplier details and fabric-specific pricing/lead time.
+   * Throws NotFoundException if fabric not found or soft-deleted.
+   */
+  async findSuppliers(
+    fabricId: number,
+    query: QueryFabricSuppliersDto,
+  ): Promise<PaginatedResult<FabricSupplierItem>> {
+    // Verify fabric exists and is active
+    const fabric = await this.prisma.fabric.findFirst({
+      where: { id: fabricId, isActive: true },
+    });
+
+    if (!fabric) {
+      throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+    }
+
+    // Build supplier filter conditions
+    const supplierWhere: Prisma.SupplierWhereInput = {
+      isActive: true,
+    };
+
+    // Add supplier filters if provided
+    if (query.supplierName) {
+      supplierWhere.companyName = { contains: query.supplierName };
+    }
+
+    // Build where clause for FabricSupplier
+    const where: Prisma.FabricSupplierWhereInput = {
+      fabricId,
+      supplier: supplierWhere,
+    };
+
+    // Build pagination args
+    const paginationArgs = buildPaginationArgs(query);
+
+    // Build sort order
+    const sortBy = query.sortBy ?? FabricSupplierSortField.createdAt;
+    const sortOrder = query.sortOrder ?? 'desc';
+
+    // Handle sorting - supplierName is on supplier, others on fabricSupplier
+    let orderBy: Prisma.FabricSupplierOrderByWithRelationInput;
+    if (sortBy === FabricSupplierSortField.supplierName) {
+      orderBy = { supplier: { companyName: sortOrder } };
+    } else {
+      orderBy = { [sortBy]: sortOrder };
+    }
+
+    // Execute queries in parallel
+    const [fabricSuppliers, total] = await Promise.all([
+      this.prisma.fabricSupplier.findMany({
+        where,
+        ...paginationArgs,
+        orderBy,
+        include: {
+          supplier: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+              phone: true,
+              status: true,
+            },
+          },
+        },
+      }),
+      this.prisma.fabricSupplier.count({ where }),
+    ]);
+
+    // Transform results - convert Decimal to number
+    const items: FabricSupplierItem[] = fabricSuppliers.map((fs) => ({
+      supplier: {
+        id: fs.supplier.id,
+        companyName: fs.supplier.companyName,
+        contactName: fs.supplier.contactName,
+        phone: fs.supplier.phone,
+        status: fs.supplier.status,
+      },
+      fabricSupplierRelation: {
+        fabricSupplierId: fs.id,
+        purchasePrice: Number(fs.purchasePrice),
+        minOrderQty: fs.minOrderQty ? Number(fs.minOrderQty) : null,
+        leadTimeDays: fs.leadTimeDays,
+      },
+    }));
+
+    return buildPaginatedResult(items, total, query);
+  }
+}
+
+/**
+ * Response structure for fabric supplier items.
+ */
+export interface FabricSupplierItem {
+  supplier: {
+    id: number;
+    companyName: string;
+    contactName: string | null;
+    phone: string | null;
+    status: string;
+  };
+  fabricSupplierRelation: {
+    fabricSupplierId: number;
+    purchasePrice: number;
+    minOrderQty: number | null;
+    leadTimeDays: number | null;
+  };
 }

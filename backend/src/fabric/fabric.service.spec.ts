@@ -73,7 +73,7 @@ describe('FabricService', () => {
     findFirst: jest.fn(),
     delete: jest.fn(),
   };
-  const fabricSupplierMock = { count: jest.fn() };
+  const fabricSupplierMock = { count: jest.fn(), findMany: jest.fn() };
   const customerPricingMock = { count: jest.fn() };
   const orderItemMock = { count: jest.fn() };
   const quoteMock = { count: jest.fn() };
@@ -849,6 +849,184 @@ describe('FabricService', () => {
       });
       // removeByKey should not be called for external URLs
       expect(mockFileService.removeByKey).not.toHaveBeenCalled();
+    });
+  });
+
+  // ========================================
+  // FIND SUPPLIERS Tests (2.3.9)
+  // ========================================
+  describe('findSuppliers', () => {
+    const mockSupplier = {
+      id: 1,
+      companyName: 'Textile Corp',
+      contactName: 'John Doe',
+      phone: '123456789',
+      status: 'active',
+      isActive: true,
+    };
+
+    const mockFabricSupplier = {
+      id: 1,
+      fabricId: 1,
+      supplierId: 1,
+      purchasePrice: new Decimal(45.5),
+      minOrderQty: new Decimal(100),
+      leadTimeDays: 7,
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+      supplier: mockSupplier,
+    };
+
+    beforeEach(() => {
+      fabricSupplierMock.findMany = jest.fn();
+      mockPrismaService.fabricSupplier.findMany = fabricSupplierMock.findMany;
+    });
+
+    it('should return paginated supplier list for a fabric', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([mockFabricSupplier]);
+      fabricSupplierMock.count.mockResolvedValue(1);
+
+      const result = await service.findSuppliers(1, {});
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].supplier.companyName).toBe('Textile Corp');
+      expect(result.items[0].fabricSupplierRelation.purchasePrice).toBe(45.5);
+      expect(result.pagination.total).toBe(1);
+    });
+
+    it('should return empty list when no suppliers associated', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([]);
+      fabricSupplierMock.count.mockResolvedValue(0);
+
+      const result = await service.findSuppliers(1, {});
+
+      expect(result.items).toHaveLength(0);
+      expect(result.pagination.total).toBe(0);
+    });
+
+    it('should throw NotFoundException if fabric not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.findSuppliers(999, {})).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.findSuppliers(999, {})).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.findSuppliers(1, {})).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should filter by supplier name (fuzzy search)', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([mockFabricSupplier]);
+      fabricSupplierMock.count.mockResolvedValue(1);
+
+      await service.findSuppliers(1, { supplierName: 'Textile' });
+
+      expect(fabricSupplierMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            supplier: expect.objectContaining({
+              companyName: { contains: 'Textile' },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should sort by purchasePrice ascending', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([]);
+      fabricSupplierMock.count.mockResolvedValue(0);
+
+      await service.findSuppliers(1, {
+        sortBy: 'purchasePrice' as any,
+        sortOrder: 'asc',
+      });
+
+      expect(fabricSupplierMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { purchasePrice: 'asc' },
+        }),
+      );
+    });
+
+    it('should sort by supplier name', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([]);
+      fabricSupplierMock.count.mockResolvedValue(0);
+
+      await service.findSuppliers(1, {
+        sortBy: 'supplierName' as any,
+        sortOrder: 'asc',
+      });
+
+      expect(fabricSupplierMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { supplier: { companyName: 'asc' } },
+        }),
+      );
+    });
+
+    it('should handle pagination correctly', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([mockFabricSupplier]);
+      fabricSupplierMock.count.mockResolvedValue(50);
+
+      const result = await service.findSuppliers(1, { page: 3, pageSize: 10 });
+
+      expect(fabricSupplierMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 20,
+          take: 10,
+        }),
+      );
+      expect(result.pagination.page).toBe(3);
+      expect(result.pagination.pageSize).toBe(10);
+      expect(result.pagination.totalPages).toBe(5);
+    });
+
+    it('should convert Decimal values to numbers in response', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([mockFabricSupplier]);
+      fabricSupplierMock.count.mockResolvedValue(1);
+
+      const result = await service.findSuppliers(1, {});
+
+      expect(typeof result.items[0].fabricSupplierRelation.purchasePrice).toBe(
+        'number',
+      );
+      expect(typeof result.items[0].fabricSupplierRelation.minOrderQty).toBe(
+        'number',
+      );
+    });
+
+    it('should handle null minOrderQty gracefully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      const supplierWithNullQty = {
+        ...mockFabricSupplier,
+        minOrderQty: null,
+      };
+      fabricSupplierMock.findMany.mockResolvedValue([supplierWithNullQty]);
+      fabricSupplierMock.count.mockResolvedValue(1);
+
+      const result = await service.findSuppliers(1, {});
+
+      expect(result.items[0].fabricSupplierRelation.minOrderQty).toBeNull();
     });
   });
 });
