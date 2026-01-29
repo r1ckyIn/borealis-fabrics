@@ -11,7 +11,11 @@ import {
   ParseBoolPipe,
   HttpCode,
   HttpStatus,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
   ApiOperation,
@@ -19,9 +23,24 @@ import {
   ApiBody,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { FabricService } from './fabric.service';
-import { CreateFabricDto, QueryFabricDto, UpdateFabricDto } from './dto';
+import {
+  CreateFabricDto,
+  QueryFabricDto,
+  UpdateFabricDto,
+  UploadFabricImageDto,
+  FabricImageResponseDto,
+} from './dto';
+
+// Allowed image MIME types for fabric images
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+];
 
 @ApiTags('fabrics')
 @Controller('api/v1/fabrics')
@@ -109,5 +128,61 @@ export class FabricController {
     @Query('force', new ParseBoolPipe({ optional: true })) force?: boolean,
   ) {
     return this.fabricService.remove(id, force ?? false);
+  }
+
+  @Post(':id/images')
+  @HttpCode(HttpStatus.CREATED)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload an image for a fabric' })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiBody({
+    description: 'Image file to upload',
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Image file (jpeg, png, gif, webp)',
+        },
+        sortOrder: {
+          type: 'integer',
+          description: 'Sort order for display (0-999)',
+          minimum: 0,
+          maximum: 999,
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Image uploaded successfully',
+    type: FabricImageResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'No file provided or invalid file type',
+  })
+  @ApiResponse({ status: 404, description: 'Fabric not found' })
+  uploadImage(
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() dto: UploadFabricImageDto,
+  ) {
+    // Validate file is provided
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    // Validate MIME type at controller level for early rejection
+    if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Allowed: jpeg, png, gif, webp',
+      );
+    }
+
+    return this.fabricService.uploadImage(id, file, dto.sortOrder ?? 0);
   }
 }

@@ -2,19 +2,35 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { FileService, UploadedFile } from '../file/file.service';
 import { CreateFabricDto, QueryFabricDto, UpdateFabricDto } from './dto';
-import { Fabric, Prisma } from '@prisma/client';
+import { Fabric, FabricImage, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
   buildPaginatedResult,
   PaginatedResult,
 } from '../common/utils/pagination';
 
+// Allowed image MIME types for fabric images
+const ALLOWED_IMAGE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+];
+
+// Maximum file size: 10MB
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
 @Injectable()
 export class FabricService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly fileService: FileService,
+  ) {}
 
   /**
    * Create a new fabric.
@@ -213,6 +229,51 @@ export class FabricService {
     await this.prisma.fabric.update({
       where: { id },
       data: { isActive: false },
+    });
+  }
+
+  /**
+   * Upload an image for a fabric.
+   * Validates fabric exists and is active, file type is an allowed image type,
+   * and file size does not exceed 10MB.
+   * Creates FabricImage record after successful file upload.
+   */
+  async uploadImage(
+    fabricId: number,
+    file: UploadedFile,
+    sortOrder: number = 0,
+  ): Promise<FabricImage> {
+    // Validate fabric exists and is active
+    const fabric = await this.prisma.fabric.findFirst({
+      where: { id: fabricId, isActive: true },
+    });
+
+    if (!fabric) {
+      throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+    }
+
+    // Validate file type
+    if (!ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(
+        'Invalid file type. Allowed: jpeg, png, gif, webp',
+      );
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      throw new BadRequestException('File too large. Maximum size: 10MB');
+    }
+
+    // Upload file via FileService
+    const uploadResult = await this.fileService.upload(file);
+
+    // Create FabricImage record
+    return this.prisma.fabricImage.create({
+      data: {
+        fabricId,
+        url: uploadResult.url,
+        sortOrder,
+      },
     });
   }
 }

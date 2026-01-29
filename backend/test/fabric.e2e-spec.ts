@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { FabricModule } from '../src/fabric/fabric.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { FileService } from '../src/file/file.service';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
@@ -52,6 +53,14 @@ interface PaginatedFabricData {
     total: number;
     totalPages: number;
   };
+}
+
+interface FabricImageData {
+  id: number;
+  fabricId: number;
+  url: string;
+  sortOrder: number;
+  createdAt: string;
 }
 
 describe('FabricController (e2e)', () => {
@@ -106,7 +115,15 @@ describe('FabricController (e2e)', () => {
     $transaction: jest.Mock;
   }
 
-  const mockPrismaService: MockPrismaServiceType = {
+  interface MockFabricImageMethods extends MockCountMethod {
+    create: jest.Mock;
+  }
+
+  interface MockPrismaServiceTypeExtended extends MockPrismaServiceType {
+    fabricImage: MockFabricImageMethods;
+  }
+
+  const mockPrismaService: MockPrismaServiceTypeExtended = {
     fabric: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -117,16 +134,25 @@ describe('FabricController (e2e)', () => {
       delete: jest.fn(),
     },
     // Related tables for delete check
-    fabricImage: { count: jest.fn() },
+    fabricImage: { count: jest.fn(), create: jest.fn() },
     fabricSupplier: { count: jest.fn() },
     customerPricing: { count: jest.fn() },
     orderItem: { count: jest.fn() },
     quote: { count: jest.fn() },
     // Transaction mock - passes the mock service to the callback
     $transaction: jest.fn(
-      <T>(fn: (tx: MockPrismaServiceType) => Promise<T>): Promise<T> =>
+      <T>(fn: (tx: MockPrismaServiceTypeExtended) => Promise<T>): Promise<T> =>
         fn(mockPrismaService),
     ),
+  };
+
+  // Mock FileService
+  const mockFileService = {
+    upload: jest.fn(),
+    findOne: jest.fn(),
+    findByKey: jest.fn(),
+    remove: jest.fn(),
+    removeByKey: jest.fn(),
   };
 
   beforeAll(async () => {
@@ -135,6 +161,8 @@ describe('FabricController (e2e)', () => {
     })
       .overrideProvider(PrismaService)
       .useValue(mockPrismaService)
+      .overrideProvider(FileService)
+      .useValue(mockFileService)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -1020,6 +1048,230 @@ describe('FabricController (e2e)', () => {
       expect(response.body).toHaveProperty('message');
       expect(response.body).toHaveProperty('path');
       expect(response.body).toHaveProperty('timestamp');
+    });
+  });
+
+  // ============================================================
+  // POST /api/v1/fabrics/:id/images - Upload Fabric Image
+  // ============================================================
+  describe('POST /api/v1/fabrics/:id/images', () => {
+    const mockFileUploadResult = {
+      id: 1,
+      key: 'uuid-123.jpg',
+      url: 'http://localhost:3000/uploads/uuid-123.jpg',
+      originalName: 'test-image.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024 * 1024,
+    };
+
+    const mockFabricImage = {
+      id: 1,
+      fabricId: 1,
+      url: 'http://localhost:3000/uploads/uuid-123.jpg',
+      sortOrder: 0,
+      createdAt: new Date('2025-01-01'),
+    };
+
+    it('should upload an image successfully and return 201', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue(mockFileUploadResult);
+      mockPrismaService.fabricImage.create.mockResolvedValue(mockFabricImage);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .attach('file', Buffer.from('test image data'), {
+          filename: 'test-image.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(201);
+
+      const body = response.body as ApiSuccessResponse<FabricImageData>;
+      expect(body.code).toBe(201);
+      expect(body.message).toBe('success');
+      expect(body.data.fabricId).toBe(1);
+      expect(body.data.url).toBe('http://localhost:3000/uploads/uuid-123.jpg');
+      expect(body.data.sortOrder).toBe(0);
+    });
+
+    it('should upload with custom sortOrder and return 201', async () => {
+      const customSortOrderImage = { ...mockFabricImage, sortOrder: 5 };
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue(mockFileUploadResult);
+      mockPrismaService.fabricImage.create.mockResolvedValue(
+        customSortOrderImage,
+      );
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .field('sortOrder', '5')
+        .attach('file', Buffer.from('test image data'), {
+          filename: 'test-image.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(201);
+
+      const body = response.body as ApiSuccessResponse<FabricImageData>;
+      expect(body.code).toBe(201);
+      expect(body.data.sortOrder).toBe(5);
+    });
+
+    it('should return 404 when fabric does not exist', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/999/images')
+        .attach('file', Buffer.from('test image data'), {
+          filename: 'test-image.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+      expect(body.message).toContain('not found');
+    });
+
+    it('should return 400 when no file is provided', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+      expect(body.message).toContain('No file provided');
+    });
+
+    it('should return 400 for non-image file type', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .attach('file', Buffer.from('pdf content'), {
+          filename: 'document.pdf',
+          contentType: 'application/pdf',
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+      expect(body.message).toContain('Invalid file type');
+    });
+
+    it('should return 400 for invalid ID format', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/invalid/images')
+        .attach('file', Buffer.from('test image data'), {
+          filename: 'test-image.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+    });
+
+    it('should return 400 for negative sortOrder', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .field('sortOrder', '-1')
+        .attach('file', Buffer.from('test image data'), {
+          filename: 'test-image.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+    });
+
+    it('should return 400 for sortOrder exceeding maximum (999)', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .field('sortOrder', '1000')
+        .attach('file', Buffer.from('test image data'), {
+          filename: 'test-image.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+    });
+
+    it('should accept PNG image', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue({
+        ...mockFileUploadResult,
+        mimeType: 'image/png',
+      });
+      mockPrismaService.fabricImage.create.mockResolvedValue(mockFabricImage);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .attach('file', Buffer.from('png data'), {
+          filename: 'test.png',
+          contentType: 'image/png',
+        })
+        .expect(201);
+    });
+
+    it('should accept GIF image', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue({
+        ...mockFileUploadResult,
+        mimeType: 'image/gif',
+      });
+      mockPrismaService.fabricImage.create.mockResolvedValue(mockFabricImage);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .attach('file', Buffer.from('gif data'), {
+          filename: 'test.gif',
+          contentType: 'image/gif',
+        })
+        .expect(201);
+    });
+
+    it('should accept WebP image', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue({
+        ...mockFileUploadResult,
+        mimeType: 'image/webp',
+      });
+      mockPrismaService.fabricImage.create.mockResolvedValue(mockFabricImage);
+
+      await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .attach('file', Buffer.from('webp data'), {
+          filename: 'test.webp',
+          contentType: 'image/webp',
+        })
+        .expect(201);
+    });
+
+    it('should accept sortOrder at maximum (999)', async () => {
+      const maxSortOrderImage = { ...mockFabricImage, sortOrder: 999 };
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue(mockFileUploadResult);
+      mockPrismaService.fabricImage.create.mockResolvedValue(maxSortOrderImage);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/images')
+        .field('sortOrder', '999')
+        .attach('file', Buffer.from('test image data'), {
+          filename: 'test-image.jpg',
+          contentType: 'image/jpeg',
+        })
+        .expect(201);
+
+      const body = response.body as ApiSuccessResponse<FabricImageData>;
+      expect(body.data.sortOrder).toBe(999);
     });
   });
 });

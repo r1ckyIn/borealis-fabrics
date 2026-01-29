@@ -2,9 +2,14 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { FabricService } from './fabric.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { FileService, UploadedFile } from '../file/file.service';
 import { CreateFabricDto, QueryFabricDto, FabricSortField } from './dto';
 import { Fabric } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -82,6 +87,11 @@ describe('FabricService', () => {
     ),
   };
 
+  // Mock FileService
+  const mockFileService = {
+    upload: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -89,6 +99,10 @@ describe('FabricService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: FileService,
+          useValue: mockFileService,
         },
       ],
     }).compile();
@@ -458,6 +472,231 @@ describe('FabricService', () => {
         expect(message).toContain('5 order items');
         expect(message).toContain('4 quotes');
       }
+    });
+  });
+
+  // ========================================
+  // UPLOAD IMAGE Tests
+  // ========================================
+  describe('uploadImage', () => {
+    const mockFile: UploadedFile = {
+      originalname: 'test-image.jpg',
+      mimetype: 'image/jpeg',
+      size: 1024 * 1024, // 1MB
+      buffer: Buffer.from('test image data'),
+    };
+
+    const mockFileUploadResult = {
+      id: 1,
+      key: 'uuid-123.jpg',
+      url: 'http://localhost:3000/uploads/uuid-123.jpg',
+      originalName: 'test-image.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024 * 1024,
+    };
+
+    const mockFabricImage = {
+      id: 1,
+      fabricId: 1,
+      url: 'http://localhost:3000/uploads/uuid-123.jpg',
+      sortOrder: 0,
+      createdAt: new Date(),
+    };
+
+    it('should successfully upload an image for an active fabric', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue(mockFileUploadResult);
+      fabricImageMock.create = jest.fn().mockResolvedValue(mockFabricImage);
+      mockPrismaService.fabricImage.create = fabricImageMock.create;
+
+      const result = await service.uploadImage(1, mockFile);
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(mockFileService.upload).toHaveBeenCalledWith(mockFile);
+      expect(fabricImageMock.create).toHaveBeenCalledWith({
+        data: {
+          fabricId: 1,
+          url: mockFileUploadResult.url,
+          sortOrder: 0,
+        },
+      });
+      expect(result).toEqual(mockFabricImage);
+    });
+
+    it('should use custom sortOrder when provided', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue(mockFileUploadResult);
+      const customSortOrderImage = { ...mockFabricImage, sortOrder: 5 };
+      fabricImageMock.create = jest
+        .fn()
+        .mockResolvedValue(customSortOrderImage);
+      mockPrismaService.fabricImage.create = fabricImageMock.create;
+
+      const result = await service.uploadImage(1, mockFile, 5);
+
+      expect(fabricImageMock.create).toHaveBeenCalledWith({
+        data: {
+          fabricId: 1,
+          url: mockFileUploadResult.url,
+          sortOrder: 5,
+        },
+      });
+      expect(result.sortOrder).toBe(5);
+    });
+
+    it('should throw NotFoundException if fabric does not exist', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.uploadImage(999, mockFile)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.uploadImage(999, mockFile)).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+      expect(mockFileService.upload).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.uploadImage(1, mockFile)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw BadRequestException for non-image MIME type', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      const pdfFile: UploadedFile = {
+        ...mockFile,
+        originalname: 'document.pdf',
+        mimetype: 'application/pdf',
+      };
+
+      await expect(service.uploadImage(1, pdfFile)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.uploadImage(1, pdfFile)).rejects.toThrow(
+        'Invalid file type. Allowed: jpeg, png, gif, webp',
+      );
+      expect(mockFileService.upload).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for file exceeding 10MB', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      const largeFile: UploadedFile = {
+        ...mockFile,
+        size: 11 * 1024 * 1024, // 11MB
+      };
+
+      await expect(service.uploadImage(1, largeFile)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.uploadImage(1, largeFile)).rejects.toThrow(
+        'File too large. Maximum size: 10MB',
+      );
+      expect(mockFileService.upload).not.toHaveBeenCalled();
+    });
+
+    it('should accept image/jpeg MIME type', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue(mockFileUploadResult);
+      fabricImageMock.create = jest.fn().mockResolvedValue(mockFabricImage);
+      mockPrismaService.fabricImage.create = fabricImageMock.create;
+
+      const jpegFile: UploadedFile = { ...mockFile, mimetype: 'image/jpeg' };
+      await service.uploadImage(1, jpegFile);
+
+      expect(mockFileService.upload).toHaveBeenCalled();
+    });
+
+    it('should accept image/png MIME type', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue({
+        ...mockFileUploadResult,
+        mimeType: 'image/png',
+      });
+      fabricImageMock.create = jest.fn().mockResolvedValue(mockFabricImage);
+      mockPrismaService.fabricImage.create = fabricImageMock.create;
+
+      const pngFile: UploadedFile = {
+        ...mockFile,
+        originalname: 'test.png',
+        mimetype: 'image/png',
+      };
+      await service.uploadImage(1, pngFile);
+
+      expect(mockFileService.upload).toHaveBeenCalled();
+    });
+
+    it('should accept image/gif MIME type', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue({
+        ...mockFileUploadResult,
+        mimeType: 'image/gif',
+      });
+      fabricImageMock.create = jest.fn().mockResolvedValue(mockFabricImage);
+      mockPrismaService.fabricImage.create = fabricImageMock.create;
+
+      const gifFile: UploadedFile = {
+        ...mockFile,
+        originalname: 'test.gif',
+        mimetype: 'image/gif',
+      };
+      await service.uploadImage(1, gifFile);
+
+      expect(mockFileService.upload).toHaveBeenCalled();
+    });
+
+    it('should accept image/webp MIME type', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue({
+        ...mockFileUploadResult,
+        mimeType: 'image/webp',
+      });
+      fabricImageMock.create = jest.fn().mockResolvedValue(mockFabricImage);
+      mockPrismaService.fabricImage.create = fabricImageMock.create;
+
+      const webpFile: UploadedFile = {
+        ...mockFile,
+        originalname: 'test.webp',
+        mimetype: 'image/webp',
+      };
+      await service.uploadImage(1, webpFile);
+
+      expect(mockFileService.upload).toHaveBeenCalled();
+    });
+
+    it('should reject image/bmp MIME type', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      const bmpFile: UploadedFile = {
+        ...mockFile,
+        originalname: 'test.bmp',
+        mimetype: 'image/bmp',
+      };
+
+      await expect(service.uploadImage(1, bmpFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should accept file exactly at 10MB limit', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      mockFileService.upload.mockResolvedValue(mockFileUploadResult);
+      fabricImageMock.create = jest.fn().mockResolvedValue(mockFabricImage);
+      mockPrismaService.fabricImage.create = fabricImageMock.create;
+
+      const exactLimitFile: UploadedFile = {
+        ...mockFile,
+        size: 10 * 1024 * 1024, // Exactly 10MB
+      };
+      await service.uploadImage(1, exactLimitFile);
+
+      expect(mockFileService.upload).toHaveBeenCalled();
     });
   });
 });
