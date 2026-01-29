@@ -18,22 +18,25 @@ export class SupplierService {
 
   /**
    * Create a new supplier.
+   * Uses transaction to prevent race conditions on companyName uniqueness check.
    * Throws ConflictException if companyName already exists.
    */
   async create(createSupplierDto: CreateSupplierDto): Promise<Supplier> {
-    // Check for duplicate companyName
-    const existing = await this.prisma.supplier.findFirst({
-      where: { companyName: createSupplierDto.companyName },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // Check for duplicate companyName
+      const existing = await tx.supplier.findFirst({
+        where: { companyName: createSupplierDto.companyName },
+      });
 
-    if (existing) {
-      throw new ConflictException(
-        `Supplier with company name "${createSupplierDto.companyName}" already exists`,
-      );
-    }
+      if (existing) {
+        throw new ConflictException(
+          `Supplier with company name "${createSupplierDto.companyName}" already exists`,
+        );
+      }
 
-    return this.prisma.supplier.create({
-      data: createSupplierDto,
+      return tx.supplier.create({
+        data: createSupplierDto,
+      });
     });
   }
 
@@ -97,6 +100,7 @@ export class SupplierService {
 
   /**
    * Update a supplier by ID.
+   * Uses transaction to prevent race conditions on companyName uniqueness check.
    * Throws NotFoundException if supplier not found.
    * Throws ConflictException if companyName conflicts with another supplier.
    */
@@ -104,32 +108,34 @@ export class SupplierService {
     id: number,
     updateSupplierDto: UpdateSupplierDto,
   ): Promise<Supplier> {
-    // Check if supplier exists
-    const existing = await this.prisma.supplier.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      throw new NotFoundException(`Supplier with ID ${id} not found`);
-    }
-
-    // Check for companyName conflict if updating companyName
-    if (updateSupplierDto.companyName) {
-      const conflict = await this.prisma.supplier.findFirst({
-        where: { companyName: updateSupplierDto.companyName },
+    return this.prisma.$transaction(async (tx) => {
+      // Check if supplier exists
+      const existing = await tx.supplier.findUnique({
+        where: { id },
       });
 
-      // If found a supplier with same name and it's not the current one
-      if (conflict && conflict.id !== id) {
-        throw new ConflictException(
-          `Supplier with company name "${updateSupplierDto.companyName}" already exists`,
-        );
+      if (!existing) {
+        throw new NotFoundException(`Supplier with ID ${id} not found`);
       }
-    }
 
-    return this.prisma.supplier.update({
-      where: { id },
-      data: updateSupplierDto,
+      // Check for companyName conflict if updating companyName
+      if (updateSupplierDto.companyName) {
+        const conflict = await tx.supplier.findFirst({
+          where: { companyName: updateSupplierDto.companyName },
+        });
+
+        // If found a supplier with same name and it's not the current one
+        if (conflict && conflict.id !== id) {
+          throw new ConflictException(
+            `Supplier with company name "${updateSupplierDto.companyName}" already exists`,
+          );
+        }
+      }
+
+      return tx.supplier.update({
+        where: { id },
+        data: updateSupplierDto,
+      });
     });
   }
 
