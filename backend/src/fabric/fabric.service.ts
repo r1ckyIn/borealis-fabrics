@@ -760,6 +760,16 @@ export class FabricService {
         );
       }
 
+      // Verify customer is still active
+      const customer = await tx.customer.findFirst({
+        where: { id: pricing.customerId, isActive: true },
+      });
+      if (!customer) {
+        throw new NotFoundException(
+          `Customer with ID ${pricing.customerId} not found`,
+        );
+      }
+
       return tx.customerPricing.update({
         where: { id: pricingId },
         data: {
@@ -792,6 +802,16 @@ export class FabricService {
       if (!pricing || pricing.fabricId !== fabricId) {
         throw new NotFoundException(
           `Fabric pricing with ID ${pricingId} not found`,
+        );
+      }
+
+      // Verify customer is still active
+      const customer = await tx.customer.findFirst({
+        where: { id: pricing.customerId, isActive: true },
+      });
+      if (!customer) {
+        throw new NotFoundException(
+          `Customer with ID ${pricing.customerId} not found`,
         );
       }
 

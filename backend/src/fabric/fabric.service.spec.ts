@@ -1766,13 +1766,19 @@ describe('FabricService', () => {
       updatedAt: new Date('2024-01-15T10:00:00Z'),
     };
 
+    const mockCustomerEntity = {
+      id: 5,
+      companyName: 'ABC Furniture',
+      isActive: true,
+    };
+
     beforeEach(() => {
       customerPricingMock.findUnique = jest.fn();
       customerPricingMock.update = jest.fn();
       mockPrismaService.customerPricing.findUnique =
         customerPricingMock.findUnique;
       mockPrismaService.customerPricing.update = customerPricingMock.update;
-      // Update $transaction mock to include customerPricing
+      // Update $transaction mock to include customerPricing and customer
       mockPrismaService.$transaction.mockImplementation(
         (callback: CallableFunction) =>
           callback({
@@ -1780,6 +1786,7 @@ describe('FabricService', () => {
             fabricImage: fabricImageMock,
             fabricSupplier: fabricSupplierMock,
             supplier: supplierMock,
+            customer: customerMock,
             customerPricing: customerPricingMock,
           }),
       );
@@ -1788,6 +1795,7 @@ describe('FabricService', () => {
     it('should update pricing successfully', async () => {
       fabricMock.findFirst.mockResolvedValue(mockFabric);
       customerPricingMock.findUnique.mockResolvedValue(mockExistingPricing);
+      customerMock.findFirst.mockResolvedValue(mockCustomerEntity);
       const updatedPricing = {
         ...mockExistingPricing,
         specialPrice: new Decimal(49.99),
@@ -1803,6 +1811,9 @@ describe('FabricService', () => {
       });
       expect(customerPricingMock.findUnique).toHaveBeenCalledWith({
         where: { id: 10 },
+      });
+      expect(customerMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 5, isActive: true },
       });
       expect(customerPricingMock.update).toHaveBeenCalledWith({
         where: { id: 10 },
@@ -1860,6 +1871,22 @@ describe('FabricService', () => {
         service.updatePricing(1, 10, { specialPrice: 49.99 }),
       ).rejects.toThrow('Fabric pricing with ID 10 not found');
     });
+
+    it('should throw NotFoundException if customer is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      customerPricingMock.findUnique.mockResolvedValue(mockExistingPricing);
+      customerMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updatePricing(1, 10, { specialPrice: 49.99 }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.updatePricing(1, 10, { specialPrice: 49.99 }),
+      ).rejects.toThrow('Customer with ID 5 not found');
+      expect(customerMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 5, isActive: true },
+      });
+    });
   });
 
   // ========================================
@@ -1875,13 +1902,19 @@ describe('FabricService', () => {
       updatedAt: new Date('2024-01-15T10:00:00Z'),
     };
 
+    const mockCustomerEntity = {
+      id: 5,
+      companyName: 'ABC Furniture',
+      isActive: true,
+    };
+
     beforeEach(() => {
       customerPricingMock.findUnique = jest.fn();
       customerPricingMock.delete = jest.fn();
       mockPrismaService.customerPricing.findUnique =
         customerPricingMock.findUnique;
       mockPrismaService.customerPricing.delete = customerPricingMock.delete;
-      // Update $transaction mock to include customerPricing
+      // Update $transaction mock to include customerPricing and customer
       mockPrismaService.$transaction.mockImplementation(
         (callback: CallableFunction) =>
           callback({
@@ -1889,6 +1922,7 @@ describe('FabricService', () => {
             fabricImage: fabricImageMock,
             fabricSupplier: fabricSupplierMock,
             supplier: supplierMock,
+            customer: customerMock,
             customerPricing: customerPricingMock,
           }),
       );
@@ -1897,6 +1931,7 @@ describe('FabricService', () => {
     it('should delete pricing successfully', async () => {
       fabricMock.findFirst.mockResolvedValue(mockFabric);
       customerPricingMock.findUnique.mockResolvedValue(mockExistingPricing);
+      customerMock.findFirst.mockResolvedValue(mockCustomerEntity);
       customerPricingMock.delete.mockResolvedValue(mockExistingPricing);
 
       await service.removePricing(1, 10);
@@ -1906,6 +1941,9 @@ describe('FabricService', () => {
       });
       expect(customerPricingMock.findUnique).toHaveBeenCalledWith({
         where: { id: 10 },
+      });
+      expect(customerMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 5, isActive: true },
       });
       expect(customerPricingMock.delete).toHaveBeenCalledWith({
         where: { id: 10 },
@@ -1962,9 +2000,26 @@ describe('FabricService', () => {
       );
     });
 
+    it('should throw NotFoundException if customer is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      customerPricingMock.findUnique.mockResolvedValue(mockExistingPricing);
+      customerMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removePricing(1, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.removePricing(1, 10)).rejects.toThrow(
+        'Customer with ID 5 not found',
+      );
+      expect(customerMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 5, isActive: true },
+      });
+    });
+
     it('should use transaction for atomic deletion', async () => {
       fabricMock.findFirst.mockResolvedValue(mockFabric);
       customerPricingMock.findUnique.mockResolvedValue(mockExistingPricing);
+      customerMock.findFirst.mockResolvedValue(mockCustomerEntity);
       customerPricingMock.delete.mockResolvedValue(mockExistingPricing);
 
       await service.removePricing(1, 10);
