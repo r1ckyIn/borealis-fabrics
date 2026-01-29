@@ -245,4 +245,192 @@ describe('FileService', () => {
       expect(fileMock.delete).toHaveBeenCalled();
     });
   });
+
+  // ========================================
+  // SECURITY Tests - Path Traversal Prevention
+  // ========================================
+  describe('security - path traversal prevention', () => {
+    describe('upload', () => {
+      it('should sanitize filename with path traversal characters (../)', async () => {
+        const maliciousFile: UploadedFile = {
+          originalname: '../../../etc/passwd.jpg',
+          mimetype: 'image/jpeg',
+          size: 1024,
+          buffer: Buffer.from('test'),
+        };
+
+        fileMock.create.mockResolvedValue({
+          ...mockFile,
+          originalName: 'passwd.jpg',
+        });
+        (fs.promises.writeFile as jest.Mock).mockResolvedValue(undefined);
+
+        const result = await service.upload(maliciousFile);
+
+        // The originalName stored should be sanitized (no path traversal)
+        expect(fileMock.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({
+            originalName: expect.not.stringContaining('..'),
+          }),
+        });
+        // The key should not contain path traversal characters
+        expect(result.key).not.toContain('..');
+      });
+
+      it('should sanitize filename with backslash path traversal (..\\)', async () => {
+        const maliciousFile: UploadedFile = {
+          originalname: '..\\..\\..\\windows\\system32\\config.jpg',
+          mimetype: 'image/jpeg',
+          size: 1024,
+          buffer: Buffer.from('test'),
+        };
+
+        fileMock.create.mockResolvedValue({
+          ...mockFile,
+          originalName: 'config.jpg',
+        });
+        (fs.promises.writeFile as jest.Mock).mockResolvedValue(undefined);
+
+        const result = await service.upload(maliciousFile);
+
+        expect(result.key).not.toContain('..');
+        expect(result.key).not.toContain('\\');
+      });
+
+      it('should sanitize filename with null byte injection', async () => {
+        // Null byte in middle of filename (common attack vector)
+        const maliciousFile: UploadedFile = {
+          originalname: 'mali\x00cious.jpg',
+          mimetype: 'image/jpeg',
+          size: 1024,
+          buffer: Buffer.from('test'),
+        };
+
+        fileMock.create.mockResolvedValue({
+          ...mockFile,
+          originalName: 'malicious.jpg',
+        });
+        (fs.promises.writeFile as jest.Mock).mockResolvedValue(undefined);
+
+        const result = await service.upload(maliciousFile);
+
+        // The key should not contain null bytes
+        expect(result.key).not.toContain('\x00');
+        // The stored original name should have null bytes removed
+        expect(fileMock.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({
+            originalName: expect.not.stringContaining('\x00'),
+          }),
+        });
+      });
+
+      it('should only allow whitelisted extensions', async () => {
+        const maliciousFile: UploadedFile = {
+          originalname: 'malware.exe',
+          mimetype: 'image/jpeg', // Spoofed mime type
+          size: 1024,
+          buffer: Buffer.from('test'),
+        };
+
+        await expect(service.upload(maliciousFile)).rejects.toThrow(
+          'Invalid file extension',
+        );
+      });
+
+      it('should reject double extension attacks', async () => {
+        const maliciousFile: UploadedFile = {
+          originalname: 'image.jpg.exe',
+          mimetype: 'image/jpeg',
+          size: 1024,
+          buffer: Buffer.from('test'),
+        };
+
+        await expect(service.upload(maliciousFile)).rejects.toThrow(
+          'Invalid file extension',
+        );
+      });
+    });
+
+    describe('remove', () => {
+      it('should reject removal if key contains path traversal', async () => {
+        const maliciousFile: File = {
+          ...mockFile,
+          key: '../../../etc/passwd',
+        };
+        fileMock.findUnique.mockResolvedValue(maliciousFile);
+
+        await expect(service.remove(1)).rejects.toThrow('Invalid file path');
+
+        // Should not attempt to delete the file
+        expect(fs.promises.unlink).not.toHaveBeenCalled();
+        expect(fileMock.delete).not.toHaveBeenCalled();
+      });
+
+      it('should reject removal if resolved path is outside upload directory', async () => {
+        const maliciousFile: File = {
+          ...mockFile,
+          key: '..%2F..%2F..%2Fetc%2Fpasswd', // URL encoded
+        };
+        fileMock.findUnique.mockResolvedValue(maliciousFile);
+
+        await expect(service.remove(1)).rejects.toThrow('Invalid file path');
+      });
+    });
+  });
+
+  // ========================================
+  // SECURITY Tests - Filename Validation
+  // ========================================
+  describe('security - filename validation', () => {
+    it('should handle extremely long filenames', async () => {
+      const longName = 'a'.repeat(300) + '.jpg';
+      const maliciousFile: UploadedFile = {
+        originalname: longName,
+        mimetype: 'image/jpeg',
+        size: 1024,
+        buffer: Buffer.from('test'),
+      };
+
+      fileMock.create.mockResolvedValue({
+        ...mockFile,
+        originalName: 'a'.repeat(200) + '.jpg', // Truncated
+      });
+      (fs.promises.writeFile as jest.Mock).mockResolvedValue(undefined);
+
+      await service.upload(maliciousFile);
+
+      // Should truncate the original name to a reasonable length
+      expect(fileMock.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          originalName: expect.any(String),
+        }),
+      });
+      const mockCalls = fileMock.create.mock.calls as Array<
+        [{ data: { originalName: string } }]
+      >;
+      const createdData = mockCalls[0][0];
+      expect(createdData.data.originalName.length).toBeLessThanOrEqual(255);
+    });
+
+    it('should sanitize special characters in filename', async () => {
+      const specialFile: UploadedFile = {
+        originalname: 'file<script>alert(1)</script>.jpg',
+        mimetype: 'image/jpeg',
+        size: 1024,
+        buffer: Buffer.from('test'),
+      };
+
+      fileMock.create.mockResolvedValue(mockFile);
+      (fs.promises.writeFile as jest.Mock).mockResolvedValue(undefined);
+
+      await service.upload(specialFile);
+
+      // Key should not contain HTML/script tags
+      expect(fileMock.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          originalName: expect.not.stringContaining('<'),
+        }),
+      });
+    });
+  });
 });

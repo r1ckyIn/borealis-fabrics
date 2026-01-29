@@ -191,4 +191,102 @@ describe('FileController', () => {
       expect(mockFileService.remove).toHaveBeenCalledWith(1);
     });
   });
+
+  // ========================================
+  // SECURITY Tests - Filename Validation
+  // ========================================
+  describe('security - filename validation', () => {
+    it('should reject filename with path traversal characters (../)', async () => {
+      const maliciousFile = {
+        ...mockMulterFile,
+        originalname: '../../../etc/passwd.jpg',
+      };
+
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        'Invalid filename',
+      );
+    });
+
+    it('should reject filename with backslash path traversal (..\\)', async () => {
+      const maliciousFile = {
+        ...mockMulterFile,
+        originalname: '..\\..\\..\\windows\\system32\\config.jpg',
+      };
+
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        'Invalid filename',
+      );
+    });
+
+    it('should reject filename with null byte', async () => {
+      const maliciousFile = {
+        ...mockMulterFile,
+        originalname: 'image.jpg\x00.exe',
+      };
+
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        'Invalid filename',
+      );
+    });
+
+    it('should reject extremely long filenames', async () => {
+      const maliciousFile = {
+        ...mockMulterFile,
+        originalname: 'a'.repeat(300) + '.jpg',
+      };
+
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        'Filename too long',
+      );
+    });
+
+    it('should reject filenames with only dots', async () => {
+      const maliciousFile = {
+        ...mockMulterFile,
+        originalname: '....jpg',
+      };
+
+      await expect(controller.upload(maliciousFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should allow valid filenames with special characters', async () => {
+      const validFile = {
+        ...mockMulterFile,
+        originalname: 'my-file_2024 (1).jpg',
+      };
+      mockFileService.upload.mockResolvedValue(mockUploadResult);
+
+      const result = await controller.upload(validFile);
+
+      expect(result).toBeDefined();
+      expect(mockFileService.upload).toHaveBeenCalled();
+    });
+
+    it('should allow Chinese/Unicode filenames', async () => {
+      const unicodeFile = {
+        ...mockMulterFile,
+        originalname: '面料图片-红色.jpg',
+      };
+      mockFileService.upload.mockResolvedValue(mockUploadResult);
+
+      const result = await controller.upload(unicodeFile);
+
+      expect(result).toBeDefined();
+      expect(mockFileService.upload).toHaveBeenCalled();
+    });
+  });
 });
