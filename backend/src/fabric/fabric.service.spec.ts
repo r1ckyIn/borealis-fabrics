@@ -367,13 +367,14 @@ describe('FabricService', () => {
       const updateDto = { name: 'Updated Fabric Name' };
       const updatedFabric = { ...mockFabric, ...updateDto };
 
-      fabricMock.findUnique.mockResolvedValue(mockFabric);
+      // First findFirst for existence check (with isActive: true)
+      fabricMock.findFirst.mockResolvedValueOnce(mockFabric);
       fabricMock.update.mockResolvedValue(updatedFabric);
 
       const result = await service.update(1, updateDto);
 
-      expect(fabricMock.findUnique).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
       });
       expect(fabricMock.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -383,17 +384,27 @@ describe('FabricService', () => {
     });
 
     it('should throw NotFoundException if fabric not found', async () => {
-      fabricMock.findUnique.mockResolvedValue(null);
+      fabricMock.findFirst.mockResolvedValueOnce(null);
 
       await expect(service.update(999, { name: 'Test' })).rejects.toThrow(
         NotFoundException,
       );
     });
 
+    it('should throw NotFoundException if fabric is soft deleted', async () => {
+      fabricMock.findFirst.mockResolvedValueOnce(null);
+
+      await expect(service.update(1, { name: 'Test' })).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
     it('should throw ConflictException if fabricCode conflicts with another fabric', async () => {
       const anotherFabric = { ...mockFabric, id: 2 };
-      fabricMock.findUnique.mockResolvedValue(mockFabric);
-      fabricMock.findFirst.mockResolvedValue(anotherFabric);
+      // First findFirst for existence check, second for conflict check
+      fabricMock.findFirst
+        .mockResolvedValueOnce(mockFabric)
+        .mockResolvedValueOnce(anotherFabric);
 
       await expect(
         service.update(1, { fabricCode: 'EXISTING-CODE' }),
@@ -401,8 +412,10 @@ describe('FabricService', () => {
     });
 
     it('should allow updating fabricCode to same value (self-reference)', async () => {
-      fabricMock.findUnique.mockResolvedValue(mockFabric);
-      fabricMock.findFirst.mockResolvedValue(mockFabric); // Same fabric found
+      // First findFirst for existence check, second for conflict check (returns self)
+      fabricMock.findFirst
+        .mockResolvedValueOnce(mockFabric)
+        .mockResolvedValueOnce(mockFabric);
       fabricMock.update.mockResolvedValue(mockFabric);
 
       const result = await service.update(1, {

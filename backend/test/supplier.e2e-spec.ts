@@ -378,7 +378,8 @@ describe('SupplierController (e2e)', () => {
   describe('PATCH /api/v1/suppliers/:id', () => {
     it('should update a supplier successfully', async () => {
       const updatedSupplier = { ...mockSupplier, contactName: 'Jane Doe' };
-      mockPrismaService.supplier.findUnique.mockResolvedValue(mockSupplier);
+      // Use findFirst for existence check (with isActive: true)
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
       mockPrismaService.supplier.update.mockResolvedValue(updatedSupplier);
 
       const response = await request(app.getHttpServer())
@@ -393,7 +394,7 @@ describe('SupplierController (e2e)', () => {
     });
 
     it('should return 404 when supplier not found', async () => {
-      mockPrismaService.supplier.findUnique.mockResolvedValue(null);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/suppliers/999')
@@ -404,10 +405,25 @@ describe('SupplierController (e2e)', () => {
       expect(body.code).toBe(404);
     });
 
+    it('should return 404 when supplier is soft deleted', async () => {
+      // findFirst with isActive: true returns null for soft-deleted supplier
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/suppliers/1')
+        .send({ contactName: 'Jane Doe' })
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+    });
+
     it('should return 409 for companyName conflict', async () => {
       const anotherSupplier = { ...mockSupplier, id: 2 };
-      mockPrismaService.supplier.findUnique.mockResolvedValue(mockSupplier);
-      mockPrismaService.supplier.findFirst.mockResolvedValue(anotherSupplier);
+      // First call for existence check, second for conflict check
+      mockPrismaService.supplier.findFirst
+        .mockResolvedValueOnce(mockSupplier)
+        .mockResolvedValueOnce(anotherSupplier);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/suppliers/1')
@@ -420,7 +436,7 @@ describe('SupplierController (e2e)', () => {
     });
 
     it('should return 400 for invalid email format', async () => {
-      mockPrismaService.supplier.findUnique.mockResolvedValue(mockSupplier);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/suppliers/1')

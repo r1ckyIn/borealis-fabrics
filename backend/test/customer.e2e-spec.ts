@@ -573,7 +573,8 @@ describe('CustomerController (e2e)', () => {
   describe('PATCH /api/v1/customers/:id', () => {
     it('should update a customer successfully', async () => {
       const updatedCustomer = { ...mockCustomer, contactName: 'Wang Wei' };
-      mockPrismaService.customer.findUnique.mockResolvedValue(mockCustomer);
+      // Use findFirst for existence check (with isActive: true)
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
       mockPrismaService.customer.update.mockResolvedValue(updatedCustomer);
 
       const response = await request(app.getHttpServer())
@@ -590,7 +591,7 @@ describe('CustomerController (e2e)', () => {
     it('should update addresses array', async () => {
       const newAddresses = [{ ...mockAddress, city: '广州市' }];
       const updatedCustomer = { ...mockCustomer, addresses: newAddresses };
-      mockPrismaService.customer.findUnique.mockResolvedValue(mockCustomer);
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
       mockPrismaService.customer.update.mockResolvedValue(updatedCustomer);
 
       const response = await request(app.getHttpServer())
@@ -605,20 +606,17 @@ describe('CustomerController (e2e)', () => {
     it('should allow updating to existing companyName (no conflict)', async () => {
       // Unlike Supplier, Customer allows duplicate companyName
       const updatedCustomer = { ...mockCustomer, companyName: 'Another Co.' };
-      mockPrismaService.customer.findUnique.mockResolvedValue(mockCustomer);
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
       mockPrismaService.customer.update.mockResolvedValue(updatedCustomer);
 
       await request(app.getHttpServer())
         .patch('/api/v1/customers/1')
         .send({ companyName: 'Another Co.' })
         .expect(200);
-
-      // No findFirst call for duplicate check
-      expect(mockPrismaService.customer.findFirst).not.toHaveBeenCalled();
     });
 
     it('should return 404 when customer not found', async () => {
-      mockPrismaService.customer.findUnique.mockResolvedValue(null);
+      mockPrismaService.customer.findFirst.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/customers/999')
@@ -629,8 +627,21 @@ describe('CustomerController (e2e)', () => {
       expect(body.code).toBe(404);
     });
 
+    it('should return 404 when customer is soft deleted', async () => {
+      // findFirst with isActive: true returns null for soft-deleted customer
+      mockPrismaService.customer.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/customers/1')
+        .send({ contactName: 'Wang Wei' })
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+    });
+
     it('should return 400 for invalid email format', async () => {
-      mockPrismaService.customer.findUnique.mockResolvedValue(mockCustomer);
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/customers/1')

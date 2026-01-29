@@ -738,8 +738,8 @@ describe('FabricController (e2e)', () => {
   describe('PATCH /api/v1/fabrics/:id', () => {
     it('should update a fabric successfully', async () => {
       const updatedFabric = { ...mockFabric, name: 'Updated Fabric Name' };
-      mockPrismaService.fabric.findUnique.mockResolvedValue(mockFabric);
-      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+      // Use findFirst for existence check (with isActive: true)
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
       mockPrismaService.fabric.update.mockResolvedValue(updatedFabric);
 
       const response = await request(app.getHttpServer())
@@ -755,7 +755,7 @@ describe('FabricController (e2e)', () => {
 
     it('should update fabric color', async () => {
       const updatedFabric = { ...mockFabric, color: 'Red' };
-      mockPrismaService.fabric.findUnique.mockResolvedValue(mockFabric);
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
       mockPrismaService.fabric.update.mockResolvedValue(updatedFabric);
 
       const response = await request(app.getHttpServer())
@@ -769,8 +769,10 @@ describe('FabricController (e2e)', () => {
 
     it('should update fabricCode when no conflict', async () => {
       const updatedFabric = { ...mockFabric, fabricCode: 'FB-NEW-CODE' };
-      mockPrismaService.fabric.findUnique.mockResolvedValue(mockFabric);
-      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+      // First call for existence check, second for conflict check
+      mockPrismaService.fabric.findFirst
+        .mockResolvedValueOnce(mockFabric)
+        .mockResolvedValueOnce(null);
       mockPrismaService.fabric.update.mockResolvedValue(updatedFabric);
 
       const response = await request(app.getHttpServer())
@@ -783,7 +785,7 @@ describe('FabricController (e2e)', () => {
     });
 
     it('should return 404 when fabric not found', async () => {
-      mockPrismaService.fabric.findUnique.mockResolvedValue(null);
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/fabrics/999')
@@ -794,10 +796,25 @@ describe('FabricController (e2e)', () => {
       expect(body.code).toBe(404);
     });
 
+    it('should return 404 when fabric is soft deleted', async () => {
+      // findFirst with isActive: true returns null for soft-deleted fabric
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/fabrics/1')
+        .send({ name: 'Updated Name' })
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+    });
+
     it('should return 409 when fabricCode conflicts with another fabric', async () => {
       const anotherFabric = { ...mockFabric, id: 2, fabricCode: 'FB-EXISTING' };
-      mockPrismaService.fabric.findUnique.mockResolvedValue(mockFabric);
-      mockPrismaService.fabric.findFirst.mockResolvedValue(anotherFabric);
+      // First call for existence check, second for conflict check
+      mockPrismaService.fabric.findFirst
+        .mockResolvedValueOnce(mockFabric)
+        .mockResolvedValueOnce(anotherFabric);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/fabrics/1')
@@ -810,8 +827,10 @@ describe('FabricController (e2e)', () => {
     });
 
     it('should allow updating to same fabricCode (no conflict)', async () => {
-      mockPrismaService.fabric.findUnique.mockResolvedValue(mockFabric);
-      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric); // Same fabric
+      // First call for existence check, second for conflict check (returns self)
+      mockPrismaService.fabric.findFirst
+        .mockResolvedValueOnce(mockFabric)
+        .mockResolvedValueOnce(mockFabric);
       mockPrismaService.fabric.update.mockResolvedValue(mockFabric);
 
       await request(app.getHttpServer())
@@ -821,7 +840,7 @@ describe('FabricController (e2e)', () => {
     });
 
     it('should return 400 for invalid name length', async () => {
-      mockPrismaService.fabric.findUnique.mockResolvedValue(mockFabric);
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/fabrics/1')
