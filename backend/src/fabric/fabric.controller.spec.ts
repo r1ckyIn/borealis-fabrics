@@ -1,8 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { Readable } from 'stream';
 import { FabricController } from './fabric.controller';
 import { FabricService } from './fabric.service';
-import { CreateFabricDto, QueryFabricDto, UpdateFabricDto } from './dto';
-import { Fabric } from '@prisma/client';
+import {
+  CreateFabricDto,
+  QueryFabricDto,
+  UpdateFabricDto,
+  UploadFabricImageDto,
+} from './dto';
+import { Fabric, FabricImage } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PaginatedResult } from '../common/utils/pagination';
 
@@ -49,6 +56,7 @@ describe('FabricController', () => {
     findOne: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    uploadImage: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -174,6 +182,172 @@ describe('FabricController', () => {
       await controller.remove(1, false);
 
       expect(mockFabricService.remove).toHaveBeenCalledWith(1, false);
+    });
+  });
+
+  // ========================================
+  // UPLOAD IMAGE Tests (2.3.7)
+  // ========================================
+  describe('uploadImage (POST /:id/images)', () => {
+    const mockFile: Express.Multer.File = {
+      fieldname: 'file',
+      originalname: 'test-image.jpg',
+      encoding: '7bit',
+      mimetype: 'image/jpeg',
+      size: 1024 * 1024,
+      buffer: Buffer.from('test image data'),
+      stream: Readable.from([]),
+      destination: '',
+      filename: '',
+      path: '',
+    };
+
+    const mockFabricImage: FabricImage = {
+      id: 1,
+      fabricId: 1,
+      url: 'http://localhost:3000/uploads/uuid-123.jpg',
+      sortOrder: 0,
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+    };
+
+    it('should upload an image successfully', async () => {
+      const dto: UploadFabricImageDto = {};
+      mockFabricService.uploadImage.mockResolvedValue(mockFabricImage);
+
+      const result = await controller.uploadImage(1, mockFile, dto);
+
+      expect(mockFabricService.uploadImage).toHaveBeenCalledWith(
+        1,
+        mockFile,
+        0,
+      );
+      expect(result).toEqual(mockFabricImage);
+    });
+
+    it('should pass custom sortOrder to service', async () => {
+      const dto: UploadFabricImageDto = { sortOrder: 5 };
+      const imageWithSortOrder = { ...mockFabricImage, sortOrder: 5 };
+      mockFabricService.uploadImage.mockResolvedValue(imageWithSortOrder);
+
+      const result = await controller.uploadImage(1, mockFile, dto);
+
+      expect(mockFabricService.uploadImage).toHaveBeenCalledWith(
+        1,
+        mockFile,
+        5,
+      );
+      expect(result.sortOrder).toBe(5);
+    });
+
+    it('should throw BadRequestException when no file provided', () => {
+      const dto: UploadFabricImageDto = {};
+
+      expect(() => controller.uploadImage(1, undefined, dto)).toThrow(
+        BadRequestException,
+      );
+      expect(() => controller.uploadImage(1, undefined, dto)).toThrow(
+        'No file provided',
+      );
+    });
+
+    it('should throw BadRequestException for invalid MIME type', () => {
+      const pdfFile: Express.Multer.File = {
+        ...mockFile,
+        originalname: 'document.pdf',
+        mimetype: 'application/pdf',
+      };
+      const dto: UploadFabricImageDto = {};
+
+      expect(() => controller.uploadImage(1, pdfFile, dto)).toThrow(
+        BadRequestException,
+      );
+      expect(() => controller.uploadImage(1, pdfFile, dto)).toThrow(
+        'Invalid file type. Allowed: jpeg, png, gif, webp',
+      );
+    });
+
+    it('should accept image/jpeg MIME type', async () => {
+      const dto: UploadFabricImageDto = {};
+      mockFabricService.uploadImage.mockResolvedValue(mockFabricImage);
+
+      await controller.uploadImage(1, mockFile, dto);
+
+      expect(mockFabricService.uploadImage).toHaveBeenCalled();
+    });
+
+    it('should accept image/png MIME type', async () => {
+      const pngFile: Express.Multer.File = {
+        ...mockFile,
+        mimetype: 'image/png',
+      };
+      const dto: UploadFabricImageDto = {};
+      mockFabricService.uploadImage.mockResolvedValue(mockFabricImage);
+
+      await controller.uploadImage(1, pngFile, dto);
+
+      expect(mockFabricService.uploadImage).toHaveBeenCalled();
+    });
+
+    it('should accept image/gif MIME type', async () => {
+      const gifFile: Express.Multer.File = {
+        ...mockFile,
+        mimetype: 'image/gif',
+      };
+      const dto: UploadFabricImageDto = {};
+      mockFabricService.uploadImage.mockResolvedValue(mockFabricImage);
+
+      await controller.uploadImage(1, gifFile, dto);
+
+      expect(mockFabricService.uploadImage).toHaveBeenCalled();
+    });
+
+    it('should accept image/webp MIME type', async () => {
+      const webpFile: Express.Multer.File = {
+        ...mockFile,
+        mimetype: 'image/webp',
+      };
+      const dto: UploadFabricImageDto = {};
+      mockFabricService.uploadImage.mockResolvedValue(mockFabricImage);
+
+      await controller.uploadImage(1, webpFile, dto);
+
+      expect(mockFabricService.uploadImage).toHaveBeenCalled();
+    });
+
+    it('should reject image/bmp MIME type', () => {
+      const bmpFile: Express.Multer.File = {
+        ...mockFile,
+        mimetype: 'image/bmp',
+      };
+      const dto: UploadFabricImageDto = {};
+
+      expect(() => controller.uploadImage(1, bmpFile, dto)).toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should pass NotFoundException from service', async () => {
+      const dto: UploadFabricImageDto = {};
+      mockFabricService.uploadImage.mockRejectedValue(
+        new NotFoundException('Fabric with ID 999 not found'),
+      );
+
+      await expect(controller.uploadImage(999, mockFile, dto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should use default sortOrder 0 when not provided', async () => {
+      const dto: UploadFabricImageDto = {};
+      mockFabricService.uploadImage.mockResolvedValue(mockFabricImage);
+
+      await controller.uploadImage(1, mockFile, dto);
+
+      expect(mockFabricService.uploadImage).toHaveBeenCalledWith(
+        1,
+        mockFile,
+        0,
+      );
     });
   });
 });

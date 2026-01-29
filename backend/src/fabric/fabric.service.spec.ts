@@ -67,7 +67,7 @@ describe('FabricService', () => {
     delete: jest.fn(),
   };
 
-  const fabricImageMock = { count: jest.fn() };
+  const fabricImageMock = { count: jest.fn(), create: jest.fn() };
   const fabricSupplierMock = { count: jest.fn() };
   const customerPricingMock = { count: jest.fn() };
   const orderItemMock = { count: jest.fn() };
