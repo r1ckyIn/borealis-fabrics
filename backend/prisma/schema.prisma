@@ -81,6 +81,23 @@ model FabricImage {
 }
 
 // ============================================================
+// File (Generic file storage for COS uploads)
+// ============================================================
+model File {
+  id           Int      @id @default(autoincrement())
+  key          String   @unique
+  url          String
+  originalName String   @map("original_name")
+  mimeType     String   @map("mime_type")
+  size         Int
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([key])
+  @@index([createdAt])
+  @@map("files")
+}
+
+// ============================================================
 // Supplier
 // ============================================================
 model Supplier {

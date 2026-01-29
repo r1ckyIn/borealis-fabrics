@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { CustomerModule } from './customer/customer.module';
 import { FabricModule } from './fabric/fabric.module';
+import { FileModule } from './file/file.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HealthController } from './common/health/health.controller';
@@ -57,6 +58,7 @@ import configuration from './config/configuration';
     SupplierModule,
     CustomerModule,
     FabricModule,
+    FileModule,
   ],
   controllers: [HealthController],
   providers: [
