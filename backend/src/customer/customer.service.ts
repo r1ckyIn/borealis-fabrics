@@ -22,10 +22,13 @@ export class CustomerService {
    */
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
     // Convert addresses to JSON-compatible format for Prisma
+    // Using JSON.parse/stringify for proper serialization
     const data: Prisma.CustomerCreateInput = {
       ...createCustomerDto,
       addresses: createCustomerDto.addresses
-        ? (createCustomerDto.addresses as unknown as Prisma.InputJsonValue)
+        ? (JSON.parse(
+            JSON.stringify(createCustomerDto.addresses),
+          ) as Prisma.InputJsonValue)
         : undefined,
     };
 
@@ -88,6 +91,7 @@ export class CustomerService {
 
   /**
    * Update a customer by ID.
+   * Uses transaction to ensure atomic read-check-update operation.
    * Throws NotFoundException if customer not found.
    * Note: companyName is NOT unique for customers, so no conflict check needed.
    */
@@ -95,26 +99,30 @@ export class CustomerService {
     id: number,
     updateCustomerDto: UpdateCustomerDto,
   ): Promise<Customer> {
-    // Check if customer exists
-    const existing = await this.prisma.customer.findUnique({
-      where: { id },
-    });
+    return this.prisma.$transaction(async (tx) => {
+      // Check if customer exists
+      const existing = await tx.customer.findUnique({
+        where: { id },
+      });
 
-    if (!existing) {
-      throw new NotFoundException(`Customer with ID ${id} not found`);
-    }
+      if (!existing) {
+        throw new NotFoundException(`Customer with ID ${id} not found`);
+      }
 
-    // Convert addresses to JSON-compatible format for Prisma
-    const data: Prisma.CustomerUpdateInput = {
-      ...updateCustomerDto,
-      addresses: updateCustomerDto.addresses
-        ? (updateCustomerDto.addresses as unknown as Prisma.InputJsonValue)
-        : undefined,
-    };
+      // Convert addresses to JSON-compatible format for Prisma
+      const data: Prisma.CustomerUpdateInput = {
+        ...updateCustomerDto,
+        addresses: updateCustomerDto.addresses
+          ? (JSON.parse(
+              JSON.stringify(updateCustomerDto.addresses),
+            ) as Prisma.InputJsonValue)
+          : undefined,
+      };
 
-    return this.prisma.customer.update({
-      where: { id },
-      data,
+      return tx.customer.update({
+        where: { id },
+        data,
+      });
     });
   }
 

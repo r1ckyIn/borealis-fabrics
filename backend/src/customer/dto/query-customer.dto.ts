@@ -29,6 +29,9 @@ export class QueryCustomerDto extends PaginationDto {
     description: 'Filter by company name (fuzzy search)',
     example: 'Furniture',
   })
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.trim() : undefined,
+  )
   @IsOptional()
   @IsString()
   companyName?: string;

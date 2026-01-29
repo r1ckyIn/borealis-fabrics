@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { CustomerService } from './customer.service';
@@ -14,25 +16,37 @@ describe('CustomerService', () => {
   let service: CustomerService;
   let prisma: PrismaService;
 
+  // Define mock methods separately to avoid circular reference issues
+  const customerMock = {
+    create: jest.fn(),
+    findUnique: jest.fn(),
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
+    count: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  };
+
+  const customerPricingMock = { count: jest.fn() };
+  const orderMock = { count: jest.fn() };
+  const quoteMock = { count: jest.fn() };
+
+  // Build the mock service with proper transaction support
   const mockPrismaService = {
-    customer: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      findFirst: jest.fn(),
-      findMany: jest.fn(),
-      count: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-    },
-    customerPricing: {
-      count: jest.fn(),
-    },
-    order: {
-      count: jest.fn(),
-    },
-    quote: {
-      count: jest.fn(),
-    },
+    customer: customerMock,
+    customerPricing: customerPricingMock,
+    order: orderMock,
+    quote: quoteMock,
+    // Transaction mock - callback receives the same mock with proper typing
+
+    $transaction: jest.fn().mockImplementation((callback: CallableFunction) =>
+      callback({
+        customer: customerMock,
+        customerPricing: customerPricingMock,
+        order: orderMock,
+        quote: quoteMock,
+      }),
+    ),
   };
 
   beforeEach(async () => {
@@ -116,11 +130,11 @@ describe('CustomerService', () => {
     };
 
     it('should create a customer with complete data', async () => {
-      mockPrismaService.customer.create.mockResolvedValue(mockCustomer);
+      customerMock.create.mockResolvedValue(mockCustomer);
 
       const result = await service.create(createDto);
 
-      expect(mockPrismaService.customer.create).toHaveBeenCalledWith({
+      expect(customerMock.create).toHaveBeenCalledWith({
         data: createDto,
       });
       expect(result).toEqual(mockCustomer);
@@ -147,7 +161,7 @@ describe('CustomerService', () => {
         updatedAt: new Date(),
       };
 
-      mockPrismaService.customer.create.mockResolvedValue(minimalCustomer);
+      customerMock.create.mockResolvedValue(minimalCustomer);
 
       const result = await service.create(minimalDto);
 
@@ -156,13 +170,13 @@ describe('CustomerService', () => {
 
     // Note: Customer companyName is NOT unique, so no duplicate check needed
     it('should allow creating customers with same companyName', async () => {
-      mockPrismaService.customer.create.mockResolvedValue(mockCustomer);
+      customerMock.create.mockResolvedValue(mockCustomer);
 
       const result = await service.create(createDto);
 
       expect(result).toEqual(mockCustomer);
       // No findFirst call for duplicate check
-      expect(mockPrismaService.customer.findFirst).not.toHaveBeenCalled();
+      expect(customerMock.findFirst).not.toHaveBeenCalled();
     });
   });
 
@@ -198,18 +212,18 @@ describe('CustomerService', () => {
     };
 
     it('should return a customer when found', async () => {
-      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
 
       const result = await service.findOne(1);
 
-      expect(mockPrismaService.customer.findFirst).toHaveBeenCalledWith({
+      expect(customerMock.findFirst).toHaveBeenCalledWith({
         where: { id: 1, isActive: true },
       });
       expect(result).toEqual(mockCustomer);
     });
 
     it('should throw NotFoundException when customer not found', async () => {
-      mockPrismaService.customer.findFirst.mockResolvedValue(null);
+      customerMock.findFirst.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
       await expect(service.findOne(999)).rejects.toThrow(
@@ -218,7 +232,7 @@ describe('CustomerService', () => {
     });
 
     it('should throw NotFoundException for soft-deleted customer', async () => {
-      mockPrismaService.customer.findFirst.mockResolvedValue(null);
+      customerMock.findFirst.mockResolvedValue(null);
 
       await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
     });
@@ -263,12 +277,12 @@ describe('CustomerService', () => {
 
     it('should return paginated customers with default isActive=true', async () => {
       const query: QueryCustomerDto = {};
-      mockPrismaService.customer.findMany.mockResolvedValue(mockCustomers);
-      mockPrismaService.customer.count.mockResolvedValue(2);
+      customerMock.findMany.mockResolvedValue(mockCustomers);
+      customerMock.count.mockResolvedValue(2);
 
       const result = await service.findAll(query);
 
-      expect(mockPrismaService.customer.findMany).toHaveBeenCalledWith({
+      expect(customerMock.findMany).toHaveBeenCalledWith({
         where: { isActive: true },
         skip: 0,
         take: 20,
@@ -285,12 +299,12 @@ describe('CustomerService', () => {
 
     it('should filter by companyName (fuzzy search)', async () => {
       const query: QueryCustomerDto = { companyName: 'XYZ' };
-      mockPrismaService.customer.findMany.mockResolvedValue([mockCustomers[0]]);
-      mockPrismaService.customer.count.mockResolvedValue(1);
+      customerMock.findMany.mockResolvedValue([mockCustomers[0]]);
+      customerMock.count.mockResolvedValue(1);
 
       const result = await service.findAll(query);
 
-      expect(mockPrismaService.customer.findMany).toHaveBeenCalledWith({
+      expect(customerMock.findMany).toHaveBeenCalledWith({
         where: {
           isActive: true,
           companyName: { contains: 'XYZ' },
@@ -304,12 +318,12 @@ describe('CustomerService', () => {
 
     it('should filter by creditType', async () => {
       const query: QueryCustomerDto = { creditType: CreditType.CREDIT };
-      mockPrismaService.customer.findMany.mockResolvedValue([mockCustomers[1]]);
-      mockPrismaService.customer.count.mockResolvedValue(1);
+      customerMock.findMany.mockResolvedValue([mockCustomers[1]]);
+      customerMock.count.mockResolvedValue(1);
 
       const result = await service.findAll(query);
 
-      expect(mockPrismaService.customer.findMany).toHaveBeenCalledWith({
+      expect(customerMock.findMany).toHaveBeenCalledWith({
         where: {
           isActive: true,
           creditType: 'credit',
@@ -324,12 +338,12 @@ describe('CustomerService', () => {
     it('should filter soft-deleted records with isActive=false', async () => {
       const deletedCustomer = { ...mockCustomers[0], isActive: false };
       const query: QueryCustomerDto = { isActive: false };
-      mockPrismaService.customer.findMany.mockResolvedValue([deletedCustomer]);
-      mockPrismaService.customer.count.mockResolvedValue(1);
+      customerMock.findMany.mockResolvedValue([deletedCustomer]);
+      customerMock.count.mockResolvedValue(1);
 
       const result = await service.findAll(query);
 
-      expect(mockPrismaService.customer.findMany).toHaveBeenCalledWith({
+      expect(customerMock.findMany).toHaveBeenCalledWith({
         where: { isActive: false },
         skip: 0,
         take: 20,
@@ -345,12 +359,12 @@ describe('CustomerService', () => {
         sortBy: CustomerSortField.companyName,
         sortOrder: 'asc',
       };
-      mockPrismaService.customer.findMany.mockResolvedValue([]);
-      mockPrismaService.customer.count.mockResolvedValue(15);
+      customerMock.findMany.mockResolvedValue([]);
+      customerMock.count.mockResolvedValue(15);
 
       const result = await service.findAll(query);
 
-      expect(mockPrismaService.customer.findMany).toHaveBeenCalledWith({
+      expect(customerMock.findMany).toHaveBeenCalledWith({
         where: { isActive: true },
         skip: 10,
         take: 10,
@@ -366,8 +380,8 @@ describe('CustomerService', () => {
 
     it('should return empty results when no matches', async () => {
       const query: QueryCustomerDto = { companyName: 'NonExistent' };
-      mockPrismaService.customer.findMany.mockResolvedValue([]);
-      mockPrismaService.customer.count.mockResolvedValue(0);
+      customerMock.findMany.mockResolvedValue([]);
+      customerMock.count.mockResolvedValue(0);
 
       const result = await service.findAll(query);
 
@@ -401,15 +415,15 @@ describe('CustomerService', () => {
       const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
       const updatedCustomer = { ...existingCustomer, contactName: 'Wang Wei' };
 
-      mockPrismaService.customer.findUnique.mockResolvedValue(existingCustomer);
-      mockPrismaService.customer.update.mockResolvedValue(updatedCustomer);
+      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
 
-      expect(mockPrismaService.customer.findUnique).toHaveBeenCalledWith({
+      expect(customerMock.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
       });
-      expect(mockPrismaService.customer.update).toHaveBeenCalledWith({
+      expect(customerMock.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: updateDto,
       });
@@ -441,8 +455,8 @@ describe('CustomerService', () => {
       };
       const updatedCustomer = { ...existingCustomer, ...updateDto };
 
-      mockPrismaService.customer.findUnique.mockResolvedValue(existingCustomer);
-      mockPrismaService.customer.update.mockResolvedValue(updatedCustomer);
+      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
 
@@ -451,12 +465,12 @@ describe('CustomerService', () => {
 
     it('should throw NotFoundException when customer not found', async () => {
       const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
-      mockPrismaService.customer.findUnique.mockResolvedValue(null);
+      customerMock.findUnique.mockResolvedValue(null);
 
       await expect(service.update(999, updateDto)).rejects.toThrow(
         NotFoundException,
       );
-      expect(mockPrismaService.customer.update).not.toHaveBeenCalled();
+      expect(customerMock.update).not.toHaveBeenCalled();
     });
 
     // Note: Customer companyName is NOT unique, so no conflict check needed
@@ -467,14 +481,14 @@ describe('CustomerService', () => {
         companyName: 'ABC Home Decor',
       };
 
-      mockPrismaService.customer.findUnique.mockResolvedValue(existingCustomer);
-      mockPrismaService.customer.update.mockResolvedValue(updatedCustomer);
+      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
 
       expect(result.companyName).toBe('ABC Home Decor');
       // No findFirst call for conflict check
-      expect(mockPrismaService.customer.findFirst).not.toHaveBeenCalled();
+      expect(customerMock.findFirst).not.toHaveBeenCalled();
     });
   });
 
@@ -499,67 +513,67 @@ describe('CustomerService', () => {
     };
 
     it('should physically delete a customer with no relations', async () => {
-      mockPrismaService.customer.findUnique.mockResolvedValue(existingCustomer);
-      mockPrismaService.customerPricing.count.mockResolvedValue(0);
-      mockPrismaService.order.count.mockResolvedValue(0);
-      mockPrismaService.quote.count.mockResolvedValue(0);
-      mockPrismaService.customer.delete.mockResolvedValue(existingCustomer);
+      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerPricingMock.count.mockResolvedValue(0);
+      orderMock.count.mockResolvedValue(0);
+      quoteMock.count.mockResolvedValue(0);
+      customerMock.delete.mockResolvedValue(existingCustomer);
 
       await service.remove(1, false);
 
-      expect(mockPrismaService.customer.delete).toHaveBeenCalledWith({
+      expect(customerMock.delete).toHaveBeenCalledWith({
         where: { id: 1 },
       });
     });
 
     it('should throw NotFoundException when customer not found', async () => {
-      mockPrismaService.customer.findUnique.mockResolvedValue(null);
+      customerMock.findUnique.mockResolvedValue(null);
 
       await expect(service.remove(999, false)).rejects.toThrow(
         NotFoundException,
       );
-      expect(mockPrismaService.customer.delete).not.toHaveBeenCalled();
-      expect(mockPrismaService.customer.update).not.toHaveBeenCalled();
+      expect(customerMock.delete).not.toHaveBeenCalled();
+      expect(customerMock.update).not.toHaveBeenCalled();
     });
 
     it('should throw ConflictException when customer has relations and force=false', async () => {
-      mockPrismaService.customer.findUnique.mockResolvedValue(existingCustomer);
-      mockPrismaService.customerPricing.count.mockResolvedValue(3);
-      mockPrismaService.order.count.mockResolvedValue(5);
-      mockPrismaService.quote.count.mockResolvedValue(2);
+      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerPricingMock.count.mockResolvedValue(3);
+      orderMock.count.mockResolvedValue(5);
+      quoteMock.count.mockResolvedValue(2);
 
       await expect(service.remove(1, false)).rejects.toThrow(ConflictException);
-      expect(mockPrismaService.customer.delete).not.toHaveBeenCalled();
-      expect(mockPrismaService.customer.update).not.toHaveBeenCalled();
+      expect(customerMock.delete).not.toHaveBeenCalled();
+      expect(customerMock.update).not.toHaveBeenCalled();
     });
 
     it('should soft delete a customer with relations when force=true', async () => {
       const softDeletedCustomer = { ...existingCustomer, isActive: false };
-      mockPrismaService.customer.findUnique.mockResolvedValue(existingCustomer);
-      mockPrismaService.customerPricing.count.mockResolvedValue(3);
-      mockPrismaService.order.count.mockResolvedValue(5);
-      mockPrismaService.quote.count.mockResolvedValue(2);
-      mockPrismaService.customer.update.mockResolvedValue(softDeletedCustomer);
+      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerPricingMock.count.mockResolvedValue(3);
+      orderMock.count.mockResolvedValue(5);
+      quoteMock.count.mockResolvedValue(2);
+      customerMock.update.mockResolvedValue(softDeletedCustomer);
 
       await service.remove(1, true);
 
-      expect(mockPrismaService.customer.update).toHaveBeenCalledWith({
+      expect(customerMock.update).toHaveBeenCalledWith({
         where: { id: 1 },
         data: { isActive: false },
       });
-      expect(mockPrismaService.customer.delete).not.toHaveBeenCalled();
+      expect(customerMock.delete).not.toHaveBeenCalled();
     });
 
     it('should physically delete even with force=true when no relations exist', async () => {
-      mockPrismaService.customer.findUnique.mockResolvedValue(existingCustomer);
-      mockPrismaService.customerPricing.count.mockResolvedValue(0);
-      mockPrismaService.order.count.mockResolvedValue(0);
-      mockPrismaService.quote.count.mockResolvedValue(0);
-      mockPrismaService.customer.delete.mockResolvedValue(existingCustomer);
+      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerPricingMock.count.mockResolvedValue(0);
+      orderMock.count.mockResolvedValue(0);
+      quoteMock.count.mockResolvedValue(0);
+      customerMock.delete.mockResolvedValue(existingCustomer);
 
       await service.remove(1, true);
 
-      expect(mockPrismaService.customer.delete).toHaveBeenCalledWith({
+      expect(customerMock.delete).toHaveBeenCalledWith({
         where: { id: 1 },
       });
     });
