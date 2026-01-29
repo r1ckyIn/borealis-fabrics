@@ -774,38 +774,108 @@ describe('CustomerController (e2e)', () => {
     });
 
     describe('creditDays validation', () => {
-      it('should accept creditDays at minimum (0)', async () => {
+      it('should accept creditDays at minimum (0) when creditType is credit', async () => {
         mockPrismaService.customer.create.mockResolvedValue({
           ...mockCustomer,
+          creditType: 'credit',
           creditDays: 0,
         });
 
         await request(app.getHttpServer())
           .post('/api/v1/customers')
-          .send({ companyName: 'Test Co.', creditDays: 0 })
+          .send({
+            companyName: 'Test Co.',
+            creditType: 'credit',
+            creditDays: 0,
+          })
           .expect(201);
       });
 
-      it('should accept creditDays at maximum (365)', async () => {
+      it('should accept creditDays at maximum (365) when creditType is credit', async () => {
         mockPrismaService.customer.create.mockResolvedValue({
           ...mockCustomer,
+          creditType: 'credit',
           creditDays: 365,
         });
 
         await request(app.getHttpServer())
           .post('/api/v1/customers')
-          .send({ companyName: 'Test Co.', creditDays: 365 })
+          .send({
+            companyName: 'Test Co.',
+            creditType: 'credit',
+            creditDays: 365,
+          })
           .expect(201);
       });
 
       it('should reject negative creditDays', async () => {
         const response = await request(app.getHttpServer())
           .post('/api/v1/customers')
-          .send({ companyName: 'Test Co.', creditDays: -1 })
+          .send({
+            companyName: 'Test Co.',
+            creditType: 'credit',
+            creditDays: -1,
+          })
           .expect(400);
 
         const body = response.body as ApiErrorResponse;
         expect(body.code).toBe(400);
+      });
+
+      it('should reject creditDays when creditType is prepay', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/customers')
+          .send({
+            companyName: 'Test Co.',
+            creditType: 'prepay',
+            creditDays: 30,
+          })
+          .expect(400);
+
+        const body = response.body as ApiErrorResponse;
+        expect(body.code).toBe(400);
+        // message can be string or array
+        const message = Array.isArray(body.message)
+          ? body.message.join(' ')
+          : body.message;
+        expect(message).toContain('creditDays');
+      });
+
+      it('should accept creditDays when creditType is credit', async () => {
+        mockPrismaService.customer.create.mockResolvedValue({
+          ...mockCustomer,
+          creditType: 'credit',
+          creditDays: 30,
+        });
+
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/customers')
+          .send({
+            companyName: 'Test Co.',
+            creditType: 'credit',
+            creditDays: 30,
+          })
+          .expect(201);
+
+        const body = response.body as ApiSuccessResponse<CustomerData>;
+        expect(body.data.creditType).toBe('credit');
+        expect(body.data.creditDays).toBe(30);
+      });
+
+      it('should accept creditType credit without creditDays', async () => {
+        mockPrismaService.customer.create.mockResolvedValue({
+          ...mockCustomer,
+          creditType: 'credit',
+          creditDays: null,
+        });
+
+        await request(app.getHttpServer())
+          .post('/api/v1/customers')
+          .send({
+            companyName: 'Test Co.',
+            creditType: 'credit',
+          })
+          .expect(201);
       });
     });
   });
