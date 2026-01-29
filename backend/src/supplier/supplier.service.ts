@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateSupplierDto, QuerySupplierDto } from './dto';
+import { CreateSupplierDto, QuerySupplierDto, UpdateSupplierDto } from './dto';
 import { Supplier, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
@@ -93,5 +93,43 @@ export class SupplierService {
     ]);
 
     return buildPaginatedResult(items, total, query);
+  }
+
+  /**
+   * Update a supplier by ID.
+   * Throws NotFoundException if supplier not found.
+   * Throws ConflictException if companyName conflicts with another supplier.
+   */
+  async update(
+    id: number,
+    updateSupplierDto: UpdateSupplierDto,
+  ): Promise<Supplier> {
+    // Check if supplier exists
+    const existing = await this.prisma.supplier.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`Supplier with ID ${id} not found`);
+    }
+
+    // Check for companyName conflict if updating companyName
+    if (updateSupplierDto.companyName) {
+      const conflict = await this.prisma.supplier.findFirst({
+        where: { companyName: updateSupplierDto.companyName },
+      });
+
+      // If found a supplier with same name and it's not the current one
+      if (conflict && conflict.id !== id) {
+        throw new ConflictException(
+          `Supplier with company name "${updateSupplierDto.companyName}" already exists`,
+        );
+      }
+    }
+
+    return this.prisma.supplier.update({
+      where: { id },
+      data: updateSupplierDto,
+    });
   }
 }

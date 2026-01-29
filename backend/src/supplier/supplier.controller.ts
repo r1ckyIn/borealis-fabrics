@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   Param,
   Query,
@@ -18,7 +19,7 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { SupplierService } from './supplier.service';
-import { CreateSupplierDto, QuerySupplierDto } from './dto';
+import { CreateSupplierDto, QuerySupplierDto, UpdateSupplierDto } from './dto';
 
 @ApiTags('suppliers')
 @Controller('api/v1/suppliers')
@@ -67,5 +68,20 @@ export class SupplierController {
   @ApiResponse({ status: 404, description: 'Supplier not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.supplierService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a supplier by ID' })
+  @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
+  @ApiBody({ type: UpdateSupplierDto })
+  @ApiResponse({ status: 200, description: 'Supplier updated successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 404, description: 'Supplier not found' })
+  @ApiResponse({ status: 409, description: 'Company name already exists' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateSupplierDto: UpdateSupplierDto,
+  ) {
+    return this.supplierService.update(id, updateSupplierDto);
   }
 }

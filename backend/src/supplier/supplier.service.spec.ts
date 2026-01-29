@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateSupplierDto,
   QuerySupplierDto,
+  UpdateSupplierDto,
   SupplierStatus,
   SettleType,
 } from './dto';
@@ -374,6 +375,125 @@ describe('SupplierService', () => {
       expect(result.items).toEqual([]);
       expect(result.pagination.total).toBe(0);
       expect(result.pagination.totalPages).toBe(0);
+    });
+  });
+
+  // ============================================================
+  // 2.1.6 Update Supplier Tests
+  // ============================================================
+  describe('update', () => {
+    const existingSupplier = {
+      id: 1,
+      companyName: 'ABC Textiles',
+      contactName: 'John Doe',
+      phone: '13800138000',
+      wechat: null,
+      email: null,
+      address: null,
+      status: 'active',
+      billReceiveType: null,
+      settleType: 'prepay',
+      creditDays: null,
+      notes: null,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should update a supplier with partial data', async () => {
+      const updateDto: UpdateSupplierDto = { contactName: 'Jane Doe' };
+      const updatedSupplier = { ...existingSupplier, contactName: 'Jane Doe' };
+
+      mockPrismaService.supplier.findUnique.mockResolvedValue(existingSupplier);
+      mockPrismaService.supplier.update.mockResolvedValue(updatedSupplier);
+
+      const result = await service.update(1, updateDto);
+
+      expect(mockPrismaService.supplier.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(mockPrismaService.supplier.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updateDto,
+      });
+      expect(result.contactName).toBe('Jane Doe');
+    });
+
+    it('should update a supplier with all fields', async () => {
+      const updateDto: UpdateSupplierDto = {
+        companyName: 'ABC Textiles Updated',
+        contactName: 'Jane Doe',
+        phone: '13900139000',
+        wechat: 'new_wechat',
+        email: 'new@email.com',
+        address: 'New Address',
+        status: SupplierStatus.SUSPENDED,
+        billReceiveType: 'new_type',
+        settleType: SettleType.CREDIT,
+        creditDays: 60,
+        notes: 'Updated notes',
+      };
+      const updatedSupplier = { ...existingSupplier, ...updateDto };
+
+      mockPrismaService.supplier.findUnique.mockResolvedValue(existingSupplier);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+      mockPrismaService.supplier.update.mockResolvedValue(updatedSupplier);
+
+      const result = await service.update(1, updateDto);
+
+      expect(result.companyName).toBe('ABC Textiles Updated');
+    });
+
+    it('should throw NotFoundException when supplier not found', async () => {
+      const updateDto: UpdateSupplierDto = { contactName: 'Jane Doe' };
+      mockPrismaService.supplier.findUnique.mockResolvedValue(null);
+
+      await expect(service.update(999, updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(mockPrismaService.supplier.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException when companyName conflicts', async () => {
+      const updateDto: UpdateSupplierDto = { companyName: 'XYZ Fabrics' };
+      const conflictingSupplier = {
+        ...existingSupplier,
+        id: 2,
+        companyName: 'XYZ Fabrics',
+      };
+
+      mockPrismaService.supplier.findUnique.mockResolvedValue(existingSupplier);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(
+        conflictingSupplier,
+      );
+
+      await expect(service.update(1, updateDto)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(service.update(1, updateDto)).rejects.toThrow(
+        'Supplier with company name "XYZ Fabrics" already exists',
+      );
+      expect(mockPrismaService.supplier.update).not.toHaveBeenCalled();
+    });
+
+    it('should allow updating companyName to its original value', async () => {
+      const updateDto: UpdateSupplierDto = {
+        companyName: 'ABC Textiles',
+        contactName: 'Updated Contact',
+      };
+      const updatedSupplier = {
+        ...existingSupplier,
+        contactName: 'Updated Contact',
+      };
+
+      mockPrismaService.supplier.findUnique.mockResolvedValue(existingSupplier);
+      // findFirst returns the same supplier (self), not a conflict
+      mockPrismaService.supplier.findFirst.mockResolvedValue(existingSupplier);
+      mockPrismaService.supplier.update.mockResolvedValue(updatedSupplier);
+
+      const result = await service.update(1, updateDto);
+
+      expect(result.contactName).toBe('Updated Contact');
     });
   });
 });

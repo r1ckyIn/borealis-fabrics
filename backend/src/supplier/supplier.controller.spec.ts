@@ -5,6 +5,7 @@ import { SupplierService } from './supplier.service';
 import {
   CreateSupplierDto,
   QuerySupplierDto,
+  UpdateSupplierDto,
   SupplierStatus,
   SettleType,
 } from './dto';
@@ -193,6 +194,64 @@ describe('SupplierController', () => {
       await controller.findAll(query);
 
       expect(mockSupplierService.findAll).toHaveBeenCalledWith(query);
+    });
+  });
+
+  // ============================================================
+  // 2.1.6 Update Supplier Controller Tests
+  // ============================================================
+  describe('update (PATCH /:id)', () => {
+    const mockSupplier = {
+      id: 1,
+      companyName: 'ABC Textiles',
+      contactName: 'John Doe',
+      phone: '13800138000',
+      wechat: null,
+      email: null,
+      address: null,
+      status: 'active',
+      billReceiveType: null,
+      settleType: 'prepay',
+      creditDays: null,
+      notes: null,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should update a supplier successfully', async () => {
+      const updateDto: UpdateSupplierDto = { contactName: 'Jane Doe' };
+      const updatedSupplier = { ...mockSupplier, contactName: 'Jane Doe' };
+      mockSupplierService.update.mockResolvedValue(updatedSupplier);
+
+      const result = await controller.update(1, updateDto);
+
+      expect(mockSupplierService.update).toHaveBeenCalledWith(1, updateDto);
+      expect(result.contactName).toBe('Jane Doe');
+    });
+
+    it('should pass NotFoundException from service', async () => {
+      const updateDto: UpdateSupplierDto = { contactName: 'Jane Doe' };
+      mockSupplierService.update.mockRejectedValue(
+        new NotFoundException('Supplier with ID 999 not found'),
+      );
+
+      await expect(controller.update(999, updateDto)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should pass ConflictException from service', async () => {
+      const updateDto: UpdateSupplierDto = { companyName: 'XYZ Fabrics' };
+      mockSupplierService.update.mockRejectedValue(
+        new ConflictException(
+          'Supplier with company name "XYZ Fabrics" already exists',
+        ),
+      );
+
+      await expect(controller.update(1, updateDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
   });
 });
