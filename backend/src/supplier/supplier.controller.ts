@@ -1,5 +1,20 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Param,
+  ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiParam,
+} from '@nestjs/swagger';
 import { SupplierService } from './supplier.service';
 import { CreateSupplierDto } from './dto';
 
@@ -17,5 +32,14 @@ export class SupplierController {
   @ApiResponse({ status: 409, description: 'Company name already exists' })
   create(@Body() createSupplierDto: CreateSupplierDto) {
     return this.supplierService.create(createSupplierDto);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a supplier by ID' })
+  @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Supplier found' })
+  @ApiResponse({ status: 404, description: 'Supplier not found' })
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.supplierService.findOne(id);
   }
 }

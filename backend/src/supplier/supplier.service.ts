@@ -1,4 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSupplierDto } from './dto';
 import { Supplier } from '@prisma/client';
@@ -26,5 +30,21 @@ export class SupplierService {
     return this.prisma.supplier.create({
       data: createSupplierDto,
     });
+  }
+
+  /**
+   * Find a supplier by ID.
+   * Throws NotFoundException if supplier not found.
+   */
+  async findOne(id: number): Promise<Supplier> {
+    const supplier = await this.prisma.supplier.findUnique({
+      where: { id },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException(`Supplier with ID ${id} not found`);
+    }
+
+    return supplier;
   }
 }

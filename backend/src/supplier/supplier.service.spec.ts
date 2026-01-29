@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { SupplierService } from './supplier.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSupplierDto, SupplierStatus, SettleType } from './dto';
@@ -150,6 +150,49 @@ describe('SupplierService', () => {
         'Supplier with company name "ABC Textiles" already exists',
       );
       expect(mockPrismaService.supplier.create).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================
+  // 2.1.4 Get Supplier by ID Tests
+  // ============================================================
+  describe('findOne', () => {
+    const mockSupplier = {
+      id: 1,
+      companyName: 'ABC Textiles',
+      contactName: 'John Doe',
+      phone: '13800138000',
+      wechat: 'wechat_id_123',
+      email: 'contact@abc-textiles.com',
+      address: '123 Fabric Street, Textile City',
+      status: 'active',
+      billReceiveType: 'invoice',
+      settleType: 'prepay',
+      creditDays: 30,
+      notes: 'Premium supplier',
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should return a supplier when found', async () => {
+      mockPrismaService.supplier.findUnique.mockResolvedValue(mockSupplier);
+
+      const result = await service.findOne(1);
+
+      expect(mockPrismaService.supplier.findUnique).toHaveBeenCalledWith({
+        where: { id: 1 },
+      });
+      expect(result).toEqual(mockSupplier);
+    });
+
+    it('should throw NotFoundException when supplier not found', async () => {
+      mockPrismaService.supplier.findUnique.mockResolvedValue(null);
+
+      await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
+      await expect(service.findOne(999)).rejects.toThrow(
+        'Supplier with ID 999 not found',
+      );
     });
   });
 });
