@@ -1,0 +1,164 @@
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsEnum,
+  IsInt,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
+  Min,
+  MaxLength,
+  IsNotEmpty,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+
+/**
+ * Credit type for customer payment terms.
+ */
+export enum CreditType {
+  PREPAY = 'prepay',
+  CREDIT = 'credit',
+}
+
+/**
+ * Address DTO for customer delivery addresses.
+ * Similar to Taobao shipping address structure.
+ */
+export class AddressDto {
+  @ApiProperty({ description: 'Province', example: '广东省' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  province!: string;
+
+  @ApiProperty({ description: 'City', example: '深圳市' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  city!: string;
+
+  @ApiProperty({ description: 'District', example: '南山区' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  district!: string;
+
+  @ApiProperty({
+    description: 'Detail address (street + building number)',
+    example: '科技园路123号A栋501室',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(500)
+  detailAddress!: string;
+
+  @ApiProperty({ description: 'Contact person name', example: '张三' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  contactName!: string;
+
+  @ApiProperty({ description: 'Contact phone number', example: '13800138000' })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(50)
+  contactPhone!: string;
+
+  @ApiPropertyOptional({
+    description: 'Address label (e.g., factory, warehouse)',
+    example: '工厂地址',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  label?: string;
+
+  @ApiPropertyOptional({
+    description: 'Whether this is the default address',
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isDefault?: boolean = false;
+}
+
+export class CreateCustomerDto {
+  @ApiProperty({
+    description: 'Company name',
+    example: 'XYZ Furniture Co.',
+  })
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  companyName!: string;
+
+  @ApiPropertyOptional({
+    description: 'Contact person name',
+    example: 'Li Ming',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  contactName?: string;
+
+  @ApiPropertyOptional({ description: 'Phone number', example: '13800138000' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  phone?: string;
+
+  @ApiPropertyOptional({ description: 'WeChat ID', example: 'wechat_xyz' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  wechat?: string;
+
+  @ApiPropertyOptional({
+    description: 'Email address',
+    example: 'contact@xyz-furniture.com',
+  })
+  @IsOptional()
+  @IsEmail()
+  @MaxLength(200)
+  email?: string;
+
+  @ApiPropertyOptional({
+    description: 'Delivery addresses (array of address objects)',
+    type: [AddressDto],
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AddressDto)
+  addresses?: AddressDto[];
+
+  @ApiPropertyOptional({
+    description: 'Credit type for payment terms',
+    enum: CreditType,
+    default: CreditType.PREPAY,
+  })
+  @IsOptional()
+  @IsEnum(CreditType)
+  creditType?: CreditType = CreditType.PREPAY;
+
+  @ApiPropertyOptional({
+    description: 'Credit days (only applicable when creditType is credit)',
+    example: 30,
+    minimum: 0,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  creditDays?: number;
+
+  @ApiPropertyOptional({
+    description: 'Additional notes',
+    example: 'VIP customer, priority delivery',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  notes?: string;
+}
