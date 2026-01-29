@@ -71,7 +71,31 @@ describe('SupplierController (e2e)', () => {
     updatedAt: new Date('2025-01-01'),
   };
 
-  const mockPrismaService = {
+  // Define mock service type for better type safety
+  interface MockSupplierMethods {
+    create: jest.Mock;
+    findUnique: jest.Mock;
+    findFirst: jest.Mock;
+    findMany: jest.Mock;
+    count: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  }
+
+  interface MockCountMethod {
+    count: jest.Mock;
+  }
+
+  interface MockPrismaServiceType {
+    supplier: MockSupplierMethods;
+    fabricSupplier: MockCountMethod;
+    orderItem: MockCountMethod;
+    supplierPayment: MockCountMethod;
+    paymentRecord: MockCountMethod;
+    $transaction: jest.Mock;
+  }
+
+  const mockPrismaService: MockPrismaServiceType = {
     supplier: {
       create: jest.fn(),
       findUnique: jest.fn(),
@@ -85,6 +109,11 @@ describe('SupplierController (e2e)', () => {
     orderItem: { count: jest.fn() },
     supplierPayment: { count: jest.fn() },
     paymentRecord: { count: jest.fn() },
+    // Transaction mock - passes the mock service to the callback
+    $transaction: jest.fn(
+      <T>(fn: (tx: MockPrismaServiceType) => Promise<T>): Promise<T> =>
+        fn(mockPrismaService),
+    ),
   };
 
   beforeAll(async () => {
