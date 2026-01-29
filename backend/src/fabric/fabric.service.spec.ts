@@ -73,10 +73,27 @@ describe('FabricService', () => {
     findFirst: jest.fn(),
     delete: jest.fn(),
   };
-  const fabricSupplierMock = { count: jest.fn() };
+  const fabricSupplierMock = {
+    count: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+    findFirst: jest.fn(),
+    update: jest.fn(),
+    delete: jest.fn(),
+  };
   const customerPricingMock = { count: jest.fn() };
   const orderItemMock = { count: jest.fn() };
   const quoteMock = { count: jest.fn() };
+  const supplierMock = { findFirst: jest.fn() };
+
+  // Mock supplier data for fabric-supplier association tests
+  const mockSupplier = {
+    id: 1,
+    companyName: 'Test Supplier',
+    isActive: true,
+    createdAt: new Date('2024-01-15T10:00:00Z'),
+    updatedAt: new Date('2024-01-15T10:00:00Z'),
+  };
 
   const mockPrismaService = {
     fabric: fabricMock,
@@ -85,10 +102,13 @@ describe('FabricService', () => {
     customerPricing: customerPricingMock,
     orderItem: orderItemMock,
     quote: quoteMock,
+    supplier: supplierMock,
     $transaction: jest.fn().mockImplementation((callback: CallableFunction) =>
       callback({
         fabric: fabricMock,
         fabricImage: fabricImageMock,
+        fabricSupplier: fabricSupplierMock,
+        supplier: supplierMock,
       }),
     ),
   };
@@ -849,6 +869,589 @@ describe('FabricService', () => {
       });
       // removeByKey should not be called for external URLs
       expect(mockFileService.removeByKey).not.toHaveBeenCalled();
+    });
+  });
+
+  // ========================================
+  // FIND SUPPLIERS Tests (2.3.9)
+  // ========================================
+  describe('findSuppliers', () => {
+    const mockSupplier = {
+      id: 1,
+      companyName: 'Textile Corp',
+      contactName: 'John Doe',
+      phone: '123456789',
+      status: 'active',
+      isActive: true,
+    };
+
+    const mockFabricSupplier = {
+      id: 1,
+      fabricId: 1,
+      supplierId: 1,
+      purchasePrice: new Decimal(45.5),
+      minOrderQty: new Decimal(100),
+      leadTimeDays: 7,
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+      supplier: mockSupplier,
+    };
+
+    beforeEach(() => {
+      fabricSupplierMock.findMany = jest.fn();
+      mockPrismaService.fabricSupplier.findMany = fabricSupplierMock.findMany;
+    });
+
+    it('should return paginated supplier list for a fabric', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([mockFabricSupplier]);
+      fabricSupplierMock.count.mockResolvedValue(1);
+
+      const result = await service.findSuppliers(1, {});
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].supplier.companyName).toBe('Textile Corp');
+      expect(result.items[0].fabricSupplierRelation.purchasePrice).toBe(45.5);
+      expect(result.pagination.total).toBe(1);
+    });
+
+    it('should return empty list when no suppliers associated', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([]);
+      fabricSupplierMock.count.mockResolvedValue(0);
+
+      const result = await service.findSuppliers(1, {});
+
+      expect(result.items).toHaveLength(0);
+      expect(result.pagination.total).toBe(0);
+    });
+
+    it('should throw NotFoundException if fabric not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.findSuppliers(999, {})).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.findSuppliers(999, {})).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.findSuppliers(1, {})).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should filter by supplier name (fuzzy search)', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([mockFabricSupplier]);
+      fabricSupplierMock.count.mockResolvedValue(1);
+
+      await service.findSuppliers(1, { supplierName: 'Textile' });
+
+      expect(fabricSupplierMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            supplier: expect.objectContaining({
+              companyName: { contains: 'Textile' },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should sort by purchasePrice ascending', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([]);
+      fabricSupplierMock.count.mockResolvedValue(0);
+
+      await service.findSuppliers(1, {
+        sortBy: 'purchasePrice' as any,
+        sortOrder: 'asc',
+      });
+
+      expect(fabricSupplierMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { purchasePrice: 'asc' },
+        }),
+      );
+    });
+
+    it('should sort by supplier name', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([]);
+      fabricSupplierMock.count.mockResolvedValue(0);
+
+      await service.findSuppliers(1, {
+        sortBy: 'supplierName' as any,
+        sortOrder: 'asc',
+      });
+
+      expect(fabricSupplierMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { supplier: { companyName: 'asc' } },
+        }),
+      );
+    });
+
+    it('should handle pagination correctly', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([mockFabricSupplier]);
+      fabricSupplierMock.count.mockResolvedValue(50);
+
+      const result = await service.findSuppliers(1, { page: 3, pageSize: 10 });
+
+      expect(fabricSupplierMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 20,
+          take: 10,
+        }),
+      );
+      expect(result.pagination.page).toBe(3);
+      expect(result.pagination.pageSize).toBe(10);
+      expect(result.pagination.totalPages).toBe(5);
+    });
+
+    it('should convert Decimal values to numbers in response', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findMany.mockResolvedValue([mockFabricSupplier]);
+      fabricSupplierMock.count.mockResolvedValue(1);
+
+      const result = await service.findSuppliers(1, {});
+
+      expect(typeof result.items[0].fabricSupplierRelation.purchasePrice).toBe(
+        'number',
+      );
+      expect(typeof result.items[0].fabricSupplierRelation.minOrderQty).toBe(
+        'number',
+      );
+    });
+
+    it('should handle null minOrderQty gracefully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      const supplierWithNullQty = {
+        ...mockFabricSupplier,
+        minOrderQty: null,
+      };
+      fabricSupplierMock.findMany.mockResolvedValue([supplierWithNullQty]);
+      fabricSupplierMock.count.mockResolvedValue(1);
+
+      const result = await service.findSuppliers(1, {});
+
+      expect(result.items[0].fabricSupplierRelation.minOrderQty).toBeNull();
+    });
+  });
+
+  // ========================================
+  // ADD SUPPLIER Tests (2.3.10)
+  // ========================================
+  describe('addSupplier', () => {
+    const mockSupplierEntity = {
+      id: 1,
+      companyName: 'Textile Corp',
+      contactName: 'John Doe',
+      phone: '123456789',
+      status: 'active',
+      isActive: true,
+    };
+
+    const mockCreatedFabricSupplier = {
+      id: 1,
+      fabricId: 1,
+      supplierId: 1,
+      purchasePrice: new Decimal(45.5),
+      minOrderQty: new Decimal(100),
+      leadTimeDays: 7,
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+      updatedAt: new Date('2024-01-15T10:00:00Z'),
+    };
+
+    const createDto = {
+      supplierId: 1,
+      purchasePrice: 45.5,
+      minOrderQty: 100,
+      leadTimeDays: 7,
+    };
+
+    it('should create fabric-supplier association successfully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplierEntity);
+      fabricSupplierMock.create.mockResolvedValue(mockCreatedFabricSupplier);
+
+      const result = await service.addSupplier(1, createDto);
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(fabricSupplierMock.create).toHaveBeenCalledWith({
+        data: {
+          fabricId: 1,
+          supplierId: 1,
+          purchasePrice: 45.5,
+          minOrderQty: 100,
+          leadTimeDays: 7,
+        },
+      });
+      expect(result).toEqual(mockCreatedFabricSupplier);
+    });
+
+    it('should create association with only required fields', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplierEntity);
+      const minimalResult = {
+        ...mockCreatedFabricSupplier,
+        minOrderQty: null,
+        leadTimeDays: null,
+      };
+      fabricSupplierMock.create.mockResolvedValue(minimalResult);
+
+      const minimalDto = {
+        supplierId: 1,
+        purchasePrice: 45.5,
+      };
+
+      const result = await service.addSupplier(1, minimalDto);
+
+      expect(fabricSupplierMock.create).toHaveBeenCalledWith({
+        data: {
+          fabricId: 1,
+          supplierId: 1,
+          purchasePrice: 45.5,
+          minOrderQty: undefined,
+          leadTimeDays: undefined,
+        },
+      });
+      expect(result).toEqual(minimalResult);
+    });
+
+    it('should throw NotFoundException if fabric not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.addSupplier(999, createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.addSupplier(999, createDto)).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+      expect(supplierMock.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if supplier not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        'Supplier with ID 1 not found',
+      );
+    });
+
+    it('should throw NotFoundException if supplier is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw ConflictException if association already exists', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplierEntity);
+      // Simulate Prisma P2002 unique constraint violation
+      const prismaError = {
+        code: 'P2002',
+        meta: { target: ['fabric_id', 'supplier_id'] },
+      };
+      fabricSupplierMock.create.mockRejectedValue(prismaError);
+
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        'This supplier is already associated with this fabric',
+      );
+    });
+  });
+
+  // ========================================
+  // UPDATE SUPPLIER Tests (2.3.11)
+  // ========================================
+  describe('updateSupplier', () => {
+    const mockExistingFabricSupplier = {
+      id: 1,
+      fabricId: 1,
+      supplierId: 1,
+      purchasePrice: new Decimal(45.5),
+      minOrderQty: new Decimal(100),
+      leadTimeDays: 7,
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+      updatedAt: new Date('2024-01-15T10:00:00Z'),
+    };
+
+    beforeEach(() => {
+      fabricSupplierMock.findFirst = jest.fn();
+      fabricSupplierMock.update = jest.fn();
+    });
+
+    it('should update a single field successfully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplier);
+      fabricSupplierMock.findFirst.mockResolvedValue(
+        mockExistingFabricSupplier,
+      );
+      const updatedRecord = {
+        ...mockExistingFabricSupplier,
+        purchasePrice: new Decimal(50.0),
+      };
+      fabricSupplierMock.update.mockResolvedValue(updatedRecord);
+
+      const result = await service.updateSupplier(1, 1, {
+        purchasePrice: 50.0,
+      });
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(fabricSupplierMock.findFirst).toHaveBeenCalledWith({
+        where: { fabricId: 1, supplierId: 1 },
+      });
+      expect(fabricSupplierMock.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { purchasePrice: 50.0 },
+      });
+      expect(result).toEqual(updatedRecord);
+    });
+
+    it('should update multiple fields successfully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplier);
+      fabricSupplierMock.findFirst.mockResolvedValue(
+        mockExistingFabricSupplier,
+      );
+      const updatedRecord = {
+        ...mockExistingFabricSupplier,
+        purchasePrice: new Decimal(55.0),
+        minOrderQty: new Decimal(200),
+        leadTimeDays: 14,
+      };
+      fabricSupplierMock.update.mockResolvedValue(updatedRecord);
+
+      const updateDto = {
+        purchasePrice: 55.0,
+        minOrderQty: 200,
+        leadTimeDays: 14,
+      };
+      const result = await service.updateSupplier(1, 1, updateDto);
+
+      expect(fabricSupplierMock.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updateDto,
+      });
+      expect(result).toEqual(updatedRecord);
+    });
+
+    it('should throw NotFoundException if fabric not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateSupplier(999, 1, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.updateSupplier(999, 1, { purchasePrice: 50.0 }),
+      ).rejects.toThrow('Fabric with ID 999 not found');
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateSupplier(1, 1, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(NotFoundException);
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if supplier not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateSupplier(1, 999, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.updateSupplier(1, 999, { purchasePrice: 50.0 }),
+      ).rejects.toThrow('Supplier with ID 999 not found');
+    });
+
+    it('should throw NotFoundException if supplier is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateSupplier(1, 1, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(NotFoundException);
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if association not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplier);
+      fabricSupplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateSupplier(1, 999, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.updateSupplier(1, 999, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(
+        'Supplier with ID 999 is not associated with fabric ID 1',
+      );
+    });
+  });
+
+  // ========================================
+  // removeSupplier Tests (2.3.12)
+  // ========================================
+  describe('removeSupplier', () => {
+    const mockFabricSupplier = {
+      id: 1,
+      fabricId: 1,
+      supplierId: 10,
+      purchasePrice: new Decimal(45.0),
+      minOrderQty: new Decimal(100),
+      leadTimeDays: 7,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should delete a fabric-supplier association successfully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue({ ...mockSupplier, id: 10 });
+      fabricSupplierMock.findFirst.mockResolvedValue(mockFabricSupplier);
+      fabricSupplierMock.delete.mockResolvedValue(mockFabricSupplier);
+
+      await service.removeSupplier(1, 10);
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 10, isActive: true },
+      });
+      expect(fabricSupplierMock.findFirst).toHaveBeenCalledWith({
+        where: { fabricId: 1, supplierId: 10 },
+      });
+      expect(fabricSupplierMock.delete).toHaveBeenCalledWith({
+        where: { id: mockFabricSupplier.id },
+      });
+    });
+
+    it('should throw NotFoundException if fabric not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removeSupplier(999, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.removeSupplier(999, 10)).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removeSupplier(1, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if supplier not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removeSupplier(1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.removeSupplier(1, 999)).rejects.toThrow(
+        'Supplier with ID 999 not found',
+      );
+    });
+
+    it('should throw NotFoundException if supplier is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removeSupplier(1, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 10, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if association not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue({ ...mockSupplier, id: 999 });
+      fabricSupplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.removeSupplier(1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.removeSupplier(1, 999)).rejects.toThrow(
+        'Supplier with ID 999 is not associated with fabric ID 1',
+      );
+    });
+
+    it('should use transaction for atomic deletion', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue({ ...mockSupplier, id: 10 });
+      fabricSupplierMock.findFirst.mockResolvedValue(mockFabricSupplier);
+      fabricSupplierMock.delete.mockResolvedValue(mockFabricSupplier);
+
+      await service.removeSupplier(1, 10);
+
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
     });
   });
 });

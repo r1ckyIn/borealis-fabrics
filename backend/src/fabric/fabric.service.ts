@@ -6,8 +6,16 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileService, UploadedFile } from '../file/file.service';
-import { CreateFabricDto, QueryFabricDto, UpdateFabricDto } from './dto';
-import { Fabric, FabricImage, Prisma } from '@prisma/client';
+import {
+  CreateFabricDto,
+  QueryFabricDto,
+  UpdateFabricDto,
+  QueryFabricSuppliersDto,
+  FabricSupplierSortField,
+  CreateFabricSupplierDto,
+  UpdateFabricSupplierDto,
+} from './dto';
+import { Fabric, FabricImage, FabricSupplier, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
   buildPaginatedResult,
@@ -330,4 +338,260 @@ export class FabricService {
     // If URL doesn't contain /uploads/, it's likely an external URL
     // Skip file deletion in this case
   }
+
+  /**
+   * Find all suppliers associated with a fabric.
+   * Returns paginated list with supplier details and fabric-specific pricing/lead time.
+   * Throws NotFoundException if fabric not found or soft-deleted.
+   */
+  async findSuppliers(
+    fabricId: number,
+    query: QueryFabricSuppliersDto,
+  ): Promise<PaginatedResult<FabricSupplierItem>> {
+    // Verify fabric exists and is active
+    const fabric = await this.prisma.fabric.findFirst({
+      where: { id: fabricId, isActive: true },
+    });
+
+    if (!fabric) {
+      throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+    }
+
+    // Build supplier filter conditions
+    const supplierWhere: Prisma.SupplierWhereInput = {
+      isActive: true,
+    };
+
+    // Add supplier filters if provided
+    if (query.supplierName) {
+      supplierWhere.companyName = { contains: query.supplierName };
+    }
+
+    // Build where clause for FabricSupplier
+    const where: Prisma.FabricSupplierWhereInput = {
+      fabricId,
+      supplier: supplierWhere,
+    };
+
+    // Build pagination args
+    const paginationArgs = buildPaginationArgs(query);
+
+    // Build sort order
+    const sortBy = query.sortBy ?? FabricSupplierSortField.createdAt;
+    const sortOrder = query.sortOrder ?? 'desc';
+
+    // Handle sorting - supplierName is on supplier, others on fabricSupplier
+    let orderBy: Prisma.FabricSupplierOrderByWithRelationInput;
+    if (sortBy === FabricSupplierSortField.supplierName) {
+      orderBy = { supplier: { companyName: sortOrder } };
+    } else {
+      orderBy = { [sortBy]: sortOrder };
+    }
+
+    // Execute queries in parallel
+    const [fabricSuppliers, total] = await Promise.all([
+      this.prisma.fabricSupplier.findMany({
+        where,
+        ...paginationArgs,
+        orderBy,
+        include: {
+          supplier: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+              phone: true,
+              status: true,
+            },
+          },
+        },
+      }),
+      this.prisma.fabricSupplier.count({ where }),
+    ]);
+
+    // Transform results - convert Decimal to number
+    const items: FabricSupplierItem[] = fabricSuppliers.map((fs) => ({
+      supplier: {
+        id: fs.supplier.id,
+        companyName: fs.supplier.companyName,
+        contactName: fs.supplier.contactName,
+        phone: fs.supplier.phone,
+        status: fs.supplier.status,
+      },
+      fabricSupplierRelation: {
+        fabricSupplierId: fs.id,
+        purchasePrice: Number(fs.purchasePrice),
+        minOrderQty: fs.minOrderQty ? Number(fs.minOrderQty) : null,
+        leadTimeDays: fs.leadTimeDays,
+      },
+    }));
+
+    return buildPaginatedResult(items, total, query);
+  }
+
+  /**
+   * Add a supplier association to a fabric.
+   * Validates fabric and supplier exist and are active.
+   * Throws ConflictException if association already exists.
+   */
+  async addSupplier(
+    fabricId: number,
+    createDto: CreateFabricSupplierDto,
+  ): Promise<FabricSupplier> {
+    return this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify supplier exists and is active
+      const supplier = await tx.supplier.findFirst({
+        where: { id: createDto.supplierId, isActive: true },
+      });
+
+      if (!supplier) {
+        throw new NotFoundException(
+          `Supplier with ID ${createDto.supplierId} not found`,
+        );
+      }
+
+      // Create the association
+      try {
+        return await tx.fabricSupplier.create({
+          data: {
+            fabricId,
+            supplierId: createDto.supplierId,
+            purchasePrice: createDto.purchasePrice,
+            minOrderQty: createDto.minOrderQty,
+            leadTimeDays: createDto.leadTimeDays,
+          },
+        });
+      } catch (error) {
+        // Handle unique constraint violation (P2002)
+        if (
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictException(
+            'This supplier is already associated with this fabric',
+          );
+        }
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Update a fabric-supplier association.
+   * Validates fabric exists and is active, supplier is active, and association exists.
+   */
+  async updateSupplier(
+    fabricId: number,
+    supplierId: number,
+    updateDto: UpdateFabricSupplierDto,
+  ): Promise<FabricSupplier> {
+    return this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify supplier exists and is active
+      const supplier = await tx.supplier.findFirst({
+        where: { id: supplierId, isActive: true },
+      });
+
+      if (!supplier) {
+        throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
+      }
+
+      // Verify association exists
+      const existingAssociation = await tx.fabricSupplier.findFirst({
+        where: { fabricId, supplierId },
+      });
+
+      if (!existingAssociation) {
+        throw new NotFoundException(
+          `Supplier with ID ${supplierId} is not associated with fabric ID ${fabricId}`,
+        );
+      }
+
+      // Update the association
+      return tx.fabricSupplier.update({
+        where: { id: existingAssociation.id },
+        data: updateDto,
+      });
+    });
+  }
+
+  /**
+   * Remove a fabric-supplier association.
+   * Validates fabric exists and is active, supplier is active, and association exists.
+   */
+  async removeSupplier(fabricId: number, supplierId: number): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify supplier exists and is active
+      const supplier = await tx.supplier.findFirst({
+        where: { id: supplierId, isActive: true },
+      });
+
+      if (!supplier) {
+        throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
+      }
+
+      // Verify association exists
+      const existingAssociation = await tx.fabricSupplier.findFirst({
+        where: { fabricId, supplierId },
+      });
+
+      if (!existingAssociation) {
+        throw new NotFoundException(
+          `Supplier with ID ${supplierId} is not associated with fabric ID ${fabricId}`,
+        );
+      }
+
+      // Delete the association
+      await tx.fabricSupplier.delete({
+        where: { id: existingAssociation.id },
+      });
+    });
+  }
+}
+
+/**
+ * Response structure for fabric supplier items.
+ */
+export interface FabricSupplierItem {
+  supplier: {
+    id: number;
+    companyName: string;
+    contactName: string | null;
+    phone: string | null;
+    status: string;
+  };
+  fabricSupplierRelation: {
+    fabricSupplierId: number;
+    purchasePrice: number;
+    minOrderQty: number | null;
+    leadTimeDays: number | null;
+  };
 }

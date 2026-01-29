@@ -32,6 +32,9 @@ import {
   UpdateFabricDto,
   UploadFabricImageDto,
   FabricImageResponseDto,
+  QueryFabricSuppliersDto,
+  CreateFabricSupplierDto,
+  UpdateFabricSupplierDto,
 } from './dto';
 
 // Allowed image MIME types for fabric images
@@ -198,5 +201,106 @@ export class FabricController {
     @Param('imageId', ParseIntPipe) imageId: number,
   ) {
     return this.fabricService.deleteImage(id, imageId);
+  }
+
+  // ========================================
+  // Fabric-Supplier Association Endpoints
+  // ========================================
+
+  @Get(':id/suppliers')
+  @ApiOperation({
+    summary: 'List suppliers associated with a fabric',
+    description:
+      'Returns paginated list of suppliers with pricing and lead time info',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 20 })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'createdAt',
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({
+    name: 'supplierName',
+    required: false,
+    type: String,
+    description: 'Filter by supplier company name (fuzzy search)',
+  })
+  @ApiResponse({ status: 200, description: 'Paginated supplier list' })
+  @ApiResponse({ status: 404, description: 'Fabric not found' })
+  findSuppliers(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: QueryFabricSuppliersDto,
+  ) {
+    return this.fabricService.findSuppliers(id, query);
+  }
+
+  @Post(':id/suppliers')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Associate a supplier with a fabric',
+    description:
+      'Creates a fabric-supplier association with pricing and lead time info',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiBody({ type: CreateFabricSupplierDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Supplier association created successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 404, description: 'Fabric or supplier not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Supplier is already associated with this fabric',
+  })
+  addSupplier(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() createDto: CreateFabricSupplierDto,
+  ) {
+    return this.fabricService.addSupplier(id, createDto);
+  }
+
+  @Patch(':id/suppliers/:supplierId')
+  @ApiOperation({
+    summary: 'Update a fabric-supplier association',
+    description:
+      'Updates pricing or lead time info for an existing association',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiParam({ name: 'supplierId', description: 'Supplier ID', type: Number })
+  @ApiBody({ type: UpdateFabricSupplierDto })
+  @ApiResponse({ status: 200, description: 'Association updated successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 404, description: 'Fabric or association not found' })
+  updateSupplier(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('supplierId', ParseIntPipe) supplierId: number,
+    @Body() updateDto: UpdateFabricSupplierDto,
+  ) {
+    return this.fabricService.updateSupplier(id, supplierId, updateDto);
+  }
+
+  @Delete(':id/suppliers/:supplierId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Remove a fabric-supplier association',
+    description: 'Removes an existing fabric-supplier association',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiParam({ name: 'supplierId', description: 'Supplier ID', type: Number })
+  @ApiResponse({
+    status: 204,
+    description: 'Association removed successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Fabric or association not found' })
+  removeSupplier(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('supplierId', ParseIntPipe) supplierId: number,
+  ) {
+    return this.fabricService.removeSupplier(id, supplierId);
   }
 }
