@@ -73,10 +73,15 @@ describe('FabricService', () => {
     findFirst: jest.fn(),
     delete: jest.fn(),
   };
-  const fabricSupplierMock = { count: jest.fn(), findMany: jest.fn() };
+  const fabricSupplierMock = {
+    count: jest.fn(),
+    findMany: jest.fn(),
+    create: jest.fn(),
+  };
   const customerPricingMock = { count: jest.fn() };
   const orderItemMock = { count: jest.fn() };
   const quoteMock = { count: jest.fn() };
+  const supplierMock = { findFirst: jest.fn() };
 
   const mockPrismaService = {
     fabric: fabricMock,
@@ -85,10 +90,13 @@ describe('FabricService', () => {
     customerPricing: customerPricingMock,
     orderItem: orderItemMock,
     quote: quoteMock,
+    supplier: supplierMock,
     $transaction: jest.fn().mockImplementation((callback: CallableFunction) =>
       callback({
         fabric: fabricMock,
         fabricImage: fabricImageMock,
+        fabricSupplier: fabricSupplierMock,
+        supplier: supplierMock,
       }),
     ),
   };
@@ -1027,6 +1035,157 @@ describe('FabricService', () => {
       const result = await service.findSuppliers(1, {});
 
       expect(result.items[0].fabricSupplierRelation.minOrderQty).toBeNull();
+    });
+  });
+
+  // ========================================
+  // ADD SUPPLIER Tests (2.3.10)
+  // ========================================
+  describe('addSupplier', () => {
+    const mockSupplierEntity = {
+      id: 1,
+      companyName: 'Textile Corp',
+      contactName: 'John Doe',
+      phone: '123456789',
+      status: 'active',
+      isActive: true,
+    };
+
+    const mockCreatedFabricSupplier = {
+      id: 1,
+      fabricId: 1,
+      supplierId: 1,
+      purchasePrice: new Decimal(45.5),
+      minOrderQty: new Decimal(100),
+      leadTimeDays: 7,
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+      updatedAt: new Date('2024-01-15T10:00:00Z'),
+    };
+
+    const createDto = {
+      supplierId: 1,
+      purchasePrice: 45.5,
+      minOrderQty: 100,
+      leadTimeDays: 7,
+    };
+
+    it('should create fabric-supplier association successfully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplierEntity);
+      fabricSupplierMock.create.mockResolvedValue(mockCreatedFabricSupplier);
+
+      const result = await service.addSupplier(1, createDto);
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(fabricSupplierMock.create).toHaveBeenCalledWith({
+        data: {
+          fabricId: 1,
+          supplierId: 1,
+          purchasePrice: 45.5,
+          minOrderQty: 100,
+          leadTimeDays: 7,
+        },
+      });
+      expect(result).toEqual(mockCreatedFabricSupplier);
+    });
+
+    it('should create association with only required fields', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplierEntity);
+      const minimalResult = {
+        ...mockCreatedFabricSupplier,
+        minOrderQty: null,
+        leadTimeDays: null,
+      };
+      fabricSupplierMock.create.mockResolvedValue(minimalResult);
+
+      const minimalDto = {
+        supplierId: 1,
+        purchasePrice: 45.5,
+      };
+
+      const result = await service.addSupplier(1, minimalDto);
+
+      expect(fabricSupplierMock.create).toHaveBeenCalledWith({
+        data: {
+          fabricId: 1,
+          supplierId: 1,
+          purchasePrice: 45.5,
+          minOrderQty: undefined,
+          leadTimeDays: undefined,
+        },
+      });
+      expect(result).toEqual(minimalResult);
+    });
+
+    it('should throw NotFoundException if fabric not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.addSupplier(999, createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.addSupplier(999, createDto)).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+      expect(supplierMock.findFirst).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if supplier not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        'Supplier with ID 1 not found',
+      );
+    });
+
+    it('should throw NotFoundException if supplier is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(supplierMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw ConflictException if association already exists', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      supplierMock.findFirst.mockResolvedValue(mockSupplierEntity);
+      // Simulate Prisma P2002 unique constraint violation
+      const prismaError = {
+        code: 'P2002',
+        meta: { target: ['fabric_id', 'supplier_id'] },
+      };
+      fabricSupplierMock.create.mockRejectedValue(prismaError);
+
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        ConflictException,
+      );
+      await expect(service.addSupplier(1, createDto)).rejects.toThrow(
+        'This supplier is already associated with this fabric',
+      );
     });
   });
 });

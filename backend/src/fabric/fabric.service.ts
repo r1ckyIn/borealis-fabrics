@@ -12,8 +12,9 @@ import {
   UpdateFabricDto,
   QueryFabricSuppliersDto,
   FabricSupplierSortField,
+  CreateFabricSupplierDto,
 } from './dto';
-import { Fabric, FabricImage, Prisma } from '@prisma/client';
+import { Fabric, FabricImage, FabricSupplier, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
   buildPaginatedResult,
@@ -425,6 +426,64 @@ export class FabricService {
     }));
 
     return buildPaginatedResult(items, total, query);
+  }
+
+  /**
+   * Add a supplier association to a fabric.
+   * Validates fabric and supplier exist and are active.
+   * Throws ConflictException if association already exists.
+   */
+  async addSupplier(
+    fabricId: number,
+    createDto: CreateFabricSupplierDto,
+  ): Promise<FabricSupplier> {
+    return this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify supplier exists and is active
+      const supplier = await tx.supplier.findFirst({
+        where: { id: createDto.supplierId, isActive: true },
+      });
+
+      if (!supplier) {
+        throw new NotFoundException(
+          `Supplier with ID ${createDto.supplierId} not found`,
+        );
+      }
+
+      // Create the association
+      try {
+        return await tx.fabricSupplier.create({
+          data: {
+            fabricId,
+            supplierId: createDto.supplierId,
+            purchasePrice: createDto.purchasePrice,
+            minOrderQty: createDto.minOrderQty,
+            leadTimeDays: createDto.leadTimeDays,
+          },
+        });
+      } catch (error) {
+        // Handle unique constraint violation (P2002)
+        if (
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictException(
+            'This supplier is already associated with this fabric',
+          );
+        }
+        throw error;
+      }
+    });
   }
 }
 
