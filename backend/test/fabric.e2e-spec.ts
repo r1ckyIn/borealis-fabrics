@@ -117,6 +117,8 @@ describe('FabricController (e2e)', () => {
 
   interface MockFabricImageMethods extends MockCountMethod {
     create: jest.Mock;
+    findFirst: jest.Mock;
+    delete: jest.Mock;
   }
 
   interface MockPrismaServiceTypeExtended extends MockPrismaServiceType {
@@ -133,8 +135,13 @@ describe('FabricController (e2e)', () => {
       update: jest.fn(),
       delete: jest.fn(),
     },
-    // Related tables for delete check
-    fabricImage: { count: jest.fn(), create: jest.fn() },
+    // Related tables for delete check and image operations
+    fabricImage: {
+      count: jest.fn(),
+      create: jest.fn(),
+      findFirst: jest.fn(),
+      delete: jest.fn(),
+    },
     fabricSupplier: { count: jest.fn() },
     customerPricing: { count: jest.fn() },
     orderItem: { count: jest.fn() },
@@ -1272,6 +1279,138 @@ describe('FabricController (e2e)', () => {
 
       const body = response.body as ApiSuccessResponse<FabricImageData>;
       expect(body.data.sortOrder).toBe(999);
+    });
+  });
+
+  // ============================================================
+  // DELETE /api/v1/fabrics/:id/images/:imageId - Delete Fabric Image (2.3.8)
+  // ============================================================
+  describe('DELETE /api/v1/fabrics/:id/images/:imageId', () => {
+    const mockFabricImage = {
+      id: 10,
+      fabricId: 1,
+      url: 'http://localhost:3000/uploads/uuid-123.jpg',
+      sortOrder: 0,
+      createdAt: new Date('2025-01-01'),
+    };
+
+    it('should delete fabric image successfully', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.fabricImage.findFirst.mockResolvedValue(
+        mockFabricImage,
+      );
+      mockPrismaService.fabricImage.delete.mockResolvedValue(mockFabricImage);
+      mockFileService.removeByKey.mockResolvedValue(undefined);
+
+      await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/images/10')
+        .expect(204);
+
+      expect(mockPrismaService.fabricImage.delete).toHaveBeenCalledWith({
+        where: { id: 10 },
+      });
+    });
+
+    it('should return 404 when fabric not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/999/images/10')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+      expect(body.message).toContain('Fabric');
+    });
+
+    it('should return 404 when fabric is soft-deleted', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/images/10')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+    });
+
+    it('should return 404 when image not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.fabricImage.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/images/999')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+      expect(body.message).toContain('image');
+    });
+
+    it('should return 404 when image belongs to different fabric', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.fabricImage.findFirst.mockResolvedValue(null); // findFirst with fabricId filter returns null
+
+      const response = await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/images/10')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+    });
+
+    it('should return 400 for invalid fabric ID format', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/invalid/images/10')
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+    });
+
+    it('should return 400 for invalid image ID format', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/images/invalid')
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+    });
+
+    it('should continue even if file removal fails (graceful degradation)', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.fabricImage.findFirst.mockResolvedValue(
+        mockFabricImage,
+      );
+      mockPrismaService.fabricImage.delete.mockResolvedValue(mockFabricImage);
+      mockFileService.removeByKey.mockRejectedValue(
+        new Error('File not found'),
+      );
+
+      // Should still return 204 even if file deletion fails
+      await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/images/10')
+        .expect(204);
+
+      expect(mockPrismaService.fabricImage.delete).toHaveBeenCalled();
+    });
+
+    it('should delete image record even when URL parsing fails', async () => {
+      const imageWithBadUrl = {
+        ...mockFabricImage,
+        url: 'not-a-valid-url',
+      };
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.fabricImage.findFirst.mockResolvedValue(
+        imageWithBadUrl,
+      );
+      mockPrismaService.fabricImage.delete.mockResolvedValue(imageWithBadUrl);
+
+      await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/images/10')
+        .expect(204);
+
+      expect(mockPrismaService.fabricImage.delete).toHaveBeenCalled();
     });
   });
 });
