@@ -21,7 +21,12 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { SupplierService } from './supplier.service';
-import { CreateSupplierDto, QuerySupplierDto, UpdateSupplierDto } from './dto';
+import {
+  CreateSupplierDto,
+  QuerySupplierDto,
+  QuerySupplierFabricsDto,
+  UpdateSupplierDto,
+} from './dto';
 
 @ApiTags('suppliers')
 @Controller('api/v1/suppliers')
@@ -70,6 +75,59 @@ export class SupplierController {
   @ApiResponse({ status: 404, description: 'Supplier not found' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.supplierService.findOne(id);
+  }
+
+  @Get(':id/fabrics')
+  @ApiOperation({
+    summary: 'List all fabrics supplied by a supplier',
+    description:
+      'Returns paginated list of fabrics that this supplier can supply, ' +
+      'including purchase price, minimum order quantity, and lead time.',
+  })
+  @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 20 })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: [
+      'createdAt',
+      'fabricCode',
+      'fabricName',
+      'purchasePrice',
+      'minOrderQty',
+      'leadTimeDays',
+    ],
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({
+    name: 'fabricCode',
+    required: false,
+    type: String,
+    description: 'Filter by fabric code (fuzzy search)',
+  })
+  @ApiQuery({
+    name: 'fabricName',
+    required: false,
+    type: String,
+    description: 'Filter by fabric name (fuzzy search)',
+  })
+  @ApiQuery({
+    name: 'color',
+    required: false,
+    type: String,
+    description: 'Filter by fabric color (exact match)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of fabrics supplied by this supplier',
+  })
+  @ApiResponse({ status: 404, description: 'Supplier not found' })
+  findSupplierFabrics(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: QuerySupplierFabricsDto,
+  ) {
+    return this.supplierService.findSupplierFabrics(id, query);
   }
 
   @Patch(':id')

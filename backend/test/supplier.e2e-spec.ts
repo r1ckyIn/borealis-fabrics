@@ -598,6 +598,306 @@ describe('SupplierController (e2e)', () => {
   });
 
   // ============================================================
+  // GET /api/v1/suppliers/:id/fabrics - List Supplier Fabrics
+  // ============================================================
+  describe('GET /api/v1/suppliers/:id/fabrics', () => {
+    const mockFabric = {
+      id: 1,
+      fabricCode: 'FB-2401-0001',
+      name: 'Cotton Twill',
+      color: 'Navy Blue',
+      weight: { toNumber: () => 280.0 },
+      width: { toNumber: () => 150.0 },
+      defaultPrice: { toNumber: () => 45.0 },
+      isActive: true,
+    };
+
+    const mockFabricSupplier = {
+      id: 10,
+      fabricId: 1,
+      supplierId: 1,
+      purchasePrice: { toNumber: () => 35.5 },
+      minOrderQty: { toNumber: () => 100.0 },
+      leadTimeDays: 7,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-01-01'),
+      fabric: mockFabric,
+    };
+
+    // Add fabricSupplier mock methods
+    beforeEach(() => {
+      (mockPrismaService.fabricSupplier as unknown as MockSupplierMethods) = {
+        ...mockPrismaService.fabricSupplier,
+        findMany: jest.fn(),
+        count: jest.fn(),
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+      };
+    });
+
+    it('should return paginated fabrics for a supplier', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).findMany.mockResolvedValue([mockFabricSupplier]);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).count.mockResolvedValue(1);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics')
+        .expect(200);
+
+      const body = response.body as ApiSuccessResponse<{
+        items: unknown[];
+        pagination: { page: number; total: number };
+      }>;
+      expect(body.code).toBe(200);
+      expect(body.message).toBe('success');
+      expect(body.data.items).toHaveLength(1);
+      expect(body.data.pagination).toBeDefined();
+      expect(body.data.pagination.page).toBe(1);
+      expect(body.data.pagination.total).toBe(1);
+    });
+
+    it('should return 404 when supplier not found', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/suppliers/999/fabrics')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+      expect(body.message).toContain('not found');
+    });
+
+    it('should return 404 when supplier is soft-deleted', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+    });
+
+    it('should return empty list when no fabrics associated', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).findMany.mockResolvedValue([]);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).count.mockResolvedValue(0);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics')
+        .expect(200);
+
+      const body = response.body as ApiSuccessResponse<{
+        items: unknown[];
+        pagination: { total: number };
+      }>;
+      expect(body.data.items).toEqual([]);
+      expect(body.data.pagination.total).toBe(0);
+    });
+
+    it('should filter by fabricCode (fuzzy search)', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).findMany.mockResolvedValue([mockFabricSupplier]);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).count.mockResolvedValue(1);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics?fabricCode=FB-24')
+        .expect(200);
+
+      expect(
+        (mockPrismaService.fabricSupplier as unknown as MockSupplierMethods)
+          .findMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          where: expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            fabric: expect.objectContaining({
+              fabricCode: { contains: 'FB-24' },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should filter by fabricName (fuzzy search)', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).findMany.mockResolvedValue([mockFabricSupplier]);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).count.mockResolvedValue(1);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics?fabricName=Cotton')
+        .expect(200);
+
+      expect(
+        (mockPrismaService.fabricSupplier as unknown as MockSupplierMethods)
+          .findMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          where: expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            fabric: expect.objectContaining({
+              name: { contains: 'Cotton' },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should filter by color (exact match)', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).findMany.mockResolvedValue([mockFabricSupplier]);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).count.mockResolvedValue(1);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics?color=Navy%20Blue')
+        .expect(200);
+
+      expect(
+        (mockPrismaService.fabricSupplier as unknown as MockSupplierMethods)
+          .findMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          where: expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            fabric: expect.objectContaining({
+              color: 'Navy Blue',
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should support custom pagination', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).findMany.mockResolvedValue([]);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).count.mockResolvedValue(50);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics?page=2&pageSize=10')
+        .expect(200);
+
+      expect(
+        (mockPrismaService.fabricSupplier as unknown as MockSupplierMethods)
+          .findMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 10,
+          take: 10,
+        }),
+      );
+
+      const body = response.body as ApiSuccessResponse<{
+        pagination: { page: number; pageSize: number };
+      }>;
+      expect(body.data.pagination.page).toBe(2);
+      expect(body.data.pagination.pageSize).toBe(10);
+    });
+
+    it('should support sorting by purchasePrice', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).findMany.mockResolvedValue([mockFabricSupplier]);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).count.mockResolvedValue(1);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics?sortBy=purchasePrice&sortOrder=asc')
+        .expect(200);
+
+      expect(
+        (mockPrismaService.fabricSupplier as unknown as MockSupplierMethods)
+          .findMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { purchasePrice: 'asc' },
+        }),
+      );
+    });
+
+    it('should return 400 for invalid sortBy field', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics?sortBy=invalidField')
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+    });
+
+    it('should return 400 for invalid ID format', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/suppliers/invalid/fabrics')
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+    });
+
+    it('should only return active fabrics', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).findMany.mockResolvedValue([mockFabricSupplier]);
+      (
+        mockPrismaService.fabricSupplier as unknown as MockSupplierMethods
+      ).count.mockResolvedValue(1);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/suppliers/1/fabrics')
+        .expect(200);
+
+      expect(
+        (mockPrismaService.fabricSupplier as unknown as MockSupplierMethods)
+          .findMany,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          where: expect.objectContaining({
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            fabric: expect.objectContaining({
+              isActive: true,
+            }),
+          }),
+        }),
+      );
+    });
+  });
+
+  // ============================================================
   // Response Format Validation
   // ============================================================
   describe('Response Format', () => {

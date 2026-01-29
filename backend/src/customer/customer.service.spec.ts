@@ -27,7 +27,7 @@ describe('CustomerService', () => {
     delete: jest.fn(),
   };
 
-  const customerPricingMock = { count: jest.fn() };
+  const customerPricingMock = { count: jest.fn(), findMany: jest.fn() };
   const orderMock = { count: jest.fn() };
   const quoteMock = { count: jest.fn() };
 

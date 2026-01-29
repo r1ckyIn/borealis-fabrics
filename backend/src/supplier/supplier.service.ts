@@ -4,7 +4,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateSupplierDto, QuerySupplierDto, UpdateSupplierDto } from './dto';
+import {
+  CreateSupplierDto,
+  QuerySupplierDto,
+  QuerySupplierFabricsDto,
+  UpdateSupplierDto,
+  SupplierFabricSortField,
+} from './dto';
 import { Supplier, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
@@ -204,4 +210,134 @@ export class SupplierService {
       data: { isActive: false },
     });
   }
+
+  /**
+   * Find all fabrics associated with a supplier.
+   * Returns paginated list with fabric details and supplier-specific pricing/lead time.
+   * Throws NotFoundException if supplier not found or soft-deleted.
+   */
+  async findSupplierFabrics(
+    supplierId: number,
+    query: QuerySupplierFabricsDto,
+  ): Promise<PaginatedResult<SupplierFabricItem>> {
+    // Verify supplier exists and is active
+    const supplier = await this.prisma.supplier.findFirst({
+      where: { id: supplierId, isActive: true },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
+    }
+
+    // Build fabric filter conditions
+    const fabricWhere: Prisma.FabricWhereInput = {
+      isActive: true,
+    };
+
+    // Add fabric filters if provided
+    if (query.fabricCode) {
+      fabricWhere.fabricCode = { contains: query.fabricCode };
+    }
+
+    if (query.fabricName) {
+      fabricWhere.name = { contains: query.fabricName };
+    }
+
+    if (query.color) {
+      fabricWhere.color = query.color;
+    }
+
+    // Build where clause for FabricSupplier
+    const where: Prisma.FabricSupplierWhereInput = {
+      supplierId,
+      fabric: fabricWhere,
+    };
+
+    // Build pagination args
+    const paginationArgs = buildPaginationArgs(query);
+
+    // Build sort order
+    const sortBy = query.sortBy ?? SupplierFabricSortField.createdAt;
+    const sortOrder = query.sortOrder ?? 'desc';
+
+    // Handle sorting - some fields are on fabric, others on fabricSupplier
+    let orderBy: Prisma.FabricSupplierOrderByWithRelationInput;
+    if (
+      sortBy === SupplierFabricSortField.fabricCode ||
+      sortBy === SupplierFabricSortField.fabricName
+    ) {
+      const fabricField =
+        sortBy === SupplierFabricSortField.fabricCode ? 'fabricCode' : 'name';
+      orderBy = { fabric: { [fabricField]: sortOrder } };
+    } else {
+      orderBy = { [sortBy]: sortOrder };
+    }
+
+    // Execute queries
+    const [fabricSuppliers, total] = await Promise.all([
+      this.prisma.fabricSupplier.findMany({
+        where,
+        ...paginationArgs,
+        orderBy,
+        include: {
+          fabric: {
+            select: {
+              id: true,
+              fabricCode: true,
+              name: true,
+              color: true,
+              weight: true,
+              width: true,
+              defaultPrice: true,
+            },
+          },
+        },
+      }),
+      this.prisma.fabricSupplier.count({ where }),
+    ]);
+
+    // Transform results - convert Decimal to number
+    const items: SupplierFabricItem[] = fabricSuppliers.map((fs) => ({
+      fabric: {
+        id: fs.fabric.id,
+        fabricCode: fs.fabric.fabricCode,
+        name: fs.fabric.name,
+        color: fs.fabric.color,
+        weight: fs.fabric.weight ? Number(fs.fabric.weight) : null,
+        width: fs.fabric.width ? Number(fs.fabric.width) : null,
+        defaultPrice: fs.fabric.defaultPrice
+          ? Number(fs.fabric.defaultPrice)
+          : null,
+      },
+      supplierRelation: {
+        fabricSupplierId: fs.id,
+        purchasePrice: Number(fs.purchasePrice),
+        minOrderQty: fs.minOrderQty ? Number(fs.minOrderQty) : null,
+        leadTimeDays: fs.leadTimeDays,
+      },
+    }));
+
+    return buildPaginatedResult(items, total, query);
+  }
+}
+
+/**
+ * Response structure for supplier fabric items.
+ */
+export interface SupplierFabricItem {
+  fabric: {
+    id: number;
+    fabricCode: string;
+    name: string;
+    color: string | null;
+    weight: number | null;
+    width: number | null;
+    defaultPrice: number | null;
+  };
+  supplierRelation: {
+    fabricSupplierId: number;
+    purchasePrice: number;
+    minOrderQty: number | null;
+    leadTimeDays: number | null;
+  };
 }
