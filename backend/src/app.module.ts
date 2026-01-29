@@ -12,6 +12,7 @@ import { CommonModule } from './common/common.module';
 import { AuthModule } from './auth/auth.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { CustomerModule } from './customer/customer.module';
+import { FabricModule } from './fabric/fabric.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HealthController } from './common/health/health.controller';
@@ -55,6 +56,7 @@ import configuration from './config/configuration';
     // Business modules
     SupplierModule,
     CustomerModule,
+    FabricModule,
   ],
   controllers: [HealthController],
   providers: [
