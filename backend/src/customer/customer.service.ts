@@ -293,15 +293,11 @@ export class CustomerService {
         );
       }
 
-      // Build update data
-      const data: Prisma.CustomerPricingUpdateInput = {};
-      if (updateDto.specialPrice !== undefined) {
-        data.specialPrice = updateDto.specialPrice;
-      }
-
       return tx.customerPricing.update({
         where: { id: pricingId },
-        data,
+        data: {
+          specialPrice: updateDto.specialPrice,
+        },
       });
     });
   }

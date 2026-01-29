@@ -279,36 +279,45 @@ export class FabricService {
 
   /**
    * Delete an image from a fabric.
+   * Uses transaction to ensure atomic validation and deletion of FabricImage record.
    * Validates fabric exists and is active, image exists and belongs to the fabric.
-   * Deletes FabricImage record and attempts to delete the associated file.
+   * Attempts to delete the associated file after transaction completes.
    */
   async deleteImage(fabricId: number, imageId: number): Promise<void> {
-    // Validate fabric exists and is active
-    const fabric = await this.prisma.fabric.findFirst({
-      where: { id: fabricId, isActive: true },
+    // Use transaction for atomic validation and deletion
+    const deletedImage = await this.prisma.$transaction(async (tx) => {
+      // Validate fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Validate image exists and belongs to this fabric
+      const image = await tx.fabricImage.findFirst({
+        where: { id: imageId, fabricId },
+      });
+
+      if (!image) {
+        throw new NotFoundException(
+          `Fabric image with ID ${imageId} not found`,
+        );
+      }
+
+      // Delete FabricImage record within transaction
+      await tx.fabricImage.delete({
+        where: { id: imageId },
+      });
+
+      return image;
     });
 
-    if (!fabric) {
-      throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
-    }
-
-    // Validate image exists and belongs to this fabric
-    const image = await this.prisma.fabricImage.findFirst({
-      where: { id: imageId, fabricId },
-    });
-
-    if (!image) {
-      throw new NotFoundException(`Fabric image with ID ${imageId} not found`);
-    }
-
-    // Delete FabricImage record
-    await this.prisma.fabricImage.delete({
-      where: { id: imageId },
-    });
-
-    // Try to delete the associated file (extract key from URL)
+    // Try to delete the associated file (outside transaction)
+    // File deletion failure should not affect the FabricImage deletion
     // URL format: http://localhost:3000/uploads/{key}
-    const urlParts = image.url.split('/uploads/');
+    const urlParts = deletedImage.url.split('/uploads/');
     if (urlParts.length === 2) {
       const key = urlParts[1];
       try {

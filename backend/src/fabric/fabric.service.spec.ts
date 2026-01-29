@@ -88,6 +88,7 @@ describe('FabricService', () => {
     $transaction: jest.fn().mockImplementation((callback: CallableFunction) =>
       callback({
         fabric: fabricMock,
+        fabricImage: fabricImageMock,
       }),
     ),
   };

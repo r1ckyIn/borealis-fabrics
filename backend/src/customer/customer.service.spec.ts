@@ -919,21 +919,6 @@ describe('CustomerService', () => {
       );
       expect(customerPricingMock.update).not.toHaveBeenCalled();
     });
-
-    it('should handle empty update (no changes)', async () => {
-      const emptyUpdateDto: UpdateCustomerPricingDto = {};
-      customerMock.findFirst.mockResolvedValue(mockCustomer);
-      customerPricingMock.findUnique.mockResolvedValue(mockPricing);
-      customerPricingMock.update.mockResolvedValue(mockPricing);
-
-      const result = await service.updatePricing(1, 1, emptyUpdateDto);
-
-      expect(customerPricingMock.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: {},
-      });
-      expect(result).toEqual(mockPricing);
-    });
   });
 
   // ============================================================

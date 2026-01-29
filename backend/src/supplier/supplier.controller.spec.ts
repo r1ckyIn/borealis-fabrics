@@ -5,9 +5,11 @@ import { SupplierService } from './supplier.service';
 import {
   CreateSupplierDto,
   QuerySupplierDto,
+  QuerySupplierFabricsDto,
   UpdateSupplierDto,
   SupplierStatus,
   SettleType,
+  SupplierFabricSortField,
 } from './dto';
 
 describe('SupplierController', () => {
@@ -18,6 +20,7 @@ describe('SupplierController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
+    findSupplierFabrics: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
   };
@@ -295,6 +298,100 @@ describe('SupplierController', () => {
       await expect(controller.remove(1, false)).rejects.toThrow(
         ConflictException,
       );
+    });
+  });
+
+  // ============================================================
+  // 2.1.7 Find Supplier Fabrics Controller Tests
+  // ============================================================
+  describe('findSupplierFabrics (GET /:id/fabrics)', () => {
+    const mockSupplierFabrics = {
+      items: [
+        {
+          fabric: {
+            id: 1,
+            fabricCode: 'FB-2401-0001',
+            name: 'Cotton Twill',
+            color: 'Navy Blue',
+            weight: 280.5,
+            width: 150.0,
+            defaultPrice: 45.5,
+          },
+          supplierRelation: {
+            fabricSupplierId: 1,
+            purchasePrice: 25.5,
+            minOrderQty: 100,
+            leadTimeDays: 7,
+          },
+        },
+      ],
+      pagination: {
+        page: 1,
+        pageSize: 20,
+        total: 1,
+        totalPages: 1,
+      },
+    };
+
+    it('should return paginated fabrics for a supplier', async () => {
+      const query: QuerySupplierFabricsDto = {};
+      mockSupplierService.findSupplierFabrics.mockResolvedValue(
+        mockSupplierFabrics,
+      );
+
+      const result = await controller.findSupplierFabrics(1, query);
+
+      expect(mockSupplierService.findSupplierFabrics).toHaveBeenCalledWith(
+        1,
+        query,
+      );
+      expect(result).toEqual(mockSupplierFabrics);
+    });
+
+    it('should pass query parameters to service', async () => {
+      const query: QuerySupplierFabricsDto = {
+        fabricCode: 'FB-24',
+        fabricName: 'Cotton',
+        color: 'Navy Blue',
+        page: 2,
+        pageSize: 10,
+        sortBy: SupplierFabricSortField.purchasePrice,
+        sortOrder: 'asc',
+      };
+      mockSupplierService.findSupplierFabrics.mockResolvedValue({
+        items: [],
+        pagination: { page: 2, pageSize: 10, total: 0, totalPages: 0 },
+      });
+
+      await controller.findSupplierFabrics(1, query);
+
+      expect(mockSupplierService.findSupplierFabrics).toHaveBeenCalledWith(
+        1,
+        query,
+      );
+    });
+
+    it('should pass NotFoundException from service', async () => {
+      mockSupplierService.findSupplierFabrics.mockRejectedValue(
+        new NotFoundException('Supplier with ID 999 not found'),
+      );
+
+      await expect(controller.findSupplierFabrics(999, {})).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should return empty list when supplier has no fabrics', async () => {
+      const emptyResult = {
+        items: [],
+        pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+      };
+      mockSupplierService.findSupplierFabrics.mockResolvedValue(emptyResult);
+
+      const result = await controller.findSupplierFabrics(1, {});
+
+      expect(result.items).toHaveLength(0);
+      expect(result.pagination.total).toBe(0);
     });
   });
 });

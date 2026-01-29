@@ -4,8 +4,10 @@ import { CustomerController } from './customer.controller';
 import { CustomerService } from './customer.service';
 import {
   CreateCustomerDto,
+  CreateCustomerPricingDto,
   QueryCustomerDto,
   UpdateCustomerDto,
+  UpdateCustomerPricingDto,
   CreditType,
 } from './dto';
 
@@ -18,6 +20,9 @@ describe('CustomerController', () => {
     findAll: jest.fn(),
     findOne: jest.fn(),
     findPricing: jest.fn(),
+    createPricing: jest.fn(),
+    updatePricing: jest.fn(),
+    removePricing: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
   };
@@ -201,6 +206,153 @@ describe('CustomerController', () => {
       );
 
       await expect(controller.getPricing(999)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  // ============================================================
+  // 2.2.8 Create Customer Pricing Controller Tests
+  // ============================================================
+  describe('createPricing (POST /:id/pricing)', () => {
+    const createPricingDto: CreateCustomerPricingDto = {
+      fabricId: 10,
+      specialPrice: 89.99,
+    };
+
+    const mockPricing = {
+      id: 1,
+      customerId: 1,
+      fabricId: 10,
+      specialPrice: 89.99,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should create customer pricing successfully', async () => {
+      mockCustomerService.createPricing.mockResolvedValue(mockPricing);
+
+      const result = await controller.createPricing(1, createPricingDto);
+
+      expect(mockCustomerService.createPricing).toHaveBeenCalledWith(
+        1,
+        createPricingDto,
+      );
+      expect(result).toEqual(mockPricing);
+    });
+
+    it('should pass NotFoundException from service when customer not found', async () => {
+      mockCustomerService.createPricing.mockRejectedValue(
+        new NotFoundException('Customer with ID 999 not found'),
+      );
+
+      await expect(
+        controller.createPricing(999, createPricingDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should pass NotFoundException from service when fabric not found', async () => {
+      mockCustomerService.createPricing.mockRejectedValue(
+        new NotFoundException('Fabric with ID 10 not found'),
+      );
+
+      await expect(
+        controller.createPricing(1, createPricingDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should pass ConflictException from service when pricing already exists', async () => {
+      mockCustomerService.createPricing.mockRejectedValue(
+        new ConflictException(
+          'Customer already has special pricing for fabric ID 10',
+        ),
+      );
+
+      await expect(
+        controller.createPricing(1, createPricingDto),
+      ).rejects.toThrow(ConflictException);
+    });
+  });
+
+  // ============================================================
+  // 2.2.9 Update Customer Pricing Controller Tests
+  // ============================================================
+  describe('updatePricing (PATCH /:id/pricing/:pricingId)', () => {
+    const updatePricingDto: UpdateCustomerPricingDto = {
+      specialPrice: 99.99,
+    };
+
+    const mockPricing = {
+      id: 1,
+      customerId: 1,
+      fabricId: 10,
+      specialPrice: 99.99,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should update customer pricing successfully', async () => {
+      mockCustomerService.updatePricing.mockResolvedValue(mockPricing);
+
+      const result = await controller.updatePricing(1, 1, updatePricingDto);
+
+      expect(mockCustomerService.updatePricing).toHaveBeenCalledWith(
+        1,
+        1,
+        updatePricingDto,
+      );
+      expect(result).toEqual(mockPricing);
+    });
+
+    it('should pass NotFoundException from service when customer not found', async () => {
+      mockCustomerService.updatePricing.mockRejectedValue(
+        new NotFoundException('Customer with ID 999 not found'),
+      );
+
+      await expect(
+        controller.updatePricing(999, 1, updatePricingDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should pass NotFoundException from service when pricing not found', async () => {
+      mockCustomerService.updatePricing.mockRejectedValue(
+        new NotFoundException('Customer pricing with ID 999 not found'),
+      );
+
+      await expect(
+        controller.updatePricing(1, 999, updatePricingDto),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ============================================================
+  // 2.2.10 Delete Customer Pricing Controller Tests
+  // ============================================================
+  describe('removePricing (DELETE /:id/pricing/:pricingId)', () => {
+    it('should delete customer pricing successfully', async () => {
+      mockCustomerService.removePricing.mockResolvedValue(undefined);
+
+      await controller.removePricing(1, 1);
+
+      expect(mockCustomerService.removePricing).toHaveBeenCalledWith(1, 1);
+    });
+
+    it('should pass NotFoundException from service when customer not found', async () => {
+      mockCustomerService.removePricing.mockRejectedValue(
+        new NotFoundException('Customer with ID 999 not found'),
+      );
+
+      await expect(controller.removePricing(999, 1)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should pass NotFoundException from service when pricing not found', async () => {
+      mockCustomerService.removePricing.mockRejectedValue(
+        new NotFoundException('Customer pricing with ID 999 not found'),
+      );
+
+      await expect(controller.removePricing(1, 999)).rejects.toThrow(
         NotFoundException,
       );
     });
