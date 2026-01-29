@@ -182,23 +182,29 @@ describe('SupplierService', () => {
     };
 
     it('should return a supplier when found', async () => {
-      mockPrismaService.supplier.findUnique.mockResolvedValue(mockSupplier);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
 
       const result = await service.findOne(1);
 
-      expect(mockPrismaService.supplier.findUnique).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(mockPrismaService.supplier.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
       });
       expect(result).toEqual(mockSupplier);
     });
 
     it('should throw NotFoundException when supplier not found', async () => {
-      mockPrismaService.supplier.findUnique.mockResolvedValue(null);
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
 
       await expect(service.findOne(999)).rejects.toThrow(NotFoundException);
       await expect(service.findOne(999)).rejects.toThrow(
         'Supplier with ID 999 not found',
       );
+    });
+
+    it('should throw NotFoundException for soft-deleted supplier', async () => {
+      mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+
+      await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
     });
   });
 

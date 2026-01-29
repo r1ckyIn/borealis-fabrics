@@ -39,11 +39,11 @@ export class SupplierService {
 
   /**
    * Find a supplier by ID.
-   * Throws NotFoundException if supplier not found.
+   * Throws NotFoundException if supplier not found or soft-deleted.
    */
   async findOne(id: number): Promise<Supplier> {
-    const supplier = await this.prisma.supplier.findUnique({
-      where: { id },
+    const supplier = await this.prisma.supplier.findFirst({
+      where: { id, isActive: true },
     });
 
     if (!supplier) {
