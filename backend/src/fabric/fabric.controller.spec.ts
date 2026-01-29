@@ -57,6 +57,7 @@ describe('FabricController', () => {
     update: jest.fn(),
     remove: jest.fn(),
     uploadImage: jest.fn(),
+    deleteImage: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -347,6 +348,53 @@ describe('FabricController', () => {
         1,
         mockFile,
         0,
+      );
+    });
+  });
+
+  // ========================================
+  // DELETE IMAGE Tests (2.3.8)
+  // ========================================
+  describe('deleteImage (DELETE /:id/images/:imageId)', () => {
+    it('should delete an image successfully', async () => {
+      mockFabricService.deleteImage.mockResolvedValue(undefined);
+
+      await controller.deleteImage(1, 10);
+
+      expect(mockFabricService.deleteImage).toHaveBeenCalledWith(1, 10);
+    });
+
+    it('should pass correct fabricId and imageId to service', async () => {
+      mockFabricService.deleteImage.mockResolvedValue(undefined);
+
+      await controller.deleteImage(5, 20);
+
+      expect(mockFabricService.deleteImage).toHaveBeenCalledWith(5, 20);
+    });
+
+    it('should pass NotFoundException from service when fabric not found', async () => {
+      mockFabricService.deleteImage.mockRejectedValue(
+        new NotFoundException('Fabric with ID 999 not found'),
+      );
+
+      await expect(controller.deleteImage(999, 10)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(controller.deleteImage(999, 10)).rejects.toThrow(
+        'Fabric with ID 999 not found',
+      );
+    });
+
+    it('should pass NotFoundException from service when image not found', async () => {
+      mockFabricService.deleteImage.mockRejectedValue(
+        new NotFoundException('Fabric image with ID 999 not found'),
+      );
+
+      await expect(controller.deleteImage(1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(controller.deleteImage(1, 999)).rejects.toThrow(
+        'Fabric image with ID 999 not found',
       );
     });
   });

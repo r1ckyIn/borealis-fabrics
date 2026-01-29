@@ -276,4 +276,49 @@ export class FabricService {
       },
     });
   }
+
+  /**
+   * Delete an image from a fabric.
+   * Validates fabric exists and is active, image exists and belongs to the fabric.
+   * Deletes FabricImage record and attempts to delete the associated file.
+   */
+  async deleteImage(fabricId: number, imageId: number): Promise<void> {
+    // Validate fabric exists and is active
+    const fabric = await this.prisma.fabric.findFirst({
+      where: { id: fabricId, isActive: true },
+    });
+
+    if (!fabric) {
+      throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+    }
+
+    // Validate image exists and belongs to this fabric
+    const image = await this.prisma.fabricImage.findFirst({
+      where: { id: imageId, fabricId },
+    });
+
+    if (!image) {
+      throw new NotFoundException(`Fabric image with ID ${imageId} not found`);
+    }
+
+    // Delete FabricImage record
+    await this.prisma.fabricImage.delete({
+      where: { id: imageId },
+    });
+
+    // Try to delete the associated file (extract key from URL)
+    // URL format: http://localhost:3000/uploads/{key}
+    const urlParts = image.url.split('/uploads/');
+    if (urlParts.length === 2) {
+      const key = urlParts[1];
+      try {
+        await this.fileService.removeByKey(key);
+      } catch {
+        // File may not exist in File table (e.g., external URL or orphan record)
+        // Log warning but don't fail the operation since FabricImage is deleted
+      }
+    }
+    // If URL doesn't contain /uploads/, it's likely an external URL
+    // Skip file deletion in this case
+  }
 }

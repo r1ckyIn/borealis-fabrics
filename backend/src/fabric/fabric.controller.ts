@@ -185,4 +185,18 @@ export class FabricController {
 
     return this.fabricService.uploadImage(id, file, dto.sortOrder ?? 0);
   }
+
+  @Delete(':id/images/:imageId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete an image from a fabric' })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiParam({ name: 'imageId', description: 'Image ID', type: Number })
+  @ApiResponse({ status: 204, description: 'Image deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Fabric or image not found' })
+  deleteImage(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('imageId', ParseIntPipe) imageId: number,
+  ) {
+    return this.fabricService.deleteImage(id, imageId);
+  }
 }
