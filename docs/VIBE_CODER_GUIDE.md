@@ -171,12 +171,12 @@ curl http://localhost:3000/health
 |---|------|------|------|
 | 2.1.1 | Service 基础设施 | 创建 SupplierService 类和依赖注入 | ✅ |
 | 2.1.2 | Controller 基础设施 | 创建 SupplierController 和路由 | ✅ |
-| 2.1.3 | Create Supplier | POST /api/v1/suppliers | ⏳ |
-| 2.1.4 | Get Supplier | GET /api/v1/suppliers/:id | ⏳ |
-| 2.1.5 | List Suppliers | GET /api/v1/suppliers (分页+筛选) | ⏳ |
-| 2.1.6 | Update Supplier | PATCH /api/v1/suppliers/:id | ⏳ |
-| 2.1.7 | Delete Supplier | DELETE /api/v1/suppliers/:id (软删除) | ⏳ |
-| 2.1.8 | 模块集成测试 | 测试所有 API 端点协同工作 | ⏳ |
+| 2.1.3 | Create Supplier | POST /api/v1/suppliers | ✅ |
+| 2.1.4 | Get Supplier | GET /api/v1/suppliers/:id | ✅ |
+| 2.1.5 | List Suppliers | GET /api/v1/suppliers (分页+筛选) | ✅ |
+| 2.1.6 | Update Supplier | PATCH /api/v1/suppliers/:id | ✅ |
+| 2.1.7 | Delete Supplier | DELETE /api/v1/suppliers/:id (软删除) | ✅ |
+| 2.1.8 | 模块集成测试 | 测试所有 API 端点协同工作 | ✅ |
 
 ### CustomerModule 功能清单
 
@@ -217,9 +217,9 @@ curl http://localhost:3000/health
 
 ### 当前进度
 
-- **已完成功能**: 2.1.1 SupplierService 基础设施, 2.1.2 SupplierController 基础设施
-- **当前状态**: 基础设施已完成，准备实现 CRUD
-- **下一个功能**: 2.1.3 Create Supplier (POST)
+- **已完成功能**: SupplierModule 全部功能 (2.1.1 - 2.1.8)
+- **当前状态**: SupplierModule 开发完成，PR #1 审查中
+- **下一个功能**: 2.2.1 CustomerService 基础设施
 
 ---
 
@@ -335,7 +335,18 @@ docker compose -f backend/docker-compose.yml down -v
    cd backend && npx prisma studio
    # 浏览器会打开 http://localhost:5555，可以看到所有表和数据
    ```
-4. **所有模块完成后**：告诉 Claude "创建 PR"
+4. **每个模块完成后**：告诉 Claude "创建 PR"
+   - Claude 会创建 PR 并运行 /code-review
+   - 你审查 PR，确认没问题后合并
+
+**PR 创建节点（专业工作流）**：
+
+| 模块 | PR |
+|------|-----|
+| SupplierModule 完成 | feature/supplier-module → main |
+| CustomerModule 完成 | feature/customer-module → main |
+| FabricModule 完成 | feature/fabric-module → main |
+| FileModule 完成 | feature/file-module → main |
 
 **预计需要 4-8 个 Session**（每个模块 1-2 个 Session，取决于功能复杂度）
 
