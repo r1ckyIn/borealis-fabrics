@@ -77,6 +77,8 @@ describe('FabricService', () => {
     count: jest.fn(),
     findMany: jest.fn(),
     create: jest.fn(),
+    findFirst: jest.fn(),
+    update: jest.fn(),
   };
   const customerPricingMock = { count: jest.fn() };
   const orderItemMock = { count: jest.fn() };
@@ -1185,6 +1187,118 @@ describe('FabricService', () => {
       );
       await expect(service.addSupplier(1, createDto)).rejects.toThrow(
         'This supplier is already associated with this fabric',
+      );
+    });
+  });
+
+  // ========================================
+  // UPDATE SUPPLIER Tests (2.3.11)
+  // ========================================
+  describe('updateSupplier', () => {
+    const mockExistingFabricSupplier = {
+      id: 1,
+      fabricId: 1,
+      supplierId: 1,
+      purchasePrice: new Decimal(45.5),
+      minOrderQty: new Decimal(100),
+      leadTimeDays: 7,
+      createdAt: new Date('2024-01-15T10:00:00Z'),
+      updatedAt: new Date('2024-01-15T10:00:00Z'),
+    };
+
+    beforeEach(() => {
+      fabricSupplierMock.findFirst = jest.fn();
+      fabricSupplierMock.update = jest.fn();
+    });
+
+    it('should update a single field successfully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findFirst.mockResolvedValue(
+        mockExistingFabricSupplier,
+      );
+      const updatedRecord = {
+        ...mockExistingFabricSupplier,
+        purchasePrice: new Decimal(50.0),
+      };
+      fabricSupplierMock.update.mockResolvedValue(updatedRecord);
+
+      const result = await service.updateSupplier(1, 1, {
+        purchasePrice: 50.0,
+      });
+
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(fabricSupplierMock.findFirst).toHaveBeenCalledWith({
+        where: { fabricId: 1, supplierId: 1 },
+      });
+      expect(fabricSupplierMock.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { purchasePrice: 50.0 },
+      });
+      expect(result).toEqual(updatedRecord);
+    });
+
+    it('should update multiple fields successfully', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findFirst.mockResolvedValue(
+        mockExistingFabricSupplier,
+      );
+      const updatedRecord = {
+        ...mockExistingFabricSupplier,
+        purchasePrice: new Decimal(55.0),
+        minOrderQty: new Decimal(200),
+        leadTimeDays: 14,
+      };
+      fabricSupplierMock.update.mockResolvedValue(updatedRecord);
+
+      const updateDto = {
+        purchasePrice: 55.0,
+        minOrderQty: 200,
+        leadTimeDays: 14,
+      };
+      const result = await service.updateSupplier(1, 1, updateDto);
+
+      expect(fabricSupplierMock.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: updateDto,
+      });
+      expect(result).toEqual(updatedRecord);
+    });
+
+    it('should throw NotFoundException if fabric not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateSupplier(999, 1, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.updateSupplier(999, 1, { purchasePrice: 50.0 }),
+      ).rejects.toThrow('Fabric with ID 999 not found');
+    });
+
+    it('should throw NotFoundException if fabric is soft-deleted', async () => {
+      fabricMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateSupplier(1, 1, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(NotFoundException);
+      expect(fabricMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+    });
+
+    it('should throw NotFoundException if association not found', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      fabricSupplierMock.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.updateSupplier(1, 999, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        service.updateSupplier(1, 999, { purchasePrice: 50.0 }),
+      ).rejects.toThrow(
+        'Supplier with ID 999 is not associated with fabric ID 1',
       );
     });
   });

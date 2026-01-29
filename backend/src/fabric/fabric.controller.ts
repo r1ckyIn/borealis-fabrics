@@ -34,6 +34,7 @@ import {
   FabricImageResponseDto,
   QueryFabricSuppliersDto,
   CreateFabricSupplierDto,
+  UpdateFabricSupplierDto,
 } from './dto';
 
 // Allowed image MIME types for fabric images
@@ -261,5 +262,25 @@ export class FabricController {
     @Body() createDto: CreateFabricSupplierDto,
   ) {
     return this.fabricService.addSupplier(id, createDto);
+  }
+
+  @Patch(':id/suppliers/:supplierId')
+  @ApiOperation({
+    summary: 'Update a fabric-supplier association',
+    description:
+      'Updates pricing or lead time info for an existing association',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiParam({ name: 'supplierId', description: 'Supplier ID', type: Number })
+  @ApiBody({ type: UpdateFabricSupplierDto })
+  @ApiResponse({ status: 200, description: 'Association updated successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 404, description: 'Fabric or association not found' })
+  updateSupplier(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('supplierId', ParseIntPipe) supplierId: number,
+    @Body() updateDto: UpdateFabricSupplierDto,
+  ) {
+    return this.fabricService.updateSupplier(id, supplierId, updateDto);
   }
 }

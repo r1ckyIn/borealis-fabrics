@@ -13,6 +13,7 @@ import {
   QueryFabricSuppliersDto,
   FabricSupplierSortField,
   CreateFabricSupplierDto,
+  UpdateFabricSupplierDto,
 } from './dto';
 import { Fabric, FabricImage, FabricSupplier, Prisma } from '@prisma/client';
 import {
@@ -483,6 +484,44 @@ export class FabricService {
         }
         throw error;
       }
+    });
+  }
+
+  /**
+   * Update a fabric-supplier association.
+   * Validates fabric exists and is active, and association exists.
+   */
+  async updateSupplier(
+    fabricId: number,
+    supplierId: number,
+    updateDto: UpdateFabricSupplierDto,
+  ): Promise<FabricSupplier> {
+    return this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify association exists
+      const existingAssociation = await tx.fabricSupplier.findFirst({
+        where: { fabricId, supplierId },
+      });
+
+      if (!existingAssociation) {
+        throw new NotFoundException(
+          `Supplier with ID ${supplierId} is not associated with fabric ID ${fabricId}`,
+        );
+      }
+
+      // Update the association
+      return tx.fabricSupplier.update({
+        where: { id: existingAssociation.id },
+        data: updateDto,
+      });
     });
   }
 }
