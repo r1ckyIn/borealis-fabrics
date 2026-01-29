@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConflictException } from '@nestjs/common';
 import { SupplierController } from './supplier.controller';
 import { SupplierService } from './supplier.service';
+import { CreateSupplierDto, SupplierStatus, SettleType } from './dto';
 
 describe('SupplierController', () => {
   let controller: SupplierController;
@@ -37,5 +39,53 @@ describe('SupplierController', () => {
 
   it('should have supplier service injected', () => {
     expect(service).toBeDefined();
+  });
+
+  // ============================================================
+  // 2.1.3 Create Supplier Controller Tests
+  // ============================================================
+  describe('create (POST /)', () => {
+    const createDto: CreateSupplierDto = {
+      companyName: 'ABC Textiles',
+      contactName: 'John Doe',
+      phone: '13800138000',
+      wechat: 'wechat_id_123',
+      email: 'contact@abc-textiles.com',
+      address: '123 Fabric Street, Textile City',
+      status: SupplierStatus.ACTIVE,
+      billReceiveType: 'invoice',
+      settleType: SettleType.PREPAY,
+      creditDays: 30,
+      notes: 'Premium supplier',
+    };
+
+    const mockSupplier = {
+      id: 1,
+      ...createDto,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it('should create a supplier successfully', async () => {
+      mockSupplierService.create.mockResolvedValue(mockSupplier);
+
+      const result = await controller.create(createDto);
+
+      expect(mockSupplierService.create).toHaveBeenCalledWith(createDto);
+      expect(result).toEqual(mockSupplier);
+    });
+
+    it('should pass ConflictException from service', async () => {
+      mockSupplierService.create.mockRejectedValue(
+        new ConflictException(
+          'Supplier with company name "ABC Textiles" already exists',
+        ),
+      );
+
+      await expect(controller.create(createDto)).rejects.toThrow(
+        ConflictException,
+      );
+    });
   });
 });
