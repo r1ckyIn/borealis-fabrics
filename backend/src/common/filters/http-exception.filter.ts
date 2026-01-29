@@ -8,6 +8,16 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
+// Check if running in production
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Prisma error codes that should be handled specially
+const PRISMA_ERROR_CODES = new Set([
+  'P2002', // Unique constraint violation
+  'P2003', // Foreign key constraint violation
+  'P2025', // Record not found
+]);
+
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
@@ -32,11 +42,22 @@ export class AllExceptionsFilter implements ExceptionFilter {
         errors = obj.errors as unknown[] | undefined;
       }
     } else if (exception instanceof Error) {
-      message = exception.message;
+      // Log the actual error for debugging
       this.logger.error(
         `Unhandled exception: ${exception.message}`,
         exception.stack,
       );
+
+      // Check if it's a Prisma error
+      const prismaCode = this.extractPrismaErrorCode(exception);
+
+      if (isProduction) {
+        // In production, hide sensitive error details
+        message = this.getSafeErrorMessage(prismaCode);
+      } else {
+        // In development, show the actual error message
+        message = exception.message;
+      }
     }
 
     response.status(status).json({
@@ -46,5 +67,33 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
       timestamp: new Date().toISOString(),
     });
+  }
+
+  /**
+   * Extract Prisma error code from error message
+   */
+  private extractPrismaErrorCode(error: Error): string | null {
+    // Prisma errors contain codes like P2002, P2003, etc.
+    const match = error.message.match(/P\d{4}/);
+    if (match && PRISMA_ERROR_CODES.has(match[0])) {
+      return match[0];
+    }
+    return null;
+  }
+
+  /**
+   * Get a safe error message that doesn't expose internal details
+   */
+  private getSafeErrorMessage(prismaCode: string | null): string {
+    switch (prismaCode) {
+      case 'P2002':
+        return 'A record with this value already exists';
+      case 'P2003':
+        return 'Referenced record does not exist';
+      case 'P2025':
+        return 'Record not found';
+      default:
+        return 'Internal server error';
+    }
   }
 }
