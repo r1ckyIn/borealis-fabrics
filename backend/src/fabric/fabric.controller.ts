@@ -35,6 +35,9 @@ import {
   QueryFabricSuppliersDto,
   CreateFabricSupplierDto,
   UpdateFabricSupplierDto,
+  QueryFabricPricingDto,
+  CreateFabricPricingDto,
+  UpdateFabricPricingDto,
 } from './dto';
 
 // Allowed image MIME types for fabric images
@@ -302,5 +305,104 @@ export class FabricController {
     @Param('supplierId', ParseIntPipe) supplierId: number,
   ) {
     return this.fabricService.removeSupplier(id, supplierId);
+  }
+
+  // ========================================
+  // Fabric Pricing Endpoints (2.3.13 - 2.3.16)
+  // ========================================
+
+  @Get(':id/pricing')
+  @ApiOperation({
+    summary: 'List special pricing records for a fabric',
+    description:
+      'Returns paginated list of customer special pricing with customer details',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 20 })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    type: String,
+    example: 'createdAt',
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({
+    name: 'customerName',
+    required: false,
+    type: String,
+    description: 'Filter by customer company name (fuzzy search)',
+  })
+  @ApiResponse({ status: 200, description: 'Paginated pricing list' })
+  @ApiResponse({ status: 404, description: 'Fabric not found' })
+  findPricing(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: QueryFabricPricingDto,
+  ) {
+    return this.fabricService.findPricing(id, query);
+  }
+
+  @Post(':id/pricing')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Create a special pricing for a customer',
+    description: 'Sets a special price for a specific customer for this fabric',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiBody({ type: CreateFabricPricingDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Pricing created successfully',
+  })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 404, description: 'Fabric or customer not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Customer already has special pricing for this fabric',
+  })
+  createPricing(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() createDto: CreateFabricPricingDto,
+  ) {
+    return this.fabricService.createPricing(id, createDto);
+  }
+
+  @Patch(':id/pricing/:pricingId')
+  @ApiOperation({
+    summary: 'Update a special pricing record',
+    description: 'Updates the special price for an existing pricing record',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiParam({ name: 'pricingId', description: 'Pricing ID', type: Number })
+  @ApiBody({ type: UpdateFabricPricingDto })
+  @ApiResponse({ status: 200, description: 'Pricing updated successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @ApiResponse({ status: 404, description: 'Fabric or pricing not found' })
+  updatePricing(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('pricingId', ParseIntPipe) pricingId: number,
+    @Body() updateDto: UpdateFabricPricingDto,
+  ) {
+    return this.fabricService.updatePricing(id, pricingId, updateDto);
+  }
+
+  @Delete(':id/pricing/:pricingId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete a special pricing record',
+    description: 'Removes a special pricing record for a customer',
+  })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiParam({ name: 'pricingId', description: 'Pricing ID', type: Number })
+  @ApiResponse({
+    status: 204,
+    description: 'Pricing removed successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Fabric or pricing not found' })
+  removePricing(
+    @Param('id', ParseIntPipe) id: number,
+    @Param('pricingId', ParseIntPipe) pricingId: number,
+  ) {
+    return this.fabricService.removePricing(id, pricingId);
   }
 }

@@ -101,6 +101,39 @@ interface FabricSupplierAssociationData {
   updatedAt: string;
 }
 
+interface FabricPricingData {
+  id: number;
+  customerId: number;
+  fabricId: number;
+  specialPrice: number;
+  createdAt: string;
+  updatedAt: string;
+  customer: {
+    id: number;
+    companyName: string;
+    contactName: string | null;
+  };
+}
+
+interface PaginatedFabricPricingData {
+  items: FabricPricingData[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+interface FabricPricingRecordData {
+  id: number;
+  fabricId: number;
+  customerId: number;
+  specialPrice: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 describe('FabricController (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -171,10 +204,26 @@ describe('FabricController (e2e)', () => {
     findFirst: jest.Mock;
   }
 
+  interface MockCustomerMethods {
+    findFirst: jest.Mock;
+  }
+
+  interface MockCustomerPricingMethods {
+    count: jest.Mock;
+    findMany: jest.Mock;
+    findFirst: jest.Mock;
+    findUnique: jest.Mock;
+    create: jest.Mock;
+    update: jest.Mock;
+    delete: jest.Mock;
+  }
+
   interface MockPrismaServiceTypeExtended extends MockPrismaServiceType {
     fabricImage: MockFabricImageMethods;
     fabricSupplier: MockFabricSupplierMethods;
     supplier: MockSupplierMethods;
+    customer: MockCustomerMethods;
+    customerPricing: MockCustomerPricingMethods;
   }
 
   const mockPrismaService: MockPrismaServiceTypeExtended = {
@@ -207,7 +256,20 @@ describe('FabricController (e2e)', () => {
     supplier: {
       findFirst: jest.fn(),
     },
-    customerPricing: { count: jest.fn() },
+    // Customer methods for pricing validation
+    customer: {
+      findFirst: jest.fn(),
+    },
+    // CustomerPricing methods for pricing operations
+    customerPricing: {
+      count: jest.fn(),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
     orderItem: { count: jest.fn() },
     quote: { count: jest.fn() },
     // Transaction mock - passes the mock service to the callback
@@ -1933,6 +1995,472 @@ describe('FabricController (e2e)', () => {
     it('should handle non-numeric supplier ID', async () => {
       await request(app.getHttpServer())
         .delete('/api/v1/fabrics/1/suppliers/abc')
+        .expect(400);
+    });
+  });
+
+  // ========================================
+  // Fabric Pricing E2E Tests (2.3.13-2.3.16)
+  // ========================================
+  describe('GET /api/v1/fabrics/:id/pricing (2.3.13)', () => {
+    const mockCustomerForPricing = {
+      id: 20,
+      companyName: 'Test Customer Co.',
+      contactName: 'Jane Doe',
+    };
+
+    const mockCustomerPricingWithRelation = {
+      id: 1,
+      fabricId: 1,
+      customerId: 20,
+      specialPrice: 38.5,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-01-01'),
+      customer: mockCustomerForPricing,
+    };
+
+    it('should return paginated list of pricing for a fabric', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findMany.mockResolvedValue([
+        mockCustomerPricingWithRelation,
+      ]);
+      mockPrismaService.customerPricing.count.mockResolvedValue(1);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/fabrics/1/pricing')
+        .expect(200);
+
+      const body =
+        response.body as ApiSuccessResponse<PaginatedFabricPricingData>;
+      expect(body.code).toBe(200);
+      expect(body.data.items).toHaveLength(1);
+      expect(body.data.items[0].customer.companyName).toBe('Test Customer Co.');
+      expect(body.data.items[0].specialPrice).toBe(38.5);
+      expect(body.data.pagination.total).toBe(1);
+    });
+
+    it('should return empty list when fabric has no pricing', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findMany.mockResolvedValue([]);
+      mockPrismaService.customerPricing.count.mockResolvedValue(0);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/fabrics/1/pricing')
+        .expect(200);
+
+      const body =
+        response.body as ApiSuccessResponse<PaginatedFabricPricingData>;
+      expect(body.data.items).toHaveLength(0);
+      expect(body.data.pagination.total).toBe(0);
+    });
+
+    it('should return 404 when fabric not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/fabrics/999/pricing')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toContain('Fabric with ID 999 not found');
+    });
+
+    it('should support pagination parameters', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findMany.mockResolvedValue([]);
+      mockPrismaService.customerPricing.count.mockResolvedValue(50);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/fabrics/1/pricing?page=2&pageSize=10')
+        .expect(200);
+
+      const body =
+        response.body as ApiSuccessResponse<PaginatedFabricPricingData>;
+      expect(body.data.pagination.page).toBe(2);
+      expect(body.data.pagination.pageSize).toBe(10);
+    });
+
+    it('should support customerName filter', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findMany.mockResolvedValue([
+        mockCustomerPricingWithRelation,
+      ]);
+      mockPrismaService.customerPricing.count.mockResolvedValue(1);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/fabrics/1/pricing?customerName=Test')
+        .expect(200);
+
+      expect(mockPrismaService.customerPricing.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            customer: expect.objectContaining({
+              companyName: { contains: 'Test' },
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should support sorting by specialPrice', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findMany.mockResolvedValue([
+        mockCustomerPricingWithRelation,
+      ]);
+      mockPrismaService.customerPricing.count.mockResolvedValue(1);
+
+      await request(app.getHttpServer())
+        .get('/api/v1/fabrics/1/pricing?sortBy=specialPrice&sortOrder=desc')
+        .expect(200);
+
+      expect(mockPrismaService.customerPricing.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { specialPrice: 'desc' },
+        }),
+      );
+    });
+  });
+
+  describe('POST /api/v1/fabrics/:id/pricing (2.3.14)', () => {
+    const mockCustomer = {
+      id: 20,
+      companyName: 'Test Customer Co.',
+      contactName: 'Jane Doe',
+      phone: '987-654-3210',
+      email: 'jane@test.com',
+      address: null,
+      creditLimit: null,
+      status: 'active',
+      notes: null,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockCreatedPricing = {
+      id: 1,
+      fabricId: 1,
+      customerId: 20,
+      specialPrice: 38.5,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-01-01'),
+    };
+
+    it('should create fabric pricing successfully', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.customerPricing.create.mockResolvedValue(
+        mockCreatedPricing,
+      );
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/pricing')
+        .send({
+          customerId: 20,
+          specialPrice: 38.5,
+        })
+        .expect(201);
+
+      const body = response.body as ApiSuccessResponse<FabricPricingRecordData>;
+      expect(body.code).toBe(201);
+      expect(body.data.fabricId).toBe(1);
+      expect(body.data.customerId).toBe(20);
+      expect(body.data.specialPrice).toBe(38.5);
+    });
+
+    it('should return 400 when customerId is missing', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/pricing')
+        .send({
+          specialPrice: 38.5,
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      const messageStr = Array.isArray(body.message)
+        ? body.message.join(' ')
+        : body.message;
+      expect(messageStr).toContain('customerId');
+    });
+
+    it('should return 400 when specialPrice is missing', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/pricing')
+        .send({
+          customerId: 20,
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      const messageStr = Array.isArray(body.message)
+        ? body.message.join(' ')
+        : body.message;
+      expect(messageStr).toContain('specialPrice');
+    });
+
+    it('should return 404 when fabric not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/999/pricing')
+        .send({
+          customerId: 20,
+          specialPrice: 38.5,
+        })
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toContain('Fabric with ID 999 not found');
+    });
+
+    it('should return 404 when customer not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customer.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/pricing')
+        .send({
+          customerId: 999,
+          specialPrice: 38.5,
+        })
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toContain('Customer with ID 999 not found');
+    });
+
+    it('should return 409 when pricing already exists', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      const prismaError = new Error('Unique constraint failed');
+      (prismaError as unknown as { code: string }).code = 'P2002';
+      mockPrismaService.customerPricing.create.mockRejectedValue(prismaError);
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/pricing')
+        .send({
+          customerId: 20,
+          specialPrice: 38.5,
+        })
+        .expect(409);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toContain('already has special pricing');
+    });
+
+    it('should validate specialPrice range (min)', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/pricing')
+        .send({
+          customerId: 20,
+          specialPrice: 0,
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toBeDefined();
+    });
+
+    it('should validate specialPrice range (max)', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/pricing')
+        .send({
+          customerId: 20,
+          specialPrice: 10000000,
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toBeDefined();
+    });
+
+    it('should accept specialPrice at min boundary (0.01)', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.customerPricing.create.mockResolvedValue({
+        ...mockCreatedPricing,
+        specialPrice: 0.01,
+      });
+
+      const response = await request(app.getHttpServer())
+        .post('/api/v1/fabrics/1/pricing')
+        .send({
+          customerId: 20,
+          specialPrice: 0.01,
+        })
+        .expect(201);
+
+      const body = response.body as ApiSuccessResponse<FabricPricingRecordData>;
+      expect(body.data.specialPrice).toBe(0.01);
+    });
+  });
+
+  describe('PATCH /api/v1/fabrics/:id/pricing/:pricingId (2.3.15)', () => {
+    const mockExistingPricing = {
+      id: 1,
+      fabricId: 1,
+      customerId: 20,
+      specialPrice: 38.5,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-01-01'),
+    };
+
+    it('should update fabric pricing successfully', async () => {
+      const updatedPricing = {
+        ...mockExistingPricing,
+        specialPrice: 42.0,
+      };
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findUnique.mockResolvedValue(
+        mockExistingPricing,
+      );
+      mockPrismaService.customerPricing.update.mockResolvedValue(
+        updatedPricing,
+      );
+
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/fabrics/1/pricing/1')
+        .send({
+          specialPrice: 42.0,
+        })
+        .expect(200);
+
+      const body = response.body as ApiSuccessResponse<FabricPricingRecordData>;
+      expect(body.code).toBe(200);
+      expect(body.data.specialPrice).toBe(42.0);
+    });
+
+    it('should return 404 when fabric not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/fabrics/999/pricing/1')
+        .send({
+          specialPrice: 42.0,
+        })
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toContain('Fabric with ID 999 not found');
+    });
+
+    it('should return 404 when pricing not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findUnique.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/fabrics/1/pricing/999')
+        .send({
+          specialPrice: 42.0,
+        })
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toContain('Fabric pricing with ID 999 not found');
+    });
+
+    it('should validate specialPrice range (min)', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/fabrics/1/pricing/1')
+        .send({
+          specialPrice: 0,
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toBeDefined();
+    });
+
+    it('should validate specialPrice range (max)', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/fabrics/1/pricing/1')
+        .send({
+          specialPrice: 10000000,
+        })
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toBeDefined();
+    });
+
+    it('should return 400 when specialPrice is missing', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/api/v1/fabrics/1/pricing/1')
+        .send({})
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toBeDefined();
+    });
+
+    it('should handle non-numeric pricing ID', async () => {
+      await request(app.getHttpServer())
+        .patch('/api/v1/fabrics/1/pricing/abc')
+        .send({
+          specialPrice: 42.0,
+        })
+        .expect(400);
+    });
+  });
+
+  describe('DELETE /api/v1/fabrics/:id/pricing/:pricingId (2.3.16)', () => {
+    const mockExistingPricing = {
+      id: 1,
+      fabricId: 1,
+      customerId: 20,
+      specialPrice: 38.5,
+      createdAt: new Date('2025-01-01'),
+      updatedAt: new Date('2025-01-01'),
+    };
+
+    it('should delete fabric pricing successfully', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findUnique.mockResolvedValue(
+        mockExistingPricing,
+      );
+      mockPrismaService.customerPricing.delete.mockResolvedValue(
+        mockExistingPricing,
+      );
+
+      await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/pricing/1')
+        .expect(204);
+
+      expect(mockPrismaService.customerPricing.delete).toHaveBeenCalled();
+    });
+
+    it('should return 404 when fabric not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/999/pricing/1')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toContain('Fabric with ID 999 not found');
+    });
+
+    it('should return 404 when pricing not found', async () => {
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockPrismaService.customerPricing.findUnique.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/pricing/999')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.message).toContain('Fabric pricing with ID 999 not found');
+    });
+
+    it('should handle non-numeric pricing ID', async () => {
+      await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/1/pricing/abc')
+        .expect(400);
+    });
+
+    it('should handle non-numeric fabric ID', async () => {
+      await request(app.getHttpServer())
+        .delete('/api/v1/fabrics/abc/pricing/1')
         .expect(400);
     });
   });

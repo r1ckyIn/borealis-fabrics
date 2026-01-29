@@ -14,8 +14,18 @@ import {
   FabricSupplierSortField,
   CreateFabricSupplierDto,
   UpdateFabricSupplierDto,
+  QueryFabricPricingDto,
+  FabricPricingSortField,
+  CreateFabricPricingDto,
+  UpdateFabricPricingDto,
 } from './dto';
-import { Fabric, FabricImage, FabricSupplier, Prisma } from '@prisma/client';
+import {
+  Fabric,
+  FabricImage,
+  FabricSupplier,
+  CustomerPricing,
+  Prisma,
+} from '@prisma/client';
 import {
   buildPaginationArgs,
   buildPaginatedResult,
@@ -575,6 +585,242 @@ export class FabricService {
       });
     });
   }
+
+  // ========================================
+  // Fabric Pricing Methods (2.3.13 - 2.3.16)
+  // ========================================
+
+  /**
+   * Find all special pricing records for a fabric.
+   * Returns paginated list with customer details.
+   * Throws NotFoundException if fabric not found or soft-deleted.
+   */
+  async findPricing(
+    fabricId: number,
+    query: QueryFabricPricingDto,
+  ): Promise<PaginatedResult<FabricPricingItem>> {
+    // Verify fabric exists and is active
+    const fabric = await this.prisma.fabric.findFirst({
+      where: { id: fabricId, isActive: true },
+    });
+
+    if (!fabric) {
+      throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+    }
+
+    // Build customer filter conditions
+    const customerWhere: Prisma.CustomerWhereInput = {
+      isActive: true,
+    };
+
+    // Add customer name filter if provided
+    if (query.customerName) {
+      customerWhere.companyName = { contains: query.customerName };
+    }
+
+    // Build where clause for CustomerPricing
+    const where: Prisma.CustomerPricingWhereInput = {
+      fabricId,
+      customer: customerWhere,
+    };
+
+    // Build pagination args
+    const paginationArgs = buildPaginationArgs(query);
+
+    // Build sort order
+    const sortBy = query.sortBy ?? FabricPricingSortField.createdAt;
+    const sortOrder = query.sortOrder ?? 'desc';
+
+    // Handle sorting - customerName is on customer, others on customerPricing
+    let orderBy: Prisma.CustomerPricingOrderByWithRelationInput;
+    if (sortBy === FabricPricingSortField.customerName) {
+      orderBy = { customer: { companyName: sortOrder } };
+    } else {
+      orderBy = { [sortBy]: sortOrder };
+    }
+
+    // Execute queries in parallel
+    const [pricingRecords, total] = await Promise.all([
+      this.prisma.customerPricing.findMany({
+        where,
+        ...paginationArgs,
+        orderBy,
+        include: {
+          customer: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+            },
+          },
+        },
+      }),
+      this.prisma.customerPricing.count({ where }),
+    ]);
+
+    // Transform results - convert Decimal to number
+    const items: FabricPricingItem[] = pricingRecords.map((cp) => ({
+      id: cp.id,
+      customerId: cp.customerId,
+      fabricId: cp.fabricId,
+      specialPrice: Number(cp.specialPrice),
+      createdAt: cp.createdAt,
+      updatedAt: cp.updatedAt,
+      customer: {
+        id: cp.customer.id,
+        companyName: cp.customer.companyName,
+        contactName: cp.customer.contactName,
+      },
+    }));
+
+    return buildPaginatedResult(items, total, query);
+  }
+
+  /**
+   * Create a special pricing record for a fabric-customer pair.
+   * Uses transaction to ensure atomic validation and creation.
+   * Throws NotFoundException if fabric or customer not found.
+   * Throws ConflictException if pricing already exists for the pair.
+   */
+  async createPricing(
+    fabricId: number,
+    createDto: CreateFabricPricingDto,
+  ): Promise<CustomerPricing> {
+    return this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify customer exists and is active
+      const customer = await tx.customer.findFirst({
+        where: { id: createDto.customerId, isActive: true },
+      });
+      if (!customer) {
+        throw new NotFoundException(
+          `Customer with ID ${createDto.customerId} not found`,
+        );
+      }
+
+      // Create pricing record (handle unique constraint violation)
+      try {
+        return await tx.customerPricing.create({
+          data: {
+            fabricId,
+            customerId: createDto.customerId,
+            specialPrice: createDto.specialPrice,
+          },
+        });
+      } catch (error) {
+        if (
+          error &&
+          typeof error === 'object' &&
+          'code' in error &&
+          error.code === 'P2002'
+        ) {
+          throw new ConflictException(
+            'Customer already has special pricing for this fabric',
+          );
+        }
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * Update a special pricing record.
+   * Uses transaction to ensure atomic validation and update.
+   * Throws NotFoundException if fabric or pricing not found.
+   * Throws NotFoundException if pricing does not belong to the fabric.
+   */
+  async updatePricing(
+    fabricId: number,
+    pricingId: number,
+    updateDto: UpdateFabricPricingDto,
+  ): Promise<CustomerPricing> {
+    return this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify pricing exists and belongs to this fabric
+      const pricing = await tx.customerPricing.findUnique({
+        where: { id: pricingId },
+      });
+      if (!pricing || pricing.fabricId !== fabricId) {
+        throw new NotFoundException(
+          `Fabric pricing with ID ${pricingId} not found`,
+        );
+      }
+
+      // Verify customer is still active
+      const customer = await tx.customer.findFirst({
+        where: { id: pricing.customerId, isActive: true },
+      });
+      if (!customer) {
+        throw new NotFoundException(
+          `Customer with ID ${pricing.customerId} not found`,
+        );
+      }
+
+      return tx.customerPricing.update({
+        where: { id: pricingId },
+        data: {
+          specialPrice: updateDto.specialPrice,
+        },
+      });
+    });
+  }
+
+  /**
+   * Delete a special pricing record.
+   * Uses transaction to ensure atomic validation and deletion.
+   * Throws NotFoundException if fabric or pricing not found.
+   * Throws NotFoundException if pricing does not belong to the fabric.
+   */
+  async removePricing(fabricId: number, pricingId: number): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      // Verify fabric exists and is active
+      const fabric = await tx.fabric.findFirst({
+        where: { id: fabricId, isActive: true },
+      });
+      if (!fabric) {
+        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+      }
+
+      // Verify pricing exists and belongs to this fabric
+      const pricing = await tx.customerPricing.findUnique({
+        where: { id: pricingId },
+      });
+      if (!pricing || pricing.fabricId !== fabricId) {
+        throw new NotFoundException(
+          `Fabric pricing with ID ${pricingId} not found`,
+        );
+      }
+
+      // Verify customer is still active
+      const customer = await tx.customer.findFirst({
+        where: { id: pricing.customerId, isActive: true },
+      });
+      if (!customer) {
+        throw new NotFoundException(
+          `Customer with ID ${pricing.customerId} not found`,
+        );
+      }
+
+      // Delete the pricing record
+      await tx.customerPricing.delete({
+        where: { id: pricingId },
+      });
+    });
+  }
 }
 
 /**
@@ -593,5 +839,22 @@ export interface FabricSupplierItem {
     purchasePrice: number;
     minOrderQty: number | null;
     leadTimeDays: number | null;
+  };
+}
+
+/**
+ * Response structure for fabric pricing items.
+ */
+export interface FabricPricingItem {
+  id: number;
+  customerId: number;
+  fabricId: number;
+  specialPrice: number;
+  createdAt: Date;
+  updatedAt: Date;
+  customer: {
+    id: number;
+    companyName: string;
+    contactName: string | null;
   };
 }
