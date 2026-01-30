@@ -309,6 +309,7 @@ model Quote {
   @@index([fabricId])
   @@index([validUntil])
   @@index([status])
+  @@index([status, validUntil], name: "idx_quotes_status_valid_until")
   @@map("quotes")
 }
 

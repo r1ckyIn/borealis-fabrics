@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ConflictException,
@@ -20,8 +21,13 @@ import {
   PaginatedResult,
 } from '../common/utils/pagination';
 
+// Maximum retries for handling quote code conflicts
+const MAX_CODE_GENERATION_RETRIES = 3;
+
 @Injectable()
 export class QuoteService {
+  private readonly logger = new Logger(QuoteService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly codeGeneratorService: CodeGeneratorService,
@@ -30,58 +36,79 @@ export class QuoteService {
   /**
    * Create a new quote.
    * Validates customer and fabric existence, generates quote code.
+   * Implements retry logic for handling quote code conflicts (P2002).
    */
   async create(createDto: CreateQuoteDto): Promise<Quote> {
-    return this.prisma.$transaction(async (tx) => {
-      // Validate customer exists and is active
-      const customer = await tx.customer.findFirst({
-        where: { id: createDto.customerId, isActive: true },
-      });
-      if (!customer) {
-        throw new NotFoundException(
-          `Customer with ID ${createDto.customerId} not found`,
-        );
-      }
-
-      // Validate fabric exists and is active
-      const fabric = await tx.fabric.findFirst({
-        where: { id: createDto.fabricId, isActive: true },
-      });
-      if (!fabric) {
-        throw new NotFoundException(
-          `Fabric with ID ${createDto.fabricId} not found`,
-        );
-      }
-
-      // Validate validUntil is in the future
-      const validUntilDate = new Date(createDto.validUntil);
-      if (validUntilDate <= new Date()) {
-        throw new BadRequestException('validUntil must be a future date');
-      }
-
-      // Generate quote code
-      const quoteCode = await this.codeGeneratorService.generateCode(
-        CodePrefix.QUOTE,
-      );
-
-      // Calculate total price
-      const totalPrice = createDto.quantity * createDto.unitPrice;
-
-      // Create quote
-      return tx.quote.create({
-        data: {
-          quoteCode,
-          customerId: createDto.customerId,
-          fabricId: createDto.fabricId,
-          quantity: createDto.quantity,
-          unitPrice: createDto.unitPrice,
-          totalPrice,
-          validUntil: validUntilDate,
-          status: QuoteStatus.ACTIVE,
-          notes: createDto.notes,
-        },
-      });
+    // Validate customer and fabric outside transaction for better error messages
+    const customer = await this.prisma.customer.findFirst({
+      where: { id: createDto.customerId, isActive: true },
     });
+    if (!customer) {
+      throw new NotFoundException(
+        `Customer with ID ${createDto.customerId} not found`,
+      );
+    }
+
+    const fabric = await this.prisma.fabric.findFirst({
+      where: { id: createDto.fabricId, isActive: true },
+    });
+    if (!fabric) {
+      throw new NotFoundException(
+        `Fabric with ID ${createDto.fabricId} not found`,
+      );
+    }
+
+    // Validate validUntil is in the future
+    const validUntilDate = new Date(createDto.validUntil);
+    if (validUntilDate <= new Date()) {
+      throw new BadRequestException('validUntil must be a future date');
+    }
+
+    // Calculate total price
+    const totalPrice = createDto.quantity * createDto.unitPrice;
+
+    // Retry loop for handling quote code conflicts
+    for (let attempt = 1; attempt <= MAX_CODE_GENERATION_RETRIES; attempt++) {
+      try {
+        return await this.prisma.$transaction(async (tx) => {
+          // Generate quote code
+          const quoteCode = await this.codeGeneratorService.generateCode(
+            CodePrefix.QUOTE,
+          );
+
+          // Create quote
+          return tx.quote.create({
+            data: {
+              quoteCode,
+              customerId: createDto.customerId,
+              fabricId: createDto.fabricId,
+              quantity: createDto.quantity,
+              unitPrice: createDto.unitPrice,
+              totalPrice,
+              validUntil: validUntilDate,
+              status: QuoteStatus.ACTIVE,
+              notes: createDto.notes,
+            },
+          });
+        });
+      } catch (error) {
+        const prismaError = error as { code?: string };
+        // P2002 is Prisma's unique constraint violation error code
+        if (
+          prismaError.code === 'P2002' &&
+          attempt < MAX_CODE_GENERATION_RETRIES
+        ) {
+          this.logger.warn(
+            `Quote code conflict detected, retrying (${attempt}/${MAX_CODE_GENERATION_RETRIES})`,
+          );
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    // This should never be reached due to the throw in catch block
+    throw new Error('Failed to create quote after maximum retries');
   }
 
   /**
@@ -208,20 +235,24 @@ export class QuoteService {
    * Update a quote.
    * Only active or expired quotes can be updated.
    * Extending validity on expired quote resets status to active.
-   * Uses transaction to prevent race conditions between read and update.
+   * Uses atomic conditional update to prevent race conditions.
    */
   async update(id: number, updateDto: UpdateQuoteDto): Promise<Quote> {
+    // Validate validUntil is in the future if provided
+    let newValidUntil: Date | undefined;
+    if (updateDto.validUntil !== undefined) {
+      newValidUntil = new Date(updateDto.validUntil);
+      if (newValidUntil <= new Date()) {
+        throw new BadRequestException('validUntil must be a future date');
+      }
+    }
+
     return this.prisma.$transaction(async (tx) => {
-      // Get existing quote within transaction
+      // First, get the quote to calculate new totalPrice and check if status reset is needed
       const quote = await tx.quote.findUnique({ where: { id } });
 
       if (!quote) {
         throw new NotFoundException(`Quote with ID ${id} not found`);
-      }
-
-      // Check status constraint (quote.status is string from DB)
-      if ((quote.status as QuoteStatus) === QuoteStatus.CONVERTED) {
-        throw new ConflictException('Cannot update a converted quote');
       }
 
       // Build update data
@@ -235,16 +266,12 @@ export class QuoteService {
         data.unitPrice = updateDto.unitPrice;
       }
 
-      if (updateDto.validUntil !== undefined) {
-        const newValidUntil = new Date(updateDto.validUntil);
+      if (newValidUntil !== undefined) {
         data.validUntil = newValidUntil;
 
         // If extending validity on expired quote and new date is in future,
         // reset status to active
-        if (
-          (quote.status as QuoteStatus) === QuoteStatus.EXPIRED &&
-          newValidUntil > new Date()
-        ) {
+        if ((quote.status as QuoteStatus) === QuoteStatus.EXPIRED) {
           data.status = QuoteStatus.ACTIVE;
         }
       }
@@ -264,32 +291,59 @@ export class QuoteService {
           : Number(quote.unitPrice);
       data.totalPrice = newQuantity * newUnitPrice;
 
-      return tx.quote.update({
-        where: { id },
-        data,
+      // Use updateMany with status condition for atomic check-and-update
+      // This prevents race conditions where status changes between read and update
+      const updateResult = await tx.quote.updateMany({
+        where: {
+          id,
+          status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+        },
+        data: data as Prisma.QuoteUpdateManyMutationInput,
       });
+
+      if (updateResult.count === 0) {
+        // Quote exists but status is converted (race condition or actual state)
+        throw new ConflictException('Cannot update a converted quote');
+      }
+
+      // Fetch and return the updated quote
+      const updatedQuote = await tx.quote.findUnique({ where: { id } });
+      if (!updatedQuote) {
+        throw new NotFoundException(`Quote with ID ${id} not found`);
+      }
+
+      return updatedQuote;
     });
   }
 
   /**
    * Delete a quote.
    * Only active or expired quotes can be deleted.
+   * Uses conditional delete to prevent race conditions.
    */
   async remove(id: number): Promise<void> {
-    const quote = await this.prisma.quote.findUnique({ where: { id } });
+    // Use deleteMany with status condition for atomic check-and-delete
+    // This prevents race conditions where status changes between read and delete
+    const deleteResult = await this.prisma.quote.deleteMany({
+      where: {
+        id,
+        status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+      },
+    });
 
-    if (!quote) {
-      throw new NotFoundException(`Quote with ID ${id} not found`);
-    }
+    if (deleteResult.count === 0) {
+      // Either quote doesn't exist or status is converted
+      const quote = await this.prisma.quote.findUnique({ where: { id } });
 
-    // Check status constraint (quote.status is string from DB)
-    if ((quote.status as QuoteStatus) === QuoteStatus.CONVERTED) {
+      if (!quote) {
+        throw new NotFoundException(`Quote with ID ${id} not found`);
+      }
+
+      // Quote exists but couldn't be deleted due to status
       throw new ConflictException(
         'Cannot delete a converted quote. It is linked to an order.',
       );
     }
-
-    await this.prisma.quote.delete({ where: { id } });
   }
 
   /**

@@ -100,6 +100,7 @@ describe('QuoteController (e2e)', () => {
     update: jest.Mock;
     updateMany: jest.Mock;
     delete: jest.Mock;
+    deleteMany: jest.Mock;
   }
 
   interface MockPrismaServiceType {
@@ -119,6 +120,7 @@ describe('QuoteController (e2e)', () => {
       update: jest.fn(),
       updateMany: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
     customer: {
       findFirst: jest.fn(),
@@ -374,8 +376,11 @@ describe('QuoteController (e2e)', () => {
         notes: 'Updated notes',
       };
 
-      mockPrismaService.quote.findUnique.mockResolvedValue(existingQuote);
-      mockPrismaService.quote.update.mockResolvedValue(updatedQuote);
+      // First call to get existing quote, second call after updateMany
+      mockPrismaService.quote.findUnique
+        .mockResolvedValueOnce(existingQuote)
+        .mockResolvedValueOnce(updatedQuote);
+      mockPrismaService.quote.updateMany.mockResolvedValue({ count: 1 });
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/quotes/1')
@@ -401,6 +406,8 @@ describe('QuoteController (e2e)', () => {
     it('should return 409 when updating converted quote', async () => {
       const convertedQuote = { ...mockQuote, status: QuoteStatus.CONVERTED };
       mockPrismaService.quote.findUnique.mockResolvedValue(convertedQuote);
+      // updateMany returns 0 count because status doesn't match condition
+      mockPrismaService.quote.updateMany.mockResolvedValue({ count: 0 });
 
       await request(app.getHttpServer())
         .patch('/api/v1/quotes/1')
@@ -416,8 +423,10 @@ describe('QuoteController (e2e)', () => {
         validUntil: new Date('2026-12-31'),
       };
 
-      mockPrismaService.quote.findUnique.mockResolvedValue(expiredQuote);
-      mockPrismaService.quote.update.mockResolvedValue(reactivatedQuote);
+      mockPrismaService.quote.findUnique
+        .mockResolvedValueOnce(expiredQuote)
+        .mockResolvedValueOnce(reactivatedQuote);
+      mockPrismaService.quote.updateMany.mockResolvedValue({ count: 1 });
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/quotes/1')
@@ -427,17 +436,26 @@ describe('QuoteController (e2e)', () => {
       const body = response.body as ApiSuccessResponse<QuoteData>;
       expect(body.data.status).toBe(QuoteStatus.ACTIVE);
     });
+
+    it('should return 400 when validUntil is in the past', async () => {
+      await request(app.getHttpServer())
+        .patch('/api/v1/quotes/1')
+        .send({ validUntil: '2020-01-01T00:00:00.000Z' })
+        .expect(400);
+    });
   });
 
   describe('DELETE /api/v1/quotes/:id', () => {
     it('should delete quote successfully (204)', async () => {
-      mockPrismaService.quote.findUnique.mockResolvedValue(mockQuote);
-      mockPrismaService.quote.delete.mockResolvedValue(mockQuote);
+      // deleteMany returns count: 1 for successful deletion
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 1 });
 
       await request(app.getHttpServer()).delete('/api/v1/quotes/1').expect(204);
     });
 
     it('should return 404 when quote not found', async () => {
+      // deleteMany returns 0, then findUnique returns null
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 0 });
       mockPrismaService.quote.findUnique.mockResolvedValue(null);
 
       await request(app.getHttpServer())
@@ -447,15 +465,16 @@ describe('QuoteController (e2e)', () => {
 
     it('should return 409 when deleting converted quote', async () => {
       const convertedQuote = { ...mockQuote, status: QuoteStatus.CONVERTED };
+      // deleteMany returns 0 because status doesn't match, then findUnique returns converted quote
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 0 });
       mockPrismaService.quote.findUnique.mockResolvedValue(convertedQuote);
 
       await request(app.getHttpServer()).delete('/api/v1/quotes/1').expect(409);
     });
 
     it('should allow deleting expired quote', async () => {
-      const expiredQuote = { ...mockQuote, status: QuoteStatus.EXPIRED };
-      mockPrismaService.quote.findUnique.mockResolvedValue(expiredQuote);
-      mockPrismaService.quote.delete.mockResolvedValue(expiredQuote);
+      // deleteMany returns count: 1 for successful deletion (expired is allowed)
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 1 });
 
       await request(app.getHttpServer()).delete('/api/v1/quotes/1').expect(204);
     });
