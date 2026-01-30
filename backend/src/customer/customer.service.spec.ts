@@ -428,17 +428,14 @@ describe('CustomerService', () => {
       const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
       const updatedCustomer = { ...existingCustomer, contactName: 'Wang Wei' };
 
-      customerMock.findFirst.mockResolvedValueOnce(existingCustomer);
       customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
 
-      expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
-      });
+      // New implementation uses compound where clause directly in update
       expect(customerMock.update).toHaveBeenCalledWith({
-        where: { id: 1 },
-        data: updateDto,
+        where: { id: 1, isActive: true },
+        data: { ...updateDto, addresses: undefined },
       });
       expect(result.contactName).toBe('Wang Wei');
     });
@@ -468,7 +465,6 @@ describe('CustomerService', () => {
       };
       const updatedCustomer = { ...existingCustomer, ...updateDto };
 
-      customerMock.findFirst.mockResolvedValueOnce(existingCustomer);
       customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
@@ -478,22 +474,30 @@ describe('CustomerService', () => {
 
     it('should throw NotFoundException when customer not found', async () => {
       const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
-      customerMock.findFirst.mockResolvedValueOnce(null);
+      // New implementation catches P2025 error from Prisma update
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
+        'Record to update not found',
+        { code: 'P2025', clientVersion: '5.0.0' },
+      );
+      customerMock.update.mockRejectedValueOnce(prismaError);
 
       await expect(service.update(999, updateDto)).rejects.toThrow(
         NotFoundException,
       );
-      expect(customerMock.update).not.toHaveBeenCalled();
     });
 
     it('should throw NotFoundException when customer is soft deleted', async () => {
       const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
-      customerMock.findFirst.mockResolvedValueOnce(null);
+      // New implementation catches P2025 error (isActive=false fails the where clause)
+      const prismaError = new Prisma.PrismaClientKnownRequestError(
+        'Record to update not found',
+        { code: 'P2025', clientVersion: '5.0.0' },
+      );
+      customerMock.update.mockRejectedValueOnce(prismaError);
 
       await expect(service.update(1, updateDto)).rejects.toThrow(
         NotFoundException,
       );
-      expect(customerMock.update).not.toHaveBeenCalled();
     });
 
     // Note: Customer companyName is NOT unique, so no conflict check needed
@@ -504,12 +508,21 @@ describe('CustomerService', () => {
         companyName: 'ABC Home Decor',
       };
 
-      customerMock.findFirst.mockResolvedValueOnce(existingCustomer);
       customerMock.update.mockResolvedValue(updatedCustomer);
 
       const result = await service.update(1, updateDto);
 
       expect(result.companyName).toBe('ABC Home Decor');
+    });
+
+    it('should rethrow non-P2025 errors', async () => {
+      const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
+      const genericError = new Error('Database connection failed');
+      customerMock.update.mockRejectedValueOnce(genericError);
+
+      await expect(service.update(1, updateDto)).rejects.toThrow(
+        'Database connection failed',
+      );
     });
   });
 

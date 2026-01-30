@@ -27,15 +27,12 @@ export class CustomerService {
    * Note: companyName is NOT unique for customers, so no duplicate check needed.
    */
   async create(createCustomerDto: CreateCustomerDto): Promise<Customer> {
-    // Convert addresses to JSON-compatible format for Prisma
-    // Using JSON.parse/stringify for proper serialization
+    // DTO data is already validated and JSON-compatible, no need for serialization
     const data: Prisma.CustomerCreateInput = {
       ...createCustomerDto,
-      addresses: createCustomerDto.addresses
-        ? (JSON.parse(
-            JSON.stringify(createCustomerDto.addresses),
-          ) as Prisma.InputJsonValue)
-        : undefined,
+      addresses: createCustomerDto.addresses as
+        | Prisma.InputJsonValue
+        | undefined,
     };
 
     return this.prisma.customer.create({ data });
@@ -122,39 +119,38 @@ export class CustomerService {
 
   /**
    * Update a customer by ID.
-   * Uses transaction to ensure atomic read-check-update operation.
-   * Throws NotFoundException if customer not found.
+   * Uses compound where clause to check existence and active status atomically.
+   * Throws NotFoundException if customer not found or soft-deleted.
    * Note: companyName is NOT unique for customers, so no conflict check needed.
    */
   async update(
     id: number,
     updateCustomerDto: UpdateCustomerDto,
   ): Promise<Customer> {
-    return this.prisma.$transaction(async (tx) => {
-      // Check if customer exists and is active
-      const existing = await tx.customer.findFirst({
+    // DTO data is already validated and JSON-compatible, no need for serialization
+    const data: Prisma.CustomerUpdateInput = {
+      ...updateCustomerDto,
+      addresses: updateCustomerDto.addresses as
+        | Prisma.InputJsonValue
+        | undefined,
+    };
+
+    try {
+      // Use compound where to atomically check existence and active status
+      return await this.prisma.customer.update({
         where: { id, isActive: true },
-      });
-
-      if (!existing) {
-        throw new NotFoundException(`Customer with ID ${id} not found`);
-      }
-
-      // Convert addresses to JSON-compatible format for Prisma
-      const data: Prisma.CustomerUpdateInput = {
-        ...updateCustomerDto,
-        addresses: updateCustomerDto.addresses
-          ? (JSON.parse(
-              JSON.stringify(updateCustomerDto.addresses),
-            ) as Prisma.InputJsonValue)
-          : undefined,
-      };
-
-      return tx.customer.update({
-        where: { id },
         data,
       });
-    });
+    } catch (error) {
+      // P2025: Record not found (either doesn't exist or isActive=false)
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Customer with ID ${id} not found`);
+      }
+      throw error;
+    }
   }
 
   /**
