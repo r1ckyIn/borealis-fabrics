@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { QuoteService } from './quote.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CodeGeneratorService, CodePrefix } from '../common/services';
@@ -18,6 +22,7 @@ describe('QuoteService', () => {
       update: jest.Mock;
       updateMany: jest.Mock;
       delete: jest.Mock;
+      deleteMany: jest.Mock;
       count: jest.Mock;
     };
     customer: { findFirst: jest.Mock };
@@ -59,6 +64,7 @@ describe('QuoteService', () => {
         update: jest.fn(),
         updateMany: jest.fn(),
         delete: jest.fn(),
+        deleteMany: jest.fn(),
         count: jest.fn(),
       },
       customer: { findFirst: jest.fn() },
@@ -169,6 +175,51 @@ describe('QuoteService', () => {
           totalPrice: 502.5, // 50.25 * 10.0
         }),
       });
+    });
+
+    it('should retry on P2002 unique constraint violation', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockCodeGeneratorService.generateCode
+        .mockResolvedValueOnce('QT-2601-0001')
+        .mockResolvedValueOnce('QT-2601-0002');
+
+      // First call fails with P2002, second succeeds
+      mockPrismaService.quote.create
+        .mockRejectedValueOnce({ code: 'P2002' })
+        .mockResolvedValueOnce(mockQuote);
+
+      const result = await service.create(createDto);
+
+      expect(result).toEqual(mockQuote);
+      expect(mockCodeGeneratorService.generateCode).toHaveBeenCalledTimes(2);
+      expect(mockPrismaService.quote.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should throw after max retries on persistent P2002 errors', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockCodeGeneratorService.generateCode.mockResolvedValue('QT-2601-0001');
+      mockPrismaService.quote.create.mockRejectedValue({ code: 'P2002' });
+
+      await expect(service.create(createDto)).rejects.toEqual({
+        code: 'P2002',
+      });
+      expect(mockPrismaService.quote.create).toHaveBeenCalledTimes(3);
+    });
+
+    it('should throw non-P2002 errors immediately without retry', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.fabric.findFirst.mockResolvedValue(mockFabric);
+      mockCodeGeneratorService.generateCode.mockResolvedValue('QT-2601-0001');
+      mockPrismaService.quote.create.mockRejectedValue(
+        new Error('Database connection error'),
+      );
+
+      await expect(service.create(createDto)).rejects.toThrow(
+        'Database connection error',
+      );
+      expect(mockPrismaService.quote.create).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -301,17 +352,25 @@ describe('QuoteService', () => {
 
     it('should update quote successfully', async () => {
       mockPrismaService.quote.findUnique.mockResolvedValue(mockQuote);
-      mockPrismaService.quote.update.mockResolvedValue({
+      mockPrismaService.quote.updateMany.mockResolvedValue({ count: 1 });
+
+      const updatedQuote = {
         ...mockQuote,
         ...updateDto,
         totalPrice: 6000.0,
-      });
+      };
+      mockPrismaService.quote.findUnique
+        .mockResolvedValueOnce(mockQuote) // First call to get current values
+        .mockResolvedValueOnce(updatedQuote); // Second call after update
 
       const result = await service.update(1, updateDto);
 
       expect(result.quantity).toBe(200.0);
-      expect(mockPrismaService.quote.update).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(mockPrismaService.quote.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+        },
         data: expect.objectContaining({
           quantity: 200.0,
           unitPrice: 30.0,
@@ -328,30 +387,38 @@ describe('QuoteService', () => {
       );
     });
 
-    it('should throw error when updating converted quote', async () => {
+    it('should throw ConflictException when updating converted quote', async () => {
       mockPrismaService.quote.findUnique.mockResolvedValue({
         ...mockQuote,
         status: QuoteStatus.CONVERTED,
       });
+      mockPrismaService.quote.updateMany.mockResolvedValue({ count: 0 });
 
-      await expect(service.update(1, updateDto)).rejects.toThrow();
+      await expect(service.update(1, updateDto)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('should reset expired status to active when extending validity', async () => {
       const expiredQuote = { ...mockQuote, status: QuoteStatus.EXPIRED };
-      mockPrismaService.quote.findUnique.mockResolvedValue(expiredQuote);
-      mockPrismaService.quote.update.mockResolvedValue({
-        ...expiredQuote,
-        status: QuoteStatus.ACTIVE,
-        validUntil: new Date('2026-12-31'),
-      });
+      mockPrismaService.quote.findUnique
+        .mockResolvedValueOnce(expiredQuote)
+        .mockResolvedValueOnce({
+          ...expiredQuote,
+          status: QuoteStatus.ACTIVE,
+          validUntil: new Date('2026-12-31'),
+        });
+      mockPrismaService.quote.updateMany.mockResolvedValue({ count: 1 });
 
       await service.update(1, {
         validUntil: '2026-12-31T23:59:59.000Z',
       });
 
-      expect(mockPrismaService.quote.update).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(mockPrismaService.quote.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+        },
         data: expect.objectContaining({
           status: QuoteStatus.ACTIVE,
         }),
@@ -359,58 +426,79 @@ describe('QuoteService', () => {
     });
 
     it('should recalculate totalPrice when quantity or unitPrice changes', async () => {
-      mockPrismaService.quote.findUnique.mockResolvedValue(mockQuote);
-      mockPrismaService.quote.update.mockImplementation((args) =>
-        Promise.resolve({
+      mockPrismaService.quote.findUnique
+        .mockResolvedValueOnce(mockQuote)
+        .mockResolvedValueOnce({
           ...mockQuote,
-          ...args.data,
-        }),
-      );
+          quantity: 50.0,
+          totalPrice: 1275.0,
+        });
+      mockPrismaService.quote.updateMany.mockResolvedValue({ count: 1 });
 
       await service.update(1, { quantity: 50.0 });
 
       // Use existing unitPrice (25.5) with new quantity (50)
-      expect(mockPrismaService.quote.update).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(mockPrismaService.quote.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+        },
         data: expect.objectContaining({
           totalPrice: 1275.0, // 50 * 25.5
         }),
       });
     });
+
+    it('should throw BadRequestException when validUntil is in the past', async () => {
+      await expect(
+        service.update(1, { validUntil: '2020-01-01T00:00:00.000Z' }),
+      ).rejects.toThrow(BadRequestException);
+
+      // Verify that prisma was not called
+      expect(mockPrismaService.quote.updateMany).not.toHaveBeenCalled();
+    });
   });
 
   describe('remove', () => {
     it('should delete quote successfully', async () => {
-      mockPrismaService.quote.findUnique.mockResolvedValue(mockQuote);
-      mockPrismaService.quote.delete.mockResolvedValue(mockQuote);
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 1 });
 
       await expect(service.remove(1)).resolves.not.toThrow();
-      expect(mockPrismaService.quote.delete).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(mockPrismaService.quote.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+        },
       });
     });
 
     it('should throw NotFoundException when quote not found', async () => {
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 0 });
       mockPrismaService.quote.findUnique.mockResolvedValue(null);
 
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException when deleting converted quote', async () => {
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 0 });
       mockPrismaService.quote.findUnique.mockResolvedValue({
         ...mockQuote,
         status: QuoteStatus.CONVERTED,
       });
 
-      await expect(service.remove(1)).rejects.toThrow();
+      await expect(service.remove(1)).rejects.toThrow(ConflictException);
     });
 
     it('should allow deleting expired quote', async () => {
-      const expiredQuote = { ...mockQuote, status: QuoteStatus.EXPIRED };
-      mockPrismaService.quote.findUnique.mockResolvedValue(expiredQuote);
-      mockPrismaService.quote.delete.mockResolvedValue(expiredQuote);
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 1 });
 
       await expect(service.remove(1)).resolves.not.toThrow();
+      expect(mockPrismaService.quote.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+        },
+      });
     });
   });
 
