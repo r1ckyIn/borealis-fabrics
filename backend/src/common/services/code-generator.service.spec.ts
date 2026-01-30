@@ -13,6 +13,7 @@ describe('CodeGeneratorService', () => {
     fabric: { findFirst: jest.Mock };
     order: { findFirst: jest.Mock };
     quote: { findFirst: jest.Mock };
+    $transaction: jest.Mock;
   };
 
   // Get expected YYMM
@@ -33,7 +34,15 @@ describe('CodeGeneratorService', () => {
       fabric: { findFirst: jest.fn() },
       order: { findFirst: jest.fn() },
       quote: { findFirst: jest.fn() },
+      $transaction: jest.fn(),
     };
+
+    // Mock $transaction to execute the callback with the mockPrismaService
+    mockPrismaService.$transaction.mockImplementation(
+      <T>(callback: (tx: typeof mockPrismaService) => Promise<T>) => {
+        return callback(mockPrismaService);
+      },
+    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

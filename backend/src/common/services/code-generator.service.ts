@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { RedisService } from './redis.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -80,20 +81,48 @@ export class CodeGeneratorService {
 
   /**
    * Get the next sequence number from the database.
-   * Uses transaction to ensure atomicity.
+   * Uses serializable transaction to prevent race conditions during concurrent access.
+   * Note: In high concurrency scenarios, callers should handle unique constraint
+   * violations and retry with a new sequence number.
    */
   private async getNextSequenceFromDb(
     prefix: CodePrefix,
     yearMonth: string,
   ): Promise<number> {
-    const maxSequence = await this.getMaxSequenceFromDb(prefix, yearMonth);
-    return maxSequence + 1;
+    return this.prisma.$transaction(
+      async (tx) => {
+        const maxSequence = await this.getMaxSequenceFromDbTx(
+          tx,
+          prefix,
+          yearMonth,
+        );
+        return maxSequence + 1;
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
   }
 
   /**
    * Get the maximum sequence number from the database for the given prefix and month.
+   * Uses the default Prisma client (non-transactional).
    */
   private async getMaxSequenceFromDb(
+    prefix: CodePrefix,
+    yearMonth: string,
+  ): Promise<number> {
+    return this.getMaxSequenceFromDbTx(this.prisma, prefix, yearMonth);
+  }
+
+  /**
+   * Get the maximum sequence number within a transaction context.
+   * @param tx - Prisma transaction client or regular client
+   * @param prefix - The code prefix
+   * @param yearMonth - The year-month string (YYMM format)
+   */
+  private async getMaxSequenceFromDbTx(
+    tx: Prisma.TransactionClient | PrismaService,
     prefix: CodePrefix,
     yearMonth: string,
   ): Promise<number> {
@@ -102,7 +131,7 @@ export class CodeGeneratorService {
 
     switch (prefix) {
       case CodePrefix.FABRIC: {
-        const result = await this.prisma.fabric.findFirst({
+        const result = await tx.fabric.findFirst({
           where: {
             fabricCode: { startsWith: `${prefix}-${yearMonth}-` },
           },
@@ -113,7 +142,7 @@ export class CodeGeneratorService {
         break;
       }
       case CodePrefix.ORDER: {
-        const result = await this.prisma.order.findFirst({
+        const result = await tx.order.findFirst({
           where: {
             orderCode: { startsWith: `${prefix}-${yearMonth}-` },
           },
@@ -124,7 +153,7 @@ export class CodeGeneratorService {
         break;
       }
       case CodePrefix.QUOTE: {
-        const result = await this.prisma.quote.findFirst({
+        const result = await tx.quote.findFirst({
           where: {
             quoteCode: { startsWith: `${prefix}-${yearMonth}-` },
           },

@@ -208,63 +208,66 @@ export class QuoteService {
    * Update a quote.
    * Only active or expired quotes can be updated.
    * Extending validity on expired quote resets status to active.
+   * Uses transaction to prevent race conditions between read and update.
    */
   async update(id: number, updateDto: UpdateQuoteDto): Promise<Quote> {
-    // Get existing quote
-    const quote = await this.prisma.quote.findUnique({ where: { id } });
+    return this.prisma.$transaction(async (tx) => {
+      // Get existing quote within transaction
+      const quote = await tx.quote.findUnique({ where: { id } });
 
-    if (!quote) {
-      throw new NotFoundException(`Quote with ID ${id} not found`);
-    }
-
-    // Check status constraint (quote.status is string from DB)
-    if ((quote.status as QuoteStatus) === QuoteStatus.CONVERTED) {
-      throw new ConflictException('Cannot update a converted quote');
-    }
-
-    // Build update data
-    const data: Prisma.QuoteUpdateInput = {};
-
-    if (updateDto.quantity !== undefined) {
-      data.quantity = updateDto.quantity;
-    }
-
-    if (updateDto.unitPrice !== undefined) {
-      data.unitPrice = updateDto.unitPrice;
-    }
-
-    if (updateDto.validUntil !== undefined) {
-      const newValidUntil = new Date(updateDto.validUntil);
-      data.validUntil = newValidUntil;
-
-      // If extending validity on expired quote and new date is in future,
-      // reset status to active
-      if (
-        (quote.status as QuoteStatus) === QuoteStatus.EXPIRED &&
-        newValidUntil > new Date()
-      ) {
-        data.status = QuoteStatus.ACTIVE;
+      if (!quote) {
+        throw new NotFoundException(`Quote with ID ${id} not found`);
       }
-    }
 
-    if (updateDto.notes !== undefined) {
-      data.notes = updateDto.notes;
-    }
+      // Check status constraint (quote.status is string from DB)
+      if ((quote.status as QuoteStatus) === QuoteStatus.CONVERTED) {
+        throw new ConflictException('Cannot update a converted quote');
+      }
 
-    // Recalculate totalPrice if quantity or unitPrice changes
-    const newQuantity =
-      updateDto.quantity !== undefined
-        ? updateDto.quantity
-        : Number(quote.quantity);
-    const newUnitPrice =
-      updateDto.unitPrice !== undefined
-        ? updateDto.unitPrice
-        : Number(quote.unitPrice);
-    data.totalPrice = newQuantity * newUnitPrice;
+      // Build update data
+      const data: Prisma.QuoteUpdateInput = {};
 
-    return this.prisma.quote.update({
-      where: { id },
-      data,
+      if (updateDto.quantity !== undefined) {
+        data.quantity = updateDto.quantity;
+      }
+
+      if (updateDto.unitPrice !== undefined) {
+        data.unitPrice = updateDto.unitPrice;
+      }
+
+      if (updateDto.validUntil !== undefined) {
+        const newValidUntil = new Date(updateDto.validUntil);
+        data.validUntil = newValidUntil;
+
+        // If extending validity on expired quote and new date is in future,
+        // reset status to active
+        if (
+          (quote.status as QuoteStatus) === QuoteStatus.EXPIRED &&
+          newValidUntil > new Date()
+        ) {
+          data.status = QuoteStatus.ACTIVE;
+        }
+      }
+
+      if (updateDto.notes !== undefined) {
+        data.notes = updateDto.notes;
+      }
+
+      // Recalculate totalPrice if quantity or unitPrice changes
+      const newQuantity =
+        updateDto.quantity !== undefined
+          ? updateDto.quantity
+          : Number(quote.quantity);
+      const newUnitPrice =
+        updateDto.unitPrice !== undefined
+          ? updateDto.unitPrice
+          : Number(quote.unitPrice);
+      data.totalPrice = newQuantity * newUnitPrice;
+
+      return tx.quote.update({
+        where: { id },
+        data,
+      });
     });
   }
 
