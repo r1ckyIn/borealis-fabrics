@@ -1,9 +1,13 @@
 import { Module, Global } from '@nestjs/common';
+import { RedisService } from './services/redis.service';
+import { CodeGeneratorService } from './services/code-generator.service';
+import { PrismaModule } from '../prisma/prisma.module';
 
 @Global()
 @Module({
-  providers: [],
-  exports: [],
+  imports: [PrismaModule],
+  providers: [RedisService, CodeGeneratorService],
+  exports: [RedisService, CodeGeneratorService],
 })
 export class CommonModule {}
 
