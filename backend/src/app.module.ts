@@ -14,6 +14,7 @@ import { SupplierModule } from './supplier/supplier.module';
 import { CustomerModule } from './customer/customer.module';
 import { FabricModule } from './fabric/fabric.module';
 import { FileModule } from './file/file.module';
+import { QuoteModule } from './quote/quote.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HealthController } from './common/health/health.controller';
@@ -59,6 +60,7 @@ import configuration from './config/configuration';
     CustomerModule,
     FabricModule,
     FileModule,
+    QuoteModule,
   ],
   controllers: [HealthController],
   providers: [
