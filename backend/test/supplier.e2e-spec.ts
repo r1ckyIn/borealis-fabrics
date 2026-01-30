@@ -212,6 +212,147 @@ describe('SupplierController (e2e)', () => {
       expect(body.code).toBe(400);
     });
 
+    // creditDays validation tests
+    describe('creditDays validation', () => {
+      it('should accept creditDays at minimum (0) when settleType is credit', async () => {
+        mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+        mockPrismaService.supplier.create.mockResolvedValue({
+          ...mockSupplier,
+          settleType: 'credit',
+          creditDays: 0,
+        });
+
+        await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({
+            companyName: 'Test Supplier',
+            settleType: 'credit',
+            creditDays: 0,
+          })
+          .expect(201);
+      });
+
+      it('should accept creditDays at maximum (365) when settleType is credit', async () => {
+        mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+        mockPrismaService.supplier.create.mockResolvedValue({
+          ...mockSupplier,
+          settleType: 'credit',
+          creditDays: 365,
+        });
+
+        await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({
+            companyName: 'Test Supplier',
+            settleType: 'credit',
+            creditDays: 365,
+          })
+          .expect(201);
+      });
+
+      it('should reject negative creditDays', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({
+            companyName: 'Test Supplier',
+            settleType: 'credit',
+            creditDays: -1,
+          })
+          .expect(400);
+
+        const body = response.body as ApiErrorResponse;
+        expect(body.code).toBe(400);
+      });
+
+      it('should reject creditDays exceeding 365', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({
+            companyName: 'Test Supplier',
+            settleType: 'credit',
+            creditDays: 366,
+          })
+          .expect(400);
+
+        const body = response.body as ApiErrorResponse;
+        expect(body.code).toBe(400);
+      });
+
+      it('should reject creditDays when settleType is prepay', async () => {
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({
+            companyName: 'Test Supplier',
+            settleType: 'prepay',
+            creditDays: 30,
+          })
+          .expect(400);
+
+        const body = response.body as ApiErrorResponse;
+        expect(body.code).toBe(400);
+        const message = Array.isArray(body.message)
+          ? body.message.join(' ')
+          : body.message;
+        expect(message).toContain('creditDays');
+      });
+
+      it('should accept creditDays when settleType is credit', async () => {
+        mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+        mockPrismaService.supplier.create.mockResolvedValue({
+          ...mockSupplier,
+          settleType: 'credit',
+          creditDays: 30,
+        });
+
+        const response = await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({
+            companyName: 'Test Supplier',
+            settleType: 'credit',
+            creditDays: 30,
+          })
+          .expect(201);
+
+        const body = response.body as ApiSuccessResponse<SupplierData>;
+        expect(body.data.settleType).toBe('credit');
+        expect(body.data.creditDays).toBe(30);
+      });
+
+      it('should accept settleType credit without creditDays', async () => {
+        mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+        mockPrismaService.supplier.create.mockResolvedValue({
+          ...mockSupplier,
+          settleType: 'credit',
+          creditDays: null,
+        });
+
+        await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({
+            companyName: 'Test Supplier',
+            settleType: 'credit',
+          })
+          .expect(201);
+      });
+
+      it('should accept settleType prepay without creditDays', async () => {
+        mockPrismaService.supplier.findFirst.mockResolvedValue(null);
+        mockPrismaService.supplier.create.mockResolvedValue({
+          ...mockSupplier,
+          settleType: 'prepay',
+          creditDays: null,
+        });
+
+        await request(app.getHttpServer())
+          .post('/api/v1/suppliers')
+          .send({
+            companyName: 'Test Supplier',
+            settleType: 'prepay',
+          })
+          .expect(201);
+      });
+    });
+
     it('should return 409 for duplicate companyName', async () => {
       mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
 
