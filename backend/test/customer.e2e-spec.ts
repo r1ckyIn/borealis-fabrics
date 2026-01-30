@@ -620,7 +620,7 @@ describe('CustomerController (e2e)', () => {
         'Record to update not found',
         { code: 'P2025', clientVersion: '5.0.0' },
       );
-      mockPrismaService.customer.update.mockRejectedValue(prismaError);
+      mockPrismaService.customer.update.mockRejectedValueOnce(prismaError);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/customers/999')
@@ -637,7 +637,7 @@ describe('CustomerController (e2e)', () => {
         'Record to update not found',
         { code: 'P2025', clientVersion: '5.0.0' },
       );
-      mockPrismaService.customer.update.mockRejectedValue(prismaError);
+      mockPrismaService.customer.update.mockRejectedValueOnce(prismaError);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/customers/1')
@@ -1149,7 +1149,9 @@ describe('CustomerController (e2e)', () => {
         'Unique constraint failed on the fields: (`customerId`,`fabricId`)',
         { code: 'P2002', clientVersion: '5.0.0' },
       );
-      mockPrismaService.customerPricing.create.mockRejectedValue(prismaError);
+      mockPrismaService.customerPricing.create.mockRejectedValueOnce(
+        prismaError,
+      );
 
       const response = await request(app.getHttpServer())
         .post('/api/v1/customers/1/pricing')
