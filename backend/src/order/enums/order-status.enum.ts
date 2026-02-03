@@ -3,15 +3,15 @@
  * Represents the 9-state workflow for order items.
  */
 export enum OrderItemStatus {
-  INQUIRY = 'INQUIRY', // 询价中
-  PENDING = 'PENDING', // 待下单
-  ORDERED = 'ORDERED', // 已下单
-  PRODUCTION = 'PRODUCTION', // 生产中
-  QC = 'QC', // 质检中
-  SHIPPED = 'SHIPPED', // 已发货
-  RECEIVED = 'RECEIVED', // 已签收
-  COMPLETED = 'COMPLETED', // 已完成
-  CANCELLED = 'CANCELLED', // 已取消
+  INQUIRY = 'INQUIRY', // Inquiring
+  PENDING = 'PENDING', // Pending order
+  ORDERED = 'ORDERED', // Order placed
+  PRODUCTION = 'PRODUCTION', // In production
+  QC = 'QC', // Quality check
+  SHIPPED = 'SHIPPED', // Shipped
+  RECEIVED = 'RECEIVED', // Received
+  COMPLETED = 'COMPLETED', // Completed
+  CANCELLED = 'CANCELLED', // Cancelled
 }
 
 /**
