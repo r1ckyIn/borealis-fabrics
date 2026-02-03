@@ -634,6 +634,13 @@ export class OrderService {
       throw new NotFoundException(`Order with ID ${orderId} not found`);
     }
 
+    // Check if order status allows adding items
+    if (!canModifyItem(order.status as OrderItemStatus)) {
+      throw new BadRequestException(
+        `Cannot add items - order status is ${order.status}. Only INQUIRY and PENDING orders can have items added.`,
+      );
+    }
+
     // Validate fabric exists and is active
     const fabric = await this.prisma.fabric.findFirst({
       where: { id: dto.fabricId, isActive: true },

@@ -1361,6 +1361,17 @@ describe('OrderService - Order Items Methods', () => {
         NotFoundException,
       );
     });
+
+    it('should throw BadRequestException when order status not modifiable', async () => {
+      mockPrismaService.order.findUnique.mockResolvedValue({
+        ...mockOrder,
+        status: OrderItemStatus.SHIPPED,
+      });
+
+      await expect(service.addOrderItem(1, addDto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
   });
 
   describe('updateOrderItem', () => {
