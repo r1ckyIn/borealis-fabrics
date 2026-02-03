@@ -5,6 +5,7 @@ import {
   IsString,
   IsDateString,
   Min,
+  Max,
   MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
@@ -48,28 +49,34 @@ export class CreateOrderItemDto {
     description: 'Quantity in meters',
     example: 100.5,
     minimum: 0.01,
+    maximum: 1000000,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
+  @Max(1000000, { message: 'Quantity cannot exceed 1,000,000 meters' })
   quantity!: number;
 
   @ApiProperty({
     description: 'Sale price per meter',
     example: 35.5,
     minimum: 0.01,
+    maximum: 100000,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
+  @Max(100000, { message: 'Sale price cannot exceed 100,000' })
   salePrice!: number;
 
   @ApiPropertyOptional({
     description: 'Purchase price per meter (cost from supplier)',
     example: 25.0,
     minimum: 0.01,
+    maximum: 100000,
   })
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
+  @Max(100000, { message: 'Purchase price cannot exceed 100,000' })
   purchasePrice?: number;
 
   @ApiPropertyOptional({

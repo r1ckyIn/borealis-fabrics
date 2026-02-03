@@ -13,6 +13,7 @@ const MAX_CONSECUTIVE_FAILURES = 3;
 export class QuoteScheduler {
   private readonly logger = new Logger(QuoteScheduler.name);
   private consecutiveFailures = 0;
+  private isRunning = false;
 
   constructor(private readonly quoteService: QuoteService) {}
 
@@ -20,9 +21,19 @@ export class QuoteScheduler {
    * Mark expired quotes every hour.
    * Scans all active quotes and marks those past validUntil as expired.
    * Tracks consecutive failures and logs critical alerts when threshold exceeded.
+   * Uses execution lock to prevent concurrent runs.
    */
   @Cron(CronExpression.EVERY_HOUR)
   async handleExpiredQuotes(): Promise<void> {
+    // Prevent concurrent execution
+    if (this.isRunning) {
+      this.logger.warn(
+        'Skipping expired quotes check - previous execution still running',
+      );
+      return;
+    }
+
+    this.isRunning = true;
     this.logger.debug('Running expired quotes check...');
 
     try {
@@ -47,6 +58,8 @@ export class QuoteScheduler {
           'CRITICAL: Quote expiration scheduler has failed multiple times consecutively. Manual intervention may be required.',
         );
       }
+    } finally {
+      this.isRunning = false;
     }
   }
 
@@ -64,5 +77,13 @@ export class QuoteScheduler {
    */
   resetConsecutiveFailures(): void {
     this.consecutiveFailures = 0;
+  }
+
+  /**
+   * Check if scheduler is currently running.
+   * Useful for monitoring and testing.
+   */
+  isCurrentlyRunning(): boolean {
+    return this.isRunning;
   }
 }

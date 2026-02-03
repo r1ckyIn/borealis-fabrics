@@ -5,6 +5,7 @@ import {
   IsString,
   IsDateString,
   Min,
+  Max,
   MaxLength,
   IsNotEmpty,
 } from 'class-validator';
@@ -48,18 +49,22 @@ export class CreateQuoteDto {
     description: 'Quantity in meters',
     example: 100.5,
     minimum: 0.01,
+    maximum: 1000000,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
+  @Max(1000000, { message: 'Quantity cannot exceed 1,000,000 meters' })
   quantity!: number;
 
   @ApiProperty({
     description: 'Unit price per meter',
     example: 25.5,
     minimum: 0.01,
+    maximum: 100000,
   })
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
+  @Max(100000, { message: 'Unit price cannot exceed 100,000' })
   unitPrice!: number;
 
   @ApiProperty({
