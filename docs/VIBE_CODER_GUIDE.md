@@ -6,15 +6,15 @@
 ---
 ### 用户初始化输入格式
 
-进行初始化，为[功能]创建一个新的分支并切换在严格执行开发周期八步骤的前提下开发它 
+进行初始化，为[功能]创建一个新的分支并切换在严格执行01workflow开发周期八步骤的前提下开发它
 
 ## 当前状态速览
 
 | 阶段 | 状态 | 说明 |
 |------|------|------|
 | 阶段 1：项目骨架 | ✅ 完成 | NestJS + React + Prisma 搭建完毕 |
-| 阶段 2：核心数据模块 | 🔄 进行中 | 基础 CRUD 完成，关联 API 部分完成 |
-| 阶段 3：业务流程模块 | ⏳ 待开始 | 依赖阶段 2 完成 |
+| 阶段 2：核心数据模块 | ✅ 完成 | 4 个模块全部完成 |
+| 阶段 3：业务流程模块 | 🔄 进行中 | QuoteModule ✅, OrderModule 主表 API ✅ |
 | 阶段 4：前端开发 | ⏳ 待开始 | - |
 | 阶段 5：集成测试 | ⏳ 待开始 | - |
 | 阶段 6：部署上线 | ⏳ 待开始 | 届时需购买腾讯云 |
@@ -42,15 +42,15 @@
 | E2E 集成测试 | ✅ |
 | 2.2.11 客户历史订单（依赖 OrderModule） | ⏳ 移至阶段 3 |
 
-### 2.3 FabricModule 🔄 进行中
+### 2.3 FabricModule ✅ 完成
 
 | 功能 | 状态 |
 |------|------|
 | 基础 CRUD | ✅ |
 | 2.3.7-2.3.8 图片上传/删除 | ✅ |
-| E2E 集成测试（基础+图片） | ✅ |
-| **2.3.9-2.3.12 面料-供应商关联 CRUD** | ⏳ **下一步** |
-| 2.3.13-2.3.16 面料特殊定价 CRUD | ⏳ |
+| 2.3.9-2.3.12 面料-供应商关联 CRUD | ✅ |
+| 2.3.13-2.3.16 面料特殊定价 CRUD | ✅ |
+| E2E 集成测试 | ✅ |
 
 ### 2.4 FileModule ✅ 完成
 
@@ -64,29 +64,34 @@
 
 ## 现在要做什么
 
-### 下一个待开发功能
+### 阶段 3 进行中
 
-**2.3.9-2.3.12：面料-供应商关联 API**
+#### 已完成
 
-| # | API 端点 | 功能 |
-|---|---------|------|
-| 2.3.9 | GET /fabrics/:id/suppliers | 获取面料供应商列表 |
-| 2.3.10 | POST /fabrics/:id/suppliers | 关联供应商到面料 |
-| 2.3.11 | PATCH /fabrics/:id/suppliers/:supplierId | 更新关联信息 |
-| 2.3.12 | DELETE /fabrics/:id/suppliers/:supplierId | 移除关联 |
+- ✅ **QuoteModule**（报价管理）- 6 个 API 端点
+- ✅ **OrderModule 订单主表 API**（3.2.1-3.2.5）- 5 个 API 端点
 
-### 开始开发的命令
+#### 下一步：订单明细 API（3.2.6-3.2.12）
 
 ```bash
-# 1. 你先切分支
-git checkout -b feature/fabric-supplier-association
+# 1. 创建分支
+git checkout -b feature/stage3-order-items-api
 
-# 2. 确认分支
-git branch --show-current
-
-# 3. 告诉 Claude
-"开发功能 2.3.9-2.3.12 面料-供应商关联 API"
+# 2. 告诉 Claude
+"进行初始化，为订单明细 API（3.2.6-3.2.12）创建一个新的分支并切换在严格执行开发周期八步骤的前提下开发它"
 ```
+
+#### 阶段 3 剩余模块
+
+| 模块 | 功能 | 状态 |
+|------|------|------|
+| OrderModule 明细 API | 3.2.6-3.2.12 | ⏳ 下一步 |
+| OrderModule 时间线 API | 3.2.13-3.2.14 | ⏳ |
+| OrderModule 付款 API | 3.2.15-3.2.17 | ⏳ |
+| LogisticsModule | 物流管理 | ⏳ |
+| ImportModule | 批量导入 | ⏳ |
+| AuthModule | 企业微信认证 | ⏳ |
+| SystemModule | 枚举值+健康检查 | ⏳ |
 
 ---
 
@@ -178,15 +183,72 @@ cd backend && npx prisma studio
 
 ---
 
-## 阶段 2 完成标准
+## 前端开发环境准备
 
-阶段 2 完成需要：
+### 启动前检查清单
 
-- [x] SupplierModule 全部完成
+| 项目 | 检查命令 | 预期结果 |
+|------|---------|---------|
+| Docker Desktop | - | 已启动 |
+| MySQL | `docker ps \| grep mysql` | backend-db-1 运行中 |
+| Redis | `docker ps \| grep redis` | redis 运行中 |
+| 后端 .env | `ls backend/.env` | 文件存在 |
+| 后端依赖 | `ls backend/node_modules` | 目录存在 |
+| 前端依赖 | `ls frontend/node_modules` | 目录存在 |
+| 数据库迁移 | `cd backend && npx prisma migrate status` | "Database schema is up to date!" |
+
+### 启动开发服务器
+
+需要**两个终端**分别运行：
+
+**终端 1 - 后端 (NestJS)**
+```bash
+cd backend
+pnpm start:dev
+# 运行在 http://localhost:3000
+```
+
+**终端 2 - 前端 (React + Vite)**
+```bash
+cd frontend
+pnpm dev
+# 运行在 http://localhost:5173
+```
+
+### 一键启动数据库
+
+```bash
+# 启动 MySQL + Redis
+docker compose -f backend/docker-compose.yml up -d
+
+# 验证状态
+docker compose -f backend/docker-compose.yml ps
+```
+
+### 前端 .env 配置（如需要）
+
+```bash
+# frontend/.env
+VITE_API_BASE_URL=http://localhost:3000/api/v1
+```
+
+---
+
+## 阶段 2 完成标准 ✅
+
+阶段 2 已于 2026-01-30 完成：
+
+- [x] SupplierModule 全部完成（基础 CRUD + 关联 API）
 - [x] CustomerModule 基础 + 定价完成（历史订单移至阶段 3）
-- [ ] FabricModule 供应商关联 API（2.3.9-2.3.12）
-- [ ] FabricModule 特殊定价 API（2.3.13-2.3.16）
-- [x] FileModule 全部完成
+- [x] FabricModule 供应商关联 API（2.3.9-2.3.12）
+- [x] FabricModule 特殊定价 API（2.3.13-2.3.16）
+- [x] FileModule 全部完成（含安全修复）
+
+**验证结果**：
+- `pnpm build` ✅
+- `pnpm test` ✅ 293 tests passed
+- `pnpm test:e2e` ✅ 268 tests passed
+- `pnpm lint` ✅
 
 ---
 
@@ -229,4 +291,4 @@ cd backend && npx prisma studio
 
 ---
 
-*最后更新：2026-01-30*
+*最后更新：2026-01-30（阶段 2 完成）*
