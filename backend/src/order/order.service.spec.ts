@@ -1167,6 +1167,7 @@ describe('OrderService - Order Items Methods', () => {
       findMany: jest.Mock;
       update: jest.Mock;
       delete: jest.Mock;
+      deleteMany: jest.Mock;
       aggregate: jest.Mock;
     };
     orderTimeline: {
@@ -1179,6 +1180,7 @@ describe('OrderService - Order Items Methods', () => {
       create: jest.Mock;
       update: jest.Mock;
       delete: jest.Mock;
+      deleteMany: jest.Mock;
       upsert: jest.Mock;
     };
     fabric: { findFirst: jest.Mock };
@@ -1228,6 +1230,7 @@ describe('OrderService - Order Items Methods', () => {
         findMany: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
+        deleteMany: jest.fn(),
         aggregate: jest.fn(),
       },
       orderTimeline: {
@@ -1240,6 +1243,7 @@ describe('OrderService - Order Items Methods', () => {
         create: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
+        deleteMany: jest.fn(),
         upsert: jest.fn(),
       },
       fabric: { findFirst: jest.fn() },
@@ -1407,22 +1411,31 @@ describe('OrderService - Order Items Methods', () => {
 
   describe('removeOrderItem', () => {
     it('should remove item successfully', async () => {
-      mockPrismaService.orderItem.findFirst.mockResolvedValue(mockOrderItem);
-      mockPrismaService.orderItem.delete.mockResolvedValue({});
+      // deleteMany returns count: 1 indicating successful atomic delete
+      mockPrismaService.orderItem.deleteMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.orderItem.findMany.mockResolvedValue([]);
+      mockPrismaService.supplierPayment.deleteMany.mockResolvedValue({
+        count: 0,
+      });
       mockPrismaService.orderItem.aggregate.mockResolvedValue({
         _sum: { subtotal: 0 },
       });
-      mockPrismaService.orderItem.findMany.mockResolvedValue([]);
       mockPrismaService.order.update.mockResolvedValue(mockOrder);
 
       await service.removeOrderItem(1, 1);
 
-      expect(mockPrismaService.orderItem.delete).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(mockPrismaService.orderItem.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          orderId: 1,
+          status: { in: [OrderItemStatus.INQUIRY, OrderItemStatus.PENDING] },
+        },
       });
     });
 
     it('should throw NotFoundException when item not found', async () => {
+      // deleteMany returns count: 0, then findFirst returns null (item doesn't exist)
+      mockPrismaService.orderItem.deleteMany.mockResolvedValue({ count: 0 });
       mockPrismaService.orderItem.findFirst.mockResolvedValue(null);
 
       await expect(service.removeOrderItem(1, 999)).rejects.toThrow(
@@ -1431,6 +1444,8 @@ describe('OrderService - Order Items Methods', () => {
     });
 
     it('should throw BadRequestException when item status not deletable', async () => {
+      // deleteMany returns count: 0, then findFirst returns item with wrong status
+      mockPrismaService.orderItem.deleteMany.mockResolvedValue({ count: 0 });
       mockPrismaService.orderItem.findFirst.mockResolvedValue({
         ...mockOrderItem,
         status: OrderItemStatus.SHIPPED,

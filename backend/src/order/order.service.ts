@@ -28,7 +28,6 @@ import {
   calculateAggregateStatus,
   isValidStatusTransition,
   canModifyItem,
-  canDeleteItem,
   canCancelItem,
   canRestoreItem,
 } from './enums/order-status.enum';
@@ -741,24 +740,7 @@ export class OrderService {
       `UpdateOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
     );
 
-    // Find item and verify it belongs to the order
-    const item = await this.prisma.orderItem.findFirst({
-      where: { id: itemId, orderId },
-    });
-    if (!item) {
-      throw new NotFoundException(
-        `Order item with ID ${itemId} not found in order ${orderId}`,
-      );
-    }
-
-    // Check if item can be modified
-    if (!canModifyItem(item.status as OrderItemStatus)) {
-      throw new BadRequestException(
-        `Cannot modify item - status is ${item.status}. Only INQUIRY and PENDING items can be modified.`,
-      );
-    }
-
-    // Validate supplier if changing
+    // Validate supplier if changing (can be done outside transaction)
     if (dto.supplierId !== undefined) {
       const supplier = await this.prisma.supplier.findFirst({
         where: { id: dto.supplierId, isActive: true },
@@ -770,7 +752,7 @@ export class OrderService {
       }
     }
 
-    // Validate quote if changing
+    // Validate quote if changing (can be done outside transaction)
     if (dto.quoteId !== undefined) {
       const quote = await this.prisma.quote.findUnique({
         where: { id: dto.quoteId },
@@ -780,39 +762,56 @@ export class OrderService {
       }
     }
 
-    // Build update data
-    const updateData: Prisma.OrderItemUpdateInput = {};
-    const oldSupplierId = item.supplierId;
-
-    if (dto.supplierId !== undefined) {
-      updateData.supplier = { connect: { id: dto.supplierId } };
-    }
-    if (dto.quoteId !== undefined) {
-      updateData.quote = { connect: { id: dto.quoteId } };
-    }
-    if (dto.quantity !== undefined) {
-      updateData.quantity = dto.quantity;
-    }
-    if (dto.salePrice !== undefined) {
-      updateData.salePrice = dto.salePrice;
-    }
-    if (dto.purchasePrice !== undefined) {
-      updateData.purchasePrice = dto.purchasePrice;
-    }
-    if (dto.deliveryDate !== undefined) {
-      updateData.deliveryDate = new Date(dto.deliveryDate);
-    }
-    if (dto.notes !== undefined) {
-      updateData.notes = dto.notes;
-    }
-
-    // Recalculate subtotal if quantity or price changed
-    const newQuantity = dto.quantity ?? Number(item.quantity);
-    const newSalePrice = dto.salePrice ?? Number(item.salePrice);
-    updateData.subtotal = newQuantity * newSalePrice;
-
-    // Update in transaction
+    // Update in transaction with atomic status check
     return this.prisma.$transaction(async (tx) => {
+      // Atomically find and verify item with status check inside transaction
+      const item = await tx.orderItem.findFirst({
+        where: { id: itemId, orderId },
+      });
+      if (!item) {
+        throw new NotFoundException(
+          `Order item with ID ${itemId} not found in order ${orderId}`,
+        );
+      }
+
+      // Check status inside transaction to prevent race condition
+      if (!canModifyItem(item.status as OrderItemStatus)) {
+        throw new BadRequestException(
+          `Cannot modify item - status is ${item.status}. Only INQUIRY and PENDING items can be modified.`,
+        );
+      }
+
+      // Build update data
+      const updateData: Prisma.OrderItemUpdateInput = {};
+      const oldSupplierId = item.supplierId;
+
+      if (dto.supplierId !== undefined) {
+        updateData.supplier = { connect: { id: dto.supplierId } };
+      }
+      if (dto.quoteId !== undefined) {
+        updateData.quote = { connect: { id: dto.quoteId } };
+      }
+      if (dto.quantity !== undefined) {
+        updateData.quantity = dto.quantity;
+      }
+      if (dto.salePrice !== undefined) {
+        updateData.salePrice = dto.salePrice;
+      }
+      if (dto.purchasePrice !== undefined) {
+        updateData.purchasePrice = dto.purchasePrice;
+      }
+      if (dto.deliveryDate !== undefined) {
+        updateData.deliveryDate = new Date(dto.deliveryDate);
+      }
+      if (dto.notes !== undefined) {
+        updateData.notes = dto.notes;
+      }
+
+      // Recalculate subtotal if quantity or price changed
+      const newQuantity = dto.quantity ?? Number(item.quantity);
+      const newSalePrice = dto.salePrice ?? Number(item.salePrice);
+      updateData.subtotal = newQuantity * newSalePrice;
+
       const updatedItem = await tx.orderItem.update({
         where: { id: itemId },
         data: updateData,
@@ -870,36 +869,59 @@ export class OrderService {
       `RemoveOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
     );
 
-    // Find item and verify it belongs to the order
-    const item = await this.prisma.orderItem.findFirst({
-      where: { id: itemId, orderId },
-    });
-    if (!item) {
-      throw new NotFoundException(
-        `Order item with ID ${itemId} not found in order ${orderId}`,
-      );
-    }
-
-    // Check if item can be deleted
-    if (!canDeleteItem(item.status as OrderItemStatus)) {
-      throw new BadRequestException(
-        `Cannot delete item - status is ${item.status}. Only INQUIRY and PENDING items can be deleted.`,
-      );
-    }
-
-    const supplierId = item.supplierId;
-
-    // Delete in transaction
+    // Delete in transaction with atomic status check
     await this.prisma.$transaction(async (tx) => {
-      // Delete the item (cascade deletes timelines)
-      await tx.orderItem.delete({
-        where: { id: itemId },
+      // Atomic delete with status condition to prevent race condition
+      const deleteResult = await tx.orderItem.deleteMany({
+        where: {
+          id: itemId,
+          orderId,
+          status: { in: [OrderItemStatus.INQUIRY, OrderItemStatus.PENDING] },
+        },
       });
 
-      // Update supplier payment if supplier was set
-      if (supplierId !== null) {
+      // If no rows deleted, check why
+      if (deleteResult.count === 0) {
+        const item = await tx.orderItem.findFirst({
+          where: { id: itemId, orderId },
+        });
+        if (!item) {
+          throw new NotFoundException(
+            `Order item with ID ${itemId} not found in order ${orderId}`,
+          );
+        }
+        // Item exists but status doesn't allow deletion
+        throw new BadRequestException(
+          `Cannot delete item - status is ${item.status}. Only INQUIRY and PENDING items can be deleted.`,
+        );
+      }
+
+      // Get the deleted item's supplier ID for payment recalculation
+      // Since item is deleted, we need to recalculate all supplier payments
+      const remainingItems = await tx.orderItem.findMany({
+        where: { orderId },
+        select: { supplierId: true },
+      });
+      const supplierIds = [
+        ...new Set(
+          remainingItems
+            .map((i) => i.supplierId)
+            .filter((id): id is number => id !== null),
+        ),
+      ];
+
+      // Recalculate supplier payments
+      for (const supplierId of supplierIds) {
         await this.upsertSupplierPayment(tx, orderId, supplierId);
       }
+
+      // Clean up supplier payments that no longer have items
+      await tx.supplierPayment.deleteMany({
+        where: {
+          orderId,
+          supplierId: { notIn: supplierIds.length > 0 ? supplierIds : [-1] },
+        },
+      });
 
       // Update order totals
       await this.recalculateOrderTotals(tx, orderId);
@@ -919,28 +941,29 @@ export class OrderService {
       `UpdateItemStatus called for orderId: ${orderId}, itemId: ${itemId}, newStatus: ${dto.status}`,
     );
 
-    // Find item and verify it belongs to the order
-    const item = await this.prisma.orderItem.findFirst({
-      where: { id: itemId, orderId },
-    });
-    if (!item) {
-      throw new NotFoundException(
-        `Order item with ID ${itemId} not found in order ${orderId}`,
-      );
-    }
-
-    const currentStatus = item.status as OrderItemStatus;
     const newStatus = dto.status;
 
-    // Validate status transition
-    if (!isValidStatusTransition(currentStatus, newStatus)) {
-      throw new BadRequestException(
-        `Invalid status transition from ${currentStatus} to ${newStatus}`,
-      );
-    }
-
-    // Update in transaction
+    // Update in transaction with atomic status check
     return this.prisma.$transaction(async (tx) => {
+      // Find item inside transaction to prevent race condition
+      const item = await tx.orderItem.findFirst({
+        where: { id: itemId, orderId },
+      });
+      if (!item) {
+        throw new NotFoundException(
+          `Order item with ID ${itemId} not found in order ${orderId}`,
+        );
+      }
+
+      const currentStatus = item.status as OrderItemStatus;
+
+      // Validate status transition inside transaction
+      if (!isValidStatusTransition(currentStatus, newStatus)) {
+        throw new BadRequestException(
+          `Invalid status transition from ${currentStatus} to ${newStatus}`,
+        );
+      }
+
       // Update item status
       const updatedItem = await tx.orderItem.update({
         where: { id: itemId },
@@ -998,25 +1021,25 @@ export class OrderService {
       `CancelOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
     );
 
-    // Find item and verify it belongs to the order
-    const item = await this.prisma.orderItem.findFirst({
-      where: { id: itemId, orderId },
-    });
-    if (!item) {
-      throw new NotFoundException(
-        `Order item with ID ${itemId} not found in order ${orderId}`,
-      );
-    }
-
-    const currentStatus = item.status as OrderItemStatus;
-
-    // Check if item can be cancelled
-    if (!canCancelItem(currentStatus)) {
-      throw new BadRequestException('Item is already cancelled');
-    }
-
-    // Update in transaction
+    // Update in transaction with atomic status check
     return this.prisma.$transaction(async (tx) => {
+      // Find item inside transaction to prevent race condition
+      const item = await tx.orderItem.findFirst({
+        where: { id: itemId, orderId },
+      });
+      if (!item) {
+        throw new NotFoundException(
+          `Order item with ID ${itemId} not found in order ${orderId}`,
+        );
+      }
+
+      const currentStatus = item.status as OrderItemStatus;
+
+      // Check if item can be cancelled inside transaction
+      if (!canCancelItem(currentStatus)) {
+        throw new BadRequestException('Item is already cancelled');
+      }
+
       const updatedItem = await tx.orderItem.update({
         where: { id: itemId },
         data: {
@@ -1073,31 +1096,31 @@ export class OrderService {
       `RestoreOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
     );
 
-    // Find item and verify it belongs to the order
-    const item = await this.prisma.orderItem.findFirst({
-      where: { id: itemId, orderId },
-    });
-    if (!item) {
-      throw new NotFoundException(
-        `Order item with ID ${itemId} not found in order ${orderId}`,
-      );
-    }
-
-    const currentStatus = item.status as OrderItemStatus;
-    const prevStatus = item.prevStatus as OrderItemStatus | null;
-
-    // Check if item can be restored
-    if (!canRestoreItem(currentStatus, prevStatus)) {
-      if (currentStatus !== OrderItemStatus.CANCELLED) {
-        throw new BadRequestException('Only cancelled items can be restored');
-      }
-      throw new BadRequestException(
-        'Cannot restore - no previous status recorded',
-      );
-    }
-
-    // Update in transaction
+    // Update in transaction with atomic status check
     return this.prisma.$transaction(async (tx) => {
+      // Find item inside transaction to prevent race condition
+      const item = await tx.orderItem.findFirst({
+        where: { id: itemId, orderId },
+      });
+      if (!item) {
+        throw new NotFoundException(
+          `Order item with ID ${itemId} not found in order ${orderId}`,
+        );
+      }
+
+      const currentStatus = item.status as OrderItemStatus;
+      const prevStatus = item.prevStatus as OrderItemStatus | null;
+
+      // Check if item can be restored inside transaction
+      if (!canRestoreItem(currentStatus, prevStatus)) {
+        if (currentStatus !== OrderItemStatus.CANCELLED) {
+          throw new BadRequestException('Only cancelled items can be restored');
+        }
+        throw new BadRequestException(
+          'Cannot restore - no previous status recorded',
+        );
+      }
+
       const updatedItem = await tx.orderItem.update({
         where: { id: itemId },
         data: {
