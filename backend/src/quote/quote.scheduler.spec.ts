@@ -112,4 +112,62 @@ describe('QuoteScheduler', () => {
       expect(scheduler.getConsecutiveFailures()).toBe(0);
     });
   });
+
+  describe('duplicate execution prevention', () => {
+    it('should prevent concurrent execution', async () => {
+      // Simulate slow execution
+      let resolveFirst: () => void;
+      const slowPromise = new Promise<number>((resolve) => {
+        resolveFirst = () => resolve(5);
+      });
+      mockQuoteService.markExpiredQuotes.mockReturnValueOnce(slowPromise);
+      mockQuoteService.markExpiredQuotes.mockResolvedValueOnce(3);
+
+      // Start first execution (will be slow)
+      const firstExecution = scheduler.handleExpiredQuotes();
+
+      // Try second execution while first is running
+      const secondExecution = scheduler.handleExpiredQuotes();
+
+      // Second execution should skip (return immediately without calling service)
+      await secondExecution;
+
+      // Complete first execution
+      resolveFirst!();
+      await firstExecution;
+
+      // Service should only be called once (second call was skipped)
+      expect(mockQuoteService.markExpiredQuotes).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow execution after previous completes', async () => {
+      mockQuoteService.markExpiredQuotes.mockResolvedValue(5);
+
+      // First execution
+      await scheduler.handleExpiredQuotes();
+      expect(mockQuoteService.markExpiredQuotes).toHaveBeenCalledTimes(1);
+
+      // Second execution after first completes
+      await scheduler.handleExpiredQuotes();
+      expect(mockQuoteService.markExpiredQuotes).toHaveBeenCalledTimes(2);
+    });
+
+    it('should release lock even when execution fails', async () => {
+      mockQuoteService.markExpiredQuotes
+        .mockRejectedValueOnce(new Error('First error'))
+        .mockResolvedValueOnce(5);
+
+      // First execution fails
+      await scheduler.handleExpiredQuotes();
+      expect(mockQuoteService.markExpiredQuotes).toHaveBeenCalledTimes(1);
+
+      // Second execution should work (lock released after failure)
+      await scheduler.handleExpiredQuotes();
+      expect(mockQuoteService.markExpiredQuotes).toHaveBeenCalledTimes(2);
+    });
+
+    it('should return running status correctly', () => {
+      expect(scheduler.isCurrentlyRunning()).toBe(false);
+    });
+  });
 });
