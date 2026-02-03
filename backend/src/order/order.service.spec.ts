@@ -21,6 +21,7 @@ describe('OrderService', () => {
       findUnique: jest.Mock;
       update: jest.Mock;
       delete: jest.Mock;
+      deleteMany: jest.Mock;
       count: jest.Mock;
     };
     orderItem: {
@@ -99,6 +100,7 @@ describe('OrderService', () => {
         findUnique: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
+        deleteMany: jest.fn(),
         count: jest.fn(),
       },
       orderItem: {
@@ -813,24 +815,26 @@ describe('OrderService', () => {
   });
 
   describe('remove', () => {
-    it('should delete order with INQUIRY status and no payment records', async () => {
-      const inquiryOrder = {
-        ...mockOrder,
-        status: OrderItemStatus.INQUIRY,
-        customerPaid: 0,
-        supplierPayments: [],
-      };
-      mockPrismaService.order.findUnique.mockResolvedValue(inquiryOrder);
-      mockPrismaService.order.delete.mockResolvedValue(inquiryOrder);
+    it('should delete order with INQUIRY status and no payment records using atomic operation', async () => {
+      // Mock deleteMany returning count: 1 (success)
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 1 });
 
       await service.remove(1);
 
-      expect(mockPrismaService.order.delete).toHaveBeenCalledWith({
-        where: { id: 1 },
+      // Verify atomic conditional delete was used
+      expect(mockPrismaService.order.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: OrderItemStatus.INQUIRY,
+          customerPaid: 0,
+        },
       });
     });
 
-    it('should throw NotFoundException when order not found', async () => {
+    it('should throw NotFoundException when order not found (deleteMany returns 0)', async () => {
+      // deleteMany returns 0 - order doesn't exist or doesn't match conditions
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
+      // findUnique called to determine why deletion failed
       mockPrismaService.order.findUnique.mockResolvedValue(null);
 
       await expect(service.remove(999)).rejects.toThrow(NotFoundException);
@@ -840,6 +844,9 @@ describe('OrderService', () => {
     });
 
     it('should throw BadRequestException when order status is not INQUIRY', async () => {
+      // deleteMany returns 0 due to status mismatch
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
+      // findUnique returns the order to check why
       const orderedOrder = {
         ...mockOrder,
         status: OrderItemStatus.ORDERED,
@@ -854,7 +861,9 @@ describe('OrderService', () => {
       );
     });
 
-    it('should throw ConflictException when order has customer payment records', async () => {
+    it('should throw ConflictException when order has customer payment > 0', async () => {
+      // deleteMany returns 0 due to customerPaid > 0
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
       const orderWithPayment = {
         ...mockOrder,
         status: OrderItemStatus.INQUIRY,
@@ -869,12 +878,14 @@ describe('OrderService', () => {
       );
     });
 
-    it('should throw ConflictException when order has supplier payment records', async () => {
+    it('should throw ConflictException when supplier has actual paid amount > 0', async () => {
+      // deleteMany returns 0 (but we need secondary check for supplier payments)
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
       const orderWithSupplierPayment = {
         ...mockOrder,
         status: OrderItemStatus.INQUIRY,
         customerPaid: 0,
-        supplierPayments: [{ id: 1, supplierId: 1, paidAmount: 500 }],
+        supplierPayments: [{ id: 1, supplierId: 1, paid: 500 }],
       };
       mockPrismaService.order.findUnique.mockResolvedValue(
         orderWithSupplierPayment,
@@ -884,6 +895,21 @@ describe('OrderService', () => {
       await expect(service.remove(1)).rejects.toThrow(
         'Cannot delete order - has payment records',
       );
+    });
+
+    it('should allow deletion when supplier payment record exists but paid = 0', async () => {
+      // Supplier payment record exists but no actual payment made
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 1 });
+
+      await service.remove(1);
+
+      expect(mockPrismaService.order.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: OrderItemStatus.INQUIRY,
+          customerPaid: 0,
+        },
+      });
     });
   });
 });

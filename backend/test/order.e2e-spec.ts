@@ -144,6 +144,7 @@ describe('OrderController (e2e)', () => {
     count: jest.Mock;
     update: jest.Mock;
     delete: jest.Mock;
+    deleteMany: jest.Mock;
   }
 
   interface MockPrismaServiceType {
@@ -171,6 +172,7 @@ describe('OrderController (e2e)', () => {
       count: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      deleteMany: jest.fn(),
     },
     orderItem: {
       findMany: jest.fn(),
@@ -502,23 +504,23 @@ describe('OrderController (e2e)', () => {
 
   describe('DELETE /api/v1/orders/:id', () => {
     it('should delete order with INQUIRY status and no payments (204)', async () => {
-      const deletableOrder = {
-        ...mockOrder,
-        status: OrderItemStatus.INQUIRY,
-        customerPaid: 0,
-        supplierPayments: [],
-      };
-      mockPrismaService.order.findUnique.mockResolvedValue(deletableOrder);
-      mockPrismaService.order.delete.mockResolvedValue(deletableOrder);
+      // Mock deleteMany returning count: 1 (success)
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 1 });
 
       await request(app.getHttpServer()).delete('/api/v1/orders/1').expect(204);
 
-      expect(mockPrismaService.order.delete).toHaveBeenCalledWith({
-        where: { id: 1 },
+      expect(mockPrismaService.order.deleteMany).toHaveBeenCalledWith({
+        where: {
+          id: 1,
+          status: OrderItemStatus.INQUIRY,
+          customerPaid: 0,
+        },
       });
     });
 
     it('should return 404 when order not found', async () => {
+      // deleteMany returns 0, findUnique returns null
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
       mockPrismaService.order.findUnique.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
@@ -529,6 +531,8 @@ describe('OrderController (e2e)', () => {
     });
 
     it('should return 400 when order status is not INQUIRY', async () => {
+      // deleteMany returns 0 due to status mismatch
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
       const orderedOrder = {
         ...mockOrder,
         status: OrderItemStatus.ORDERED,
@@ -545,6 +549,8 @@ describe('OrderController (e2e)', () => {
     });
 
     it('should return 409 when order has customer payment records', async () => {
+      // deleteMany returns 0 due to customerPaid > 0
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
       const orderWithPayment = {
         ...mockOrder,
         status: OrderItemStatus.INQUIRY,
@@ -560,12 +566,14 @@ describe('OrderController (e2e)', () => {
       expect(response.body).toHaveProperty('message');
     });
 
-    it('should return 409 when order has supplier payment records', async () => {
+    it('should return 409 when order has supplier payment with paid > 0', async () => {
+      // deleteMany returns 0, then check supplier payments
+      mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
       const orderWithSupplierPayment = {
         ...mockOrder,
         status: OrderItemStatus.INQUIRY,
         customerPaid: 0,
-        supplierPayments: [{ id: 1, supplierId: 1, paidAmount: 500 }],
+        supplierPayments: [{ id: 1, supplierId: 1, paid: 500 }],
       };
       mockPrismaService.order.findUnique.mockResolvedValue(
         orderWithSupplierPayment,

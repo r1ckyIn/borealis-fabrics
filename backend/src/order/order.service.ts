@@ -455,42 +455,55 @@ export class OrderService {
   /**
    * Delete an order.
    * Only allowed when status is INQUIRY and no payment records exist.
+   * Uses atomic conditional delete to prevent race conditions.
    */
   async remove(id: number): Promise<void> {
     this.logger.debug(`Remove order called with id: ${id}`);
 
-    // Find order with payment info
-    const order = await this.prisma.order.findUnique({
-      where: { id },
-      include: {
-        supplierPayments: true,
+    // Atomic conditional delete: only delete if status is INQUIRY and customerPaid is 0
+    // This prevents TOCTOU race conditions where status might change between check and delete
+    const deleteResult = await this.prisma.order.deleteMany({
+      where: {
+        id,
+        status: OrderItemStatus.INQUIRY,
+        customerPaid: 0,
       },
     });
 
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
+    if (deleteResult.count === 0) {
+      // Deletion failed - determine reason by checking the order
+      const order = await this.prisma.order.findUnique({
+        where: { id },
+        include: {
+          supplierPayments: true,
+        },
+      });
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID ${id} not found`);
+      }
+
+      // Check status is INQUIRY
+      if ((order.status as OrderItemStatus) !== OrderItemStatus.INQUIRY) {
+        throw new BadRequestException(
+          'Cannot delete order - only INQUIRY status orders can be deleted',
+        );
+      }
+
+      // Check for actual payment records (customerPaid > 0 or any supplier has paid > 0)
+      const hasPaymentRecords =
+        Number(order.customerPaid) > 0 ||
+        order.supplierPayments?.some((sp) => Number(sp.paid) > 0);
+
+      if (hasPaymentRecords) {
+        throw new ConflictException(
+          'Cannot delete order - has payment records',
+        );
+      }
+
+      // If we reach here, conditions matched but delete still failed (unexpected)
+      throw new ConflictException('Cannot delete order - unexpected condition');
     }
-
-    // Check status is INQUIRY (order.status is string from DB)
-    if ((order.status as OrderItemStatus) !== OrderItemStatus.INQUIRY) {
-      throw new BadRequestException(
-        'Cannot delete order - only INQUIRY status orders can be deleted',
-      );
-    }
-
-    // Check for payment records
-    const hasPaymentRecords =
-      Number(order.customerPaid) > 0 ||
-      (order.supplierPayments && order.supplierPayments.length > 0);
-
-    if (hasPaymentRecords) {
-      throw new ConflictException('Cannot delete order - has payment records');
-    }
-
-    // Delete the order
-    await this.prisma.order.delete({
-      where: { id },
-    });
   }
 
   /**
