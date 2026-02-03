@@ -76,3 +76,101 @@ export function calculateAggregateStatus(
 
   return STATUS_PRIORITY[lowestIndex] ?? OrderItemStatus.INQUIRY;
 }
+
+/**
+ * Valid status transitions map.
+ * Key: current status, Value: array of valid next statuses.
+ */
+export const VALID_STATUS_TRANSITIONS: Record<
+  OrderItemStatus,
+  OrderItemStatus[]
+> = {
+  [OrderItemStatus.INQUIRY]: [
+    OrderItemStatus.PENDING,
+    OrderItemStatus.CANCELLED,
+  ],
+  [OrderItemStatus.PENDING]: [
+    OrderItemStatus.ORDERED,
+    OrderItemStatus.CANCELLED,
+  ],
+  [OrderItemStatus.ORDERED]: [
+    OrderItemStatus.PRODUCTION,
+    OrderItemStatus.CANCELLED,
+  ],
+  [OrderItemStatus.PRODUCTION]: [OrderItemStatus.QC, OrderItemStatus.CANCELLED],
+  [OrderItemStatus.QC]: [OrderItemStatus.SHIPPED, OrderItemStatus.CANCELLED],
+  [OrderItemStatus.SHIPPED]: [
+    OrderItemStatus.RECEIVED,
+    OrderItemStatus.CANCELLED,
+  ],
+  [OrderItemStatus.RECEIVED]: [
+    OrderItemStatus.COMPLETED,
+    OrderItemStatus.CANCELLED,
+  ],
+  [OrderItemStatus.COMPLETED]: [OrderItemStatus.CANCELLED],
+  [OrderItemStatus.CANCELLED]: [], // Can be restored to prevStatus via separate endpoint
+};
+
+/**
+ * Check if a status transition is valid.
+ * @param fromStatus Current status
+ * @param toStatus Target status
+ * @returns true if transition is valid
+ */
+export function isValidStatusTransition(
+  fromStatus: OrderItemStatus,
+  toStatus: OrderItemStatus,
+): boolean {
+  const validTransitions = VALID_STATUS_TRANSITIONS[fromStatus];
+  return validTransitions?.includes(toStatus) ?? false;
+}
+
+/**
+ * Statuses that allow item modification (quantity, price, etc.).
+ */
+export const MODIFIABLE_STATUSES: OrderItemStatus[] = [
+  OrderItemStatus.INQUIRY,
+  OrderItemStatus.PENDING,
+];
+
+/**
+ * Check if an item can be modified (quantity, price, etc.).
+ * @param status Current item status
+ * @returns true if item can be modified
+ */
+export function canModifyItem(status: OrderItemStatus): boolean {
+  return MODIFIABLE_STATUSES.includes(status);
+}
+
+/**
+ * Check if an item can be deleted.
+ * Same rules as modification - only INQUIRY and PENDING.
+ * @param status Current item status
+ * @returns true if item can be deleted
+ */
+export function canDeleteItem(status: OrderItemStatus): boolean {
+  return MODIFIABLE_STATUSES.includes(status);
+}
+
+/**
+ * Check if an item can be cancelled.
+ * All statuses except CANCELLED can be cancelled.
+ * @param status Current item status
+ * @returns true if item can be cancelled
+ */
+export function canCancelItem(status: OrderItemStatus): boolean {
+  return status !== OrderItemStatus.CANCELLED;
+}
+
+/**
+ * Check if a cancelled item can be restored.
+ * @param status Current status (should be CANCELLED)
+ * @param prevStatus Previous status before cancellation
+ * @returns true if item can be restored
+ */
+export function canRestoreItem(
+  status: OrderItemStatus,
+  prevStatus: OrderItemStatus | null | undefined,
+): boolean {
+  return status === OrderItemStatus.CANCELLED && prevStatus != null;
+}

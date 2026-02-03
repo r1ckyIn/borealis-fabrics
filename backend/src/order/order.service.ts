@@ -10,13 +10,35 @@ import {
   CodeGeneratorService,
   CodePrefix,
 } from '../common/services/code-generator.service';
-import { CreateOrderDto, UpdateOrderDto, QueryOrderDto } from './dto';
+import {
+  CreateOrderDto,
+  UpdateOrderDto,
+  QueryOrderDto,
+  AddOrderItemDto,
+  UpdateOrderItemDto,
+  UpdateItemStatusDto,
+  UpdateCustomerPaymentDto,
+  UpdateSupplierPaymentDto,
+  CancelItemDto,
+  RestoreItemDto,
+} from './dto';
 import {
   OrderItemStatus,
   CustomerPayStatus,
   calculateAggregateStatus,
+  isValidStatusTransition,
+  canModifyItem,
+  canDeleteItem,
+  canCancelItem,
+  canRestoreItem,
 } from './enums/order-status.enum';
-import { Order, Prisma } from '@prisma/client';
+import {
+  Order,
+  OrderItem,
+  OrderTimeline,
+  SupplierPayment,
+  Prisma,
+} from '@prisma/client';
 import {
   PaginatedResult,
   buildPaginationArgs,
@@ -538,6 +560,958 @@ export class OrderService {
     await this.prisma.order.update({
       where: { id: orderId },
       data: { totalAmount: result._sum.subtotal ?? 0 },
+    });
+  }
+
+  // ============================================================
+  // Order Items Methods (3.2.6 - 3.2.12)
+  // ============================================================
+
+  /**
+   * Get all items for an order (3.2.6).
+   */
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    this.logger.debug(`GetOrderItems called for orderId: ${orderId}`);
+
+    // Verify order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    return this.prisma.orderItem.findMany({
+      where: { orderId },
+      include: {
+        fabric: {
+          select: {
+            id: true,
+            fabricCode: true,
+            name: true,
+            composition: true,
+          },
+        },
+        supplier: {
+          select: {
+            id: true,
+            companyName: true,
+            contactName: true,
+            phone: true,
+          },
+        },
+        quote: {
+          select: {
+            id: true,
+            quoteCode: true,
+          },
+        },
+        timelines: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  /**
+   * Add a new item to an order (3.2.7).
+   * Creates the item, updates order total, and records timeline.
+   */
+  async addOrderItem(
+    orderId: number,
+    dto: AddOrderItemDto,
+  ): Promise<OrderItem> {
+    this.logger.debug(
+      `AddOrderItem called for orderId: ${orderId}, data: ${JSON.stringify(dto)}`,
+    );
+
+    // Verify order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Validate fabric exists and is active
+    const fabric = await this.prisma.fabric.findFirst({
+      where: { id: dto.fabricId, isActive: true },
+    });
+    if (!fabric) {
+      throw new NotFoundException(`Fabric with ID ${dto.fabricId} not found`);
+    }
+
+    // Validate supplier if provided
+    if (dto.supplierId !== undefined) {
+      const supplier = await this.prisma.supplier.findFirst({
+        where: { id: dto.supplierId, isActive: true },
+      });
+      if (!supplier) {
+        throw new NotFoundException(
+          `Supplier with ID ${dto.supplierId} not found`,
+        );
+      }
+    }
+
+    // Validate quote if provided
+    if (dto.quoteId !== undefined) {
+      const quote = await this.prisma.quote.findUnique({
+        where: { id: dto.quoteId },
+      });
+      if (!quote) {
+        throw new NotFoundException(`Quote with ID ${dto.quoteId} not found`);
+      }
+    }
+
+    // Calculate subtotal
+    const subtotal = dto.quantity * dto.salePrice;
+
+    // Create item and update order in transaction
+    return this.prisma.$transaction(async (tx) => {
+      const item = await tx.orderItem.create({
+        data: {
+          orderId,
+          fabricId: dto.fabricId,
+          supplierId: dto.supplierId,
+          quoteId: dto.quoteId,
+          quantity: dto.quantity,
+          salePrice: dto.salePrice,
+          purchasePrice: dto.purchasePrice,
+          subtotal,
+          status: OrderItemStatus.INQUIRY,
+          deliveryDate: dto.deliveryDate
+            ? new Date(dto.deliveryDate)
+            : undefined,
+          notes: dto.notes,
+        },
+        include: {
+          fabric: {
+            select: {
+              id: true,
+              fabricCode: true,
+              name: true,
+              composition: true,
+            },
+          },
+          supplier: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      // Create timeline entry
+      await tx.orderTimeline.create({
+        data: {
+          orderItemId: item.id,
+          fromStatus: null,
+          toStatus: OrderItemStatus.INQUIRY,
+          remark: 'Item added to order',
+        },
+      });
+
+      // Update supplier payment if supplier is specified
+      if (dto.supplierId !== undefined && dto.purchasePrice !== undefined) {
+        await this.upsertSupplierPayment(tx, orderId, dto.supplierId);
+      }
+
+      // Update order total and aggregate status
+      await this.recalculateOrderTotals(tx, orderId);
+
+      return item;
+    });
+  }
+
+  /**
+   * Update an order item (3.2.8).
+   * Only allowed when item status is INQUIRY or PENDING.
+   */
+  async updateOrderItem(
+    orderId: number,
+    itemId: number,
+    dto: UpdateOrderItemDto,
+  ): Promise<OrderItem> {
+    this.logger.debug(
+      `UpdateOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
+    );
+
+    // Find item and verify it belongs to the order
+    const item = await this.prisma.orderItem.findFirst({
+      where: { id: itemId, orderId },
+    });
+    if (!item) {
+      throw new NotFoundException(
+        `Order item with ID ${itemId} not found in order ${orderId}`,
+      );
+    }
+
+    // Check if item can be modified
+    if (!canModifyItem(item.status as OrderItemStatus)) {
+      throw new BadRequestException(
+        `Cannot modify item - status is ${item.status}. Only INQUIRY and PENDING items can be modified.`,
+      );
+    }
+
+    // Validate supplier if changing
+    if (dto.supplierId !== undefined) {
+      const supplier = await this.prisma.supplier.findFirst({
+        where: { id: dto.supplierId, isActive: true },
+      });
+      if (!supplier) {
+        throw new NotFoundException(
+          `Supplier with ID ${dto.supplierId} not found`,
+        );
+      }
+    }
+
+    // Validate quote if changing
+    if (dto.quoteId !== undefined) {
+      const quote = await this.prisma.quote.findUnique({
+        where: { id: dto.quoteId },
+      });
+      if (!quote) {
+        throw new NotFoundException(`Quote with ID ${dto.quoteId} not found`);
+      }
+    }
+
+    // Build update data
+    const updateData: Prisma.OrderItemUpdateInput = {};
+    const oldSupplierId = item.supplierId;
+
+    if (dto.supplierId !== undefined) {
+      updateData.supplier = { connect: { id: dto.supplierId } };
+    }
+    if (dto.quoteId !== undefined) {
+      updateData.quote = { connect: { id: dto.quoteId } };
+    }
+    if (dto.quantity !== undefined) {
+      updateData.quantity = dto.quantity;
+    }
+    if (dto.salePrice !== undefined) {
+      updateData.salePrice = dto.salePrice;
+    }
+    if (dto.purchasePrice !== undefined) {
+      updateData.purchasePrice = dto.purchasePrice;
+    }
+    if (dto.deliveryDate !== undefined) {
+      updateData.deliveryDate = new Date(dto.deliveryDate);
+    }
+    if (dto.notes !== undefined) {
+      updateData.notes = dto.notes;
+    }
+
+    // Recalculate subtotal if quantity or price changed
+    const newQuantity = dto.quantity ?? Number(item.quantity);
+    const newSalePrice = dto.salePrice ?? Number(item.salePrice);
+    updateData.subtotal = newQuantity * newSalePrice;
+
+    // Update in transaction
+    return this.prisma.$transaction(async (tx) => {
+      const updatedItem = await tx.orderItem.update({
+        where: { id: itemId },
+        data: updateData,
+        include: {
+          fabric: {
+            select: {
+              id: true,
+              fabricCode: true,
+              name: true,
+              composition: true,
+            },
+          },
+          supplier: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      // Update supplier payments if supplier changed
+      if (dto.supplierId !== undefined && dto.supplierId !== oldSupplierId) {
+        // Recalculate for old supplier
+        if (oldSupplierId !== null) {
+          await this.upsertSupplierPayment(tx, orderId, oldSupplierId);
+        }
+        // Recalculate for new supplier
+        await this.upsertSupplierPayment(tx, orderId, dto.supplierId);
+      } else if (
+        dto.quantity !== undefined ||
+        dto.purchasePrice !== undefined
+      ) {
+        // Recalculate for current supplier if quantity or price changed
+        if (updatedItem.supplierId !== null) {
+          await this.upsertSupplierPayment(tx, orderId, updatedItem.supplierId);
+        }
+      }
+
+      // Update order totals
+      await this.recalculateOrderTotals(tx, orderId);
+
+      return updatedItem;
+    });
+  }
+
+  /**
+   * Delete an order item (3.2.9).
+   * Only allowed when item status is INQUIRY or PENDING.
+   */
+  async removeOrderItem(orderId: number, itemId: number): Promise<void> {
+    this.logger.debug(
+      `RemoveOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
+    );
+
+    // Find item and verify it belongs to the order
+    const item = await this.prisma.orderItem.findFirst({
+      where: { id: itemId, orderId },
+    });
+    if (!item) {
+      throw new NotFoundException(
+        `Order item with ID ${itemId} not found in order ${orderId}`,
+      );
+    }
+
+    // Check if item can be deleted
+    if (!canDeleteItem(item.status as OrderItemStatus)) {
+      throw new BadRequestException(
+        `Cannot delete item - status is ${item.status}. Only INQUIRY and PENDING items can be deleted.`,
+      );
+    }
+
+    const supplierId = item.supplierId;
+
+    // Delete in transaction
+    await this.prisma.$transaction(async (tx) => {
+      // Delete the item (cascade deletes timelines)
+      await tx.orderItem.delete({
+        where: { id: itemId },
+      });
+
+      // Update supplier payment if supplier was set
+      if (supplierId !== null) {
+        await this.upsertSupplierPayment(tx, orderId, supplierId);
+      }
+
+      // Update order totals
+      await this.recalculateOrderTotals(tx, orderId);
+    });
+  }
+
+  /**
+   * Update an order item's status (3.2.10).
+   * Validates status transition and records timeline.
+   */
+  async updateItemStatus(
+    orderId: number,
+    itemId: number,
+    dto: UpdateItemStatusDto,
+  ): Promise<OrderItem> {
+    this.logger.debug(
+      `UpdateItemStatus called for orderId: ${orderId}, itemId: ${itemId}, newStatus: ${dto.status}`,
+    );
+
+    // Find item and verify it belongs to the order
+    const item = await this.prisma.orderItem.findFirst({
+      where: { id: itemId, orderId },
+    });
+    if (!item) {
+      throw new NotFoundException(
+        `Order item with ID ${itemId} not found in order ${orderId}`,
+      );
+    }
+
+    const currentStatus = item.status as OrderItemStatus;
+    const newStatus = dto.status;
+
+    // Validate status transition
+    if (!isValidStatusTransition(currentStatus, newStatus)) {
+      throw new BadRequestException(
+        `Invalid status transition from ${currentStatus} to ${newStatus}`,
+      );
+    }
+
+    // Update in transaction
+    return this.prisma.$transaction(async (tx) => {
+      // Update item status
+      const updatedItem = await tx.orderItem.update({
+        where: { id: itemId },
+        data: {
+          status: newStatus,
+          prevStatus: currentStatus,
+        },
+        include: {
+          fabric: {
+            select: {
+              id: true,
+              fabricCode: true,
+              name: true,
+              composition: true,
+            },
+          },
+          supplier: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      // Create timeline entry
+      await tx.orderTimeline.create({
+        data: {
+          orderItemId: itemId,
+          fromStatus: currentStatus,
+          toStatus: newStatus,
+          remark: dto.remark ?? `Status changed to ${newStatus}`,
+        },
+      });
+
+      // Update order aggregate status
+      await this.updateAggregateStatusInTx(tx, orderId);
+
+      return updatedItem;
+    });
+  }
+
+  /**
+   * Cancel an order item (3.2.11).
+   * Stores previous status for potential restoration.
+   */
+  async cancelOrderItem(
+    orderId: number,
+    itemId: number,
+    dto: CancelItemDto,
+  ): Promise<OrderItem> {
+    this.logger.debug(
+      `CancelOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
+    );
+
+    // Find item and verify it belongs to the order
+    const item = await this.prisma.orderItem.findFirst({
+      where: { id: itemId, orderId },
+    });
+    if (!item) {
+      throw new NotFoundException(
+        `Order item with ID ${itemId} not found in order ${orderId}`,
+      );
+    }
+
+    const currentStatus = item.status as OrderItemStatus;
+
+    // Check if item can be cancelled
+    if (!canCancelItem(currentStatus)) {
+      throw new BadRequestException('Item is already cancelled');
+    }
+
+    // Update in transaction
+    return this.prisma.$transaction(async (tx) => {
+      const updatedItem = await tx.orderItem.update({
+        where: { id: itemId },
+        data: {
+          status: OrderItemStatus.CANCELLED,
+          prevStatus: currentStatus,
+        },
+        include: {
+          fabric: {
+            select: {
+              id: true,
+              fabricCode: true,
+              name: true,
+              composition: true,
+            },
+          },
+          supplier: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      // Create timeline entry
+      await tx.orderTimeline.create({
+        data: {
+          orderItemId: itemId,
+          fromStatus: currentStatus,
+          toStatus: OrderItemStatus.CANCELLED,
+          remark: dto.reason ?? 'Item cancelled',
+        },
+      });
+
+      // Update order aggregate status
+      await this.updateAggregateStatusInTx(tx, orderId);
+
+      return updatedItem;
+    });
+  }
+
+  /**
+   * Restore a cancelled order item (3.2.12).
+   * Restores to previous status if available.
+   */
+  async restoreOrderItem(
+    orderId: number,
+    itemId: number,
+    dto: RestoreItemDto,
+  ): Promise<OrderItem> {
+    this.logger.debug(
+      `RestoreOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
+    );
+
+    // Find item and verify it belongs to the order
+    const item = await this.prisma.orderItem.findFirst({
+      where: { id: itemId, orderId },
+    });
+    if (!item) {
+      throw new NotFoundException(
+        `Order item with ID ${itemId} not found in order ${orderId}`,
+      );
+    }
+
+    const currentStatus = item.status as OrderItemStatus;
+    const prevStatus = item.prevStatus as OrderItemStatus | null;
+
+    // Check if item can be restored
+    if (!canRestoreItem(currentStatus, prevStatus)) {
+      if (currentStatus !== OrderItemStatus.CANCELLED) {
+        throw new BadRequestException('Only cancelled items can be restored');
+      }
+      throw new BadRequestException(
+        'Cannot restore - no previous status recorded',
+      );
+    }
+
+    // Update in transaction
+    return this.prisma.$transaction(async (tx) => {
+      const updatedItem = await tx.orderItem.update({
+        where: { id: itemId },
+        data: {
+          status: prevStatus!,
+          prevStatus: null,
+        },
+        include: {
+          fabric: {
+            select: {
+              id: true,
+              fabricCode: true,
+              name: true,
+              composition: true,
+            },
+          },
+          supplier: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+              phone: true,
+            },
+          },
+        },
+      });
+
+      // Create timeline entry
+      await tx.orderTimeline.create({
+        data: {
+          orderItemId: itemId,
+          fromStatus: OrderItemStatus.CANCELLED,
+          toStatus: prevStatus!,
+          remark: dto.reason ?? `Item restored to ${prevStatus}`,
+        },
+      });
+
+      // Update order aggregate status
+      await this.updateAggregateStatusInTx(tx, orderId);
+
+      return updatedItem;
+    });
+  }
+
+  // ============================================================
+  // Timeline Methods (3.2.13 - 3.2.14)
+  // ============================================================
+
+  /**
+   * Get timeline for an entire order (3.2.13).
+   * Aggregates all item timelines.
+   */
+  async getOrderTimeline(orderId: number): Promise<OrderTimeline[]> {
+    this.logger.debug(`GetOrderTimeline called for orderId: ${orderId}`);
+
+    // Verify order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    return this.prisma.orderTimeline.findMany({
+      where: {
+        orderItem: {
+          orderId,
+        },
+      },
+      include: {
+        orderItem: {
+          select: {
+            id: true,
+            fabric: {
+              select: {
+                id: true,
+                fabricCode: true,
+                name: true,
+              },
+            },
+          },
+        },
+        operator: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
+   * Get timeline for a specific order item (3.2.14).
+   */
+  async getItemTimeline(
+    orderId: number,
+    itemId: number,
+  ): Promise<OrderTimeline[]> {
+    this.logger.debug(
+      `GetItemTimeline called for orderId: ${orderId}, itemId: ${itemId}`,
+    );
+
+    // Verify item exists and belongs to order
+    const item = await this.prisma.orderItem.findFirst({
+      where: { id: itemId, orderId },
+    });
+    if (!item) {
+      throw new NotFoundException(
+        `Order item with ID ${itemId} not found in order ${orderId}`,
+      );
+    }
+
+    return this.prisma.orderTimeline.findMany({
+      where: { orderItemId: itemId },
+      include: {
+        operator: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // ============================================================
+  // Payment Methods (3.2.15 - 3.2.17)
+  // ============================================================
+
+  /**
+   * Update customer payment information (3.2.15).
+   */
+  async updateCustomerPayment(
+    orderId: number,
+    dto: UpdateCustomerPaymentDto,
+  ): Promise<Order> {
+    this.logger.debug(`UpdateCustomerPayment called for orderId: ${orderId}`);
+
+    // Verify order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Build update data
+    const updateData: Prisma.OrderUpdateInput = {};
+
+    if (dto.customerPaid !== undefined) {
+      updateData.customerPaid = dto.customerPaid;
+    }
+    if (dto.customerPayStatus !== undefined) {
+      updateData.customerPayStatus = dto.customerPayStatus;
+    }
+    if (dto.customerPayMethod !== undefined) {
+      updateData.customerPayMethod = dto.customerPayMethod;
+    }
+    if (dto.customerCreditDays !== undefined) {
+      updateData.customerCreditDays = dto.customerCreditDays;
+    }
+    if (dto.customerPaidAt !== undefined) {
+      updateData.customerPaidAt = new Date(dto.customerPaidAt);
+    }
+
+    return this.prisma.order.update({
+      where: { id: orderId },
+      data: updateData,
+      include: {
+        customer: {
+          select: {
+            id: true,
+            companyName: true,
+            contactName: true,
+            phone: true,
+          },
+        },
+        items: {
+          select: {
+            id: true,
+            fabricId: true,
+            quantity: true,
+            salePrice: true,
+            subtotal: true,
+            status: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Get supplier payments for an order (3.2.16).
+   */
+  async getSupplierPayments(orderId: number): Promise<SupplierPayment[]> {
+    this.logger.debug(`GetSupplierPayments called for orderId: ${orderId}`);
+
+    // Verify order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    return this.prisma.supplierPayment.findMany({
+      where: { orderId },
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            companyName: true,
+            contactName: true,
+            phone: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * Update supplier payment information (3.2.17).
+   */
+  async updateSupplierPayment(
+    orderId: number,
+    supplierId: number,
+    dto: UpdateSupplierPaymentDto,
+  ): Promise<SupplierPayment> {
+    this.logger.debug(
+      `UpdateSupplierPayment called for orderId: ${orderId}, supplierId: ${supplierId}`,
+    );
+
+    // Verify order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    }
+
+    // Find or create supplier payment record
+    let supplierPayment = await this.prisma.supplierPayment.findUnique({
+      where: {
+        orderId_supplierId: { orderId, supplierId },
+      },
+    });
+
+    if (!supplierPayment) {
+      // Verify supplier exists
+      const supplier = await this.prisma.supplier.findFirst({
+        where: { id: supplierId, isActive: true },
+      });
+      if (!supplier) {
+        throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
+      }
+
+      // Create new supplier payment record
+      supplierPayment = await this.prisma.supplierPayment.create({
+        data: {
+          orderId,
+          supplierId,
+          payable: 0,
+          paid: 0,
+          payStatus: CustomerPayStatus.UNPAID,
+        },
+      });
+    }
+
+    // Build update data
+    const updateData: Prisma.SupplierPaymentUpdateInput = {};
+
+    if (dto.paid !== undefined) {
+      updateData.paid = dto.paid;
+    }
+    if (dto.payStatus !== undefined) {
+      updateData.payStatus = dto.payStatus;
+    }
+    if (dto.payMethod !== undefined) {
+      updateData.payMethod = dto.payMethod;
+    }
+    if (dto.creditDays !== undefined) {
+      updateData.creditDays = dto.creditDays;
+    }
+    if (dto.paidAt !== undefined) {
+      updateData.paidAt = new Date(dto.paidAt);
+    }
+
+    return this.prisma.supplierPayment.update({
+      where: { id: supplierPayment.id },
+      data: updateData,
+      include: {
+        supplier: {
+          select: {
+            id: true,
+            companyName: true,
+            contactName: true,
+            phone: true,
+          },
+        },
+      },
+    });
+  }
+
+  // ============================================================
+  // Helper Methods
+  // ============================================================
+
+  /**
+   * Upsert supplier payment record and recalculate payable amount.
+   */
+  private async upsertSupplierPayment(
+    tx: Prisma.TransactionClient,
+    orderId: number,
+    supplierId: number,
+  ): Promise<void> {
+    // Calculate payable based on purchase prices for this supplier
+    const items = await tx.orderItem.findMany({
+      where: {
+        orderId,
+        supplierId,
+        status: { not: OrderItemStatus.CANCELLED },
+      },
+      select: { quantity: true, purchasePrice: true },
+    });
+
+    const payable = items.reduce((sum, item) => {
+      const purchasePrice = item.purchasePrice ? Number(item.purchasePrice) : 0;
+      return sum + Number(item.quantity) * purchasePrice;
+    }, 0);
+
+    // Upsert supplier payment
+    await tx.supplierPayment.upsert({
+      where: {
+        orderId_supplierId: { orderId, supplierId },
+      },
+      create: {
+        orderId,
+        supplierId,
+        payable,
+        paid: 0,
+        payStatus: CustomerPayStatus.UNPAID,
+      },
+      update: {
+        payable,
+      },
+    });
+
+    // Clean up supplier payment if no items for this supplier
+    if (payable === 0) {
+      const payment = await tx.supplierPayment.findUnique({
+        where: { orderId_supplierId: { orderId, supplierId } },
+      });
+      if (payment && Number(payment.paid) === 0) {
+        await tx.supplierPayment.delete({
+          where: { id: payment.id },
+        });
+      }
+    }
+  }
+
+  /**
+   * Recalculate order totals (totalAmount and aggregate status).
+   */
+  private async recalculateOrderTotals(
+    tx: Prisma.TransactionClient,
+    orderId: number,
+  ): Promise<void> {
+    // Calculate total amount
+    const amountResult = await tx.orderItem.aggregate({
+      where: { orderId },
+      _sum: { subtotal: true },
+    });
+
+    // Get all item statuses for aggregate calculation
+    const items = await tx.orderItem.findMany({
+      where: { orderId },
+      select: { status: true },
+    });
+
+    const statuses = items.map((item) => item.status as OrderItemStatus);
+    const aggregateStatus = calculateAggregateStatus(statuses);
+
+    // Update order
+    await tx.order.update({
+      where: { id: orderId },
+      data: {
+        totalAmount: amountResult._sum.subtotal ?? 0,
+        status: aggregateStatus,
+      },
+    });
+  }
+
+  /**
+   * Update aggregate status in transaction context.
+   */
+  private async updateAggregateStatusInTx(
+    tx: Prisma.TransactionClient,
+    orderId: number,
+  ): Promise<void> {
+    const items = await tx.orderItem.findMany({
+      where: { orderId },
+      select: { status: true },
+    });
+
+    const statuses = items.map((item) => item.status as OrderItemStatus);
+    const aggregateStatus = calculateAggregateStatus(statuses);
+
+    await tx.order.update({
+      where: { id: orderId },
+      data: { status: aggregateStatus },
     });
   }
 }
