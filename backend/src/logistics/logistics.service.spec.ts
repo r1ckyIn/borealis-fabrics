@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { LogisticsService } from './logistics.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { LogisticsSortField } from './dto/query-logistics.dto';
 
 // Helper to create Prisma P2025 error for testing
 const createPrismaNotFoundError = () => {
@@ -292,7 +293,10 @@ describe('LogisticsService', () => {
       mockPrismaService.logistics.findMany.mockResolvedValue([]);
       mockPrismaService.logistics.count.mockResolvedValue(0);
 
-      await service.findAll({ sortBy: 'shippedAt', sortOrder: 'asc' });
+      await service.findAll({
+        sortBy: LogisticsSortField.SHIPPED_AT,
+        sortOrder: 'asc',
+      });
 
       expect(mockPrismaService.logistics.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
