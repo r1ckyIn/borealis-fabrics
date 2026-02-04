@@ -8,6 +8,17 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
+/**
+ * Convert Buffer to ArrayBuffer for ExcelJS compatibility.
+ * ExcelJS workbook.xlsx.load() expects ArrayBuffer, not Node.js Buffer.
+ */
+function toArrayBuffer(buffer: Buffer): ArrayBuffer {
+  return buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  );
+}
+
 // Response type definitions
 interface ApiSuccessResponse<T> {
   code: number;
@@ -131,7 +142,7 @@ describe('ImportController (e2e)', () => {
 
       const workbook = new ExcelJS.Workbook();
 
-      await workbook.xlsx.load(response.body);
+      await workbook.xlsx.load(toArrayBuffer(response.body as Buffer));
 
       expect(workbook.worksheets.length).toBe(2);
       expect(workbook.worksheets[0].name).toBe('Fabrics');
@@ -166,7 +177,7 @@ describe('ImportController (e2e)', () => {
 
       const workbook = new ExcelJS.Workbook();
 
-      await workbook.xlsx.load(response.body);
+      await workbook.xlsx.load(toArrayBuffer(response.body as Buffer));
 
       expect(workbook.worksheets.length).toBe(2);
       expect(workbook.worksheets[0].name).toBe('Suppliers');
