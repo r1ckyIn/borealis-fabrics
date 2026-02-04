@@ -209,6 +209,7 @@ describe('AuthController', () => {
     it('should clear auth cookie on logout', async () => {
       const mockLogoutResponse = { message: 'Logged out successfully' };
       authService.logout.mockResolvedValue(mockLogoutResponse);
+      configService.get.mockReturnValue('development');
       const req = mockAuthenticatedRequest();
       const res = mockResponse();
 
@@ -216,10 +217,27 @@ describe('AuthController', () => {
       await controller.logout(req as any, res);
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(res.clearCookie).toHaveBeenCalledWith(
-        'bf_auth_token',
-        AUTH_COOKIE_OPTIONS,
-      );
+      expect(res.clearCookie).toHaveBeenCalledWith('bf_auth_token', {
+        ...AUTH_COOKIE_OPTIONS,
+        secure: false,
+      });
+    });
+
+    it('should clear auth cookie with secure flag in production', async () => {
+      const mockLogoutResponse = { message: 'Logged out successfully' };
+      authService.logout.mockResolvedValue(mockLogoutResponse);
+      configService.get.mockReturnValue('production');
+      const req = mockAuthenticatedRequest();
+      const res = mockResponse();
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await controller.logout(req as any, res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.clearCookie).toHaveBeenCalledWith('bf_auth_token', {
+        ...AUTH_COOKIE_OPTIONS,
+        secure: true,
+      });
     });
 
     it('should handle missing authorization header', async () => {

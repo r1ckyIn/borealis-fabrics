@@ -25,6 +25,17 @@ const NUMERIC_RANGES = {
 } as const;
 
 /**
+ * Convert Buffer to ArrayBuffer for ExcelJS compatibility.
+ * ExcelJS workbook.xlsx.load() expects ArrayBuffer, not Node.js Buffer.
+ */
+function toArrayBuffer(buffer: Buffer): ArrayBuffer {
+  return buffer.buffer.slice(
+    buffer.byteOffset,
+    buffer.byteOffset + buffer.byteLength,
+  ) as ArrayBuffer;
+}
+
+/**
  * Template column definition type
  */
 interface ColumnDefinition {
@@ -489,7 +500,7 @@ export class ImportService {
     const workbook = new ExcelJS.Workbook();
 
     try {
-      await workbook.xlsx.load(file.buffer as any);
+      await workbook.xlsx.load(toArrayBuffer(file.buffer));
     } catch {
       throw new BadRequestException('Invalid Excel file format');
     }
