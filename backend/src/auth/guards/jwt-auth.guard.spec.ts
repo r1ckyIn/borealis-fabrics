@@ -2,8 +2,9 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { JwtAuthGuard, TOKEN_BLACKLIST_PREFIX } from './jwt-auth.guard';
+import { JwtAuthGuard } from './jwt-auth.guard';
 import { RedisService } from '../../common/services/redis.service';
+import { TOKEN_BLACKLIST_PREFIX, hashToken } from '../constants';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
@@ -153,7 +154,7 @@ describe('JwtAuthGuard', () => {
       await guard.canActivate(context);
 
       expect(redisService.get).toHaveBeenCalledWith(
-        `${TOKEN_BLACKLIST_PREFIX}${token.substring(0, 32)}`,
+        `${TOKEN_BLACKLIST_PREFIX}${hashToken(token)}`,
       );
     });
   });

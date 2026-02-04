@@ -11,15 +11,12 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../common/services/redis.service';
 import { JwtPayload, RequestUser } from './interfaces';
 import { UserResponseDto, LoginResponseDto, LogoutResponseDto } from './dto';
-
-/** Redis key prefix for blacklisted tokens */
-const TOKEN_BLACKLIST_PREFIX = 'auth:blacklist:';
-
-/** Redis key prefix for OAuth state */
-const OAUTH_STATE_PREFIX = 'auth:state:';
-
-/** OAuth state expiration time in seconds (5 minutes) */
-const OAUTH_STATE_TTL = 300;
+import {
+  TOKEN_BLACKLIST_PREFIX,
+  OAUTH_STATE_PREFIX,
+  OAUTH_STATE_TTL,
+  hashToken,
+} from './constants';
 
 /**
  * WeWork user info response structure.
@@ -129,15 +126,12 @@ export class AuthService {
    * Logout user by blacklisting their token.
    */
   async logout(token: string, user: RequestUser): Promise<LogoutResponseDto> {
-    // Calculate remaining token TTL
-
     const decoded: { exp?: number } | null = this.jwtService.decode(token);
 
-    if (decoded && typeof (decoded as { exp?: unknown }).exp === 'number') {
-      const ttl = (decoded.exp as number) - Math.floor(Date.now() / 1000);
+    if (decoded && typeof decoded.exp === 'number') {
+      const ttl = decoded.exp - Math.floor(Date.now() / 1000);
       if (ttl > 0) {
-        // Add token to blacklist with remaining TTL
-        const key = `${TOKEN_BLACKLIST_PREFIX}${this.hashToken(token)}`;
+        const key = `${TOKEN_BLACKLIST_PREFIX}${hashToken(token)}`;
         await this.redisService.setex(key, ttl, '1');
         this.logger.log(`User ${user.weworkId} logged out`);
       }
@@ -306,12 +300,5 @@ export class AuthService {
     dto.createdAt = user.createdAt;
     dto.updatedAt = user.updatedAt;
     return dto;
-  }
-
-  /**
-   * Hash token using SHA256 for secure blacklist storage.
-   */
-  private hashToken(token: string): string {
-    return crypto.createHash('sha256').update(token).digest('hex');
   }
 }

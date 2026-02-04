@@ -10,9 +10,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { RedisService } from '../../common/services/redis.service';
 import { JwtPayload, RequestUser } from '../interfaces';
-
-/** Redis key prefix for blacklisted tokens */
-const TOKEN_BLACKLIST_PREFIX = 'auth:blacklist:';
+import { TOKEN_BLACKLIST_PREFIX, hashToken } from '../constants';
 
 /**
  * JWT authentication guard with blacklist support.
@@ -88,18 +86,8 @@ export class JwtAuthGuard implements CanActivate {
    * Check if a token is in the blacklist.
    */
   private async isTokenBlacklisted(token: string): Promise<boolean> {
-    const key = `${TOKEN_BLACKLIST_PREFIX}${this.hashToken(token)}`;
+    const key = `${TOKEN_BLACKLIST_PREFIX}${hashToken(token)}`;
     const result = await this.redisService.get(key);
     return result !== null;
   }
-
-  /**
-   * Simple hash function for token blacklist keys.
-   * Uses first 32 chars of token to avoid long Redis keys.
-   */
-  private hashToken(token: string): string {
-    return token.substring(0, 32);
-  }
 }
-
-export { TOKEN_BLACKLIST_PREFIX };
