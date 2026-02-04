@@ -1354,6 +1354,7 @@ export class OrderService {
 
   /**
    * Update supplier payment information (3.2.17).
+   * Uses transaction with upsert for atomic operation to prevent TOCTOU race conditions.
    */
   async updateSupplierPayment(
     orderId: number,
@@ -1364,74 +1365,69 @@ export class OrderService {
       `UpdateSupplierPayment called for orderId: ${orderId}, supplierId: ${supplierId}`,
     );
 
-    // Verify order exists
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
-    }
+    return this.prisma.$transaction(async (tx) => {
+      // Verify order exists (inside transaction)
+      const order = await tx.order.findUnique({
+        where: { id: orderId },
+      });
+      if (!order) {
+        throw new NotFoundException(`Order with ID ${orderId} not found`);
+      }
 
-    // Find or create supplier payment record
-    let supplierPayment = await this.prisma.supplierPayment.findUnique({
-      where: {
-        orderId_supplierId: { orderId, supplierId },
-      },
-    });
-
-    if (!supplierPayment) {
-      // Verify supplier exists
-      const supplier = await this.prisma.supplier.findFirst({
+      // Verify supplier exists (inside transaction)
+      const supplier = await tx.supplier.findFirst({
         where: { id: supplierId, isActive: true },
       });
       if (!supplier) {
         throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
       }
 
-      // Create new supplier payment record
-      supplierPayment = await this.prisma.supplierPayment.create({
-        data: {
+      // Build update data
+      const updateData: Prisma.SupplierPaymentUpdateInput = {};
+
+      if (dto.paid !== undefined) {
+        updateData.paid = dto.paid;
+      }
+      if (dto.payStatus !== undefined) {
+        updateData.payStatus = dto.payStatus;
+      }
+      if (dto.payMethod !== undefined) {
+        updateData.payMethod = dto.payMethod;
+      }
+      if (dto.creditDays !== undefined) {
+        updateData.creditDays = dto.creditDays;
+      }
+      if (dto.paidAt !== undefined) {
+        updateData.paidAt = new Date(dto.paidAt);
+      }
+
+      // Use upsert for atomic find-or-create-and-update
+      return tx.supplierPayment.upsert({
+        where: {
+          orderId_supplierId: { orderId, supplierId },
+        },
+        create: {
           orderId,
           supplierId,
           payable: 0,
-          paid: 0,
-          payStatus: CustomerPayStatus.UNPAID,
+          paid: dto.paid ?? 0,
+          payStatus: dto.payStatus ?? CustomerPayStatus.UNPAID,
+          payMethod: dto.payMethod,
+          creditDays: dto.creditDays,
+          paidAt: dto.paidAt ? new Date(dto.paidAt) : undefined,
         },
-      });
-    }
-
-    // Build update data
-    const updateData: Prisma.SupplierPaymentUpdateInput = {};
-
-    if (dto.paid !== undefined) {
-      updateData.paid = dto.paid;
-    }
-    if (dto.payStatus !== undefined) {
-      updateData.payStatus = dto.payStatus;
-    }
-    if (dto.payMethod !== undefined) {
-      updateData.payMethod = dto.payMethod;
-    }
-    if (dto.creditDays !== undefined) {
-      updateData.creditDays = dto.creditDays;
-    }
-    if (dto.paidAt !== undefined) {
-      updateData.paidAt = new Date(dto.paidAt);
-    }
-
-    return this.prisma.supplierPayment.update({
-      where: { id: supplierPayment.id },
-      data: updateData,
-      include: {
-        supplier: {
-          select: {
-            id: true,
-            companyName: true,
-            contactName: true,
-            phone: true,
+        update: updateData,
+        include: {
+          supplier: {
+            select: {
+              id: true,
+              companyName: true,
+              contactName: true,
+              phone: true,
+            },
           },
         },
-      },
+      });
     });
   }
 

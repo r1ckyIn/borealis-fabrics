@@ -12,29 +12,32 @@ export class LogisticsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Create a new logistics record
+   * Create a new logistics record.
+   * Uses foreign key constraint to validate orderItemId atomically,
+   * preventing TOCTOU race conditions.
    */
   async create(createLogisticsDto: CreateLogisticsDto) {
     const { orderItemId, shippedAt, ...rest } = createLogisticsDto;
 
-    // Verify order item exists
-    const orderItem = await this.prisma.orderItem.findUnique({
-      where: { id: orderItemId },
-    });
-
-    if (!orderItem) {
-      throw new NotFoundException(
-        `Order item with ID ${orderItemId} not found`,
-      );
+    try {
+      return await this.prisma.logistics.create({
+        data: {
+          orderItemId,
+          ...rest,
+          shippedAt: shippedAt ? new Date(shippedAt) : undefined,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2003' // Foreign key constraint failed
+      ) {
+        throw new NotFoundException(
+          `Order item with ID ${orderItemId} not found`,
+        );
+      }
+      throw error;
     }
-
-    return this.prisma.logistics.create({
-      data: {
-        orderItemId,
-        ...rest,
-        shippedAt: shippedAt ? new Date(shippedAt) : undefined,
-      },
-    });
   }
 
   /**

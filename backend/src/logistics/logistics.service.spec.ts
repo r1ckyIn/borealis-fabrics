@@ -15,6 +15,17 @@ const createPrismaNotFoundError = () => {
   });
 };
 
+// Helper to create Prisma P2003 error for testing (foreign key constraint violation)
+const createPrismaForeignKeyError = () => {
+  return new Prisma.PrismaClientKnownRequestError(
+    'Foreign key constraint failed',
+    {
+      code: 'P2003',
+      clientVersion: '5.0.0',
+    },
+  );
+};
+
 describe('LogisticsService', () => {
   let service: LogisticsService;
   let mockPrismaService: {
@@ -110,15 +121,12 @@ describe('LogisticsService', () => {
     };
 
     it('should create a logistics record successfully', async () => {
-      mockPrismaService.orderItem.findUnique.mockResolvedValue(mockOrderItem);
+      // Note: New implementation uses foreign key constraint instead of explicit check
       mockPrismaService.logistics.create.mockResolvedValue(mockLogistics);
 
       const result = await service.create(createDto);
 
       expect(result).toEqual(mockLogistics);
-      expect(mockPrismaService.orderItem.findUnique).toHaveBeenCalledWith({
-        where: { id: 1 },
-      });
       expect(mockPrismaService.logistics.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           orderItemId: 1,
@@ -136,7 +144,6 @@ describe('LogisticsService', () => {
         orderItemId: 1,
         carrier: '顺丰速运',
       };
-      mockPrismaService.orderItem.findUnique.mockResolvedValue(mockOrderItem);
       mockPrismaService.logistics.create.mockResolvedValue({
         ...mockLogistics,
         contactName: null,
@@ -157,8 +164,11 @@ describe('LogisticsService', () => {
       });
     });
 
-    it('should throw NotFoundException when order item not found', async () => {
-      mockPrismaService.orderItem.findUnique.mockResolvedValue(null);
+    it('should throw NotFoundException when order item not found (P2003 foreign key error)', async () => {
+      // New implementation relies on database foreign key constraint
+      mockPrismaService.logistics.create.mockRejectedValue(
+        createPrismaForeignKeyError(),
+      );
 
       await expect(service.create(createDto)).rejects.toThrow(
         NotFoundException,
