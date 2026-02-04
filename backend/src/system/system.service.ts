@@ -45,18 +45,14 @@ export class SystemService {
 
   /**
    * Build an enum definition with values and labels.
-   * @param enumObj The enum object
-   * @param labels The Chinese labels mapping
+   * Note: All enums are string enums, so Object.values returns only string values.
    */
   private buildEnumDefinition(
     enumObj: Record<string, string>,
     labels: Record<string, string>,
   ): EnumDefinitionDto {
-    // Get enum values (filter out reverse mappings for numeric enums)
-    const values = Object.values(enumObj).filter((v) => typeof v === 'string');
-
     return {
-      values,
+      values: Object.values(enumObj),
       labels,
     };
   }
