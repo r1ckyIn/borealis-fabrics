@@ -828,7 +828,7 @@ enum SupplierStatus {
 |------|------|------|
 | QuoteModule | ✅ 已完成 | 含定时任务、编号生成服务 |
 | OrderModule | ✅ 已完成 | 主表 API + 明细 API (3.2.1-3.2.17) |
-| LogisticsModule | ⏳ 待开始 | |
+| LogisticsModule | ✅ 已完成 | 3.3.1-3.3.5 全部完成 |
 | ImportModule | ⏳ 待开始 | |
 | AuthModule | ⏳ 待开始 | |
 | SystemModule | ⏳ 待开始 | |
@@ -1147,11 +1147,11 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
 |---|------|---------|------|---------|-----|
-| 3.3.1 | 物流记录列表（支持按订单、明细、单号筛选） | GET /logistics | ⏳ | ⏳ | ⏳ |
-| 3.3.2 | 物流详情（含关联的明细信息） | GET /logistics/:id | ⏳ | ⏳ | ⏳ |
-| 3.3.3 | 创建物流记录（关联订单明细、物流公司、联系人、联系电话、物流单号、发货时间） | POST /logistics | ⏳ | ⏳ | ⏳ |
-| 3.3.4 | 更新物流信息 | PATCH /logistics/:id | ⏳ | ⏳ | ⏳ |
-| 3.3.5 | 删除物流记录（物理删除） | DELETE /logistics/:id | ⏳ | ⏳ | ⏳ |
+| 3.3.1 | 物流记录列表（支持按订单、明细、单号筛选） | GET /logistics | ✅ | ✅ | ✅ |
+| 3.3.2 | 物流详情（含关联的明细信息） | GET /logistics/:id | ✅ | ✅ | ✅ |
+| 3.3.3 | 创建物流记录（关联订单明细、物流公司、联系人、联系电话、物流单号、发货时间） | POST /logistics | ✅ | ✅ | ✅ |
+| 3.3.4 | 更新物流信息 | PATCH /logistics/:id | ✅ | ✅ | ✅ |
+| 3.3.5 | 删除物流记录（物理删除） | DELETE /logistics/:id | ✅ | ✅ | ✅ |
 
 ### 14.4 ImportModule（批量导入）
 
