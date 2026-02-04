@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AUTH_COOKIE_OPTIONS } from './constants';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Response } from 'express';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -217,11 +218,7 @@ describe('AuthController', () => {
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(res.clearCookie).toHaveBeenCalledWith(
         'bf_auth_token',
-        expect.objectContaining({
-          httpOnly: true,
-          sameSite: 'lax',
-          path: '/',
-        }),
+        AUTH_COOKIE_OPTIONS,
       );
     });
 

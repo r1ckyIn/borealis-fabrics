@@ -136,12 +136,8 @@ export class AuthController {
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LogoutResponseDto> {
-    // Clear the HttpOnly auth cookie
-    res.clearCookie(AUTH_COOKIE_NAME, {
-      httpOnly: true,
-      sameSite: 'lax',
-      path: '/',
-    });
+    // Clear the HttpOnly auth cookie (reuse shared options)
+    res.clearCookie(AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS);
 
     // Extract token from header or cookie and blacklist it
     const token =
