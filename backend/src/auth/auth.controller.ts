@@ -119,6 +119,7 @@ export class AuthController {
 
   /**
    * 3.5.4 Logout - invalidates the current token.
+   * Clears the HttpOnly auth cookie and blacklists the token in Redis.
    */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
@@ -131,8 +132,22 @@ export class AuthController {
     type: LogoutResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Req() req: AuthenticatedRequest): Promise<LogoutResponseDto> {
-    const token = req.headers.authorization?.replace('Bearer ', '') || '';
+  async logout(
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<LogoutResponseDto> {
+    // Clear the HttpOnly auth cookie
+    res.clearCookie(AUTH_COOKIE_NAME, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+    });
+
+    // Extract token from header or cookie and blacklist it
+    const token =
+      req.headers.authorization?.replace('Bearer ', '') ||
+      (req.cookies as Record<string, string> | undefined)?.[AUTH_COOKIE_NAME] ||
+      '';
     return this.authService.logout(token, req.user);
   }
 }

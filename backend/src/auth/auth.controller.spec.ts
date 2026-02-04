@@ -19,6 +19,7 @@ describe('AuthController', () => {
     const res: Partial<Response> = {
       redirect: jest.fn(),
       cookie: jest.fn(),
+      clearCookie: jest.fn(),
     };
     return res as Response;
   };
@@ -192,30 +193,52 @@ describe('AuthController', () => {
 
   describe('logout', () => {
     it('should logout user and return success message', async () => {
-      const mockResponse = { message: 'Logged out successfully' };
-      authService.logout.mockResolvedValue(mockResponse);
+      const mockLogoutResponse = { message: 'Logged out successfully' };
+      authService.logout.mockResolvedValue(mockLogoutResponse);
       const req = mockAuthenticatedRequest();
+      const res = mockResponse();
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const result = await controller.logout(req as any);
+      const result = await controller.logout(req as any, res);
 
       expect(authService.logout).toHaveBeenCalledWith('test-token', req.user);
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockLogoutResponse);
+    });
+
+    it('should clear auth cookie on logout', async () => {
+      const mockLogoutResponse = { message: 'Logged out successfully' };
+      authService.logout.mockResolvedValue(mockLogoutResponse);
+      const req = mockAuthenticatedRequest();
+      const res = mockResponse();
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await controller.logout(req as any, res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.clearCookie).toHaveBeenCalledWith(
+        'bf_auth_token',
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'lax',
+          path: '/',
+        }),
+      );
     });
 
     it('should handle missing authorization header', async () => {
-      const mockResponse = { message: 'Logged out successfully' };
-      authService.logout.mockResolvedValue(mockResponse);
+      const mockLogoutResponse = { message: 'Logged out successfully' };
+      authService.logout.mockResolvedValue(mockLogoutResponse);
       const req = {
         user: { id: 1, weworkId: 'test', name: 'Test' },
         headers: {},
       };
+      const res = mockResponse();
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const result = await controller.logout(req as any);
+      const result = await controller.logout(req as any, res);
 
       expect(authService.logout).toHaveBeenCalledWith('', req.user);
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockLogoutResponse);
     });
   });
 });
