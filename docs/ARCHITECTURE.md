@@ -829,7 +829,7 @@ enum SupplierStatus {
 | QuoteModule | ✅ 已完成 | 含定时任务、编号生成服务 |
 | OrderModule | ✅ 已完成 | 主表 API + 明细 API (3.2.1-3.2.17) |
 | LogisticsModule | ✅ 已完成 | 3.3.1-3.3.5 全部完成 |
-| ImportModule | ⏳ 待开始 | |
+| ImportModule | ✅ 已完成 | 3.4.1-3.4.4 全部完成 |
 | AuthModule | ⏳ 待开始 | |
 | SystemModule | ⏳ 待开始 | |
 
@@ -1164,10 +1164,10 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
 |---|------|---------|------|---------|-----|
-| 3.4.1 | 批量导入面料（Excel，冲突跳过） | POST /import/fabrics | ⏳ | ⏳ | ⏳ |
-| 3.4.2 | 批量导入供应商（Excel，冲突跳过） | POST /import/suppliers | ⏳ | ⏳ | ⏳ |
-| 3.4.3 | 下载面料导入模板（含列定义和示例数据） | GET /import/templates/fabrics | ⏳ | ⏳ | ⏳ |
-| 3.4.4 | 下载供应商导入模板 | GET /import/templates/suppliers | ⏳ | ⏳ | ⏳ |
+| 3.4.1 | 批量导入面料（Excel，冲突跳过） | POST /import/fabrics | ✅ | ✅ | ✅ |
+| 3.4.2 | 批量导入供应商（Excel，冲突跳过） | POST /import/suppliers | ✅ | ✅ | ✅ |
+| 3.4.3 | 下载面料导入模板（含列定义和示例数据） | GET /import/templates/fabrics | ✅ | ✅ | ✅ |
+| 3.4.4 | 下载供应商导入模板 | GET /import/templates/suppliers | ✅ | ✅ | ✅ |
 
 ### 14.5 AuthModule（认证模块）
 
