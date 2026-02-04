@@ -244,7 +244,7 @@ describe('OrderService', () => {
         NotFoundException,
       );
       await expect(service.create(createDto)).rejects.toThrow(
-        'Fabrics not found: 1',
+        'Fabric not found: 1',
       );
     });
 
@@ -260,7 +260,7 @@ describe('OrderService', () => {
       mockPrismaService.fabric.findMany.mockResolvedValue([mockFabric]); // Only fabric 1 found
 
       await expect(service.create(multiItemDto)).rejects.toThrow(
-        'Fabrics not found: 2',
+        'Fabric not found: 2',
       );
     });
 
@@ -284,7 +284,7 @@ describe('OrderService', () => {
         NotFoundException,
       );
       await expect(service.create(dtoWithSupplier)).rejects.toThrow(
-        'Suppliers not found: 999',
+        'Supplier not found: 999',
       );
     });
 
@@ -308,7 +308,7 @@ describe('OrderService', () => {
         NotFoundException,
       );
       await expect(service.create(dtoWithQuote)).rejects.toThrow(
-        'Quotes not found: 999',
+        'Quote not found: 999',
       );
     });
 
@@ -748,11 +748,12 @@ describe('OrderService', () => {
 
       expect(mockPrismaService.customer.findFirst).toHaveBeenCalledWith({
         where: { id: 2, isActive: true },
+        select: { id: true },
       });
       expect(mockPrismaService.order.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            customerId: 2,
+            customer: { connect: { id: 2 } },
           }),
         }),
       );

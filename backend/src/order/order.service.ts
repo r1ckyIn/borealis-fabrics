@@ -32,6 +32,27 @@ import {
   canRestoreItem,
 } from './enums/order-status.enum';
 import {
+  ORDER_INCLUDE_LIST,
+  ORDER_INCLUDE_DETAIL,
+  ORDER_INCLUDE_UPDATE,
+  ORDER_INCLUDE_PAYMENT,
+  ORDER_ITEM_INCLUDE_BASIC,
+  ORDER_ITEM_INCLUDE_WITH_TIMELINE,
+  TIMELINE_INCLUDE_ORDER,
+  TIMELINE_INCLUDE_ITEM,
+  SUPPLIER_PAYMENT_INCLUDE,
+} from './order.includes';
+import {
+  validateCustomerExists,
+  validateFabricExists,
+  validateSupplierExists,
+  validateQuoteExists,
+  validateOrderExists,
+  validateOrderItemExists,
+  extractUniqueIds,
+  validateEntityIds,
+} from './order.validators';
+import {
   Order,
   OrderItem,
   OrderTimeline,
@@ -68,83 +89,39 @@ export class OrderService {
   async create(createDto: CreateOrderDto): Promise<Order> {
     this.logger.debug(`Create order called with: ${JSON.stringify(createDto)}`);
 
-    // Validate customer exists and is active
-    const customer = await this.prisma.customer.findFirst({
-      where: { id: createDto.customerId, isActive: true },
-    });
-    if (!customer) {
-      throw new NotFoundException(
-        `Customer with ID ${createDto.customerId} not found`,
-      );
-    }
+    // Validate all references before starting transaction
+    await validateCustomerExists(this.prisma, createDto.customerId);
 
-    // Collect all fabric IDs from items
-    const fabricIds = [
-      ...new Set(createDto.items.map((item) => item.fabricId)),
-    ];
+    // Extract and validate all IDs from items
+    const fabricIds = extractUniqueIds(createDto.items, 'fabricId');
+    const supplierIds = extractUniqueIds(createDto.items, 'supplierId');
+    const quoteIds = extractUniqueIds(createDto.items, 'quoteId');
 
-    // Validate all fabrics exist and are active
-    const fabrics = await this.prisma.fabric.findMany({
-      where: { id: { in: fabricIds }, isActive: true },
-      select: { id: true },
-    });
-    const foundFabricIds = new Set(fabrics.map((f) => f.id));
-    const missingFabricIds = fabricIds.filter((id) => !foundFabricIds.has(id));
-    if (missingFabricIds.length > 0) {
-      throw new NotFoundException(
-        `Fabrics not found: ${missingFabricIds.join(', ')}`,
-      );
-    }
-
-    // Collect supplier IDs from items (if any)
-    const supplierIds = [
-      ...new Set(
-        createDto.items
-          .filter((item) => item.supplierId !== undefined)
-          .map((item) => item.supplierId as number),
+    await Promise.all([
+      validateEntityIds(
+        this.prisma,
+        'Fabric',
+        fabricIds,
+        this.prisma.fabric.findMany.bind(this.prisma.fabric),
       ),
-    ];
-
-    // Validate suppliers if any
-    if (supplierIds.length > 0) {
-      const suppliers = await this.prisma.supplier.findMany({
-        where: { id: { in: supplierIds }, isActive: true },
-        select: { id: true },
-      });
-      const foundSupplierIds = new Set(suppliers.map((s) => s.id));
-      const missingSupplierIds = supplierIds.filter(
-        (id) => !foundSupplierIds.has(id),
-      );
-      if (missingSupplierIds.length > 0) {
-        throw new NotFoundException(
-          `Suppliers not found: ${missingSupplierIds.join(', ')}`,
-        );
-      }
-    }
-
-    // Collect quote IDs from items (if any)
-    const quoteIds = [
-      ...new Set(
-        createDto.items
-          .filter((item) => item.quoteId !== undefined)
-          .map((item) => item.quoteId as number),
-      ),
-    ];
-
-    // Validate quotes if any
-    if (quoteIds.length > 0) {
-      const quotes = await this.prisma.quote.findMany({
-        where: { id: { in: quoteIds } },
-        select: { id: true },
-      });
-      const foundQuoteIds = new Set(quotes.map((q) => q.id));
-      const missingQuoteIds = quoteIds.filter((id) => !foundQuoteIds.has(id));
-      if (missingQuoteIds.length > 0) {
-        throw new NotFoundException(
-          `Quotes not found: ${missingQuoteIds.join(', ')}`,
-        );
-      }
-    }
+      supplierIds.length > 0
+        ? validateEntityIds(
+            this.prisma,
+            'Supplier',
+            supplierIds,
+            this.prisma.supplier.findMany.bind(this.prisma.supplier),
+          )
+        : Promise.resolve(new Set<number>()),
+      quoteIds.length > 0
+        ? validateEntityIds(
+            this.prisma,
+            'Quote',
+            quoteIds,
+            this.prisma.quote.findMany.bind(this.prisma.quote),
+            false,
+          )
+        : Promise.resolve(new Set<number>()),
+    ]);
 
     // Calculate total amount from items
     const totalAmount = createDto.items.reduce((sum, item) => {
@@ -284,35 +261,13 @@ export class OrderService {
     const sortOrder = query.sortOrder ?? 'desc';
     const orderBy = { [sortBy]: sortOrder };
 
-    // Include relations
-    const include = {
-      customer: {
-        select: {
-          id: true,
-          companyName: true,
-          contactName: true,
-          phone: true,
-        },
-      },
-      items: {
-        select: {
-          id: true,
-          fabricId: true,
-          quantity: true,
-          salePrice: true,
-          subtotal: true,
-          status: true,
-        },
-      },
-    };
-
     // Execute queries
     const [items, total] = await Promise.all([
       this.prisma.order.findMany({
         where,
         ...paginationArgs,
         orderBy,
-        include,
+        include: ORDER_INCLUDE_LIST,
       }),
       this.prisma.order.count({ where }),
     ]);
@@ -328,47 +283,7 @@ export class OrderService {
 
     const order = await this.prisma.order.findUnique({
       where: { id },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            companyName: true,
-            contactName: true,
-            phone: true,
-            email: true,
-          },
-        },
-        items: {
-          include: {
-            fabric: {
-              select: {
-                id: true,
-                fabricCode: true,
-                name: true,
-                composition: true,
-              },
-            },
-            supplier: {
-              select: {
-                id: true,
-                companyName: true,
-                contactName: true,
-                phone: true,
-              },
-            },
-            quote: {
-              select: {
-                id: true,
-                quoteCode: true,
-              },
-            },
-            timelines: {
-              orderBy: { createdAt: 'desc' },
-            },
-          },
-        },
-        supplierPayments: true,
-      },
+      include: ORDER_INCLUDE_DETAIL,
     });
 
     if (!order) {
@@ -388,35 +303,18 @@ export class OrderService {
       `Update order called with id: ${id}, data: ${JSON.stringify(updateDto)}`,
     );
 
-    // Find existing order
-    const existingOrder = await this.prisma.order.findUnique({
-      where: { id },
-    });
-
-    if (!existingOrder) {
-      throw new NotFoundException(`Order with ID ${id} not found`);
-    }
+    // Verify order exists
+    await validateOrderExists(this.prisma, id);
 
     // Validate new customer if provided
     if (updateDto.customerId !== undefined) {
-      const customer = await this.prisma.customer.findFirst({
-        where: { id: updateDto.customerId, isActive: true },
-      });
-      if (!customer) {
-        throw new NotFoundException(
-          `Customer with ID ${updateDto.customerId} not found`,
-        );
-      }
+      await validateCustomerExists(this.prisma, updateDto.customerId);
     }
 
-    // Build update data
-    const data: {
-      customerId?: number;
-      deliveryAddress?: string;
-      notes?: string;
-    } = {};
+    // Build update data - only include defined fields
+    const data: Prisma.OrderUpdateInput = {};
     if (updateDto.customerId !== undefined) {
-      data.customerId = updateDto.customerId;
+      data.customer = { connect: { id: updateDto.customerId } };
     }
     if (updateDto.deliveryAddress !== undefined) {
       data.deliveryAddress = updateDto.deliveryAddress;
@@ -425,51 +323,10 @@ export class OrderService {
       data.notes = updateDto.notes;
     }
 
-    // Update and return with includes
     return this.prisma.order.update({
       where: { id },
       data,
-      include: {
-        customer: {
-          select: {
-            id: true,
-            companyName: true,
-            contactName: true,
-            phone: true,
-            email: true,
-          },
-        },
-        items: {
-          include: {
-            fabric: {
-              select: {
-                id: true,
-                fabricCode: true,
-                name: true,
-                composition: true,
-              },
-            },
-            supplier: {
-              select: {
-                id: true,
-                companyName: true,
-                contactName: true,
-                phone: true,
-              },
-            },
-            quote: {
-              select: {
-                id: true,
-                quoteCode: true,
-              },
-            },
-            timelines: {
-              orderBy: { createdAt: 'desc' },
-            },
-          },
-        },
-        supplierPayments: true,
-      },
+      include: ORDER_INCLUDE_UPDATE,
     });
   }
 
@@ -573,43 +430,11 @@ export class OrderService {
     this.logger.debug(`GetOrderItems called for orderId: ${orderId}`);
 
     // Verify order exists
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
-    }
+    await validateOrderExists(this.prisma, orderId);
 
     return this.prisma.orderItem.findMany({
       where: { orderId },
-      include: {
-        fabric: {
-          select: {
-            id: true,
-            fabricCode: true,
-            name: true,
-            composition: true,
-          },
-        },
-        supplier: {
-          select: {
-            id: true,
-            companyName: true,
-            contactName: true,
-            phone: true,
-          },
-        },
-        quote: {
-          select: {
-            id: true,
-            quoteCode: true,
-          },
-        },
-        timelines: {
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-        },
-      },
+      include: ORDER_ITEM_INCLUDE_WITH_TIMELINE,
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -626,49 +451,22 @@ export class OrderService {
       `AddOrderItem called for orderId: ${orderId}, data: ${JSON.stringify(dto)}`,
     );
 
-    // Verify order exists
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
-    }
+    // Verify order exists and check status
+    const order = await validateOrderExists(this.prisma, orderId);
 
-    // Check if order status allows adding items
     if (!canModifyItem(order.status as OrderItemStatus)) {
       throw new BadRequestException(
         `Cannot add items - order status is ${order.status}. Only INQUIRY and PENDING orders can have items added.`,
       );
     }
 
-    // Validate fabric exists and is active
-    const fabric = await this.prisma.fabric.findFirst({
-      where: { id: dto.fabricId, isActive: true },
-    });
-    if (!fabric) {
-      throw new NotFoundException(`Fabric with ID ${dto.fabricId} not found`);
-    }
-
-    // Validate supplier if provided
+    // Validate references
+    await validateFabricExists(this.prisma, dto.fabricId);
     if (dto.supplierId !== undefined) {
-      const supplier = await this.prisma.supplier.findFirst({
-        where: { id: dto.supplierId, isActive: true },
-      });
-      if (!supplier) {
-        throw new NotFoundException(
-          `Supplier with ID ${dto.supplierId} not found`,
-        );
-      }
+      await validateSupplierExists(this.prisma, dto.supplierId);
     }
-
-    // Validate quote if provided
     if (dto.quoteId !== undefined) {
-      const quote = await this.prisma.quote.findUnique({
-        where: { id: dto.quoteId },
-      });
-      if (!quote) {
-        throw new NotFoundException(`Quote with ID ${dto.quoteId} not found`);
-      }
+      await validateQuoteExists(this.prisma, dto.quoteId);
     }
 
     // Calculate subtotal
@@ -692,24 +490,7 @@ export class OrderService {
             : undefined,
           notes: dto.notes,
         },
-        include: {
-          fabric: {
-            select: {
-              id: true,
-              fabricCode: true,
-              name: true,
-              composition: true,
-            },
-          },
-          supplier: {
-            select: {
-              id: true,
-              companyName: true,
-              contactName: true,
-              phone: true,
-            },
-          },
-        },
+        include: ORDER_ITEM_INCLUDE_BASIC,
       });
 
       // Create timeline entry
@@ -747,39 +528,18 @@ export class OrderService {
       `UpdateOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
     );
 
-    // Validate supplier if changing (can be done outside transaction)
+    // Validate references outside transaction for better error messages
     if (dto.supplierId !== undefined) {
-      const supplier = await this.prisma.supplier.findFirst({
-        where: { id: dto.supplierId, isActive: true },
-      });
-      if (!supplier) {
-        throw new NotFoundException(
-          `Supplier with ID ${dto.supplierId} not found`,
-        );
-      }
+      await validateSupplierExists(this.prisma, dto.supplierId);
     }
-
-    // Validate quote if changing (can be done outside transaction)
     if (dto.quoteId !== undefined) {
-      const quote = await this.prisma.quote.findUnique({
-        where: { id: dto.quoteId },
-      });
-      if (!quote) {
-        throw new NotFoundException(`Quote with ID ${dto.quoteId} not found`);
-      }
+      await validateQuoteExists(this.prisma, dto.quoteId);
     }
 
     // Update in transaction with atomic status check
     return this.prisma.$transaction(async (tx) => {
-      // Atomically find and verify item with status check inside transaction
-      const item = await tx.orderItem.findFirst({
-        where: { id: itemId, orderId },
-      });
-      if (!item) {
-        throw new NotFoundException(
-          `Order item with ID ${itemId} not found in order ${orderId}`,
-        );
-      }
+      // Find and verify item inside transaction
+      const item = await validateOrderItemExists(tx, orderId, itemId);
 
       // Check status inside transaction to prevent race condition
       if (!canModifyItem(item.status as OrderItemStatus)) {
@@ -789,57 +549,13 @@ export class OrderService {
       }
 
       // Build update data
-      const updateData: Prisma.OrderItemUpdateInput = {};
+      const updateData = this.buildOrderItemUpdateData(dto, item);
       const oldSupplierId = item.supplierId;
-
-      if (dto.supplierId !== undefined) {
-        updateData.supplier = { connect: { id: dto.supplierId } };
-      }
-      if (dto.quoteId !== undefined) {
-        updateData.quote = { connect: { id: dto.quoteId } };
-      }
-      if (dto.quantity !== undefined) {
-        updateData.quantity = dto.quantity;
-      }
-      if (dto.salePrice !== undefined) {
-        updateData.salePrice = dto.salePrice;
-      }
-      if (dto.purchasePrice !== undefined) {
-        updateData.purchasePrice = dto.purchasePrice;
-      }
-      if (dto.deliveryDate !== undefined) {
-        updateData.deliveryDate = new Date(dto.deliveryDate);
-      }
-      if (dto.notes !== undefined) {
-        updateData.notes = dto.notes;
-      }
-
-      // Recalculate subtotal if quantity or price changed
-      const newQuantity = dto.quantity ?? Number(item.quantity);
-      const newSalePrice = dto.salePrice ?? Number(item.salePrice);
-      updateData.subtotal = newQuantity * newSalePrice;
 
       const updatedItem = await tx.orderItem.update({
         where: { id: itemId },
         data: updateData,
-        include: {
-          fabric: {
-            select: {
-              id: true,
-              fabricCode: true,
-              name: true,
-              composition: true,
-            },
-          },
-          supplier: {
-            select: {
-              id: true,
-              companyName: true,
-              contactName: true,
-              phone: true,
-            },
-          },
-        },
+        include: ORDER_ITEM_INCLUDE_BASIC,
       });
 
       // Update supplier payments if supplier changed
@@ -950,65 +666,29 @@ export class OrderService {
 
     const newStatus = dto.status;
 
-    // Update in transaction with atomic status check
     return this.prisma.$transaction(async (tx) => {
-      // Find item inside transaction to prevent race condition
-      const item = await tx.orderItem.findFirst({
-        where: { id: itemId, orderId },
-      });
-      if (!item) {
-        throw new NotFoundException(
-          `Order item with ID ${itemId} not found in order ${orderId}`,
-        );
-      }
-
+      const item = await validateOrderItemExists(tx, orderId, itemId);
       const currentStatus = item.status as OrderItemStatus;
 
-      // Validate status transition inside transaction
       if (!isValidStatusTransition(currentStatus, newStatus)) {
         throw new BadRequestException(
           `Invalid status transition from ${currentStatus} to ${newStatus}`,
         );
       }
 
-      // Update item status
       const updatedItem = await tx.orderItem.update({
         where: { id: itemId },
-        data: {
-          status: newStatus,
-          prevStatus: currentStatus,
-        },
-        include: {
-          fabric: {
-            select: {
-              id: true,
-              fabricCode: true,
-              name: true,
-              composition: true,
-            },
-          },
-          supplier: {
-            select: {
-              id: true,
-              companyName: true,
-              contactName: true,
-              phone: true,
-            },
-          },
-        },
+        data: { status: newStatus, prevStatus: currentStatus },
+        include: ORDER_ITEM_INCLUDE_BASIC,
       });
 
-      // Create timeline entry
-      await tx.orderTimeline.create({
-        data: {
-          orderItemId: itemId,
-          fromStatus: currentStatus,
-          toStatus: newStatus,
-          remark: dto.remark ?? `Status changed to ${newStatus}`,
-        },
-      });
-
-      // Update order aggregate status
+      await this.createTimelineEntry(
+        tx,
+        itemId,
+        currentStatus,
+        newStatus,
+        dto.remark,
+      );
       await this.updateAggregateStatusInTx(tx, orderId);
 
       return updatedItem;
@@ -1028,62 +708,27 @@ export class OrderService {
       `CancelOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
     );
 
-    // Update in transaction with atomic status check
     return this.prisma.$transaction(async (tx) => {
-      // Find item inside transaction to prevent race condition
-      const item = await tx.orderItem.findFirst({
-        where: { id: itemId, orderId },
-      });
-      if (!item) {
-        throw new NotFoundException(
-          `Order item with ID ${itemId} not found in order ${orderId}`,
-        );
-      }
-
+      const item = await validateOrderItemExists(tx, orderId, itemId);
       const currentStatus = item.status as OrderItemStatus;
 
-      // Check if item can be cancelled inside transaction
       if (!canCancelItem(currentStatus)) {
         throw new BadRequestException('Item is already cancelled');
       }
 
       const updatedItem = await tx.orderItem.update({
         where: { id: itemId },
-        data: {
-          status: OrderItemStatus.CANCELLED,
-          prevStatus: currentStatus,
-        },
-        include: {
-          fabric: {
-            select: {
-              id: true,
-              fabricCode: true,
-              name: true,
-              composition: true,
-            },
-          },
-          supplier: {
-            select: {
-              id: true,
-              companyName: true,
-              contactName: true,
-              phone: true,
-            },
-          },
-        },
+        data: { status: OrderItemStatus.CANCELLED, prevStatus: currentStatus },
+        include: ORDER_ITEM_INCLUDE_BASIC,
       });
 
-      // Create timeline entry
-      await tx.orderTimeline.create({
-        data: {
-          orderItemId: itemId,
-          fromStatus: currentStatus,
-          toStatus: OrderItemStatus.CANCELLED,
-          remark: dto.reason ?? 'Item cancelled',
-        },
-      });
-
-      // Update order aggregate status
+      await this.createTimelineEntry(
+        tx,
+        itemId,
+        currentStatus,
+        OrderItemStatus.CANCELLED,
+        dto.reason ?? 'Item cancelled',
+      );
       await this.updateAggregateStatusInTx(tx, orderId);
 
       return updatedItem;
@@ -1103,22 +748,11 @@ export class OrderService {
       `RestoreOrderItem called for orderId: ${orderId}, itemId: ${itemId}`,
     );
 
-    // Update in transaction with atomic status check
     return this.prisma.$transaction(async (tx) => {
-      // Find item inside transaction to prevent race condition
-      const item = await tx.orderItem.findFirst({
-        where: { id: itemId, orderId },
-      });
-      if (!item) {
-        throw new NotFoundException(
-          `Order item with ID ${itemId} not found in order ${orderId}`,
-        );
-      }
-
+      const item = await validateOrderItemExists(tx, orderId, itemId);
       const currentStatus = item.status as OrderItemStatus;
       const prevStatus = item.prevStatus as OrderItemStatus | null;
 
-      // Check if item can be restored inside transaction
       if (!canRestoreItem(currentStatus, prevStatus)) {
         if (currentStatus !== OrderItemStatus.CANCELLED) {
           throw new BadRequestException('Only cancelled items can be restored');
@@ -1130,41 +764,17 @@ export class OrderService {
 
       const updatedItem = await tx.orderItem.update({
         where: { id: itemId },
-        data: {
-          status: prevStatus!,
-          prevStatus: null,
-        },
-        include: {
-          fabric: {
-            select: {
-              id: true,
-              fabricCode: true,
-              name: true,
-              composition: true,
-            },
-          },
-          supplier: {
-            select: {
-              id: true,
-              companyName: true,
-              contactName: true,
-              phone: true,
-            },
-          },
-        },
+        data: { status: prevStatus!, prevStatus: null },
+        include: ORDER_ITEM_INCLUDE_BASIC,
       });
 
-      // Create timeline entry
-      await tx.orderTimeline.create({
-        data: {
-          orderItemId: itemId,
-          fromStatus: OrderItemStatus.CANCELLED,
-          toStatus: prevStatus!,
-          remark: dto.reason ?? `Item restored to ${prevStatus}`,
-        },
-      });
-
-      // Update order aggregate status
+      await this.createTimelineEntry(
+        tx,
+        itemId,
+        OrderItemStatus.CANCELLED,
+        prevStatus!,
+        dto.reason ?? `Item restored to ${prevStatus}`,
+      );
       await this.updateAggregateStatusInTx(tx, orderId);
 
       return updatedItem;
@@ -1182,41 +792,11 @@ export class OrderService {
   async getOrderTimeline(orderId: number): Promise<OrderTimeline[]> {
     this.logger.debug(`GetOrderTimeline called for orderId: ${orderId}`);
 
-    // Verify order exists
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
-    }
+    await validateOrderExists(this.prisma, orderId);
 
     return this.prisma.orderTimeline.findMany({
-      where: {
-        orderItem: {
-          orderId,
-        },
-      },
-      include: {
-        orderItem: {
-          select: {
-            id: true,
-            fabric: {
-              select: {
-                id: true,
-                fabricCode: true,
-                name: true,
-              },
-            },
-          },
-        },
-        operator: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-      },
+      where: { orderItem: { orderId } },
+      include: TIMELINE_INCLUDE_ORDER,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -1232,27 +812,11 @@ export class OrderService {
       `GetItemTimeline called for orderId: ${orderId}, itemId: ${itemId}`,
     );
 
-    // Verify item exists and belongs to order
-    const item = await this.prisma.orderItem.findFirst({
-      where: { id: itemId, orderId },
-    });
-    if (!item) {
-      throw new NotFoundException(
-        `Order item with ID ${itemId} not found in order ${orderId}`,
-      );
-    }
+    await validateOrderItemExists(this.prisma, orderId, itemId);
 
     return this.prisma.orderTimeline.findMany({
       where: { orderItemId: itemId },
-      include: {
-        operator: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-      },
+      include: TIMELINE_INCLUDE_ITEM,
       orderBy: { createdAt: 'desc' },
     });
   }
@@ -1270,15 +834,117 @@ export class OrderService {
   ): Promise<Order> {
     this.logger.debug(`UpdateCustomerPayment called for orderId: ${orderId}`);
 
-    // Verify order exists
-    const order = await this.prisma.order.findUnique({
+    await validateOrderExists(this.prisma, orderId);
+
+    const updateData = this.buildCustomerPaymentUpdateData(dto);
+
+    return this.prisma.order.update({
       where: { id: orderId },
+      data: updateData,
+      include: ORDER_INCLUDE_PAYMENT,
     });
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
+  }
+
+  /**
+   * Get supplier payments for an order (3.2.16).
+   */
+  async getSupplierPayments(orderId: number): Promise<SupplierPayment[]> {
+    this.logger.debug(`GetSupplierPayments called for orderId: ${orderId}`);
+
+    await validateOrderExists(this.prisma, orderId);
+
+    return this.prisma.supplierPayment.findMany({
+      where: { orderId },
+      include: SUPPLIER_PAYMENT_INCLUDE,
+    });
+  }
+
+  /**
+   * Update supplier payment information (3.2.17).
+   * Uses transaction with upsert for atomic operation to prevent TOCTOU race conditions.
+   */
+  async updateSupplierPayment(
+    orderId: number,
+    supplierId: number,
+    dto: UpdateSupplierPaymentDto,
+  ): Promise<SupplierPayment> {
+    this.logger.debug(
+      `UpdateSupplierPayment called for orderId: ${orderId}, supplierId: ${supplierId}`,
+    );
+
+    return this.prisma.$transaction(async (tx) => {
+      await validateOrderExists(tx, orderId);
+      await validateSupplierExists(tx, supplierId);
+
+      const updateData = this.buildSupplierPaymentUpdateData(dto);
+
+      return tx.supplierPayment.upsert({
+        where: { orderId_supplierId: { orderId, supplierId } },
+        create: {
+          orderId,
+          supplierId,
+          payable: 0,
+          paid: dto.paid ?? 0,
+          payStatus: dto.payStatus ?? CustomerPayStatus.UNPAID,
+          payMethod: dto.payMethod,
+          creditDays: dto.creditDays,
+          paidAt: dto.paidAt ? new Date(dto.paidAt) : undefined,
+        },
+        update: updateData,
+        include: SUPPLIER_PAYMENT_INCLUDE,
+      });
+    });
+  }
+
+  // ============================================================
+  // Helper Methods
+  // ============================================================
+
+  /**
+   * Build update data for order item.
+   */
+  private buildOrderItemUpdateData(
+    dto: UpdateOrderItemDto,
+    item: { quantity: unknown; salePrice: unknown },
+  ): Prisma.OrderItemUpdateInput {
+    const updateData: Prisma.OrderItemUpdateInput = {};
+
+    if (dto.supplierId !== undefined) {
+      updateData.supplier = { connect: { id: dto.supplierId } };
+    }
+    if (dto.quoteId !== undefined) {
+      updateData.quote = { connect: { id: dto.quoteId } };
+    }
+    if (dto.quantity !== undefined) {
+      updateData.quantity = dto.quantity;
+    }
+    if (dto.salePrice !== undefined) {
+      updateData.salePrice = dto.salePrice;
+    }
+    if (dto.purchasePrice !== undefined) {
+      updateData.purchasePrice = dto.purchasePrice;
+    }
+    if (dto.deliveryDate !== undefined) {
+      updateData.deliveryDate = new Date(dto.deliveryDate);
+    }
+    if (dto.notes !== undefined) {
+      updateData.notes = dto.notes;
     }
 
-    // Build update data
+    // Recalculate subtotal
+    const newQuantity = dto.quantity ?? Number(item.quantity);
+    const newSalePrice = dto.salePrice ?? Number(item.salePrice);
+    updateData.subtotal = newQuantity * newSalePrice;
+
+    return updateData;
+  }
+
+  /**
+   * Build update data for customer payment.
+   */
+  private buildCustomerPaymentUpdateData(
+    dto: UpdateCustomerPaymentDto,
+  ): Prisma.OrderUpdateInput {
     const updateData: Prisma.OrderUpdateInput = {};
 
     if (dto.customerPaid !== undefined) {
@@ -1297,143 +963,55 @@ export class OrderService {
       updateData.customerPaidAt = new Date(dto.customerPaidAt);
     }
 
-    return this.prisma.order.update({
-      where: { id: orderId },
-      data: updateData,
-      include: {
-        customer: {
-          select: {
-            id: true,
-            companyName: true,
-            contactName: true,
-            phone: true,
-          },
-        },
-        items: {
-          select: {
-            id: true,
-            fabricId: true,
-            quantity: true,
-            salePrice: true,
-            subtotal: true,
-            status: true,
-          },
-        },
-      },
-    });
+    return updateData;
   }
 
   /**
-   * Get supplier payments for an order (3.2.16).
+   * Build update data for supplier payment.
    */
-  async getSupplierPayments(orderId: number): Promise<SupplierPayment[]> {
-    this.logger.debug(`GetSupplierPayments called for orderId: ${orderId}`);
+  private buildSupplierPaymentUpdateData(
+    dto: UpdateSupplierPaymentDto,
+  ): Prisma.SupplierPaymentUpdateInput {
+    const updateData: Prisma.SupplierPaymentUpdateInput = {};
 
-    // Verify order exists
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-    });
-    if (!order) {
-      throw new NotFoundException(`Order with ID ${orderId} not found`);
+    if (dto.paid !== undefined) {
+      updateData.paid = dto.paid;
+    }
+    if (dto.payStatus !== undefined) {
+      updateData.payStatus = dto.payStatus;
+    }
+    if (dto.payMethod !== undefined) {
+      updateData.payMethod = dto.payMethod;
+    }
+    if (dto.creditDays !== undefined) {
+      updateData.creditDays = dto.creditDays;
+    }
+    if (dto.paidAt !== undefined) {
+      updateData.paidAt = new Date(dto.paidAt);
     }
 
-    return this.prisma.supplierPayment.findMany({
-      where: { orderId },
-      include: {
-        supplier: {
-          select: {
-            id: true,
-            companyName: true,
-            contactName: true,
-            phone: true,
-          },
-        },
-      },
-    });
+    return updateData;
   }
 
   /**
-   * Update supplier payment information (3.2.17).
-   * Uses transaction with upsert for atomic operation to prevent TOCTOU race conditions.
+   * Create a timeline entry for status change.
    */
-  async updateSupplierPayment(
-    orderId: number,
-    supplierId: number,
-    dto: UpdateSupplierPaymentDto,
-  ): Promise<SupplierPayment> {
-    this.logger.debug(
-      `UpdateSupplierPayment called for orderId: ${orderId}, supplierId: ${supplierId}`,
-    );
-
-    return this.prisma.$transaction(async (tx) => {
-      // Verify order exists (inside transaction)
-      const order = await tx.order.findUnique({
-        where: { id: orderId },
-      });
-      if (!order) {
-        throw new NotFoundException(`Order with ID ${orderId} not found`);
-      }
-
-      // Verify supplier exists (inside transaction)
-      const supplier = await tx.supplier.findFirst({
-        where: { id: supplierId, isActive: true },
-      });
-      if (!supplier) {
-        throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
-      }
-
-      // Build update data
-      const updateData: Prisma.SupplierPaymentUpdateInput = {};
-
-      if (dto.paid !== undefined) {
-        updateData.paid = dto.paid;
-      }
-      if (dto.payStatus !== undefined) {
-        updateData.payStatus = dto.payStatus;
-      }
-      if (dto.payMethod !== undefined) {
-        updateData.payMethod = dto.payMethod;
-      }
-      if (dto.creditDays !== undefined) {
-        updateData.creditDays = dto.creditDays;
-      }
-      if (dto.paidAt !== undefined) {
-        updateData.paidAt = new Date(dto.paidAt);
-      }
-
-      // Use upsert for atomic find-or-create-and-update
-      return tx.supplierPayment.upsert({
-        where: {
-          orderId_supplierId: { orderId, supplierId },
-        },
-        create: {
-          orderId,
-          supplierId,
-          payable: 0,
-          paid: dto.paid ?? 0,
-          payStatus: dto.payStatus ?? CustomerPayStatus.UNPAID,
-          payMethod: dto.payMethod,
-          creditDays: dto.creditDays,
-          paidAt: dto.paidAt ? new Date(dto.paidAt) : undefined,
-        },
-        update: updateData,
-        include: {
-          supplier: {
-            select: {
-              id: true,
-              companyName: true,
-              contactName: true,
-              phone: true,
-            },
-          },
-        },
-      });
+  private async createTimelineEntry(
+    tx: Prisma.TransactionClient,
+    orderItemId: number,
+    fromStatus: OrderItemStatus | null,
+    toStatus: OrderItemStatus,
+    remark?: string,
+  ): Promise<void> {
+    await tx.orderTimeline.create({
+      data: {
+        orderItemId,
+        fromStatus,
+        toStatus,
+        remark: remark ?? `Status changed to ${toStatus}`,
+      },
     });
   }
-
-  // ============================================================
-  // Helper Methods
-  // ============================================================
 
   /**
    * Upsert supplier payment record and recalculate payable amount.
