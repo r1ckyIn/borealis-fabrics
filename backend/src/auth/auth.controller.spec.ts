@@ -60,12 +60,12 @@ describe('AuthController', () => {
   });
 
   describe('weWorkLogin', () => {
-    it('should redirect to WeWork OAuth URL', () => {
+    it('should redirect to WeWork OAuth URL', async () => {
       const mockUrl = 'https://open.weixin.qq.com/connect/oauth2/authorize?...';
-      authService.buildWeWorkAuthUrl.mockReturnValue(mockUrl);
+      authService.buildWeWorkAuthUrl.mockResolvedValue(mockUrl);
       const res = mockResponse();
 
-      controller.weWorkLogin(res);
+      await controller.weWorkLogin(res);
 
       expect(authService.buildWeWorkAuthUrl).toHaveBeenCalled();
       // eslint-disable-next-line @typescript-eslint/unbound-method

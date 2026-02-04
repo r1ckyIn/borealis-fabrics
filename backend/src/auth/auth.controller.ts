@@ -50,8 +50,8 @@ export class AuthController {
     status: 302,
     description: 'Redirect to WeWork authorization page',
   })
-  weWorkLogin(@Res() res: Response): void {
-    const authUrl = this.authService.buildWeWorkAuthUrl();
+  async weWorkLogin(@Res() res: Response): Promise<void> {
+    const authUrl = await this.authService.buildWeWorkAuthUrl();
     res.redirect(authUrl);
   }
 

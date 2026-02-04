@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../common/services/redis.service';
 import { JwtPayload, RequestUser } from './interfaces';
@@ -48,7 +49,7 @@ export class AuthService {
   /**
    * Build WeWork OAuth authorization URL.
    */
-  buildWeWorkAuthUrl(): string {
+  async buildWeWorkAuthUrl(): Promise<string> {
     const corpId = this.configService.get<string>('wework.corpId');
     const agentId = this.configService.get<string>('wework.agentId');
     const redirectUri = this.configService.get<string>('wework.redirectUri');
@@ -59,8 +60,8 @@ export class AuthService {
 
     const state = this.generateState();
 
-    // Store state in Redis for CSRF protection
-    void this.redisService.setex(
+    // Store state in Redis for CSRF protection (wait for completion)
+    await this.redisService.setex(
       `${OAUTH_STATE_PREFIX}${state}`,
       OAUTH_STATE_TTL,
       '1',
@@ -146,19 +147,25 @@ export class AuthService {
   }
 
   /**
-   * Generate a random state string for OAuth CSRF protection.
+   * Generate a cryptographically secure random state string for OAuth CSRF protection.
    */
   private generateState(): string {
-    return Math.random().toString(36).substring(2, 15);
+    return crypto.randomBytes(16).toString('hex');
   }
 
   /**
    * Validate OAuth state parameter.
+   * State is deleted after validation to prevent replay attacks.
    */
   private async validateState(state: string): Promise<boolean> {
     const key = `${OAUTH_STATE_PREFIX}${state}`;
     const value = await this.redisService.get(key);
-    return value !== null;
+    if (value === null) {
+      return false;
+    }
+    // Delete state after validation to prevent replay attacks
+    await this.redisService.del(key);
+    return true;
   }
 
   /**
@@ -302,9 +309,9 @@ export class AuthService {
   }
 
   /**
-   * Simple hash function for token blacklist keys.
+   * Hash token using SHA256 for secure blacklist storage.
    */
   private hashToken(token: string): string {
-    return token.substring(0, 32);
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 }

@@ -20,7 +20,7 @@ describe('AuthService', () => {
   };
   let configService: { get: jest.Mock };
   let jwtService: { sign: jest.Mock; decode: jest.Mock };
-  let redisService: { get: jest.Mock; setex: jest.Mock };
+  let redisService: { get: jest.Mock; setex: jest.Mock; del: jest.Mock };
 
   beforeEach(async () => {
     prismaService = {
@@ -42,6 +42,7 @@ describe('AuthService', () => {
     redisService = {
       get: jest.fn(),
       setex: jest.fn(),
+      del: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -59,7 +60,7 @@ describe('AuthService', () => {
   });
 
   describe('buildWeWorkAuthUrl', () => {
-    it('should build valid WeWork OAuth URL', () => {
+    it('should build valid WeWork OAuth URL', async () => {
       configService.get.mockImplementation((key: string) => {
         const config: Record<string, string> = {
           'wework.corpId': 'test-corp-id',
@@ -68,8 +69,9 @@ describe('AuthService', () => {
         };
         return config[key];
       });
+      redisService.setex.mockResolvedValue(true);
 
-      const url = service.buildWeWorkAuthUrl();
+      const url = await service.buildWeWorkAuthUrl();
 
       expect(url).toContain(
         'https://open.weixin.qq.com/connect/oauth2/authorize',
@@ -83,7 +85,7 @@ describe('AuthService', () => {
       expect(url).toContain('#wechat_redirect');
     });
 
-    it('should store state in Redis', () => {
+    it('should generate cryptographically secure state (32 hex chars)', async () => {
       configService.get.mockImplementation((key: string) => {
         const config: Record<string, string> = {
           'wework.corpId': 'test-corp-id',
@@ -92,20 +94,42 @@ describe('AuthService', () => {
         };
         return config[key];
       });
+      redisService.setex.mockResolvedValue(true);
 
-      service.buildWeWorkAuthUrl();
+      await service.buildWeWorkAuthUrl();
+
+      // Verify state is 32 hex characters (16 bytes = 32 hex chars)
+      const stateKeyArg = (
+        redisService.setex.mock.calls as Array<[string, number, string]>
+      )[0][0];
+      const state = stateKeyArg.replace('auth:state:', '');
+      expect(state).toMatch(/^[a-f0-9]{32}$/);
+    });
+
+    it('should store state in Redis and await completion', async () => {
+      configService.get.mockImplementation((key: string) => {
+        const config: Record<string, string> = {
+          'wework.corpId': 'test-corp-id',
+          'wework.agentId': 'test-agent-id',
+          'wework.redirectUri': 'https://example.com/callback',
+        };
+        return config[key];
+      });
+      redisService.setex.mockResolvedValue(true);
+
+      await service.buildWeWorkAuthUrl();
 
       expect(redisService.setex).toHaveBeenCalledWith(
-        expect.stringMatching(/^auth:state:/),
+        expect.stringMatching(/^auth:state:[a-f0-9]{32}$/),
         300,
         '1',
       );
     });
 
-    it('should throw error when config is incomplete', () => {
+    it('should throw error when config is incomplete', async () => {
       configService.get.mockReturnValue(undefined);
 
-      expect(() => service.buildWeWorkAuthUrl()).toThrow(
+      await expect(service.buildWeWorkAuthUrl()).rejects.toThrow(
         'WeWork OAuth configuration is incomplete',
       );
     });
@@ -133,8 +157,56 @@ describe('AuthService', () => {
       ).rejects.toThrow('Invalid or expired OAuth state');
     });
 
+    it('should delete state after successful validation to prevent replay attacks', async () => {
+      redisService.get.mockResolvedValue('1');
+      redisService.del.mockResolvedValue(true);
+
+      // Mock WeWork API responses
+      mockFetch
+        .mockResolvedValueOnce({
+          json: () =>
+            Promise.resolve({
+              errcode: 0,
+              access_token: 'test-access-token',
+            }),
+        })
+        .mockResolvedValueOnce({
+          json: () =>
+            Promise.resolve({
+              errcode: 0,
+              userid: 'test-user-id',
+            }),
+        })
+        .mockResolvedValueOnce({
+          json: () =>
+            Promise.resolve({
+              errcode: 0,
+              userid: 'test-user-id',
+              name: 'Test User',
+            }),
+        });
+
+      prismaService.user.upsert.mockResolvedValue({
+        id: 1,
+        weworkId: 'test-user-id',
+        name: 'Test User',
+        avatar: null,
+        mobile: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      jwtService.sign.mockReturnValue('test-jwt-token');
+
+      await service.handleOAuthCallback('code', 'valid-state');
+
+      // Verify state was deleted after validation
+      expect(redisService.del).toHaveBeenCalledWith('auth:state:valid-state');
+    });
+
     it('should complete OAuth flow successfully', async () => {
       redisService.get.mockResolvedValue('1'); // Valid state
+      redisService.del.mockResolvedValue(true);
 
       // Mock WeWork API responses
       mockFetch
