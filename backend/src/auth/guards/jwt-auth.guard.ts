@@ -48,7 +48,7 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    const token = this.extractTokenFromHeader(request);
+    const token = this.extractToken(request);
     if (!token) {
       throw new UnauthorizedException('Missing authorization token');
     }
@@ -81,7 +81,7 @@ export class JwtAuthGuard implements CanActivate {
    * Extract JWT token from Authorization header or HttpOnly cookie.
    * Prioritizes header for API clients, falls back to cookie for browser.
    */
-  private extractTokenFromHeader(request: Request): string | null {
+  private extractToken(request: Request): string | null {
     // First try Authorization header (for API clients)
     const authHeader = request.headers.authorization;
     if (authHeader) {
@@ -93,12 +93,7 @@ export class JwtAuthGuard implements CanActivate {
 
     // Fall back to HttpOnly cookie (for browser)
     const cookies = request.cookies as Record<string, string> | undefined;
-    const cookieToken = cookies?.[AUTH_COOKIE_NAME];
-    if (cookieToken) {
-      return cookieToken;
-    }
-
-    return null;
+    return cookies?.[AUTH_COOKIE_NAME] ?? null;
   }
 
   /**

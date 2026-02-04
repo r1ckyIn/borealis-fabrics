@@ -81,34 +81,36 @@ export class SystemService {
    */
   async getReady(): Promise<ReadyResponseDto> {
     const checks: ReadyResponseDto['checks'] = {
-      database: 'unknown',
-      redis: 'unknown',
+      database: await this.checkDatabase(),
+      redis: await this.checkRedis(),
     };
 
-    // Check database connection
-    try {
-      await this.prisma.$queryRaw`SELECT 1`;
-      checks.database = 'ok';
-    } catch (error) {
-      this.logger.error('Database health check failed', error);
-      checks.database = 'error';
-    }
-
-    // Check Redis connection
-    try {
-      await this.redis.ping();
-      checks.redis = 'ok';
-    } catch (error) {
-      this.logger.error('Redis health check failed', error);
-      checks.redis = 'error';
-    }
-
-    const allOk = checks.database === 'ok' && checks.redis === 'ok';
+    const allOk = Object.values(checks).every((status) => status === 'ok');
 
     return {
       status: allOk ? 'ok' : 'degraded',
       timestamp: new Date().toISOString(),
       checks,
     };
+  }
+
+  private async checkDatabase(): Promise<'ok' | 'error'> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return 'ok';
+    } catch (error) {
+      this.logger.error('Database health check failed', error);
+      return 'error';
+    }
+  }
+
+  private async checkRedis(): Promise<'ok' | 'error'> {
+    try {
+      await this.redis.ping();
+      return 'ok';
+    } catch (error) {
+      this.logger.error('Redis health check failed', error);
+      return 'error';
+    }
   }
 }
