@@ -1989,11 +1989,10 @@ describe('OrderController (e2e)', () => {
         payMethod: PaymentMethod.BANK,
       };
 
+      // New implementation uses upsert for atomic operation
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.supplierPayment.findUnique.mockResolvedValue(
-        mockSupplierPayment,
-      );
-      mockPrismaService.supplierPayment.update.mockResolvedValue(
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         updatedPayment,
       );
 
@@ -2021,24 +2020,13 @@ describe('OrderController (e2e)', () => {
         supplier: { ...mockSupplier, id: 2 },
       };
 
+      // New implementation uses upsert for atomic operation
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.supplierPayment.findUnique.mockResolvedValue(null);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         ...mockSupplier,
         id: 2,
       });
-      mockPrismaService.supplierPayment.create.mockResolvedValue({
-        id: 2,
-        orderId: 1,
-        supplierId: 2,
-        payable: 0,
-        paid: 0,
-        payStatus: CustomerPayStatus.UNPAID,
-        payMethod: null,
-        creditDays: null,
-        paidAt: null,
-      });
-      mockPrismaService.supplierPayment.update.mockResolvedValue(newPayment);
+      mockPrismaService.supplierPayment.upsert.mockResolvedValue(newPayment);
 
       const response = await request(app.getHttpServer())
         .patch('/api/v1/orders/1/supplier-payments/2')
@@ -2060,9 +2048,9 @@ describe('OrderController (e2e)', () => {
       expect(response.body).toHaveProperty('message');
     });
 
-    it('should return 404 when supplier not found for new payment', async () => {
+    it('should return 404 when supplier not found', async () => {
+      // New implementation always validates supplier existence
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.supplierPayment.findUnique.mockResolvedValue(null);
       mockPrismaService.supplier.findFirst.mockResolvedValue(null);
 
       const response = await request(app.getHttpServer())
@@ -2077,11 +2065,10 @@ describe('OrderController (e2e)', () => {
       const creditDto = { creditDays: 45 };
       const updatedPayment = { ...mockSupplierPayment, creditDays: 45 };
 
+      // New implementation uses upsert for atomic operation
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.supplierPayment.findUnique.mockResolvedValue(
-        mockSupplierPayment,
-      );
-      mockPrismaService.supplierPayment.update.mockResolvedValue(
+      mockPrismaService.supplier.findFirst.mockResolvedValue(mockSupplier);
+      mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         updatedPayment,
       );
 
