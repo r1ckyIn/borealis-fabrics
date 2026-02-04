@@ -18,6 +18,7 @@ describe('AuthController', () => {
   const mockResponse = () => {
     const res: Partial<Response> = {
       redirect: jest.fn(),
+      cookie: jest.fn(),
     };
     return res as Response;
   };
@@ -74,7 +75,7 @@ describe('AuthController', () => {
   });
 
   describe('weWorkCallback', () => {
-    it('should redirect to frontend with token on success', async () => {
+    it('should set cookie and redirect to frontend on success', async () => {
       const mockResult = {
         token: 'jwt-token',
         user: {
@@ -86,7 +87,11 @@ describe('AuthController', () => {
         },
       };
       authService.handleOAuthCallback.mockResolvedValue(mockResult);
-      configService.get.mockReturnValue(['http://localhost:5173']);
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'cors.origins') return ['http://localhost:5173'];
+        if (key === 'nodeEnv') return 'development';
+        return undefined;
+      });
       const res = mockResponse();
 
       await controller.weWorkCallback('code', 'state', res);
@@ -96,8 +101,18 @@ describe('AuthController', () => {
         'state',
       );
       // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.cookie).toHaveBeenCalledWith(
+        'bf_auth_token',
+        'jwt-token',
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: false, // development mode
+        }),
+      );
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(res.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/auth/callback?token=jwt-token',
+        'http://localhost:5173/auth/callback?success=true',
       );
     });
 
@@ -111,7 +126,44 @@ describe('AuthController', () => {
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(res.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/auth/callback?token=jwt-token',
+        'http://localhost:5173/auth/callback?success=true',
+      );
+    });
+
+    it('should redirect with error on OAuth failure', async () => {
+      authService.handleOAuthCallback.mockRejectedValue(
+        new Error('Invalid code'),
+      );
+      configService.get.mockReturnValue(['http://localhost:5173']);
+      const res = mockResponse();
+
+      await controller.weWorkCallback('invalid-code', 'state', res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/auth/callback?error=Invalid%20code',
+      );
+    });
+
+    it('should set secure cookie in production mode', async () => {
+      const mockResult = { token: 'jwt-token', user: {} };
+      authService.handleOAuthCallback.mockResolvedValue(mockResult);
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'cors.origins') return ['https://app.example.com'];
+        if (key === 'nodeEnv') return 'production';
+        return undefined;
+      });
+      const res = mockResponse();
+
+      await controller.weWorkCallback('code', 'state', res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.cookie).toHaveBeenCalledWith(
+        'bf_auth_token',
+        'jwt-token',
+        expect.objectContaining({
+          secure: true, // production mode
+        }),
       );
     });
   });

@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -21,6 +22,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RequestUser } from './interfaces';
 import { UserResponseDto, LogoutResponseDto } from './dto';
+import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from './constants';
 
 /**
  * Extended Express Request with authenticated user.
@@ -36,6 +38,8 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
@@ -57,6 +61,7 @@ export class AuthController {
 
   /**
    * 3.5.2 WeWork OAuth callback - exchanges code for JWT token.
+   * Token is set via HttpOnly cookie instead of URL parameter for security.
    */
   @Get('wework/callback')
   @ApiOperation({ summary: 'WeWork OAuth callback handler' })
@@ -67,15 +72,35 @@ export class AuthController {
     @Query('state') state: string,
     @Res() res: Response,
   ): Promise<void> {
-    const result = await this.authService.handleOAuthCallback(code, state);
-
     // Get frontend URL from config
     const frontendUrl =
       this.configService.get<string>('cors.origins')?.[0] ||
       'http://localhost:5173';
 
-    // Redirect to frontend with token
-    res.redirect(`${frontendUrl}/auth/callback?token=${result.token}`);
+    try {
+      const result = await this.authService.handleOAuthCallback(code, state);
+
+      // Set token via HttpOnly cookie (secure in production)
+      const isProduction =
+        this.configService.get<string>('nodeEnv') === 'production';
+      res.cookie(AUTH_COOKIE_NAME, result.token, {
+        ...AUTH_COOKIE_OPTIONS,
+        secure: isProduction,
+      });
+
+      // Redirect to frontend success page
+      res.redirect(`${frontendUrl}/auth/callback?success=true`);
+    } catch (error) {
+      // Log the error for debugging
+      this.logger.error('OAuth callback failed', error);
+
+      // Redirect to frontend with error indicator
+      const errorMessage =
+        error instanceof Error ? error.message : 'Authentication failed';
+      res.redirect(
+        `${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`,
+      );
+    }
   }
 
   /**
