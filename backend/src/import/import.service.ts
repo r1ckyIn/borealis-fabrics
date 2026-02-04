@@ -5,6 +5,26 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ImportResultDto, ImportFailureDto } from './dto';
 
 /**
+ * Maximum number of rows allowed for import (excluding header)
+ */
+const MAX_IMPORT_ROWS = 1000;
+
+/**
+ * Maximum length for cell values (to prevent memory issues)
+ */
+const MAX_CELL_LENGTH = 1000;
+
+/**
+ * Numeric field validation ranges
+ */
+const NUMERIC_RANGES = {
+  weight: { min: 0, max: 10000 },
+  width: { min: 0, max: 10000 },
+  defaultPrice: { min: 0, max: 1000000 },
+  creditDays: { min: 0, max: 365 },
+};
+
+/**
  * Fabric template column definitions
  */
 const FABRIC_COLUMNS = [
@@ -129,6 +149,14 @@ export class ImportService {
       throw new BadRequestException('Excel file is empty or has no data rows');
     }
 
+    // Check maximum row limit (rowCount includes header)
+    const dataRowCount = worksheet.rowCount - 1;
+    if (dataRowCount > MAX_IMPORT_ROWS) {
+      throw new BadRequestException(
+        `Excel file has too many rows (${dataRowCount}). Maximum allowed is ${MAX_IMPORT_ROWS}.`,
+      );
+    }
+
     const failures: ImportFailureDto[] = [];
     const fabricsToCreate: Array<{
       fabricCode: string;
@@ -216,6 +244,43 @@ export class ImportService {
       const width = this.parseNumber(row, 7);
       const defaultPrice = this.parseNumber(row, 8);
 
+      // Validate numeric ranges
+      if (
+        weight !== null &&
+        (weight < NUMERIC_RANGES.weight.min ||
+          weight > NUMERIC_RANGES.weight.max)
+      ) {
+        failures.push({
+          rowNumber,
+          identifier: fabricCode,
+          reason: `weight must be between ${NUMERIC_RANGES.weight.min} and ${NUMERIC_RANGES.weight.max}`,
+        });
+        return;
+      }
+      if (
+        width !== null &&
+        (width < NUMERIC_RANGES.width.min || width > NUMERIC_RANGES.width.max)
+      ) {
+        failures.push({
+          rowNumber,
+          identifier: fabricCode,
+          reason: `width must be between ${NUMERIC_RANGES.width.min} and ${NUMERIC_RANGES.width.max}`,
+        });
+        return;
+      }
+      if (
+        defaultPrice !== null &&
+        (defaultPrice < NUMERIC_RANGES.defaultPrice.min ||
+          defaultPrice > NUMERIC_RANGES.defaultPrice.max)
+      ) {
+        failures.push({
+          rowNumber,
+          identifier: fabricCode,
+          reason: `defaultPrice must be between ${NUMERIC_RANGES.defaultPrice.min} and ${NUMERIC_RANGES.defaultPrice.max}`,
+        });
+        return;
+      }
+
       fabricsToCreate.push({
         fabricCode,
         name,
@@ -260,6 +325,14 @@ export class ImportService {
     const worksheet = workbook.worksheets[0];
     if (!worksheet || worksheet.rowCount < 2) {
       throw new BadRequestException('Excel file is empty or has no data rows');
+    }
+
+    // Check maximum row limit (rowCount includes header)
+    const dataRowCount = worksheet.rowCount - 1;
+    if (dataRowCount > MAX_IMPORT_ROWS) {
+      throw new BadRequestException(
+        `Excel file has too many rows (${dataRowCount}). Maximum allowed is ${MAX_IMPORT_ROWS}.`,
+      );
     }
 
     const failures: ImportFailureDto[] = [];
@@ -529,7 +602,8 @@ export class ImportService {
   }
 
   /**
-   * Get cell value as string
+   * Get cell value as string.
+   * Truncates values longer than MAX_CELL_LENGTH to prevent memory issues.
    */
   private getCellValue(row: ExcelJS.Row, colNumber: number): string {
     const cell = row.getCell(colNumber);
@@ -538,56 +612,53 @@ export class ImportService {
     }
 
     const value = cell.value;
+    let result = '';
 
     // Handle primitive types directly
     if (typeof value === 'string') {
-      return value.trim();
-    }
-    if (typeof value === 'number' || typeof value === 'boolean') {
-      return value.toString();
-    }
-    if (value instanceof Date) {
-      return value.toISOString();
-    }
-
-    // Handle object types
-    if (typeof value === 'object') {
+      result = value.trim();
+    } else if (typeof value === 'number' || typeof value === 'boolean') {
+      result = value.toString();
+    } else if (value instanceof Date) {
+      result = value.toISOString();
+    } else if (typeof value === 'object') {
+      // Handle object types
       // Handle rich text
       if ('richText' in value) {
-        return value.richText.map((rt) => rt.text).join('');
+        result = value.richText.map((rt) => rt.text).join('');
       }
       // Handle hyperlink
-      if ('hyperlink' in value) {
-        return value.text || '';
+      else if ('hyperlink' in value) {
+        result = value.text || '';
       }
       // Handle error (check before formula to avoid processing error strings)
-      if ('error' in value) {
-        return '';
+      else if ('error' in value) {
+        result = '';
       }
       // Handle formula
-      if ('result' in value) {
+      else if ('result' in value) {
         const formulaResult = (value as ExcelJS.CellFormulaValue).result;
         if (formulaResult === null || formulaResult === undefined) {
-          return '';
-        }
-        if (typeof formulaResult === 'string') {
-          return formulaResult.trim();
-        }
-        if (
+          result = '';
+        } else if (typeof formulaResult === 'string') {
+          result = formulaResult.trim();
+        } else if (
           typeof formulaResult === 'number' ||
           typeof formulaResult === 'boolean'
         ) {
-          return formulaResult.toString();
+          result = formulaResult.toString();
+        } else if (formulaResult instanceof Date) {
+          result = formulaResult.toISOString();
+        } else {
+          result = '';
         }
-        if (formulaResult instanceof Date) {
-          return formulaResult.toISOString();
-        }
-        return '';
       }
     }
 
-    // Fallback: should not reach here with proper typing
-    return '';
+    // Truncate to maximum length to prevent memory issues
+    return result.length > MAX_CELL_LENGTH
+      ? result.substring(0, MAX_CELL_LENGTH)
+      : result;
   }
 
   /**
