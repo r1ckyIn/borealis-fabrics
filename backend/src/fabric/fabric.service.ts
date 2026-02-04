@@ -31,17 +31,16 @@ import {
   buildPaginatedResult,
   PaginatedResult,
 } from '../common/utils/pagination';
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_FILE_SIZE,
+} from '../common/constants/file.constants';
+import { toNumber, toNumberRequired } from '../common/utils/decimal';
 
-// Allowed image MIME types for fabric images
-const ALLOWED_IMAGE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-];
-
-// Maximum file size: 10MB
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// Transaction client type for Prisma interactive transactions
+type TransactionClient = Parameters<
+  Parameters<PrismaService['$transaction']>[0]
+>[0];
 
 @Injectable()
 export class FabricService {
@@ -49,6 +48,50 @@ export class FabricService {
     private readonly prisma: PrismaService,
     private readonly fileService: FileService,
   ) {}
+
+  /**
+   * Validate fabric-supplier association exists.
+   * Checks that fabric, supplier, and their association all exist and are active.
+   * Returns the association record for further operations.
+   *
+   * @throws NotFoundException if fabric, supplier, or association not found
+   */
+  private async validateFabricSupplierAssociation(
+    tx: TransactionClient,
+    fabricId: number,
+    supplierId: number,
+  ) {
+    // Verify fabric exists and is active
+    const fabric = await tx.fabric.findFirst({
+      where: { id: fabricId, isActive: true },
+    });
+
+    if (!fabric) {
+      throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
+    }
+
+    // Verify supplier exists and is active
+    const supplier = await tx.supplier.findFirst({
+      where: { id: supplierId, isActive: true },
+    });
+
+    if (!supplier) {
+      throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
+    }
+
+    // Verify association exists
+    const association = await tx.fabricSupplier.findFirst({
+      where: { fabricId, supplierId },
+    });
+
+    if (!association) {
+      throw new NotFoundException(
+        `Supplier with ID ${supplierId} is not associated with fabric ID ${fabricId}`,
+      );
+    }
+
+    return association;
+  }
 
   /**
    * Create a new fabric.
@@ -430,8 +473,8 @@ export class FabricService {
       },
       fabricSupplierRelation: {
         fabricSupplierId: fs.id,
-        purchasePrice: Number(fs.purchasePrice),
-        minOrderQty: fs.minOrderQty ? Number(fs.minOrderQty) : null,
+        purchasePrice: toNumberRequired(fs.purchasePrice),
+        minOrderQty: toNumber(fs.minOrderQty),
         leadTimeDays: fs.leadTimeDays,
       },
     }));
@@ -507,38 +550,15 @@ export class FabricService {
     updateDto: UpdateFabricSupplierDto,
   ): Promise<FabricSupplier> {
     return this.prisma.$transaction(async (tx) => {
-      // Verify fabric exists and is active
-      const fabric = await tx.fabric.findFirst({
-        where: { id: fabricId, isActive: true },
-      });
-
-      if (!fabric) {
-        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
-      }
-
-      // Verify supplier exists and is active
-      const supplier = await tx.supplier.findFirst({
-        where: { id: supplierId, isActive: true },
-      });
-
-      if (!supplier) {
-        throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
-      }
-
-      // Verify association exists
-      const existingAssociation = await tx.fabricSupplier.findFirst({
-        where: { fabricId, supplierId },
-      });
-
-      if (!existingAssociation) {
-        throw new NotFoundException(
-          `Supplier with ID ${supplierId} is not associated with fabric ID ${fabricId}`,
-        );
-      }
+      const association = await this.validateFabricSupplierAssociation(
+        tx,
+        fabricId,
+        supplierId,
+      );
 
       // Update the association
       return tx.fabricSupplier.update({
-        where: { id: existingAssociation.id },
+        where: { id: association.id },
         data: updateDto,
       });
     });
@@ -550,38 +570,15 @@ export class FabricService {
    */
   async removeSupplier(fabricId: number, supplierId: number): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      // Verify fabric exists and is active
-      const fabric = await tx.fabric.findFirst({
-        where: { id: fabricId, isActive: true },
-      });
-
-      if (!fabric) {
-        throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
-      }
-
-      // Verify supplier exists and is active
-      const supplier = await tx.supplier.findFirst({
-        where: { id: supplierId, isActive: true },
-      });
-
-      if (!supplier) {
-        throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
-      }
-
-      // Verify association exists
-      const existingAssociation = await tx.fabricSupplier.findFirst({
-        where: { fabricId, supplierId },
-      });
-
-      if (!existingAssociation) {
-        throw new NotFoundException(
-          `Supplier with ID ${supplierId} is not associated with fabric ID ${fabricId}`,
-        );
-      }
+      const association = await this.validateFabricSupplierAssociation(
+        tx,
+        fabricId,
+        supplierId,
+      );
 
       // Delete the association
       await tx.fabricSupplier.delete({
-        where: { id: existingAssociation.id },
+        where: { id: association.id },
       });
     });
   }
@@ -663,7 +660,7 @@ export class FabricService {
       id: cp.id,
       customerId: cp.customerId,
       fabricId: cp.fabricId,
-      specialPrice: Number(cp.specialPrice),
+      specialPrice: toNumberRequired(cp.specialPrice),
       createdAt: cp.createdAt,
       updatedAt: cp.updatedAt,
       customer: {

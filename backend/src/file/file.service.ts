@@ -9,21 +9,10 @@ import { File } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-
-// Allowed file extensions (whitelist)
-const ALLOWED_EXTENSIONS = [
-  '.jpg',
-  '.jpeg',
-  '.png',
-  '.gif',
-  '.webp',
-  '.pdf',
-  '.xls',
-  '.xlsx',
-];
-
-// Maximum filename length
-const MAX_FILENAME_LENGTH = 255;
+import {
+  ALLOWED_EXTENSIONS,
+  MAX_FILENAME_LENGTH,
+} from '../common/constants/file.constants';
 
 /**
  * Sanitize filename to prevent security issues.

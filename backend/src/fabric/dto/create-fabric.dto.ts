@@ -13,10 +13,7 @@ import {
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Prisma } from '@prisma/client';
-
-// Trim transform helper
-const trimTransform = ({ value }: { value: unknown }): string | undefined =>
-  typeof value === 'string' ? value.trim() : undefined;
+import { trimTransform } from '../../common/transforms';
 
 export class CreateFabricDto {
   @ApiProperty({

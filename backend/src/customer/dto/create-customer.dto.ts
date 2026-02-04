@@ -11,45 +11,11 @@ import {
   Max,
   MaxLength,
   IsNotEmpty,
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-/**
- * Custom validator: creditDays is only allowed when creditType is 'credit'.
- * If creditType is 'prepay' and creditDays is provided, validation fails.
- */
-function IsCreditDaysValid(validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
-    registerDecorator({
-      name: 'isCreditDaysValid',
-      target: object.constructor,
-      propertyName: propertyName,
-      options: validationOptions,
-      validator: {
-        validate(value: unknown, args: ValidationArguments) {
-          const obj = args.object as { creditType?: string };
-          // If creditDays is not provided, always valid
-          if (value === undefined || value === null) {
-            return true;
-          }
-          // creditDays is only valid when creditType is 'credit'
-          return obj.creditType === 'credit';
-        },
-        defaultMessage() {
-          return 'creditDays can only be set when creditType is credit';
-        },
-      },
-    });
-  };
-}
-
-// Trim transform helper
-const trimTransform = ({ value }: { value: unknown }): string | undefined =>
-  typeof value === 'string' ? value.trim() : undefined;
+import { trimTransform } from '../../common/transforms';
+import { IsCreditDaysValidFor } from '../../common/validators/credit-days.validator';
 
 /**
  * Credit type for customer payment terms.
@@ -202,7 +168,7 @@ export class CreateCustomerDto {
   @IsInt()
   @Min(0)
   @Max(365)
-  @IsCreditDaysValid()
+  @IsCreditDaysValidFor('creditType')
   creditDays?: number;
 
   @ApiPropertyOptional({
