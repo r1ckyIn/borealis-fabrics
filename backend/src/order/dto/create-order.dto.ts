@@ -10,11 +10,8 @@ import {
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CreateOrderItemDto } from './order-item.dto';
-
-// Trim transform helper
-const trimTransform = ({ value }: { value: unknown }): string | undefined =>
-  typeof value === 'string' ? value.trim() : undefined;
+import { AddOrderItemDto } from './add-order-item.dto';
+import { trimTransform } from './dto.utils';
 
 /**
  * DTO for creating a new order.
@@ -53,12 +50,12 @@ export class CreateOrderDto {
 
   @ApiProperty({
     description: 'Order items (must have at least one)',
-    type: [CreateOrderItemDto],
+    type: [AddOrderItemDto],
     minItems: 1,
   })
   @IsArray()
   @ArrayMinSize(1, { message: 'Order must have at least one item' })
   @ValidateNested({ each: true })
-  @Type(() => CreateOrderItemDto)
-  items!: CreateOrderItemDto[];
+  @Type(() => AddOrderItemDto)
+  items!: AddOrderItemDto[];
 }
