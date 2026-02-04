@@ -489,6 +489,22 @@ describe('ImportService', () => {
       expect(result.failureCount).toBe(0);
     });
 
+    it('should fail when creditDays is provided for prepay settleType', async () => {
+      const file = await createMockExcelFile([
+        { companyName: 'Test', settleType: 'prepay', creditDays: 30 },
+      ]);
+
+      supplierMock.findMany.mockResolvedValue([]);
+
+      const result = await service.importSuppliers(file);
+
+      expect(result.successCount).toBe(0);
+      expect(result.failureCount).toBe(1);
+      expect(result.failures[0].reason).toContain(
+        'creditDays must not be set when settleType is prepay',
+      );
+    });
+
     it('should fail on invalid email format', async () => {
       const file = await createMockExcelFile([
         { companyName: 'Test', email: 'invalid-email' },

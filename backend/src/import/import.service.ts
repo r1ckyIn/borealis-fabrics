@@ -353,6 +353,16 @@ export class ImportService {
         }
       }
 
+      // Reject creditDays when settleType is prepay (consistent with DTO validation)
+      if (settleType === 'prepay' && creditDays !== null) {
+        failures.push({
+          rowNumber,
+          identifier: companyName,
+          reason: 'creditDays must not be set when settleType is prepay',
+        });
+        return;
+      }
+
       // Validate email format if provided
       const email = this.getCellValue(row, 4);
       if (email && !this.isValidEmail(email)) {
