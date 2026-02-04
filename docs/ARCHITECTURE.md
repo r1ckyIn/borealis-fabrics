@@ -1334,30 +1334,30 @@ docker-compose logs -f    # 查看日志
 | 模块 | 评分 | 高优先级问题 | 中优先级问题 | 状态 |
 |------|------|-------------|-------------|------|
 | QuoteModule | 96/100 | 0 | 2 | ✅ 优秀 |
-| OrderModule | 需重构 | 6 | 3 | ⚠️ 待改进 |
-| LogisticsModule | 良好 | 2 | 2 | ⚠️ 待修复 |
-| ImportModule | 7.2/10 | 6 | 4 | ⚠️ 待修复 |
+| OrderModule | 需重构 | 0 | 0 | ✅ 安全问题已修复 |
+| LogisticsModule | 良好 | 0 | 0 | ✅ 误报已确认 |
+| ImportModule | 8.5/10 | 0 | 1 | ✅ 安全问题已修复 |
 
-**发现的 P0 高优先级问题（Confidence >= 85）**：
+**P0 高优先级问题 - 已全部修复（PR #25）**：
 
-| # | 问题 | 模块 | Confidence |
-|---|------|------|------------|
-| 1 | Logistics Update/Delete 竞态条件 | LogisticsModule | 88/85 |
-| 2 | updateSupplierPayment TOCTOU 竞态 | OrderModule | 88 |
-| 3 | 批量导入缺少行数限制（内存风险） | ImportModule | 90 |
-| 4 | Excel 缺少最大行数验证 | ImportModule | 88 |
+| # | 问题 | 模块 | 状态 |
+|---|------|------|------|
+| 1 | Logistics Update/Delete 竞态条件 | LogisticsModule | ✅ 误报（已有 P2025 原子操作） |
+| 2 | updateSupplierPayment TOCTOU 竞态 | OrderModule | ✅ 已修复（事务+upsert） |
+| 3 | 批量导入缺少行数限制（内存风险） | ImportModule | ✅ 已修复（MAX_IMPORT_ROWS=1000） |
+| 4 | Excel 缺少最大行数验证 | ImportModule | ✅ 已修复（同上） |
 
-**发现的 P1 中优先级问题（Confidence >= 80）**：
+**P1 中优先级问题 - 状态更新**：
 
-| # | 问题 | 模块 | Confidence |
-|---|------|------|------------|
-| 5 | 缺少 salePrice < purchasePrice 利润检查 | OrderModule | 85 |
-| 6 | 删除订单项时供应商付款清理逻辑 | OrderModule | 82 |
-| 7 | getCellValue 无长度限制 | ImportModule | 85 |
-| 8 | JSON.parse 缺少安全验证 | ImportModule | 82 |
-| 9 | 数字字段缺少范围验证 | ImportModule | 82 |
+| # | 问题 | 模块 | 状态 |
+|---|------|------|------|
+| 5 | 缺少 salePrice < purchasePrice 利润检查 | OrderModule | 📝 MVP 不需要（业务决策） |
+| 6 | 删除订单项时供应商付款清理逻辑 | OrderModule | 📝 代码逻辑正确 |
+| 7 | getCellValue 无长度限制 | ImportModule | ✅ 已修复（MAX_CELL_LENGTH=1000） |
+| 8 | JSON.parse 缺少安全验证 | ImportModule | 📝 已有 try/catch |
+| 9 | 数字字段缺少范围验证 | ImportModule | ✅ 已修复（NUMERIC_RANGES） |
 
-**发现的 P2 代码质量问题**：
+**P2 代码质量问题（长期改进）**：
 
 | # | 问题 | 模块 | 建议 |
 |---|------|------|------|
@@ -1370,16 +1370,19 @@ docker-compose logs -f    # 查看日志
 - LogisticsModule E2E 测试已补充（16 个测试用例）
 - 当前测试统计：单元测试 532 通过，E2E 测试 409 通过
 
-**修复优先级建议**：
+**PR #25 修复内容**：
 
-1. **立即修复**：竞态条件（#1, #2）、内存安全（#3, #4）
-2. **近期修复**：业务验证（#5-#9）
-3. **长期改进**：代码重构（#10-#12）
+1. **LogisticsModule**：Create 方法改用外键约束（P2003）防止 TOCTOU
+2. **LogisticsModule**：QueryLogisticsDto 添加 @MaxLength 验证
+3. **ImportModule**：添加 MAX_IMPORT_ROWS (1000) 行数限制
+4. **ImportModule**：添加 MAX_CELL_LENGTH (1000) 单元格长度限制
+5. **ImportModule**：添加 NUMERIC_RANGES 数字字段范围验证
+6. **OrderModule**：updateSupplierPayment 改用事务+upsert 原子操作
 
-**结论**：QuoteModule 代码质量优秀，其他模块存在待修复问题，详见 CLAUDE.md 代码审查章节
+**结论**：所有 P0 安全问题已修复，P1 业务问题已评估（部分为误报/业务决策），P2 代码质量问题留作长期改进
 
 ---
 
-**文档状态**：v1.2 - 添加代码审查记录
+**文档状态**：v1.3 - 代码审查问题已修复（PR #25）
 
 **最后更新**：2026-02-04
