@@ -188,7 +188,13 @@ describe('LogisticsController (e2e)', () => {
     });
 
     it('should return 404 when order item not found', async () => {
-      mockPrismaService.orderItem.findUnique.mockResolvedValue(null);
+      // New implementation relies on foreign key constraint (P2003 error)
+      mockPrismaService.logistics.create.mockRejectedValue(
+        new Prisma.PrismaClientKnownRequestError(
+          'Foreign key constraint failed',
+          { code: 'P2003', clientVersion: '5.0.0' },
+        ),
+      );
 
       const createDto = {
         orderItemId: 999,
