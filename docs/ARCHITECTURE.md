@@ -830,7 +830,7 @@ enum SupplierStatus {
 | OrderModule | ✅ 已完成 | 主表 API + 明细 API (3.2.1-3.2.17) |
 | LogisticsModule | ✅ 已完成 | 3.3.1-3.3.5 全部完成 |
 | ImportModule | ✅ 已完成 | 3.4.1-3.4.4 全部完成 |
-| AuthModule | ⏳ 待开始 | |
+| AuthModule | ✅ 已完成 | 3.5.1-3.5.4 全部完成（企业微信 OAuth、JWT 认证） |
 | SystemModule | ⏳ 待开始 | |
 
 ---
@@ -1181,10 +1181,10 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
 |---|------|---------|------|---------|-----|
-| 3.5.1 | 企业微信 OAuth 登录（重定向到授权页） | GET /auth/wework/login | ⏳ | ⏳ | ⏳ |
-| 3.5.2 | OAuth 回调处理（换取 token、创建/同步用户、发送 JWT） | GET /auth/wework/callback | ⏳ | ⏳ | ⏳ |
-| 3.5.3 | 获取当前用户信息 | GET /auth/me | ⏳ | ⏳ | ⏳ |
-| 3.5.4 | 登出（清理或标记 JWT 过期） | POST /auth/logout | ⏳ | ⏳ | ⏳ |
+| 3.5.1 | 企业微信 OAuth 登录（重定向到授权页） | GET /auth/wework/login | ✅ | ✅ | ✅ |
+| 3.5.2 | OAuth 回调处理（换取 token、创建/同步用户、发送 JWT） | GET /auth/wework/callback | ✅ | ✅ | - |
+| 3.5.3 | 获取当前用户信息 | GET /auth/me | ✅ | ✅ | ✅ |
+| 3.5.4 | 登出（清理或标记 JWT 过期） | POST /auth/logout | ✅ | ✅ | ✅ |
 
 ### 14.6 SystemModule（系统模块）
 
