@@ -1325,8 +1325,61 @@ docker-compose logs -f    # 查看日志
 
 **结论**：阶段 3 开发计划已与需求文档完全对齐
 
+### [2026-02-04] 阶段 3 模块代码审查（3.1-3.4）
+
+**审查内容**：对 QuoteModule、OrderModule、LogisticsModule、ImportModule 进行深度代码审查
+
+**审查结果**：
+
+| 模块 | 评分 | 高优先级问题 | 中优先级问题 | 状态 |
+|------|------|-------------|-------------|------|
+| QuoteModule | 96/100 | 0 | 2 | ✅ 优秀 |
+| OrderModule | 需重构 | 6 | 3 | ⚠️ 待改进 |
+| LogisticsModule | 良好 | 2 | 2 | ⚠️ 待修复 |
+| ImportModule | 7.2/10 | 6 | 4 | ⚠️ 待修复 |
+
+**发现的 P0 高优先级问题（Confidence >= 85）**：
+
+| # | 问题 | 模块 | Confidence |
+|---|------|------|------------|
+| 1 | Logistics Update/Delete 竞态条件 | LogisticsModule | 88/85 |
+| 2 | updateSupplierPayment TOCTOU 竞态 | OrderModule | 88 |
+| 3 | 批量导入缺少行数限制（内存风险） | ImportModule | 90 |
+| 4 | Excel 缺少最大行数验证 | ImportModule | 88 |
+
+**发现的 P1 中优先级问题（Confidence >= 80）**：
+
+| # | 问题 | 模块 | Confidence |
+|---|------|------|------------|
+| 5 | 缺少 salePrice < purchasePrice 利润检查 | OrderModule | 85 |
+| 6 | 删除订单项时供应商付款清理逻辑 | OrderModule | 82 |
+| 7 | getCellValue 无长度限制 | ImportModule | 85 |
+| 8 | JSON.parse 缺少安全验证 | ImportModule | 82 |
+| 9 | 数字字段缺少范围验证 | ImportModule | 82 |
+
+**发现的 P2 代码质量问题**：
+
+| # | 问题 | 模块 | 建议 |
+|---|------|------|------|
+| 10 | OrderService 1547 行 | OrderModule | 拆分为 6 个服务 |
+| 11 | updateOrderItem 128 行 | OrderModule | 提取辅助方法 |
+| 12 | 重复代码违反 DRY | ImportModule | 提取通用逻辑 |
+
+**测试覆盖更新**：
+
+- LogisticsModule E2E 测试已补充（16 个测试用例）
+- 当前测试统计：单元测试 532 通过，E2E 测试 409 通过
+
+**修复优先级建议**：
+
+1. **立即修复**：竞态条件（#1, #2）、内存安全（#3, #4）
+2. **近期修复**：业务验证（#5-#9）
+3. **长期改进**：代码重构（#10-#12）
+
+**结论**：QuoteModule 代码质量优秀，其他模块存在待修复问题，详见 CLAUDE.md 代码审查章节
+
 ---
 
-**文档状态**：v1.1 - 整合开发进度
+**文档状态**：v1.2 - 添加代码审查记录
 
-**最后更新**：2026-02-03
+**最后更新**：2026-02-04
