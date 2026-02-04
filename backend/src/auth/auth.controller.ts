@@ -46,6 +46,15 @@ export class AuthController {
   ) {}
 
   /**
+   * Get cookie options with environment-appropriate secure flag.
+   */
+  private getCookieOptions(): typeof AUTH_COOKIE_OPTIONS & { secure: boolean } {
+    const isProduction =
+      this.configService.get<string>('nodeEnv') === 'production';
+    return { ...AUTH_COOKIE_OPTIONS, secure: isProduction };
+  }
+
+  /**
    * 3.5.1 WeWork OAuth login - redirects to WeWork authorization page.
    */
   @Get('wework/login')
@@ -81,12 +90,7 @@ export class AuthController {
       const result = await this.authService.handleOAuthCallback(code, state);
 
       // Set token via HttpOnly cookie (secure in production)
-      const isProduction =
-        this.configService.get<string>('nodeEnv') === 'production';
-      res.cookie(AUTH_COOKIE_NAME, result.token, {
-        ...AUTH_COOKIE_OPTIONS,
-        secure: isProduction,
-      });
+      res.cookie(AUTH_COOKIE_NAME, result.token, this.getCookieOptions());
 
       // Redirect to frontend success page
       res.redirect(`${frontendUrl}/auth/callback?success=true`);
@@ -136,13 +140,8 @@ export class AuthController {
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LogoutResponseDto> {
-    // Clear the HttpOnly auth cookie with consistent secure flag
-    const isProduction =
-      this.configService.get<string>('nodeEnv') === 'production';
-    res.clearCookie(AUTH_COOKIE_NAME, {
-      ...AUTH_COOKIE_OPTIONS,
-      secure: isProduction,
-    });
+    // Clear the HttpOnly auth cookie
+    res.clearCookie(AUTH_COOKIE_NAME, this.getCookieOptions());
 
     // Extract token from header or cookie and blacklist it
     const token =
