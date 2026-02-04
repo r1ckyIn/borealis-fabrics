@@ -550,6 +550,10 @@ export class ImportService {
       if ('hyperlink' in value) {
         return value.text || '';
       }
+      // Handle error (check before formula to avoid processing error strings)
+      if ('error' in value) {
+        return '';
+      }
       // Handle formula
       if ('result' in value) {
         const formulaResult = (value as ExcelJS.CellFormulaValue).result;
@@ -568,10 +572,6 @@ export class ImportService {
         if (formulaResult instanceof Date) {
           return formulaResult.toISOString();
         }
-        return '';
-      }
-      // Handle error
-      if ('error' in value) {
         return '';
       }
     }
