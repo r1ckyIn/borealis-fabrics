@@ -1107,32 +1107,32 @@ docker-compose logs -f    # 查看日志
 | 3.2.4 | 更新订单基本信息（客户、收货地址、备注） | PATCH /orders/:id | ✅ | ✅ | ✅ |
 | 3.2.5 | 删除订单（仅 INQUIRY 状态且无付款记录时允许） | DELETE /orders/:id | ✅ | ✅ | ✅ |
 
-#### 订单明细 API
+#### 订单明细 API ✅ 已完成
 
 | # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
 |---|------|---------|------|---------|-----|
-| 3.2.6 | 获取订单明细列表 | GET /orders/:id/items | ✅ | ✅ | ⏳ |
-| 3.2.7 | 添加订单明细（面料、数量、销售单价、供应商、采购价、交期要求） | POST /orders/:id/items | ✅ | ✅ | ⏳ |
-| 3.2.8 | 更新订单明细（受状态机限制） | PATCH /orders/:id/items/:itemId | ✅ | ✅ | ⏳ |
-| 3.2.9 | 删除订单明细（仅 INQUIRY/PENDING 状态可删除） | DELETE /orders/:id/items/:itemId | ✅ | ✅ | ⏳ |
-| 3.2.10 | 更新明细状态（状态机流转） | PATCH /orders/:id/items/:itemId/status | ✅ | ✅ | ⏳ |
-| 3.2.11 | 取消订单明细（记录 prevStatus 以便恢复） | POST /orders/:id/items/:itemId/cancel | ✅ | ✅ | ⏳ |
-| 3.2.12 | 恢复已取消明细（从 CANCELLED 恢复到 prevStatus） | POST /orders/:id/items/:itemId/restore | ✅ | ✅ | ⏳ |
+| 3.2.6 | 获取订单明细列表 | GET /orders/:id/items | ✅ | ✅ | ✅ |
+| 3.2.7 | 添加订单明细（面料、数量、销售单价、供应商、采购价、交期要求） | POST /orders/:id/items | ✅ | ✅ | ✅ |
+| 3.2.8 | 更新订单明细（受状态机限制） | PATCH /orders/:id/items/:itemId | ✅ | ✅ | ✅ |
+| 3.2.9 | 删除订单明细（仅 INQUIRY/PENDING 状态可删除） | DELETE /orders/:id/items/:itemId | ✅ | ✅ | ✅ |
+| 3.2.10 | 更新明细状态（状态机流转） | PATCH /orders/:id/items/:itemId/status | ✅ | ✅ | ✅ |
+| 3.2.11 | 取消订单明细（记录 prevStatus 以便恢复） | POST /orders/:id/items/:itemId/cancel | ✅ | ✅ | ✅ |
+| 3.2.12 | 恢复已取消明细（从 CANCELLED 恢复到 prevStatus） | POST /orders/:id/items/:itemId/restore | ✅ | ✅ | ✅ |
 
-#### 订单时间线 API
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.2.13 | 获取订单时间线（按时间倒序，支持按明细筛选） | GET /orders/:id/timeline | ✅ | ✅ | ⏳ |
-| 3.2.14 | 获取指定明细的时间线 | GET /orders/:id/items/:itemId/timeline | ✅ | ✅ | ⏳ |
-
-#### 订单付款 API
+#### 订单时间线 API ✅ 已完成
 
 | # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
 |---|------|---------|------|---------|-----|
-| 3.2.15 | 更新客户侧付款信息（应收、已收、付款状态、付款方式、账期、付款时间） | PATCH /orders/:id/customer-payment | ✅ | ✅ | ⏳ |
-| 3.2.16 | 获取订单的供应商付款列表（按订单-供应商维度） | GET /orders/:id/supplier-payments | ✅ | ✅ | ⏳ |
-| 3.2.17 | 更新指定供应商的付款信息 | PATCH /orders/:id/supplier-payments/:supplierId | ✅ | ✅ | ⏳ |
+| 3.2.13 | 获取订单时间线（按时间倒序，支持按明细筛选） | GET /orders/:id/timeline | ✅ | ✅ | ✅ |
+| 3.2.14 | 获取指定明细的时间线 | GET /orders/:id/items/:itemId/timeline | ✅ | ✅ | ✅ |
+
+#### 订单付款 API ✅ 已完成
+
+| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
+|---|------|---------|------|---------|-----|
+| 3.2.15 | 更新客户侧付款信息（应收、已收、付款状态、付款方式、账期、付款时间） | PATCH /orders/:id/customer-payment | ✅ | ✅ | ✅ |
+| 3.2.16 | 获取订单的供应商付款列表（按订单-供应商维度） | GET /orders/:id/supplier-payments | ✅ | ✅ | ✅ |
+| 3.2.17 | 更新指定供应商的付款信息 | PATCH /orders/:id/supplier-payments/:supplierId | ✅ | ✅ | ✅ |
 
 > **注**：客户历史订单 API（GET /customers/:id/orders，原 2.2.11）依赖 OrderModule，在订单模块完成后作为 CustomerModule 附加功能实现。
 
