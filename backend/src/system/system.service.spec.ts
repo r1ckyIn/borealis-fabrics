@@ -1,5 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SystemService } from './system.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../common/services/redis.service';
 import {
   OrderItemStatus,
   CustomerPayStatus,
@@ -11,10 +13,24 @@ import {
 
 describe('SystemService', () => {
   let service: SystemService;
+  let prismaService: { $queryRaw: jest.Mock };
+  let redisService: { ping: jest.Mock };
 
   beforeEach(async () => {
+    prismaService = {
+      $queryRaw: jest.fn(),
+    };
+
+    redisService = {
+      ping: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [SystemService],
+      providers: [
+        SystemService,
+        { provide: PrismaService, useValue: prismaService },
+        { provide: RedisService, useValue: redisService },
+      ],
     }).compile();
 
     service = module.get<SystemService>(SystemService);
@@ -167,6 +183,66 @@ describe('SystemService', () => {
         prepay: '预付',
         credit: '账期',
       });
+    });
+  });
+
+  describe('getHealth', () => {
+    it('should return ok status with timestamp', () => {
+      const result = service.getHealth();
+
+      expect(result.status).toBe('ok');
+      expect(result.timestamp).toBeDefined();
+      expect(new Date(result.timestamp).getTime()).not.toBeNaN();
+    });
+  });
+
+  describe('getReady', () => {
+    it('should return ok when all services are healthy', async () => {
+      prismaService.$queryRaw.mockResolvedValue([{ 1: 1 }]);
+      redisService.ping.mockResolvedValue('PONG');
+
+      const result = await service.getReady();
+
+      expect(result.status).toBe('ok');
+      expect(result.checks?.database).toBe('ok');
+      expect(result.checks?.redis).toBe('ok');
+    });
+
+    it('should return degraded when database is unhealthy', async () => {
+      prismaService.$queryRaw.mockRejectedValue(
+        new Error('DB connection failed'),
+      );
+      redisService.ping.mockResolvedValue('PONG');
+
+      const result = await service.getReady();
+
+      expect(result.status).toBe('degraded');
+      expect(result.checks?.database).toBe('error');
+      expect(result.checks?.redis).toBe('ok');
+    });
+
+    it('should return degraded when redis is unhealthy', async () => {
+      prismaService.$queryRaw.mockResolvedValue([{ 1: 1 }]);
+      redisService.ping.mockRejectedValue(new Error('Redis connection failed'));
+
+      const result = await service.getReady();
+
+      expect(result.status).toBe('degraded');
+      expect(result.checks?.database).toBe('ok');
+      expect(result.checks?.redis).toBe('error');
+    });
+
+    it('should return degraded when all services are unhealthy', async () => {
+      prismaService.$queryRaw.mockRejectedValue(
+        new Error('DB connection failed'),
+      );
+      redisService.ping.mockRejectedValue(new Error('Redis connection failed'));
+
+      const result = await service.getReady();
+
+      expect(result.status).toBe('degraded');
+      expect(result.checks?.database).toBe('error');
+      expect(result.checks?.redis).toBe('error');
     });
   });
 });

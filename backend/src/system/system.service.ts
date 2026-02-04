@@ -1,5 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../common/services/redis.service';
 import { EnumsResponseDto, EnumDefinitionDto } from './dto/enums-response.dto';
+import { HealthResponseDto, ReadyResponseDto } from './dto/health-response.dto';
 import {
   OrderItemStatus,
   CustomerPayStatus,
@@ -17,6 +20,12 @@ import {
 
 @Injectable()
 export class SystemService {
+  private readonly logger = new Logger(SystemService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
+  ) {}
   /**
    * Get all system enums with their values and Chinese labels.
    */
@@ -55,5 +64,53 @@ export class SystemService {
       values: Object.values(enumObj),
       labels,
     };
+  }
+
+  /**
+   * Basic health check - returns OK if the service is running.
+   */
+  getHealth(): HealthResponseDto {
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Readiness check - verifies database and Redis connections.
+   */
+  async getReady(): Promise<ReadyResponseDto> {
+    const checks: ReadyResponseDto['checks'] = {
+      database: await this.checkDatabase(),
+      redis: await this.checkRedis(),
+    };
+
+    const allOk = Object.values(checks).every((status) => status === 'ok');
+
+    return {
+      status: allOk ? 'ok' : 'degraded',
+      timestamp: new Date().toISOString(),
+      checks,
+    };
+  }
+
+  private async checkDatabase(): Promise<'ok' | 'error'> {
+    try {
+      await this.prisma.$queryRaw`SELECT 1`;
+      return 'ok';
+    } catch (error) {
+      this.logger.error('Database health check failed', error);
+      return 'error';
+    }
+  }
+
+  private async checkRedis(): Promise<'ok' | 'error'> {
+    try {
+      await this.redis.ping();
+      return 'ok';
+    } catch (error) {
+      this.logger.error('Redis health check failed', error);
+      return 'error';
+    }
   }
 }

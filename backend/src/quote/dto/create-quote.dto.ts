@@ -11,6 +11,7 @@ import {
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { trimTransform } from '../../common/transforms';
 
 /**
  * Quote status enum.
@@ -23,10 +24,6 @@ export enum QuoteStatus {
   EXPIRED = 'expired',
   CONVERTED = 'converted',
 }
-
-// Trim transform helper
-const trimTransform = ({ value }: { value: unknown }): string | undefined =>
-  typeof value === 'string' ? value.trim() : undefined;
 
 export class CreateQuoteDto {
   @ApiProperty({

@@ -10,7 +10,11 @@ import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { RedisService } from '../../common/services/redis.service';
 import { JwtPayload, RequestUser } from '../interfaces';
-import { TOKEN_BLACKLIST_PREFIX, hashToken } from '../constants';
+import {
+  TOKEN_BLACKLIST_PREFIX,
+  AUTH_COOKIE_NAME,
+  hashToken,
+} from '../constants';
 
 /**
  * JWT authentication guard with blacklist support.
@@ -32,6 +36,10 @@ export class JwtAuthGuard implements CanActivate {
 
     // Dev mode: skip auth, inject mock user
     if (env === 'development') {
+      this.logger.warn(
+        'Authentication bypassed in development mode. ' +
+          'Ensure NODE_ENV is set correctly in production!',
+      );
       (request as Request & { user: RequestUser }).user = {
         id: 1,
         weworkId: 'dev-user',
@@ -40,7 +48,7 @@ export class JwtAuthGuard implements CanActivate {
       return true;
     }
 
-    const token = this.extractTokenFromHeader(request);
+    const token = this.extractToken(request);
     if (!token) {
       throw new UnauthorizedException('Missing authorization token');
     }
@@ -70,16 +78,22 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   /**
-   * Extract JWT token from Authorization header.
+   * Extract JWT token from Authorization header or HttpOnly cookie.
+   * Prioritizes header for API clients, falls back to cookie for browser.
    */
-  private extractTokenFromHeader(request: Request): string | null {
+  private extractToken(request: Request): string | null {
+    // First try Authorization header (for API clients)
     const authHeader = request.headers.authorization;
-    if (!authHeader) {
-      return null;
+    if (authHeader) {
+      const [type, token] = authHeader.split(' ');
+      if (type === 'Bearer' && token) {
+        return token;
+      }
     }
 
-    const [type, token] = authHeader.split(' ');
-    return type === 'Bearer' && token ? token : null;
+    // Fall back to HttpOnly cookie (for browser)
+    const cookies = request.cookies as Record<string, string> | undefined;
+    return cookies?.[AUTH_COOKIE_NAME] ?? null;
   }
 
   /**

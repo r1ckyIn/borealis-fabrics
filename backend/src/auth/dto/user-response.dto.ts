@@ -10,18 +10,3 @@ export class UserResponseDto {
   createdAt!: Date;
   updatedAt!: Date;
 }
-
-/**
- * Login response DTO containing JWT token and user info.
- */
-export class LoginResponseDto {
-  token!: string;
-  user!: UserResponseDto;
-}
-
-/**
- * Logout response DTO.
- */
-export class LogoutResponseDto {
-  message!: string;
-}

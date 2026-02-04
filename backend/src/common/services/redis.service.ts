@@ -182,4 +182,16 @@ export class RedisService implements OnModuleDestroy {
       return false;
     }
   }
+
+  /**
+   * Ping Redis to check connection health.
+   * Returns 'PONG' if successful, throws if unavailable.
+   */
+  async ping(): Promise<string> {
+    if (!this.isAvailable()) {
+      throw new Error('Redis is not available');
+    }
+
+    return await this.client!.ping();
+  }
 }

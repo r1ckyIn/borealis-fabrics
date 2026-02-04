@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { AUTH_COOKIE_OPTIONS } from './constants';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Response } from 'express';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -18,6 +19,8 @@ describe('AuthController', () => {
   const mockResponse = () => {
     const res: Partial<Response> = {
       redirect: jest.fn(),
+      cookie: jest.fn(),
+      clearCookie: jest.fn(),
     };
     return res as Response;
   };
@@ -74,7 +77,7 @@ describe('AuthController', () => {
   });
 
   describe('weWorkCallback', () => {
-    it('should redirect to frontend with token on success', async () => {
+    it('should set cookie and redirect to frontend on success', async () => {
       const mockResult = {
         token: 'jwt-token',
         user: {
@@ -86,7 +89,11 @@ describe('AuthController', () => {
         },
       };
       authService.handleOAuthCallback.mockResolvedValue(mockResult);
-      configService.get.mockReturnValue(['http://localhost:5173']);
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'cors.origins') return ['http://localhost:5173'];
+        if (key === 'nodeEnv') return 'development';
+        return undefined;
+      });
       const res = mockResponse();
 
       await controller.weWorkCallback('code', 'state', res);
@@ -96,8 +103,18 @@ describe('AuthController', () => {
         'state',
       );
       // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.cookie).toHaveBeenCalledWith(
+        'bf_auth_token',
+        'jwt-token',
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: false, // development mode
+        }),
+      );
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(res.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/auth/callback?token=jwt-token',
+        'http://localhost:5173/auth/callback?success=true',
       );
     });
 
@@ -111,7 +128,44 @@ describe('AuthController', () => {
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(res.redirect).toHaveBeenCalledWith(
-        'http://localhost:5173/auth/callback?token=jwt-token',
+        'http://localhost:5173/auth/callback?success=true',
+      );
+    });
+
+    it('should redirect with error on OAuth failure', async () => {
+      authService.handleOAuthCallback.mockRejectedValue(
+        new Error('Invalid code'),
+      );
+      configService.get.mockReturnValue(['http://localhost:5173']);
+      const res = mockResponse();
+
+      await controller.weWorkCallback('invalid-code', 'state', res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/auth/callback?error=Invalid%20code',
+      );
+    });
+
+    it('should set secure cookie in production mode', async () => {
+      const mockResult = { token: 'jwt-token', user: {} };
+      authService.handleOAuthCallback.mockResolvedValue(mockResult);
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'cors.origins') return ['https://app.example.com'];
+        if (key === 'nodeEnv') return 'production';
+        return undefined;
+      });
+      const res = mockResponse();
+
+      await controller.weWorkCallback('code', 'state', res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.cookie).toHaveBeenCalledWith(
+        'bf_auth_token',
+        'jwt-token',
+        expect.objectContaining({
+          secure: true, // production mode
+        }),
       );
     });
   });
@@ -140,30 +194,66 @@ describe('AuthController', () => {
 
   describe('logout', () => {
     it('should logout user and return success message', async () => {
-      const mockResponse = { message: 'Logged out successfully' };
-      authService.logout.mockResolvedValue(mockResponse);
+      const mockLogoutResponse = { message: 'Logged out successfully' };
+      authService.logout.mockResolvedValue(mockLogoutResponse);
       const req = mockAuthenticatedRequest();
+      const res = mockResponse();
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const result = await controller.logout(req as any);
+      const result = await controller.logout(req as any, res);
 
       expect(authService.logout).toHaveBeenCalledWith('test-token', req.user);
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockLogoutResponse);
+    });
+
+    it('should clear auth cookie on logout', async () => {
+      const mockLogoutResponse = { message: 'Logged out successfully' };
+      authService.logout.mockResolvedValue(mockLogoutResponse);
+      configService.get.mockReturnValue('development');
+      const req = mockAuthenticatedRequest();
+      const res = mockResponse();
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await controller.logout(req as any, res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.clearCookie).toHaveBeenCalledWith('bf_auth_token', {
+        ...AUTH_COOKIE_OPTIONS,
+        secure: false,
+      });
+    });
+
+    it('should clear auth cookie with secure flag in production', async () => {
+      const mockLogoutResponse = { message: 'Logged out successfully' };
+      authService.logout.mockResolvedValue(mockLogoutResponse);
+      configService.get.mockReturnValue('production');
+      const req = mockAuthenticatedRequest();
+      const res = mockResponse();
+
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await controller.logout(req as any, res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.clearCookie).toHaveBeenCalledWith('bf_auth_token', {
+        ...AUTH_COOKIE_OPTIONS,
+        secure: true,
+      });
     });
 
     it('should handle missing authorization header', async () => {
-      const mockResponse = { message: 'Logged out successfully' };
-      authService.logout.mockResolvedValue(mockResponse);
+      const mockLogoutResponse = { message: 'Logged out successfully' };
+      authService.logout.mockResolvedValue(mockLogoutResponse);
       const req = {
         user: { id: 1, weworkId: 'test', name: 'Test' },
         headers: {},
       };
+      const res = mockResponse();
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const result = await controller.logout(req as any);
+      const result = await controller.logout(req as any, res);
 
       expect(authService.logout).toHaveBeenCalledWith('', req.user);
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(mockLogoutResponse);
     });
   });
 });

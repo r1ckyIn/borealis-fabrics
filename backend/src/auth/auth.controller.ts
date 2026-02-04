@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
@@ -21,6 +22,7 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RequestUser } from './interfaces';
 import { UserResponseDto, LogoutResponseDto } from './dto';
+import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from './constants';
 
 /**
  * Extended Express Request with authenticated user.
@@ -36,10 +38,21 @@ interface AuthenticatedRequest extends Request {
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Get cookie options with environment-appropriate secure flag.
+   */
+  private getCookieOptions(): typeof AUTH_COOKIE_OPTIONS & { secure: boolean } {
+    const isProduction =
+      this.configService.get<string>('nodeEnv') === 'production';
+    return { ...AUTH_COOKIE_OPTIONS, secure: isProduction };
+  }
 
   /**
    * 3.5.1 WeWork OAuth login - redirects to WeWork authorization page.
@@ -57,6 +70,7 @@ export class AuthController {
 
   /**
    * 3.5.2 WeWork OAuth callback - exchanges code for JWT token.
+   * Token is set via HttpOnly cookie instead of URL parameter for security.
    */
   @Get('wework/callback')
   @ApiOperation({ summary: 'WeWork OAuth callback handler' })
@@ -67,15 +81,30 @@ export class AuthController {
     @Query('state') state: string,
     @Res() res: Response,
   ): Promise<void> {
-    const result = await this.authService.handleOAuthCallback(code, state);
-
     // Get frontend URL from config
     const frontendUrl =
       this.configService.get<string>('cors.origins')?.[0] ||
       'http://localhost:5173';
 
-    // Redirect to frontend with token
-    res.redirect(`${frontendUrl}/auth/callback?token=${result.token}`);
+    try {
+      const result = await this.authService.handleOAuthCallback(code, state);
+
+      // Set token via HttpOnly cookie (secure in production)
+      res.cookie(AUTH_COOKIE_NAME, result.token, this.getCookieOptions());
+
+      // Redirect to frontend success page
+      res.redirect(`${frontendUrl}/auth/callback?success=true`);
+    } catch (error) {
+      // Log the error for debugging
+      this.logger.error('OAuth callback failed', error);
+
+      // Redirect to frontend with error indicator
+      const errorMessage =
+        error instanceof Error ? error.message : 'Authentication failed';
+      res.redirect(
+        `${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`,
+      );
+    }
   }
 
   /**
@@ -94,6 +123,7 @@ export class AuthController {
 
   /**
    * 3.5.4 Logout - invalidates the current token.
+   * Clears the HttpOnly auth cookie and blacklists the token in Redis.
    */
   @Post('logout')
   @HttpCode(HttpStatus.OK)
@@ -106,8 +136,18 @@ export class AuthController {
     type: LogoutResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Req() req: AuthenticatedRequest): Promise<LogoutResponseDto> {
-    const token = req.headers.authorization?.replace('Bearer ', '') || '';
+  async logout(
+    @Req() req: AuthenticatedRequest,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<LogoutResponseDto> {
+    // Clear the HttpOnly auth cookie
+    res.clearCookie(AUTH_COOKIE_NAME, this.getCookieOptions());
+
+    // Extract token from header or cookie and blacklist it
+    const token =
+      req.headers.authorization?.replace('Bearer ', '') ||
+      (req.cookies as Record<string, string> | undefined)?.[AUTH_COOKIE_NAME] ||
+      '';
     return this.authService.logout(token, req.user);
   }
 }
