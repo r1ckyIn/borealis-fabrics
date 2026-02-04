@@ -895,6 +895,7 @@ docker-compose logs -f    # 查看日志
 | isActive vs status | isActive=软删除，status=业务状态 | 清晰区分 |
 | 前端测试 | Vitest | 与 Vite 集成好 |
 | 后端测试 | Jest + SuperTest | NestJS 官方推荐 |
+| ExcelJS Buffer 转换 | `toArrayBuffer()` + `as ArrayBuffer` | Buffer.slice() 返回联合类型，需显式断言 |
 
 ---
 
