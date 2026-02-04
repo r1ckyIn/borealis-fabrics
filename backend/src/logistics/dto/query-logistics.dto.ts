@@ -1,4 +1,12 @@
-import { IsInt, IsOptional, IsString, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsEnum,
+  Min,
+  Max,
+  MaxLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -80,6 +88,7 @@ export class QueryLogisticsDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   trackingNo?: string;
 
   @ApiPropertyOptional({
@@ -88,5 +97,6 @@ export class QueryLogisticsDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   carrier?: string;
 }
