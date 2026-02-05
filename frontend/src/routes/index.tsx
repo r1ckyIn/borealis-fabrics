@@ -5,90 +5,41 @@
  * Protected routes require authentication.
  */
 
+import type { ComponentType } from 'react';
 import { Suspense, lazy } from 'react';
-import {
-  createBrowserRouter,
-  Navigate,
-  RouterProvider,
-} from 'react-router-dom';
-import { Spin } from 'antd';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 
 import { ProtectedRoute } from './ProtectedRoute';
+import { FullPageSpinner } from './FullPageSpinner';
 
-// Lazy load layout
+// Lazy loaded components
 const MainLayout = lazy(() => import('./layouts/MainLayout'));
-
-// Lazy load auth pages
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const OAuthCallback = lazy(() => import('@/pages/auth/OAuthCallback'));
-
-// Lazy load fabric pages
 const FabricListPage = lazy(() => import('@/pages/fabrics/FabricListPage'));
 const FabricDetailPage = lazy(() => import('@/pages/fabrics/FabricDetailPage'));
 const FabricFormPage = lazy(() => import('@/pages/fabrics/FabricFormPage'));
-
-// Lazy load supplier pages
-const SupplierListPage = lazy(
-  () => import('@/pages/suppliers/SupplierListPage')
-);
-const SupplierDetailPage = lazy(
-  () => import('@/pages/suppliers/SupplierDetailPage')
-);
-const SupplierFormPage = lazy(
-  () => import('@/pages/suppliers/SupplierFormPage')
-);
-
-// Lazy load customer pages
-const CustomerListPage = lazy(
-  () => import('@/pages/customers/CustomerListPage')
-);
-const CustomerDetailPage = lazy(
-  () => import('@/pages/customers/CustomerDetailPage')
-);
-const CustomerFormPage = lazy(
-  () => import('@/pages/customers/CustomerFormPage')
-);
-
-// Lazy load quote pages
+const SupplierListPage = lazy(() => import('@/pages/suppliers/SupplierListPage'));
+const SupplierDetailPage = lazy(() => import('@/pages/suppliers/SupplierDetailPage'));
+const SupplierFormPage = lazy(() => import('@/pages/suppliers/SupplierFormPage'));
+const CustomerListPage = lazy(() => import('@/pages/customers/CustomerListPage'));
+const CustomerDetailPage = lazy(() => import('@/pages/customers/CustomerDetailPage'));
+const CustomerFormPage = lazy(() => import('@/pages/customers/CustomerFormPage'));
 const QuoteListPage = lazy(() => import('@/pages/quotes/QuoteListPage'));
 const QuoteDetailPage = lazy(() => import('@/pages/quotes/QuoteDetailPage'));
 const QuoteFormPage = lazy(() => import('@/pages/quotes/QuoteFormPage'));
-
-// Lazy load order pages
 const OrderListPage = lazy(() => import('@/pages/orders/OrderListPage'));
 const OrderDetailPage = lazy(() => import('@/pages/orders/OrderDetailPage'));
 const OrderFormPage = lazy(() => import('@/pages/orders/OrderFormPage'));
-
-// Lazy load import page
 const ImportPage = lazy(() => import('@/pages/import/ImportPage'));
-
-// Lazy load error pages
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
 /**
- * Loading fallback component for lazy loaded routes.
+ * Wrap lazy component with Suspense for code splitting.
  */
-function PageLoading() {
+function withSuspense(Component: React.LazyExoticComponent<ComponentType>): React.ReactNode {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-      }}
-    >
-      <Spin size="large" tip="加载中..." />
-    </div>
-  );
-}
-
-/**
- * Wrap lazy component with Suspense.
- */
-function withSuspense(Component: React.LazyExoticComponent<() => JSX.Element>) {
-  return (
-    <Suspense fallback={<PageLoading />}>
+    <Suspense fallback={<FullPageSpinner />}>
       <Component />
     </Suspense>
   );

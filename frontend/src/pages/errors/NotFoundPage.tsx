@@ -7,28 +7,24 @@
 import { Button, Result } from 'antd';
 import { useNavigate } from 'react-router-dom';
 
-export default function NotFoundPage() {
+const containerStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  minHeight: '100vh',
+};
+
+export default function NotFoundPage(): React.ReactNode {
   const navigate = useNavigate();
 
-  const handleBackHome = () => {
-    navigate('/fabrics');
-  };
-
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
-      }}
-    >
+    <div style={containerStyle}>
       <Result
         status="404"
         title="404"
         subTitle="抱歉，您访问的页面不存在"
         extra={
-          <Button type="primary" onClick={handleBackHome}>
+          <Button type="primary" onClick={() => navigate('/fabrics')}>
             返回首页
           </Button>
         }
