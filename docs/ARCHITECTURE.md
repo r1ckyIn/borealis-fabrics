@@ -942,11 +942,11 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 1.1.1 | API 响应类型 | `src/types/api.types.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.1.2 | 实体类型 | `src/types/entities.types.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.1.3 | 枚举类型 | `src/types/enums.types.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.1.4 | 表单类型 | `src/types/forms.types.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.1.5 | 类型导出 | `src/types/index.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.1.1 | API 响应类型 | `src/types/api.types.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.1.2 | 实体类型 | `src/types/entities.types.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.1.3 | 枚举类型 | `src/types/enums.types.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.1.4 | 表单类型 | `src/types/forms.types.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.1.5 | 类型导出 | `src/types/index.ts` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 1.2：工具函数
 
