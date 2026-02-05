@@ -1,32 +1,40 @@
-import { ConfigProvider, App as AntdApp, Typography, Space } from 'antd';
+/**
+ * Root application component.
+ *
+ * Sets up providers for:
+ * - TanStack Query for server state management
+ * - Ant Design ConfigProvider for UI theming
+ * - React Router for navigation
+ */
+
+import { ConfigProvider, App as AntdApp } from 'antd';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import zhCN from 'antd/locale/zh_CN';
 
-const { Title, Text } = Typography;
+import { AppRouter } from '@/routes';
+
+/**
+ * TanStack Query client configuration.
+ */
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   return (
-    <ConfigProvider locale={zhCN}>
-      <AntdApp>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '100vh',
-            padding: '24px',
-          }}
-        >
-          <Space direction="vertical" align="center" size="large">
-            <Title level={2} style={{ margin: 0 }}>
-              铂润面料管理系统
-            </Title>
-            <Text type="secondary">Borealis Fabrics Management System</Text>
-            <Text type="secondary">阶段 2 开发中...</Text>
-          </Space>
-        </div>
-      </AntdApp>
-    </ConfigProvider>
+    <QueryClientProvider client={queryClient}>
+      <ConfigProvider locale={zhCN}>
+        <AntdApp>
+          <AppRouter />
+        </AntdApp>
+      </ConfigProvider>
+    </QueryClientProvider>
   );
 }
 
