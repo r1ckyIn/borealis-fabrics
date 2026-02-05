@@ -32,6 +32,9 @@ export const fabricKeys = {
     [...fabricKeys.detail(id), 'suppliers', params] as const,
   pricing: (id: number, params?: QueryFabricPricingParams) =>
     [...fabricKeys.detail(id), 'pricing', params] as const,
+  // Base keys for invalidation (without params)
+  suppliersBase: (id: number) => [...fabricKeys.detail(id), 'suppliers'] as const,
+  pricingBase: (id: number) => [...fabricKeys.detail(id), 'pricing'] as const,
 };
 
 // =============================================================================
@@ -231,19 +234,9 @@ export function useAddFabricSupplier() {
       data: CreateFabricSupplierData;
     }) => fabricApi.addFabricSupplier(fabricId, data),
     onSuccess: (_data, { fabricId }) => {
-      // Invalidate fabric suppliers list
-      queryClient.invalidateQueries({
-        queryKey: fabricKeys.detail(fabricId),
-        predicate: (query) => {
-          const key = query.queryKey;
-          // Match both suppliers queries and the main detail query
-          return (
-            key[0] === 'fabrics' &&
-            key[1] === 'detail' &&
-            key[2] === fabricId
-          );
-        },
-      });
+      // Invalidate fabric detail and suppliers
+      queryClient.invalidateQueries({ queryKey: fabricKeys.detail(fabricId) });
+      queryClient.invalidateQueries({ queryKey: fabricKeys.suppliersBase(fabricId) });
     },
   });
 }
@@ -265,18 +258,7 @@ export function useUpdateFabricSupplier() {
       data: UpdateFabricSupplierData;
     }) => fabricApi.updateFabricSupplier(fabricId, supplierId, data),
     onSuccess: (_data, { fabricId }) => {
-      // Invalidate fabric suppliers queries
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return (
-            key[0] === 'fabrics' &&
-            key[1] === 'detail' &&
-            key[2] === fabricId &&
-            key[3] === 'suppliers'
-          );
-        },
-      });
+      queryClient.invalidateQueries({ queryKey: fabricKeys.suppliersBase(fabricId) });
     },
   });
 }
@@ -291,18 +273,7 @@ export function useRemoveFabricSupplier() {
     mutationFn: ({ fabricId, supplierId }: { fabricId: number; supplierId: number }) =>
       fabricApi.removeFabricSupplier(fabricId, supplierId),
     onSuccess: (_data, { fabricId }) => {
-      // Invalidate fabric suppliers queries
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return (
-            key[0] === 'fabrics' &&
-            key[1] === 'detail' &&
-            key[2] === fabricId &&
-            key[3] === 'suppliers'
-          );
-        },
-      });
+      queryClient.invalidateQueries({ queryKey: fabricKeys.suppliersBase(fabricId) });
     },
   });
 }
@@ -326,18 +297,7 @@ export function useCreateFabricPricing() {
       data: CreateFabricPricingData;
     }) => fabricApi.createFabricPricing(fabricId, data),
     onSuccess: (_data, { fabricId }) => {
-      // Invalidate fabric pricing queries
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return (
-            key[0] === 'fabrics' &&
-            key[1] === 'detail' &&
-            key[2] === fabricId &&
-            key[3] === 'pricing'
-          );
-        },
-      });
+      queryClient.invalidateQueries({ queryKey: fabricKeys.pricingBase(fabricId) });
     },
   });
 }
@@ -359,18 +319,7 @@ export function useUpdateFabricPricing() {
       data: UpdateFabricPricingData;
     }) => fabricApi.updateFabricPricing(fabricId, pricingId, data),
     onSuccess: (_data, { fabricId }) => {
-      // Invalidate fabric pricing queries
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return (
-            key[0] === 'fabrics' &&
-            key[1] === 'detail' &&
-            key[2] === fabricId &&
-            key[3] === 'pricing'
-          );
-        },
-      });
+      queryClient.invalidateQueries({ queryKey: fabricKeys.pricingBase(fabricId) });
     },
   });
 }
@@ -385,18 +334,7 @@ export function useDeleteFabricPricing() {
     mutationFn: ({ fabricId, pricingId }: { fabricId: number; pricingId: number }) =>
       fabricApi.deleteFabricPricing(fabricId, pricingId),
     onSuccess: (_data, { fabricId }) => {
-      // Invalidate fabric pricing queries
-      queryClient.invalidateQueries({
-        predicate: (query) => {
-          const key = query.queryKey;
-          return (
-            key[0] === 'fabrics' &&
-            key[1] === 'detail' &&
-            key[2] === fabricId &&
-            key[3] === 'pricing'
-          );
-        },
-      });
+      queryClient.invalidateQueries({ queryKey: fabricKeys.pricingBase(fabricId) });
     },
   });
 }

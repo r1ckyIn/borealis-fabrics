@@ -312,8 +312,3 @@ export function usePagination(
     handleTableChange,
   };
 }
-
-/**
- * Default export for convenience.
- */
-export default usePagination;

@@ -64,139 +64,71 @@ function toSelectOptions(enumDef: EnumDefinition | undefined): SelectOption[] {
 }
 
 // =============================================================================
-// Individual Enum Hooks
+// Enum Options Hook Return Type
+// =============================================================================
+
+interface EnumOptionsResult {
+  options: SelectOption[];
+  isLoading: boolean;
+  getLabel: (value: string) => string;
+}
+
+// =============================================================================
+// Factory Hook for Enum Options
 // =============================================================================
 
 /**
- * Get order item status options for Select components.
+ * Generic hook factory for creating enum option hooks.
+ * Reduces code duplication across individual enum hooks.
  */
-export function useOrderItemStatusOptions(): {
-  options: SelectOption[];
-  isLoading: boolean;
-  getLabel: (value: string) => string;
-} {
+function useEnumOptions(
+  selector: (data: SystemEnumsResponse | undefined) => EnumDefinition | undefined
+): EnumOptionsResult {
   const { data, isLoading } = useEnums();
 
-  const options = useMemo(
-    () => toSelectOptions(data?.orderItemStatus),
-    [data?.orderItemStatus]
-  );
+  const enumDef = selector(data);
+
+  const options = useMemo(() => toSelectOptions(enumDef), [enumDef]);
 
   const getLabel = useMemo(() => {
-    return (value: string) => data?.orderItemStatus?.labels[value] || value;
-  }, [data?.orderItemStatus]);
+    return (value: string) => enumDef?.labels[value] || value;
+  }, [enumDef]);
 
   return { options, isLoading, getLabel };
 }
 
-/**
- * Get customer pay status options for Select components.
- */
-export function useCustomerPayStatusOptions(): {
-  options: SelectOption[];
-  isLoading: boolean;
-  getLabel: (value: string) => string;
-} {
-  const { data, isLoading } = useEnums();
+// =============================================================================
+// Individual Enum Hooks
+// =============================================================================
 
-  const options = useMemo(
-    () => toSelectOptions(data?.customerPayStatus),
-    [data?.customerPayStatus]
-  );
-
-  const getLabel = useMemo(() => {
-    return (value: string) => data?.customerPayStatus?.labels[value] || value;
-  }, [data?.customerPayStatus]);
-
-  return { options, isLoading, getLabel };
+/** Get order item status options for Select components. */
+export function useOrderItemStatusOptions(): EnumOptionsResult {
+  return useEnumOptions((data) => data?.orderItemStatus);
 }
 
-/**
- * Get payment method options for Select components.
- */
-export function usePaymentMethodOptions(): {
-  options: SelectOption[];
-  isLoading: boolean;
-  getLabel: (value: string) => string;
-} {
-  const { data, isLoading } = useEnums();
-
-  const options = useMemo(
-    () => toSelectOptions(data?.paymentMethod),
-    [data?.paymentMethod]
-  );
-
-  const getLabel = useMemo(() => {
-    return (value: string) => data?.paymentMethod?.labels[value] || value;
-  }, [data?.paymentMethod]);
-
-  return { options, isLoading, getLabel };
+/** Get customer pay status options for Select components. */
+export function useCustomerPayStatusOptions(): EnumOptionsResult {
+  return useEnumOptions((data) => data?.customerPayStatus);
 }
 
-/**
- * Get quote status options for Select components.
- */
-export function useQuoteStatusOptions(): {
-  options: SelectOption[];
-  isLoading: boolean;
-  getLabel: (value: string) => string;
-} {
-  const { data, isLoading } = useEnums();
-
-  const options = useMemo(
-    () => toSelectOptions(data?.quoteStatus),
-    [data?.quoteStatus]
-  );
-
-  const getLabel = useMemo(() => {
-    return (value: string) => data?.quoteStatus?.labels[value] || value;
-  }, [data?.quoteStatus]);
-
-  return { options, isLoading, getLabel };
+/** Get payment method options for Select components. */
+export function usePaymentMethodOptions(): EnumOptionsResult {
+  return useEnumOptions((data) => data?.paymentMethod);
 }
 
-/**
- * Get supplier status options for Select components.
- */
-export function useSupplierStatusOptions(): {
-  options: SelectOption[];
-  isLoading: boolean;
-  getLabel: (value: string) => string;
-} {
-  const { data, isLoading } = useEnums();
-
-  const options = useMemo(
-    () => toSelectOptions(data?.supplierStatus),
-    [data?.supplierStatus]
-  );
-
-  const getLabel = useMemo(() => {
-    return (value: string) => data?.supplierStatus?.labels[value] || value;
-  }, [data?.supplierStatus]);
-
-  return { options, isLoading, getLabel };
+/** Get quote status options for Select components. */
+export function useQuoteStatusOptions(): EnumOptionsResult {
+  return useEnumOptions((data) => data?.quoteStatus);
 }
 
-/**
- * Get settle type options for Select components.
- */
-export function useSettleTypeOptions(): {
-  options: SelectOption[];
-  isLoading: boolean;
-  getLabel: (value: string) => string;
-} {
-  const { data, isLoading } = useEnums();
+/** Get supplier status options for Select components. */
+export function useSupplierStatusOptions(): EnumOptionsResult {
+  return useEnumOptions((data) => data?.supplierStatus);
+}
 
-  const options = useMemo(
-    () => toSelectOptions(data?.settleType),
-    [data?.settleType]
-  );
-
-  const getLabel = useMemo(() => {
-    return (value: string) => data?.settleType?.labels[value] || value;
-  }, [data?.settleType]);
-
-  return { options, isLoading, getLabel };
+/** Get settle type options for Select components. */
+export function useSettleTypeOptions(): EnumOptionsResult {
+  return useEnumOptions((data) => data?.settleType);
 }
 
 /**

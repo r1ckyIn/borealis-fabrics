@@ -16,7 +16,7 @@ export {
   removeLocalStorageValue,
 } from './useLocalStorage';
 
-export { usePagination, default as usePaginationDefault } from './usePagination';
+export { usePagination } from './usePagination';
 
 // Query hooks
 export * from './queries';
