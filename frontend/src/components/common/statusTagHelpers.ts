@@ -1,7 +1,3 @@
-/**
- * Status tag helper functions for color and label mapping.
- */
-
 import type { PresetColorType, PresetStatusColorType } from 'antd/es/_util/colors';
 import {
   OrderItemStatus,
@@ -14,17 +10,9 @@ import {
   CUSTOMER_PAY_STATUS_LABELS,
 } from '@/types';
 
-// =====================
-// Types
-// =====================
-
 export type StatusType = 'orderItem' | 'quote' | 'supplier' | 'customerPay';
 
 export type AntdTagColor = PresetColorType | PresetStatusColorType | string;
-
-// =====================
-// Color mappings
-// =====================
 
 const ORDER_ITEM_COLORS: Record<OrderItemStatus, AntdTagColor> = {
   [OrderItemStatus.INQUIRY]: 'default',
@@ -56,13 +44,6 @@ const CUSTOMER_PAY_COLORS: Record<CustomerPayStatus, AntdTagColor> = {
   [CustomerPayStatus.PAID]: 'success',
 };
 
-// =====================
-// Helper functions
-// =====================
-
-/**
- * Get the color for a status value based on its type.
- */
 export function getStatusTagColor(type: StatusType, value: string): AntdTagColor {
   switch (type) {
     case 'orderItem':
@@ -78,9 +59,6 @@ export function getStatusTagColor(type: StatusType, value: string): AntdTagColor
   }
 }
 
-/**
- * Get the label for a status value based on its type.
- */
 export function getStatusTagLabel(type: StatusType, value: string): string {
   switch (type) {
     case 'orderItem':

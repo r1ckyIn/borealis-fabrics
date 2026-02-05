@@ -1,13 +1,5 @@
-/**
- * Loading spinner component with optional fullscreen overlay.
- */
-
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { Spin } from 'antd';
-
-// =====================
-// Types
-// =====================
 
 export interface LoadingSpinnerProps {
   loading?: boolean;
@@ -16,11 +8,7 @@ export interface LoadingSpinnerProps {
   children?: ReactNode;
 }
 
-// =====================
-// Styles
-// =====================
-
-const fullscreenStyle: React.CSSProperties = {
+const fullscreenStyle: CSSProperties = {
   position: 'fixed',
   top: 0,
   left: 0,
@@ -33,20 +21,14 @@ const fullscreenStyle: React.CSSProperties = {
   zIndex: 9999,
 };
 
-// =====================
-// Component
-// =====================
-
 export function LoadingSpinner({
   loading = true,
   tip = '加载中...',
   fullscreen = false,
   children,
 }: LoadingSpinnerProps): ReactNode {
-  // Fullscreen mode
   if (fullscreen) {
     if (!loading) return null;
-
     return (
       <div style={fullscreenStyle}>
         <Spin size="large" tip={tip} />
@@ -54,7 +36,6 @@ export function LoadingSpinner({
     );
   }
 
-  // Inline mode with children
   if (children) {
     return (
       <Spin spinning={loading} tip={tip}>
@@ -63,8 +44,6 @@ export function LoadingSpinner({
     );
   }
 
-  // Simple spinner
   if (!loading) return null;
-
   return <Spin tip={tip} />;
 }

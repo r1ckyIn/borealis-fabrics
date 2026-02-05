@@ -1,7 +1,3 @@
-/**
- * Common components barrel export.
- */
-
 export { SearchForm } from './SearchForm';
 export type { SearchField, SearchFieldOption, SearchFormProps } from './SearchForm';
 

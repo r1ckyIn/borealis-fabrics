@@ -1,16 +1,7 @@
-/**
- * Confirmation modal component for destructive or important actions.
- * Supports async confirmation with loading state.
- */
-
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Modal } from 'antd';
 import { ExclamationCircleFilled } from '@ant-design/icons';
-
-// =====================
-// Types
-// =====================
 
 export interface ConfirmModalProps {
   open: boolean;
@@ -23,10 +14,6 @@ export interface ConfirmModalProps {
   danger?: boolean;
   loading?: boolean;
 }
-
-// =====================
-// Component
-// =====================
 
 export function ConfirmModal({
   open,

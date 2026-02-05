@@ -1,17 +1,8 @@
-/**
- * Reusable search/filter form component.
- * Supports text, select, and date range field types.
- */
-
 import type { ReactNode } from 'react';
 import { Button, Col, DatePicker, Form, Input, Row, Select } from 'antd';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 
 const { RangePicker } = DatePicker;
-
-// =====================
-// Types
-// =====================
 
 export interface SearchFieldOption {
   label: string;
@@ -34,10 +25,6 @@ export interface SearchFormProps {
   initialValues?: Record<string, unknown>;
 }
 
-// =====================
-// Component
-// =====================
-
 export function SearchForm({
   fields,
   onSearch,
@@ -47,16 +34,12 @@ export function SearchForm({
 }: SearchFormProps): ReactNode {
   const [form] = Form.useForm();
 
-  const handleFinish = (values: Record<string, unknown>): void => {
-    onSearch(values);
-  };
-
-  const handleReset = (): void => {
+  function handleReset(): void {
     form.resetFields();
     onReset?.();
-  };
+  }
 
-  const renderField = (field: SearchField): ReactNode => {
+  function renderField(field: SearchField): ReactNode {
     switch (field.type) {
       case 'text':
         return (
@@ -65,7 +48,6 @@ export function SearchForm({
             allowClear
           />
         );
-
       case 'select':
         return (
           <Select
@@ -75,7 +57,6 @@ export function SearchForm({
             style={{ width: '100%' }}
           />
         );
-
       case 'dateRange':
         return (
           <RangePicker
@@ -83,17 +64,16 @@ export function SearchForm({
             style={{ width: '100%' }}
           />
         );
-
       default:
         return null;
     }
-  };
+  }
 
   return (
     <Form
       form={form}
       layout="vertical"
-      onFinish={handleFinish}
+      onFinish={onSearch}
       initialValues={initialValues}
     >
       <Row gutter={16}>
