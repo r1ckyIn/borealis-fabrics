@@ -1048,14 +1048,14 @@ docker-compose logs -f    # 查看日志
 | 2.4.6 | 防抖 Hook | `src/hooks/useDebounce.ts` | ✅ | ✅ | ✅ | ✅ |
 | 2.4.7 | 本地存储 Hook | `src/hooks/useLocalStorage.ts` | ✅ | ✅ | ✅ | ✅ |
 
-#### Task 2.5：面料模块页面
+#### Task 2.5：面料模块页面 ✅
 
-| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
-|---|------|---------|------|-------|------|-----------|
-| 2.5.1 | 面料列表 | `src/pages/fabrics/FabricListPage.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 2.5.2 | 面料详情 | `src/pages/fabrics/FabricDetailPage.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 2.5.3 | 面料表单页 | `src/pages/fabrics/FabricFormPage.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 2.5.4 | 面料表单组件 | `src/components/forms/FabricForm.tsx` | ✅ | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck | Test |
+|---|------|---------|------|-------|------|-----------|------|
+| 2.5.1 | 面料列表 | `src/pages/fabrics/FabricListPage.tsx` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 2.5.2 | 面料详情 | `src/pages/fabrics/FabricDetailPage.tsx` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 2.5.3 | 面料表单页 | `src/pages/fabrics/FabricFormPage.tsx` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 2.5.4 | 面料表单组件 | `src/components/forms/FabricForm.tsx` | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 2.6：供应商模块页面
 
