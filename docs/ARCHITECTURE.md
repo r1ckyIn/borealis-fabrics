@@ -899,527 +899,300 @@ docker-compose logs -f    # 查看日志
 
 ---
 
-## 十三、阶段 2 详细进度
+## 十三、后端开发完成总结
 
-> **重要说明**：根据技术需求文档 TRD 5.7 节 API 端点清单，每个模块除基础 CRUD 外，还需实现关联资源的子路由 API。
+> **后端开发状态**：阶段 1-3 全部完成，共计 39 个 API 端点，100% 测试覆盖
 
-> **架构说明**：FileModule 作为底层通用文件上传服务，面料图片 API（`/fabrics/:id/images`）在 FabricModule 中实现，内部调用 FileService。
+### 13.1 已完成模块
 
-> **测试说明**：测试分为两类：
-> - **单元测试**：测试单个 Service/Controller 的逻辑（`*.spec.ts`）
-> - **E2E 测试**：测试完整 API 端点的集成行为（`test/*.e2e-spec.ts`）
+| 模块 | API 数量 | 状态 |
+|------|---------|------|
+| SupplierModule | 6 | ✅ 已完成 |
+| CustomerModule | 11 | ✅ 已完成 |
+| FabricModule | 16 | ✅ 已完成 |
+| FileModule | 3 | ✅ 已完成 |
+| QuoteModule | 6 | ✅ 已完成 |
+| OrderModule | 17 | ✅ 已完成 |
+| LogisticsModule | 5 | ✅ 已完成 |
+| ImportModule | 4 | ✅ 已完成 |
+| AuthModule | 4 | ✅ 已完成 |
+| SystemModule | 3 | ✅ 已完成 |
 
-### 13.1 SupplierModule ✅ 已完成
+### 13.2 技术服务
 
-#### 基础 CRUD
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.1.1 | 供应商列表（分页、搜索） | GET /suppliers | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.1.2 | 供应商详情 | GET /suppliers/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.1.3 | 创建供应商 | POST /suppliers | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.1.4 | 更新供应商 | PATCH /suppliers/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.1.5 | 删除供应商（软删除/409） | DELETE /suppliers/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-#### 关联资源 API
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.1.7 | 获取供应商可供应面料 | GET /suppliers/:id/fabrics | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-### 13.2 CustomerModule ✅ 已完成
-
-#### 基础 CRUD
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.2.1 | 客户列表（分页、搜索） | GET /customers | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.2.2 | 客户详情（含特殊定价） | GET /customers/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.2.3 | 创建客户 | POST /customers | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.2.4 | 更新客户 | PATCH /customers/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.2.5 | 删除客户（软删除/409） | DELETE /customers/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-#### 客户特殊定价 API
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.2.7 | 获取客户特殊定价列表 | GET /customers/:id/pricing | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.2.8 | 设置客户面料特殊定价 | POST /customers/:id/pricing | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.2.9 | 更新客户特殊定价 | PATCH /customers/:id/pricing/:pricingId | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.2.10 | 删除客户特殊定价 | DELETE /customers/:id/pricing/:pricingId | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-#### 客户历史订单 API ✅ 已完成
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.2.11 | 获取客户历史订单 | GET /customers/:id/orders | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-### 13.3 FabricModule ✅ 已完成
-
-#### 基础 CRUD
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.3.1 | 面料列表（分页、筛选、搜索） | GET /fabrics | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.2 | 面料详情（含供应商、图片、定价） | GET /fabrics/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.3 | 创建面料 | POST /fabrics | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.4 | 更新面料 | PATCH /fabrics/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.5 | 删除面料（软删除/409） | DELETE /fabrics/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-#### 面料图片管理 API
-
-> **实现说明**：在 FabricController 中实现，内部调用 FileService 上传文件后创建 FabricImage 记录关联到面料。
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.3.7 | 上传面料图片 | POST /fabrics/:id/images | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.8 | 删除面料图片 | DELETE /fabrics/:id/images/:imageId | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-#### 面料-供应商关联 API
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.3.9 | 获取面料供应商列表 | GET /fabrics/:id/suppliers | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.10 | 关联供应商到面料 | POST /fabrics/:id/suppliers | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.11 | 更新面料-供应商关联 | PATCH /fabrics/:id/suppliers/:supplierId | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.12 | 移除面料-供应商关联 | DELETE /fabrics/:id/suppliers/:supplierId | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-#### 面料特殊定价 API
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.3.13 | 获取面料特殊定价列表 | GET /fabrics/:id/pricing | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.14 | 设置客户特殊定价 | POST /fabrics/:id/pricing | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.15 | 更新客户特殊定价 | PATCH /fabrics/:id/pricing/:pricingId | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.3.16 | 删除客户特殊定价 | DELETE /fabrics/:id/pricing/:pricingId | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-### 13.4 FileModule ✅ 已完成（底层服务）
-
-> **定位说明**：FileModule 是通用文件上传底层服务。TRD 定义的面料图片 API（`POST /fabrics/:id/images`）在 FabricModule 的 2.3.7-2.3.8 中实现，通过调用 FileService 完成文件上传后关联到面料。
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
-|---|------|---------|------|---------|-----|-------|------|
-| 2.4.1 | 上传文件（通用） | POST /files/upload | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.4.2 | 获取文件信息 | GET /files/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 2.4.3 | 删除文件 | DELETE /files/:id | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-### 13.5 阶段 2 完成标准
-
-#### SupplierModule ✅
-- [x] 基础 CRUD 实现（2.1.1-2.1.5）
-- [x] 关联资源 API 实现（2.1.7）
-- [x] 单元测试全部通过
-- [x] E2E 集成测试全部通过
-
-#### CustomerModule ✅
-- [x] 基础 CRUD 实现（2.2.1-2.2.5）
-- [x] 特殊定价 API 实现（2.2.7-2.2.10）
-- [x] 单元测试全部通过
-- [x] E2E 集成测试全部通过
-- 注：2.2.11 依赖 OrderModule，移至阶段 3
-
-#### FabricModule ✅
-- [x] 基础 CRUD 实现（2.3.1-2.3.5）
-- [x] 图片管理 API 实现（2.3.7-2.3.8）
-- [x] 供应商关联 API 实现（2.3.9-2.3.12）
-- [x] 特殊定价 API 实现（2.3.13-2.3.16）
-- [x] 单元测试全部通过
-- [x] E2E 集成测试全部通过
-
-#### FileModule ✅
-- [x] 底层服务已完成（2.4.1-2.4.3）
-- [x] 单元测试全部通过
-- [x] E2E 集成测试全部通过
-- [x] 安全问题已修复（路径遍历漏洞、文件名验证）
+| 服务 | 状态 |
+|------|------|
+| 编号生成 (Redis INCR + DB Fallback) | ✅ 已完成 |
+| 报价过期定时任务 | ✅ 已完成 |
+| 订单状态聚合计算 | ✅ 已完成 |
+| 金额自动计算 | ✅ 已完成 |
 
 ---
 
-## 十四、阶段 3 详细规划
+## 十四、阶段 4 前端开发详细进度
 
-> **依赖关系**：阶段 3 依赖阶段 2 完成，特别是 FabricSupplier 和 CustomerPricing 关联 API。
->
-> **模块概览**：阶段 3 包含 6 个核心模块，共计约 39 个 API 端点。
+> **前端开发状态**：🔄 进行中
+> **预计文件数**：~80 个
+> **工作计划文档**：[docs/plans/frontend-phase4-workplan.md](./plans/frontend-phase4-workplan.md)
+> **设计文档**：[docs/design/frontend-design-doc.md](./design/frontend-design-doc.md)
 
-### 14.1 QuoteModule（报价管理）✅ 已完成
+### 14.1 Phase 1：基础设施
 
-> **功能概述**：报价 CRUD、有效期管理、过期自动标记、报价转订单
->
-> **报价状态枚举**：
-> - `active`（有效）
-> - `expired`（已过期）- 系统定时任务自动标记
-> - `converted`（已转订单）
->
-> **关键规则**：
-> - 仅 active/expired 状态可更新
-> - 仅 active/expired 状态允许删除，converted 状态不允许删除
-> - 报价转订单：仅 active 且未过期的报价可转换；转换后状态变为 converted；生成的订单明细初始状态为 PENDING；时间线记录"从报价 QT-xxx 转换"
->
-> **技术实现**：
-> - RedisService：Redis 连接管理，支持 fallback 到数据库
-> - CodeGeneratorService：编号生成服务（QT-YYMM-NNNN 格式）
-> - QuoteScheduler：定时任务（@nestjs/schedule），每小时检查过期报价
+#### Task 1.1：类型定义
 
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.1.1 | 报价列表（分页、筛选） | GET /quotes | ✅ | ✅ | ✅ |
-| 3.1.2 | 报价详情 | GET /quotes/:id | ✅ | ✅ | ✅ |
-| 3.1.3 | 创建报价（含客户、面料、数量、单价、有效期） | POST /quotes | ✅ | ✅ | ✅ |
-| 3.1.4 | 更新报价（仅 active/expired 状态可更新） | PATCH /quotes/:id | ✅ | ✅ | ✅ |
-| 3.1.5 | 删除报价（仅 active/expired 状态允许删除） | DELETE /quotes/:id | ✅ | ✅ | ✅ |
-| 3.1.6 | 报价转订单（501 占位，等 OrderModule） | POST /quotes/:id/convert-to-order | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.1.1 | API 响应类型 | `src/types/api.types.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.1.2 | 实体类型 | `src/types/entities.types.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.1.3 | 枚举类型 | `src/types/enums.types.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.1.4 | 表单类型 | `src/types/forms.types.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.1.5 | 类型导出 | `src/types/index.ts` | ✅ | ✅ | ✅ | ✅ |
 
-### 14.2 OrderModule（订单管理）
+#### Task 1.2：工具函数
 
-> **功能概述**：订单主表 CRUD、明细管理、状态机流转（9 个状态）、付款追踪（双向：客户侧、供应商侧）、时间线记录
->
-> **订单状态枚举（9 个）**：
-> ```
-> INQUIRY (询价中) → PENDING (待下单) → ORDERED (已下单) → PRODUCTION (生产中)
-> → QC (质检中) → SHIPPED (已发货) → RECEIVED (已签收) → COMPLETED (已完成)
-> 任意状态 → CANCELLED (已取消) ← 可恢复到 prevStatus
-> ```
->
-> **状态转换规则**：
-> - INQUIRY → PENDING, CANCELLED
-> - PENDING → ORDERED, CANCELLED
-> - ORDERED → PRODUCTION, CANCELLED
-> - PRODUCTION → QC, CANCELLED
-> - QC → SHIPPED, CANCELLED
-> - SHIPPED → RECEIVED, CANCELLED
-> - RECEIVED → COMPLETED, CANCELLED
-> - COMPLETED → CANCELLED
-> - CANCELLED → 恢复到 prevStatus（取消前的状态）
->
-> **关键业务规则**：
-> 1. **订单聚合状态计算**：订单主表 status = 所有明细中进度最低的状态（已取消明细不参与计算）
-> 2. **金额自动计算**：
->    - 明细小计：`order_items.subtotal = quantity × salePrice`
->    - 订单总金额：`orders.totalAmount = Σ(所有明细 subtotal)`
->    - 供应商应付：`supplier_payments.payable = Σ(该供应商下所有明细 quantity × purchasePrice)`
-> 3. **付款与订单状态关系（MVP 不绑定）**：付款状态和订单状态各自独立变更，互不阻塞，系统仅做提醒
+| # | 功能 | 文件路径 | 状态 | 单元测试 | Build | Lint |
+|---|------|---------|------|---------|-------|------|
+| 1.2.1 | 日期/金额格式化 | `src/utils/format.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.2 | 表单验证规则 | `src/utils/validation.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.3 | 全局常量 | `src/utils/constants.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.4 | 订单状态工具 | `src/utils/statusHelpers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.5 | 工具导出 | `src/utils/index.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-#### 订单主表 API ✅ 已完成
+#### Task 1.3：API 客户端
 
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.2.1 | 订单列表（分页、筛选、搜索） | GET /orders | ✅ | ✅ | ✅ |
-| 3.2.2 | 订单详情（含明细、时间线、付款、物流） | GET /orders/:id | ✅ | ✅ | ✅ |
-| 3.2.3 | 创建订单（必须包含至少一条明细） | POST /orders | ✅ | ✅ | ✅ |
-| 3.2.4 | 更新订单基本信息（客户、收货地址、备注） | PATCH /orders/:id | ✅ | ✅ | ✅ |
-| 3.2.5 | 删除订单（仅 INQUIRY 状态且无付款记录时允许） | DELETE /orders/:id | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.3.1 | Axios 实例 | `src/api/client.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.3.2 | 认证 API | `src/api/auth.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.3.3 | 系统 API | `src/api/system.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-#### 订单明细 API ✅ 已完成
+#### Task 1.4：Zustand Stores
 
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.2.6 | 获取订单明细列表 | GET /orders/:id/items | ✅ | ✅ | ✅ |
-| 3.2.7 | 添加订单明细（面料、数量、销售单价、供应商、采购价、交期要求） | POST /orders/:id/items | ✅ | ✅ | ✅ |
-| 3.2.8 | 更新订单明细（受状态机限制） | PATCH /orders/:id/items/:itemId | ✅ | ✅ | ✅ |
-| 3.2.9 | 删除订单明细（仅 INQUIRY/PENDING 状态可删除） | DELETE /orders/:id/items/:itemId | ✅ | ✅ | ✅ |
-| 3.2.10 | 更新明细状态（状态机流转） | PATCH /orders/:id/items/:itemId/status | ✅ | ✅ | ✅ |
-| 3.2.11 | 取消订单明细（记录 prevStatus 以便恢复） | POST /orders/:id/items/:itemId/cancel | ✅ | ✅ | ✅ |
-| 3.2.12 | 恢复已取消明细（从 CANCELLED 恢复到 prevStatus） | POST /orders/:id/items/:itemId/restore | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.4.1 | 认证状态 | `src/store/authStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.4.2 | UI 状态 | `src/store/uiStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.4.3 | 枚举缓存 | `src/store/enumStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.4.4 | Store 导出 | `src/store/index.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-#### 订单时间线 API ✅ 已完成
+#### Task 1.5：路由配置
 
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.2.13 | 获取订单时间线（按时间倒序，支持按明细筛选） | GET /orders/:id/timeline | ✅ | ✅ | ✅ |
-| 3.2.14 | 获取指定明细的时间线 | GET /orders/:id/items/:itemId/timeline | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.5.1 | 路由定义 | `src/routes/index.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.5.2 | 路由守卫 | `src/routes/ProtectedRoute.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-#### 订单付款 API ✅ 已完成
+#### Task 1.6：布局组件
 
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.2.15 | 更新客户侧付款信息（应收、已收、付款状态、付款方式、账期、付款时间） | PATCH /orders/:id/customer-payment | ✅ | ✅ | ✅ |
-| 3.2.16 | 获取订单的供应商付款列表（按订单-供应商维度） | GET /orders/:id/supplier-payments | ✅ | ✅ | ✅ |
-| 3.2.17 | 更新指定供应商的付款信息 | PATCH /orders/:id/supplier-payments/:supplierId | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.6.1 | 主布局 | `src/routes/layouts/MainLayout.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.6.2 | 侧边栏 | `src/components/layout/Sidebar.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.6.3 | 顶部导航 | `src/components/layout/Header.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.6.4 | 页面容器 | `src/components/layout/PageContainer.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-> **注**：客户历史订单 API（GET /customers/:id/orders，原 2.2.11）已实现，通过 CustomerModule 调用 OrderModule 数据。
+#### Task 1.7：认证页面
 
-### 14.3 LogisticsModule（物流管理）
-
-> **功能概述**：物流记录 CRUD、关联订单明细
->
-> **关键规则**：
-> - 物流信息关联到面料级别（订单明细），同一订单不同面料可有不同物流信息
-> - MVP 阶段：员工手动录入，不做实时跟踪
-> - 预留物流 API 对接接口（后期开发）
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.3.1 | 物流记录列表（支持按订单、明细、单号筛选） | GET /logistics | ✅ | ✅ | ✅ |
-| 3.3.2 | 物流详情（含关联的明细信息） | GET /logistics/:id | ✅ | ✅ | ✅ |
-| 3.3.3 | 创建物流记录（关联订单明细、物流公司、联系人、联系电话、物流单号、发货时间） | POST /logistics | ✅ | ✅ | ✅ |
-| 3.3.4 | 更新物流信息 | PATCH /logistics/:id | ✅ | ✅ | ✅ |
-| 3.3.5 | 删除物流记录（物理删除） | DELETE /logistics/:id | ✅ | ✅ | ✅ |
-
-### 14.4 ImportModule（批量导入）
-
-> **功能概述**：Excel 批量导入面料和供应商、下载模板
->
-> **冲突处理策略**：
-> - 编号已存在的行**跳过不导入**，不覆盖、不更新已有数据
-> - 部分成功：失败行汇总报告给用户，成功行正常导入
-> - 返回导入结果报告：成功数、失败数、失败原因列表
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.4.1 | 批量导入面料（Excel，冲突跳过） | POST /import/fabrics | ✅ | ✅ | ✅ |
-| 3.4.2 | 批量导入供应商（Excel，冲突跳过） | POST /import/suppliers | ✅ | ✅ | ✅ |
-| 3.4.3 | 下载面料导入模板（含列定义和示例数据） | GET /import/templates/fabrics | ✅ | ✅ | ✅ |
-| 3.4.4 | 下载供应商导入模板 | GET /import/templates/suppliers | ✅ | ✅ | ✅ |
-
-### 14.5 AuthModule（认证模块）
-
-> **功能概述**：企业微信 OAuth 登录、JWT 会话管理
->
-> **技术细节**：
-> - 企业微信 OAuth 2.0 流程
-> - JWT 配置：过期时间 7 天，滑动过期策略（每次有效请求重置）
-> - 用户信息同步
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.5.1 | 企业微信 OAuth 登录（重定向到授权页） | GET /auth/wework/login | ✅ | ✅ | ✅ |
-| 3.5.2 | OAuth 回调处理（换取 token、创建/同步用户、发送 JWT） | GET /auth/wework/callback | ✅ | ✅ | - |
-| 3.5.3 | 获取当前用户信息 | GET /auth/me | ✅ | ✅ | ✅ |
-| 3.5.4 | 登出（清理或标记 JWT 过期） | POST /auth/logout | ✅ | ✅ | ✅ |
-
-### 14.6 SystemModule（系统模块）
-
-> **功能概述**：枚举值返回、健康检查
-
-| # | 功能 | API 端点 | 状态 | 单元测试 | E2E |
-|---|------|---------|------|---------|-----|
-| 3.6.1 | 返回所有枚举值及中文映射（MVP 硬编码） | GET /system/enums | ✅ | ✅ | ✅ |
-| 3.6.2 | 存活检查（简单的 200 OK 响应） | GET /health | ✅ | ✅ | - |
-| 3.6.3 | 就绪检查（含数据库连接检查） | GET /ready | ✅ | ✅ | - |
-
-> **注**：3.6.2 和 3.6.3 由 HealthController 实现（在 CommonModule 中）
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.7.1 | 登录页 | `src/pages/auth/LoginPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.7.2 | OAuth 回调 | `src/pages/auth/OAuthCallback.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
 ---
 
-## 十五、待实现的技术服务（跨模块）
+### 14.2 Phase 2：核心模块
 
-> 以下技术点在 TRD 中定义，需在相应模块开发时实现：
+#### Task 2.1：通用组件
 
-| # | 技术服务 | 说明 | 实现时机 |
-|---|---------|------|---------|
-| T.1 | 编号生成服务 | Redis INCR 原子递增 + DB UNIQUE 兜底，支持 BF/ORD/QT 三种编号格式；格式 `XXX-{YYMM}-{4位序号}` | ✅ 已完成（QuoteModule） |
-| T.2 | 定时任务 - 报价过期检查 | @nestjs/schedule 定时扫描 quotes.valid_until 字段，自动标记过期报价（status → expired） | ✅ 已完成（QuoteModule） |
-| T.3 | 订单状态聚合计算 | 订单主表 status = 所有明细中进度最低的状态（已取消不参与）；触发器或 Service 逻辑实现 | 阶段 3 OrderModule 开发时 |
-| T.4 | Redis Fallback 策略 | 编号生成服务 Redis 不可用时降级到 DB MAX+1；Redis 恢复后需从数据库同步最大序号 | ✅ 已完成（QuoteModule） |
-| T.5 | 付款流水记录 | 每次付款操作自动创建 payment_records 流水；客户已付/供应商已付金额 = 对应流水金额之和 | 阶段 3 OrderModule 开发时 |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.1.1 | 搜索表单 | `src/components/common/SearchForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.2 | 状态标签 | `src/components/common/StatusTag.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.3 | 金额显示 | `src/components/common/AmountDisplay.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.4 | 加载指示器 | `src/components/common/LoadingSpinner.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.5 | 错误边界 | `src/components/common/ErrorBoundary.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.6 | 确认弹窗 | `src/components/common/ConfirmModal.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.2：业务组件（Part 1）
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.2.1 | 图片上传 | `src/components/business/ImageUploader.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.2 | 地址管理 | `src/components/business/AddressManager.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.3 | 面料选择器 | `src/components/business/FabricSelector.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.4 | 供应商选择器 | `src/components/business/SupplierSelector.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.5 | 客户选择器 | `src/components/business/CustomerSelector.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.3：API 服务（核心）
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.3.1 | 面料 API | `src/api/fabric.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.3.2 | 供应商 API | `src/api/supplier.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.3.3 | 客户 API | `src/api/customer.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.3.4 | 文件 API | `src/api/file.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.4：TanStack Query Hooks
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.4.1 | 面料 Hooks | `src/hooks/queries/useFabrics.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.2 | 供应商 Hooks | `src/hooks/queries/useSuppliers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.3 | 客户 Hooks | `src/hooks/queries/useCustomers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.4 | 枚举 Hooks | `src/hooks/queries/useEnums.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.5 | 分页 Hook | `src/hooks/usePagination.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.6 | 防抖 Hook | `src/hooks/useDebounce.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.7 | 本地存储 Hook | `src/hooks/useLocalStorage.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.5：面料模块页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.5.1 | 面料列表 | `src/pages/fabrics/FabricListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.5.2 | 面料详情 | `src/pages/fabrics/FabricDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.5.3 | 面料表单页 | `src/pages/fabrics/FabricFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.5.4 | 面料表单组件 | `src/components/forms/FabricForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.6：供应商模块页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.6.1 | 供应商列表 | `src/pages/suppliers/SupplierListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.6.2 | 供应商详情 | `src/pages/suppliers/SupplierDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.6.3 | 供应商表单页 | `src/pages/suppliers/SupplierFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.6.4 | 供应商表单组件 | `src/components/forms/SupplierForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.7：客户模块页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.7.1 | 客户列表 | `src/pages/customers/CustomerListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.7.2 | 客户详情 | `src/pages/customers/CustomerDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.7.3 | 客户表单页 | `src/pages/customers/CustomerFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.7.4 | 客户表单组件 | `src/components/forms/CustomerForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
 ---
 
-## 十六、开发计划审查记录
+### 14.3 Phase 3：业务流程模块
 
-### [2026-01-29] TRD 对比审查
+#### Task 3.1：报价 API 和 Hooks
 
-**审查内容**：对比 CLAUDE.md 开发计划与 TRD 5.7 节 API 端点清单
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.1.1 | 报价 API | `src/api/quote.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.1.2 | 报价 Hooks | `src/hooks/queries/useQuotes.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-**审查结果**：
+#### Task 3.2：报价模块页面
 
-| 类别 | 问题 | 处理 |
-|------|------|------|
-| ✅ 一致 | SupplierModule 所有端点与 TRD 匹配 | - |
-| ✅ 一致 | CustomerModule 所有端点与 TRD 匹配 | - |
-| ✅ 一致 | FabricModule 所有端点与 TRD 匹配 | - |
-| ✅ 一致 | 阶段 3 所有模块端点与 TRD 匹配 | - |
-| ⚠️ 说明 | FileModule 定位 | 已添加说明：底层服务，面料图片 API 在 FabricModule 中实现 |
-| ⚠️ 补充 | 遗漏技术服务 | 已添加"待实现的技术服务"章节 |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.2.1 | 报价列表 | `src/pages/quotes/QuoteListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.2.2 | 报价详情 | `src/pages/quotes/QuoteDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.2.3 | 报价表单页 | `src/pages/quotes/QuoteFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.2.4 | 报价表单组件 | `src/components/forms/QuoteForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-**结论**：开发计划与需求文档一致，已补充必要说明。
+#### Task 3.3：业务组件（Part 2）
 
-### [2026-01-29] 代码库同步审查
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.3.1 | 订单时间线 | `src/components/business/OrderTimeline.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.3.2 | 订单状态流程 | `src/components/business/OrderStatusFlow.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.3.3 | 付款状态卡片 | `src/components/business/PaymentStatusCard.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.3.4 | 定价表格 | `src/components/business/PricingTable.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-**审查内容**：核对代码库实际实现与 CLAUDE.md 记录的功能状态
+#### Task 3.4：订单 API 和 Hooks
 
-**审查结果**：
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.4.1 | 订单 API | `src/api/order.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.4.2 | 订单 Hooks | `src/hooks/queries/useOrders.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-| 类别 | 发现 | 处理 |
-|------|------|------|
-| ✗ 不一致 | 2.2.5 删除客户：CLAUDE.md 标记 ⏳，实际已实现 ✅ | 已更新状态为 ✅ |
-| ✅ 一致 | SupplierModule 基础 CRUD 全部完成 | - |
-| ✅ 一致 | CustomerModule 基础 CRUD 全部完成 | - |
-| ✅ 一致 | FabricModule 基础 CRUD 全部完成 | - |
-| ✅ 一致 | FileModule 全部完成 | - |
-| ✅ 一致 | 所有关联资源 API 按计划待开发 | - |
-| ✅ 一致 | 测试覆盖完整（Unit + E2E） | - |
+#### Task 3.5：订单模块页面
 
-**结论**：代码库与文档已同步，一致性 100%。
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.5.1 | 订单列表 | `src/pages/orders/OrderListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.2 | 订单详情 | `src/pages/orders/OrderDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.3 | 订单表单页 | `src/pages/orders/OrderFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.4 | 订单表单组件 | `src/components/forms/OrderForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.5 | 订单明细表单 | `src/components/forms/OrderItemForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-### [2026-01-29] 测试覆盖审查
+#### Task 3.6：物流 API 和集成
 
-**审查内容**：核对新完成功能的单元测试和 E2E 集成测试覆盖情况
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.6.1 | 物流 API | `src/api/logistics.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.6.2 | 物流 Hooks | `src/hooks/queries/useLogistics.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.6.3 | 物流表单 | `src/components/forms/LogisticsForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-**审查结果**：
+#### Task 3.7：导入模块
 
-| 功能 | 单元测试 | E2E 测试 | 状态 |
-|------|---------|---------|------|
-| 2.1.7 供应商面料列表 | ✅ 通过 | ✅ 通过 | 完成 |
-| 2.2.7 客户定价列表 | ✅ 通过 | ✅ 通过 | 完成 |
-| 2.2.8 创建客户定价 | ✅ 通过 | ✅ 通过 | 完成 |
-| 2.2.9 更新客户定价 | ✅ 通过 | ✅ 通过 | 完成 |
-| 2.2.10 删除客户定价 | ✅ 通过 | ✅ 通过 | 完成 |
-| 2.3.7 上传面料图片 | ✅ 通过 | ✅ 通过 | 完成 |
-| 2.3.8 删除面料图片 | ✅ 通过 | ✅ 通过 | 完成 |
-| 2.3.13-2.3.16 面料特殊定价 | ✅ 通过 | ✅ 通过 | 完成 |
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.7.1 | 导入 API | `src/api/import.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.7.2 | 导入页面 | `src/pages/import/ImportPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.7.3 | 导入结果弹窗 | `src/components/business/ImportResultModal.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
 
-**发现的问题**：
+---
 
-1. E2E 测试 mock 需要使用 Prisma P2002 错误码模拟唯一约束冲突
-2. 功能状态表格原先只有"测试"一列，未区分单元测试和 E2E
+### 14.4 Phase 4：质量保障
 
-**处理措施**：
+#### Task 4.1：集成测试
 
-1. 将功能状态表格的"测试"列拆分为"单元测试"和"E2E"两列
-2. 更新所有功能的测试覆盖状态
-3. 添加测试说明区分两类测试
-
-**结论**：开发计划已更新，测试覆盖状态更加清晰。
-
-### [2026-01-30] 阶段 2 完成确认
-
-**审查内容**：确认阶段 2 核心数据模块全部完成
-
-**审查结果**：
-
-| 模块 | 基础 CRUD | 关联资源 API | 单元测试 | E2E 测试 | 状态 |
-|------|----------|-------------|---------|---------|------|
-| SupplierModule | ✅ | ✅ | ✅ 293 tests | ✅ 268 tests | 完成 |
-| CustomerModule | ✅ | ✅（定价 API） | ✅ | ✅ | 完成 |
-| FabricModule | ✅ | ✅（图片+供应商+定价） | ✅ | ✅ | 完成 |
-| FileModule | ✅ | N/A | ✅ | ✅ | 完成 |
-
-**验证命令执行结果**：
-
-- `pnpm build` ✅ 通过
-- `pnpm test` ✅ 293 tests passed
-- `pnpm test:e2e` ✅ 268 tests passed
-- `pnpm lint` ✅ 无错误
-
-**结论**：阶段 2 核心数据模块全部完成，可进入阶段 3 业务流程模块开发。
-
-### [2026-01-30] 阶段 3 开发计划更新
-
-**审查内容**：对比 CLAUDE.md 阶段 3 计划与 TRD 5.7 节 API 端点清单
-
-**更新内容**：
-
-| 类别 | 更新项 |
-|------|--------|
-| 结构优化 | 添加模块概述、状态枚举、关键规则说明 |
-| 功能描述 | 统一使用 TRD 自然语言描述 |
-| 表格格式 | 添加单元测试和 E2E 测试列 |
-| 遗漏补充 | 添加 T.5 付款流水记录技术服务 |
-| 遗漏补充 | 说明 2.2.11 客户历史订单 API 在 OrderModule 完成后实现 |
-| 业务规则 | 添加 QuoteModule 状态枚举和转订单规则 |
-| 业务规则 | 添加 OrderModule 状态机详细定义（9 个状态、转换规则） |
-| 业务规则 | 添加金额自动计算规则（明细小计、订单总金额、供应商应付） |
-| 业务规则 | 添加 ImportModule 冲突处理策略说明 |
-| 业务规则 | 添加 LogisticsModule 物流关联规则 |
-| 业务规则 | 添加 AuthModule OAuth/JWT 技术细节 |
-
-**验证**：逐条对比 TRD 5.7 节，确认无遗漏
-
-**结论**：阶段 3 开发计划已与需求文档完全对齐
-
-### [2026-02-04] 阶段 3 模块代码审查（3.1-3.4）
-
-**审查内容**：对 QuoteModule、OrderModule、LogisticsModule、ImportModule 进行深度代码审查
-
-**审查结果**：
-
-| 模块 | 评分 | 高优先级问题 | 中优先级问题 | 状态 |
-|------|------|-------------|-------------|------|
-| QuoteModule | 96/100 | 0 | 2 | ✅ 优秀 |
-| OrderModule | 需重构 | 0 | 0 | ✅ 安全问题已修复 |
-| LogisticsModule | 良好 | 0 | 0 | ✅ 误报已确认 |
-| ImportModule | 8.5/10 | 0 | 1 | ✅ 安全问题已修复 |
-
-**P0 高优先级问题 - 已全部修复（PR #25）**：
-
-| # | 问题 | 模块 | 状态 |
+| # | 功能 | 状态 | 备注 |
 |---|------|------|------|
-| 1 | Logistics Update/Delete 竞态条件 | LogisticsModule | ✅ 误报（已有 P2025 原子操作） |
-| 2 | updateSupplierPayment TOCTOU 竞态 | OrderModule | ✅ 已修复（事务+upsert） |
-| 3 | 批量导入缺少行数限制（内存风险） | ImportModule | ✅ 已修复（MAX_IMPORT_ROWS=1000） |
-| 4 | Excel 缺少最大行数验证 | ImportModule | ✅ 已修复（同上） |
+| 4.1.1 | 认证流程测试 | ⏳ | 登录重定向、OAuth 回调、登出 |
+| 4.1.2 | 面料 CRUD 测试 | ⏳ | API 集成测试 |
+| 4.1.3 | 订单状态机测试 | ⏳ | 状态转换验证 |
+| 4.1.4 | 付款更新测试 | ⏳ | 双向付款追踪 |
+| 4.1.5 | 报价转订单测试 | ⏳ | 转换流程 |
 
-**P1 中优先级问题 - 状态更新**：
+#### Task 4.2：性能优化
 
-| # | 问题 | 模块 | 状态 |
+| # | 功能 | 状态 | 目标 |
 |---|------|------|------|
-| 5 | 缺少 salePrice < purchasePrice 利润检查 | OrderModule | 📝 MVP 不需要（业务决策） |
-| 6 | 删除订单项时供应商付款清理逻辑 | OrderModule | 📝 代码逻辑正确 |
-| 7 | getCellValue 无长度限制 | ImportModule | ✅ 已修复（MAX_CELL_LENGTH=1000） |
-| 8 | JSON.parse 缺少安全验证 | ImportModule | 📝 已有 try/catch |
-| 9 | 数字字段缺少范围验证 | ImportModule | ✅ 已修复（NUMERIC_RANGES） |
+| 4.2.1 | 路由代码分割 | ⏳ | 按路由懒加载 |
+| 4.2.2 | Bundle 大小检查 | ⏳ | 初始 <500KB |
+| 4.2.3 | 大数据量测试 | ⏳ | 500+ 订单、100+ 供应商 |
 
-**P2 代码质量问题（长期改进）**：
+#### Task 4.3：验收标准验证
 
-| # | 问题 | 模块 | 建议 |
-|---|------|------|------|
-| 10 | OrderService 1547 行 | OrderModule | 拆分为 6 个服务 |
-| 11 | updateOrderItem 128 行 | OrderModule | 提取辅助方法 |
-| 12 | 重复代码违反 DRY | ImportModule | 提取通用逻辑 |
-
-**测试覆盖更新**：
-
-- LogisticsModule E2E 测试已补充（16 个测试用例）
-- 当前测试统计：单元测试 532 通过，E2E 测试 409 通过
-
-**PR #25 修复内容**：
-
-1. **LogisticsModule**：Create 方法改用外键约束（P2003）防止 TOCTOU
-2. **LogisticsModule**：QueryLogisticsDto 添加 @MaxLength 验证
-3. **ImportModule**：添加 MAX_IMPORT_ROWS (1000) 行数限制
-4. **ImportModule**：添加 MAX_CELL_LENGTH (1000) 单元格长度限制
-5. **ImportModule**：添加 NUMERIC_RANGES 数字字段范围验证
-6. **OrderModule**：updateSupplierPayment 改用事务+upsert 原子操作
-
-**结论**：所有 P0 安全问题已修复，P1 业务问题已评估（部分为误报/业务决策），P2 代码质量问题留作长期改进
-
-### [2026-02-05] 阶段 3 需求对齐审查
-
-**审查内容**：验证阶段 3 所有 39 个 API 端点与需求文档的对齐情况
-
-**审查结果**：
-
-| 模块 | API 覆盖率 | 业务规则 | 测试覆盖 | 对齐状态 |
-|------|-----------|---------|---------|---------|
-| QuoteModule | 6/6 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
-| OrderModule | 17/17 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
-| LogisticsModule | 5/5 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
-| ImportModule | 4/4 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
-| AuthModule | 4/4 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
-| SystemModule | 3/3 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
-
-**技术服务对齐**：
-
-| 服务 | 状态 | 说明 |
+| 模块 | 状态 | 备注 |
 |------|------|------|
-| T.1 编号生成 (Redis INCR + DB Fallback) | ✅ | code-generator.service.ts |
-| T.2 报价过期定时任务 | ✅ | quote.scheduler.ts (@Cron 每小时) |
-| T.3 订单状态聚合计算 | ✅ | calculateAggregateStatus() |
-| T.4 金额自动计算 | ✅ | recalculateOrderTotals() |
-| T.5 付款流水记录 | 📝 | MVP 暂不需要，后期迭代 |
+| AC-AUTH | ⏳ | 路由守卫、OAuth 集成 |
+| AC-FABRIC | ⏳ | 列表、详情、表单、图片、供应商关联、定价 |
+| AC-SUPPLIER | ⏳ | 列表、详情、表单、删除保护 |
+| AC-CUSTOMER | ⏳ | 列表、详情、地址管理、定价、订单历史 |
+| AC-QUOTE | ⏳ | 列表、详情、过期处理、转订单 |
+| AC-ORDER | ⏳ | 状态机、付款追踪、时间线 |
+| AC-LOGISTICS | ⏳ | 物流信息管理 |
+| AC-IMPORT | ⏳ | 模板下载、Excel 上传、结果展示 |
 
-**发现的改进点（不影响功能）**：
+#### Task 4.4：最终质量检查
 
-| # | 问题 | 优先级 | 建议 |
-|---|------|--------|------|
-| 1 | 路由前缀不一致（部分模块缺少 api/v1） | 低 | 阶段 5 统一处理 |
-| 2 | 金额精度（JavaScript 数字计算） | 中 | 确保 DB 为 DECIMAL，考虑 decimal.js |
-| 3 | 付款流水记录（T.5） | 低 | 后期迭代支持 |
-
-**结论**：阶段 3 所有 39 个 API 端点与需求文档 100% 对齐，可进入阶段 4 前端开发
+| # | 检查项 | 状态 |
+|---|--------|------|
+| 4.4.1 | `pnpm build` 成功 | ⏳ |
+| 4.4.2 | `pnpm test` 全部通过 | ⏳ |
+| 4.4.3 | `pnpm lint` 无错误 | ⏳ |
+| 4.4.4 | `pnpm typecheck` 无错误 | ⏳ |
+| 4.4.5 | 关键路径测试覆盖率 >80% | ⏳ |
+| 4.4.6 | 浏览器无 console 错误 | ⏳ |
+| 4.4.7 | 平板响应式布局正常 | ⏳ |
 
 ---
 
-**文档状态**：v1.6 - 2.2.11 客户历史订单 API 完成（PR #32）
+### 14.5 状态图例
+
+| 图标 | 含义 |
+|-----|------|
+| ⏳ | 待开始 |
+| 🔄 | 进行中 |
+| ✅ | 已完成 |
+| ❌ | 失败待修复 |
+
+---
+
+**文档状态**：v2.1 - 阶段 4 前端开发进度追踪表已创建
 
 **最后更新**：2026-02-05
