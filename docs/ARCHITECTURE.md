@@ -978,22 +978,22 @@ docker-compose logs -f    # 查看日志
 
 #### Task 1.5：路由配置
 
-| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
-|---|------|---------|------|-------|------|-----------|
-| 1.5.1 | 路由定义 | `src/routes/index.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 1.5.2 | 路由守卫 | `src/routes/ProtectedRoute.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 1.5.3 | 布局占位 | `src/routes/layouts/MainLayout.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 1.5.4 | 页面占位 | `src/pages/**/*.tsx` (21 files) | ✅ | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | 单元测试 | Build | Lint | Typecheck |
+|---|------|---------|------|---------|-------|------|-----------|
+| 1.5.1 | 路由定义 | `src/routes/index.tsx` | ✅ | - | ✅ | ✅ | ✅ |
+| 1.5.2 | 路由守卫 | `src/routes/ProtectedRoute.tsx` | ✅ | ✅ (4) | ✅ | ✅ | ✅ |
+| 1.5.3 | 布局占位 | `src/routes/layouts/MainLayout.tsx` | ✅ | - | ✅ | ✅ | ✅ |
+| 1.5.4 | 页面占位 | `src/pages/**/*.tsx` (21 files) | ✅ | - | ✅ | ✅ | ✅ |
 
 #### Task 1.6：布局组件
 
-| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
-|---|------|---------|------|-------|------|-----------|
-| 1.6.1 | 主布局 | `src/routes/layouts/MainLayout.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 1.6.2 | 侧边栏 | `src/components/layout/Sidebar.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 1.6.3 | 顶部导航 | `src/components/layout/Header.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 1.6.4 | 页面容器 | `src/components/layout/PageContainer.tsx` | ✅ | ✅ | ✅ | ✅ |
-| 1.6.5 | 组件导出 | `src/components/layout/index.ts` | ✅ | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | 单元测试 | Build | Lint | Typecheck |
+|---|------|---------|------|---------|-------|------|-----------|
+| 1.6.1 | 主布局 | `src/routes/layouts/MainLayout.tsx` | ✅ | - | ✅ | ✅ | ✅ |
+| 1.6.2 | 侧边栏 | `src/components/layout/Sidebar.tsx` | ✅ | ✅ (6) | ✅ | ✅ | ✅ |
+| 1.6.3 | 顶部导航 | `src/components/layout/Header.tsx` | ✅ | ✅ (8) | ✅ | ✅ | ✅ |
+| 1.6.4 | 页面容器 | `src/components/layout/PageContainer.tsx` | ✅ | ✅ (7) | ✅ | ✅ | ✅ |
+| 1.6.5 | 组件导出 | `src/components/layout/index.ts` | ✅ | - | ✅ | ✅ | ✅ |
 
 #### Task 1.7：认证页面
 
