@@ -36,6 +36,12 @@ export const STORAGE_KEYS = {
   SIDEBAR_COLLAPSED: 'bf_sidebar_collapsed',
 } as const;
 
+// Route paths
+export const ROUTES = {
+  LOGIN: '/login',
+  HOME: '/',
+} as const;
+
 // File upload configuration
 export const UPLOAD_CONFIG = {
   MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
