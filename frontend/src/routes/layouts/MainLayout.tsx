@@ -9,7 +9,7 @@
  */
 
 import { Layout } from 'antd';
-import { useCallback, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import { Header, Sidebar } from '@/components/layout';
@@ -39,14 +39,6 @@ export default function MainLayout() {
   const setSidebarCollapsed = useUIStore((state) => state.setSidebarCollapsed);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
 
-  // Handle sidebar collapse change from Sider component
-  const handleCollapse = useCallback(
-    (collapsed: boolean) => {
-      setSidebarCollapsed(collapsed);
-    },
-    [setSidebarCollapsed]
-  );
-
   // Auto-collapse sidebar on tablet/mobile
   useEffect(() => {
     const handleResize = () => {
@@ -69,7 +61,7 @@ export default function MainLayout() {
       <Sider
         collapsible
         collapsed={sidebarCollapsed}
-        onCollapse={handleCollapse}
+        onCollapse={setSidebarCollapsed}
         trigger={null}
         width={SIDER_WIDTH}
         collapsedWidth={SIDER_COLLAPSED_WIDTH}

@@ -74,12 +74,11 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const location = useLocation();
 
   // Determine selected key based on current path
-  const selectedKey = useMemo(() => {
-    const path = location.pathname;
-    // Match the first segment of the path (e.g., /fabrics/123 -> /fabrics)
-    const firstSegment = '/' + path.split('/')[1];
-    return firstSegment;
-  }, [location.pathname]);
+  // Match the first segment of the path (e.g., /fabrics/123 -> /fabrics)
+  const selectedKey = useMemo(
+    () => '/' + location.pathname.split('/')[1],
+    [location.pathname]
+  );
 
   // Handle menu item click
   const handleMenuClick = useCallback<Required<MenuProps>['onClick']>(
