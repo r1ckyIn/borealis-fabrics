@@ -88,7 +88,6 @@ export function SupplierForm({
 }: SupplierFormProps): React.ReactElement {
   const [internalForm] = Form.useForm<CreateSupplierData>();
   const form = externalForm ?? internalForm;
-  const isEditMode = mode === 'edit';
 
   // Watch settleType for conditional creditDays validation
   const settleType = Form.useWatch('settleType', form);
@@ -276,7 +275,7 @@ export function SupplierForm({
       <Form.Item>
         <Space>
           <Button type="primary" htmlType="submit" loading={loading}>
-            {isEditMode ? '保存修改' : '创建供应商'}
+            {mode === 'edit' ? '保存修改' : '创建供应商'}
           </Button>
           <Button onClick={onCancel}>取消</Button>
         </Space>

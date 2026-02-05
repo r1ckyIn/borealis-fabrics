@@ -14,6 +14,7 @@ import { SearchForm, type SearchField } from '@/components/common/SearchForm';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { usePagination } from '@/hooks/usePagination';
 import { useSuppliers, useDeleteSupplier } from '@/hooks/queries/useSuppliers';
+import { SUPPLIER_STATUS_TAG_COLORS } from '@/utils';
 import {
   SupplierStatus,
   SUPPLIER_STATUS_LABELS,
@@ -23,13 +24,6 @@ import {
 import type { Supplier, QuerySupplierParams } from '@/types';
 
 const { Text } = Typography;
-
-/** Status tag color mapping. */
-const STATUS_TAG_COLORS: Record<SupplierStatus, string> = {
-  [SupplierStatus.ACTIVE]: 'green',
-  [SupplierStatus.SUSPENDED]: 'orange',
-  [SupplierStatus.ELIMINATED]: 'red',
-};
 
 /** Supplier status options for search filter. */
 const STATUS_OPTIONS = Object.values(SupplierStatus).map((value) => ({
@@ -182,7 +176,7 @@ export default function SupplierListPage(): React.ReactElement {
         key: 'status',
         width: 100,
         render: (status: SupplierStatus) => (
-          <Tag color={STATUS_TAG_COLORS[status]}>
+          <Tag color={SUPPLIER_STATUS_TAG_COLORS[status]}>
             {SUPPLIER_STATUS_LABELS[status]}
           </Tag>
         ),

@@ -22,9 +22,8 @@ import type { ColumnsType } from 'antd/es/table';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { useSupplier, useSupplierFabrics } from '@/hooks/queries/useSuppliers';
-import { formatDate } from '@/utils/format';
+import { formatDate, SUPPLIER_STATUS_TAG_COLORS } from '@/utils';
 import {
-  SupplierStatus,
   SUPPLIER_STATUS_LABELS,
   SettleType,
   SETTLE_TYPE_LABELS,
@@ -32,13 +31,6 @@ import {
 import type { FabricSupplier } from '@/types';
 
 const { Text } = Typography;
-
-/** Status tag color mapping. */
-const STATUS_TAG_COLORS: Record<SupplierStatus, string> = {
-  [SupplierStatus.ACTIVE]: 'green',
-  [SupplierStatus.SUSPENDED]: 'orange',
-  [SupplierStatus.ELIMINATED]: 'red',
-};
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -230,7 +222,7 @@ export default function SupplierDetailPage(): React.ReactElement {
             {supplier.email ?? '-'}
           </Descriptions.Item>
           <Descriptions.Item label="状态">
-            <Tag color={STATUS_TAG_COLORS[supplier.status]}>
+            <Tag color={SUPPLIER_STATUS_TAG_COLORS[supplier.status]}>
               {SUPPLIER_STATUS_LABELS[supplier.status]}
             </Tag>
           </Descriptions.Item>
