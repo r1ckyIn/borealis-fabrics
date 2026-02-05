@@ -20,6 +20,7 @@ export {
   UPLOAD_CONFIG,
   CREDIT_DAYS_MIN,
   CREDIT_DAYS_MAX,
+  SUPPLIER_STATUS_TAG_COLORS,
 } from './constants';
 
 // Format utilities

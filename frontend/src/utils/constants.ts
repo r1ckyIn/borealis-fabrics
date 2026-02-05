@@ -3,7 +3,7 @@
  */
 
 // API configuration
-export const API_BASE_URL = '/api';
+export const API_BASE_URL = '/api/v1';
 export const API_TIMEOUT = 30000;
 
 // Pagination defaults
@@ -51,3 +51,10 @@ export const UPLOAD_CONFIG = {
 // Credit days range
 export const CREDIT_DAYS_MIN = 0;
 export const CREDIT_DAYS_MAX = 365;
+
+// Supplier status tag colors for Ant Design
+export const SUPPLIER_STATUS_TAG_COLORS: Record<string, string> = {
+  active: 'green',
+  suspended: 'orange',
+  eliminated: 'red',
+};
