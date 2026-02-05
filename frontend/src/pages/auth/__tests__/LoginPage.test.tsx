@@ -11,6 +11,15 @@ import { useAuthStore } from '@/store';
 
 import LoginPage from '../LoginPage';
 
+// Test fixtures
+const mockUser = {
+  id: 1,
+  weworkId: 'test',
+  name: 'Test User',
+  createdAt: '2024-01-01',
+  updatedAt: '2024-01-01',
+};
+
 // Mock auth API
 vi.mock('@/api/auth.api', () => ({
   getWeworkLoginUrl: vi.fn(() => 'https://wework.example.com/oauth'),
@@ -87,13 +96,7 @@ describe('LoginPage', () => {
   it('should redirect authenticated user to home', () => {
     // Set authenticated state
     useAuthStore.setState({
-      user: {
-        id: 1,
-        weworkId: 'test',
-        name: 'Test User',
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-01',
-      },
+      user: mockUser,
       token: 'mock-token',
       isInitializing: false,
     });
@@ -110,13 +113,7 @@ describe('LoginPage', () => {
 
   it('should redirect to original location after login', () => {
     useAuthStore.setState({
-      user: {
-        id: 1,
-        weworkId: 'test',
-        name: 'Test User',
-        createdAt: '2024-01-01',
-        updatedAt: '2024-01-01',
-      },
+      user: mockUser,
       token: 'mock-token',
       isInitializing: false,
     });
