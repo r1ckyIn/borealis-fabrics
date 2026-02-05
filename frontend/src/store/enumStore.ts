@@ -47,88 +47,51 @@ const initialState: EnumState = {
   error: null,
 };
 
+/**
+ * Internal helper to perform the actual fetch operation.
+ */
+async function performFetch(
+  set: (state: Partial<EnumState>) => void
+): Promise<void> {
+  try {
+    const enums = await systemApi.getEnums();
+    set({ enums, isLoaded: true, isLoading: false, error: null });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Failed to fetch enums';
+    set({ isLoading: false, error: message });
+    console.error('Failed to fetch enums:', error);
+  }
+}
+
 export const useEnumStore = create<EnumStore>()((set, get) => ({
   ...initialState,
 
   fetchEnums: async () => {
-    const state = get();
-    // Skip if already loaded or currently loading
-    if (state.isLoaded || state.isLoading) {
+    const { isLoaded, isLoading } = get();
+    if (isLoaded || isLoading) {
       return;
     }
-
     set({ isLoading: true, error: null });
-
-    try {
-      const enums = await systemApi.getEnums();
-      set({
-        enums,
-        isLoaded: true,
-        isLoading: false,
-        error: null,
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to fetch enums';
-      set({
-        isLoading: false,
-        error: message,
-      });
-      console.error('Failed to fetch enums:', error);
-    }
+    await performFetch(set);
   },
 
   refetchEnums: async () => {
     set({ isLoading: true, isLoaded: false, error: null });
-
-    try {
-      const enums = await systemApi.getEnums();
-      set({
-        enums,
-        isLoaded: true,
-        isLoading: false,
-        error: null,
-      });
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to fetch enums';
-      set({
-        isLoading: false,
-        error: message,
-      });
-      console.error('Failed to refetch enums:', error);
-    }
+    await performFetch(set);
   },
 
-  getLabel: (enumName: keyof SystemEnumsResponse, value: string): string => {
-    const state = get();
-    if (!state.enums) {
-      return value;
-    }
-    const enumDef = state.enums[enumName];
-    if (!enumDef) {
-      return value;
-    }
-    return enumDef.labels[value] ?? value;
+  getLabel: (enumName, value) => {
+    const enumDef = get().enums?.[enumName];
+    return enumDef?.labels[value] ?? value;
   },
 
-  getValues: (enumName: keyof SystemEnumsResponse): string[] => {
-    const state = get();
-    if (!state.enums) {
-      return [];
-    }
-    const enumDef = state.enums[enumName];
-    return enumDef?.values ?? [];
+  getValues: (enumName) => {
+    return get().enums?.[enumName]?.values ?? [];
   },
 
-  getEnumDefinition: (
-    enumName: keyof SystemEnumsResponse
-  ): EnumDefinition | null => {
-    const state = get();
-    if (!state.enums) {
-      return null;
-    }
-    return state.enums[enumName] ?? null;
+  getEnumDefinition: (enumName) => {
+    return get().enums?.[enumName] ?? null;
   },
 
   reset: () => {

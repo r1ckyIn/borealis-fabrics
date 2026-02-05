@@ -43,29 +43,20 @@ export const useUIStore = create<UIStore>()((set) => ({
     set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed }));
   },
 
-  setSidebarCollapsed: (collapsed: boolean) => {
+  setSidebarCollapsed: (collapsed) => {
     set({ sidebarCollapsed: collapsed });
   },
 
-  setGlobalLoading: (loading: boolean, message: string | null = null) => {
-    set({
-      globalLoading: loading,
-      loadingMessage: loading ? message : null,
-    });
+  setGlobalLoading: (loading, message = null) => {
+    set({ globalLoading: loading, loadingMessage: loading ? message : null });
   },
 
-  showLoading: (message?: string) => {
-    set({
-      globalLoading: true,
-      loadingMessage: message ?? null,
-    });
+  showLoading: (message) => {
+    set({ globalLoading: true, loadingMessage: message ?? null });
   },
 
   hideLoading: () => {
-    set({
-      globalLoading: false,
-      loadingMessage: null,
-    });
+    set({ globalLoading: false, loadingMessage: null });
   },
 }));
 

@@ -45,33 +45,25 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       ...initialState,
 
-      setAuth: (response: LoginResponse) => {
-        set({
-          user: response.user,
-          token: response.token,
-          isInitializing: false,
-        });
+      setAuth: (response) => {
+        set({ user: response.user, token: response.token, isInitializing: false });
       },
 
       clearAuth: () => {
-        set({
-          user: null,
-          token: null,
-          isInitializing: false,
-        });
+        set({ user: null, token: null, isInitializing: false });
       },
 
-      setUser: (user: AuthUser | null) => {
+      setUser: (user) => {
         set({ user });
       },
 
-      setInitializing: (isInitializing: boolean) => {
+      setInitializing: (isInitializing) => {
         set({ isInitializing });
       },
 
       isAuthenticated: () => {
-        const state = get();
-        return state.token !== null && state.user !== null;
+        const { token, user } = get();
+        return token !== null && user !== null;
       },
     }),
     {
