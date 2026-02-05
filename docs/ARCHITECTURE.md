@@ -929,6 +929,270 @@ docker-compose logs -f    # 查看日志
 
 ---
 
-**文档状态**：v2.0 - 后端开发完成，进入阶段 4 前端开发
+## 十四、阶段 4 前端开发详细进度
+
+> **前端开发状态**：🔄 进行中
+> **预计文件数**：~80 个
+> **工作计划文档**：[docs/plans/frontend-phase4-workplan.md](./plans/frontend-phase4-workplan.md)
+> **设计文档**：[docs/design/frontend-design-doc.md](./design/frontend-design-doc.md)
+
+### 14.1 Phase 1：基础设施
+
+#### Task 1.1：类型定义
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.1.1 | API 响应类型 | `src/types/api.types.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.1.2 | 实体类型 | `src/types/entities.types.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.1.3 | 枚举类型 | `src/types/enums.types.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.1.4 | 表单类型 | `src/types/forms.types.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.1.5 | 类型导出 | `src/types/index.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 1.2：工具函数
+
+| # | 功能 | 文件路径 | 状态 | 单元测试 | Build | Lint |
+|---|------|---------|------|---------|-------|------|
+| 1.2.1 | 日期/金额格式化 | `src/utils/format.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.2 | 表单验证规则 | `src/utils/validation.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.3 | 全局常量 | `src/utils/constants.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.4 | 订单状态工具 | `src/utils/statusHelpers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.5 | 工具导出 | `src/utils/index.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 1.3：API 客户端
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.3.1 | Axios 实例 | `src/api/client.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.3.2 | 认证 API | `src/api/auth.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.3.3 | 系统 API | `src/api/system.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 1.4：Zustand Stores
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.4.1 | 认证状态 | `src/store/authStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.4.2 | UI 状态 | `src/store/uiStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.4.3 | 枚举缓存 | `src/store/enumStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.4.4 | Store 导出 | `src/store/index.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 1.5：路由配置
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.5.1 | 路由定义 | `src/routes/index.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.5.2 | 路由守卫 | `src/routes/ProtectedRoute.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 1.6：布局组件
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.6.1 | 主布局 | `src/routes/layouts/MainLayout.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.6.2 | 侧边栏 | `src/components/layout/Sidebar.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.6.3 | 顶部导航 | `src/components/layout/Header.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.6.4 | 页面容器 | `src/components/layout/PageContainer.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 1.7：认证页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 1.7.1 | 登录页 | `src/pages/auth/LoginPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.7.2 | OAuth 回调 | `src/pages/auth/OAuthCallback.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+---
+
+### 14.2 Phase 2：核心模块
+
+#### Task 2.1：通用组件
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.1.1 | 搜索表单 | `src/components/common/SearchForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.2 | 状态标签 | `src/components/common/StatusTag.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.3 | 金额显示 | `src/components/common/AmountDisplay.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.4 | 加载指示器 | `src/components/common/LoadingSpinner.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.5 | 错误边界 | `src/components/common/ErrorBoundary.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.6 | 确认弹窗 | `src/components/common/ConfirmModal.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.2：业务组件（Part 1）
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.2.1 | 图片上传 | `src/components/business/ImageUploader.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.2 | 地址管理 | `src/components/business/AddressManager.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.3 | 面料选择器 | `src/components/business/FabricSelector.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.4 | 供应商选择器 | `src/components/business/SupplierSelector.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.5 | 客户选择器 | `src/components/business/CustomerSelector.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.3：API 服务（核心）
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.3.1 | 面料 API | `src/api/fabric.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.3.2 | 供应商 API | `src/api/supplier.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.3.3 | 客户 API | `src/api/customer.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.3.4 | 文件 API | `src/api/file.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.4：TanStack Query Hooks
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.4.1 | 面料 Hooks | `src/hooks/queries/useFabrics.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.2 | 供应商 Hooks | `src/hooks/queries/useSuppliers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.3 | 客户 Hooks | `src/hooks/queries/useCustomers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.4 | 枚举 Hooks | `src/hooks/queries/useEnums.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.5 | 分页 Hook | `src/hooks/usePagination.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.6 | 防抖 Hook | `src/hooks/useDebounce.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.7 | 本地存储 Hook | `src/hooks/useLocalStorage.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.5：面料模块页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.5.1 | 面料列表 | `src/pages/fabrics/FabricListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.5.2 | 面料详情 | `src/pages/fabrics/FabricDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.5.3 | 面料表单页 | `src/pages/fabrics/FabricFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.5.4 | 面料表单组件 | `src/components/forms/FabricForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.6：供应商模块页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.6.1 | 供应商列表 | `src/pages/suppliers/SupplierListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.6.2 | 供应商详情 | `src/pages/suppliers/SupplierDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.6.3 | 供应商表单页 | `src/pages/suppliers/SupplierFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.6.4 | 供应商表单组件 | `src/components/forms/SupplierForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 2.7：客户模块页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 2.7.1 | 客户列表 | `src/pages/customers/CustomerListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.7.2 | 客户详情 | `src/pages/customers/CustomerDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.7.3 | 客户表单页 | `src/pages/customers/CustomerFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.7.4 | 客户表单组件 | `src/components/forms/CustomerForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+---
+
+### 14.3 Phase 3：业务流程模块
+
+#### Task 3.1：报价 API 和 Hooks
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.1.1 | 报价 API | `src/api/quote.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.1.2 | 报价 Hooks | `src/hooks/queries/useQuotes.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 3.2：报价模块页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.2.1 | 报价列表 | `src/pages/quotes/QuoteListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.2.2 | 报价详情 | `src/pages/quotes/QuoteDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.2.3 | 报价表单页 | `src/pages/quotes/QuoteFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.2.4 | 报价表单组件 | `src/components/forms/QuoteForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 3.3：业务组件（Part 2）
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.3.1 | 订单时间线 | `src/components/business/OrderTimeline.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.3.2 | 订单状态流程 | `src/components/business/OrderStatusFlow.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.3.3 | 付款状态卡片 | `src/components/business/PaymentStatusCard.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.3.4 | 定价表格 | `src/components/business/PricingTable.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 3.4：订单 API 和 Hooks
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.4.1 | 订单 API | `src/api/order.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.4.2 | 订单 Hooks | `src/hooks/queries/useOrders.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 3.5：订单模块页面
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.5.1 | 订单列表 | `src/pages/orders/OrderListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.2 | 订单详情 | `src/pages/orders/OrderDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.3 | 订单表单页 | `src/pages/orders/OrderFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.4 | 订单表单组件 | `src/components/forms/OrderForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.5 | 订单明细表单 | `src/components/forms/OrderItemForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 3.6：物流 API 和集成
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.6.1 | 物流 API | `src/api/logistics.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.6.2 | 物流 Hooks | `src/hooks/queries/useLogistics.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.6.3 | 物流表单 | `src/components/forms/LogisticsForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+#### Task 3.7：导入模块
+
+| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
+|---|------|---------|------|-------|------|-----------|
+| 3.7.1 | 导入 API | `src/api/import.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.7.2 | 导入页面 | `src/pages/import/ImportPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.7.3 | 导入结果弹窗 | `src/components/business/ImportResultModal.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+
+---
+
+### 14.4 Phase 4：质量保障
+
+#### Task 4.1：集成测试
+
+| # | 功能 | 状态 | 备注 |
+|---|------|------|------|
+| 4.1.1 | 认证流程测试 | ⏳ | 登录重定向、OAuth 回调、登出 |
+| 4.1.2 | 面料 CRUD 测试 | ⏳ | API 集成测试 |
+| 4.1.3 | 订单状态机测试 | ⏳ | 状态转换验证 |
+| 4.1.4 | 付款更新测试 | ⏳ | 双向付款追踪 |
+| 4.1.5 | 报价转订单测试 | ⏳ | 转换流程 |
+
+#### Task 4.2：性能优化
+
+| # | 功能 | 状态 | 目标 |
+|---|------|------|------|
+| 4.2.1 | 路由代码分割 | ⏳ | 按路由懒加载 |
+| 4.2.2 | Bundle 大小检查 | ⏳ | 初始 <500KB |
+| 4.2.3 | 大数据量测试 | ⏳ | 500+ 订单、100+ 供应商 |
+
+#### Task 4.3：验收标准验证
+
+| 模块 | 状态 | 备注 |
+|------|------|------|
+| AC-AUTH | ⏳ | 路由守卫、OAuth 集成 |
+| AC-FABRIC | ⏳ | 列表、详情、表单、图片、供应商关联、定价 |
+| AC-SUPPLIER | ⏳ | 列表、详情、表单、删除保护 |
+| AC-CUSTOMER | ⏳ | 列表、详情、地址管理、定价、订单历史 |
+| AC-QUOTE | ⏳ | 列表、详情、过期处理、转订单 |
+| AC-ORDER | ⏳ | 状态机、付款追踪、时间线 |
+| AC-LOGISTICS | ⏳ | 物流信息管理 |
+| AC-IMPORT | ⏳ | 模板下载、Excel 上传、结果展示 |
+
+#### Task 4.4：最终质量检查
+
+| # | 检查项 | 状态 |
+|---|--------|------|
+| 4.4.1 | `pnpm build` 成功 | ⏳ |
+| 4.4.2 | `pnpm test` 全部通过 | ⏳ |
+| 4.4.3 | `pnpm lint` 无错误 | ⏳ |
+| 4.4.4 | `pnpm typecheck` 无错误 | ⏳ |
+| 4.4.5 | 关键路径测试覆盖率 >80% | ⏳ |
+| 4.4.6 | 浏览器无 console 错误 | ⏳ |
+| 4.4.7 | 平板响应式布局正常 | ⏳ |
+
+---
+
+### 14.5 状态图例
+
+| 图标 | 含义 |
+|-----|------|
+| ⏳ | 待开始 |
+| 🔄 | 进行中 |
+| ✅ | 已完成 |
+| ❌ | 失败待修复 |
+
+---
+
+**文档状态**：v2.1 - 阶段 4 前端开发进度追踪表已创建
 
 **最后更新**：2026-02-05
