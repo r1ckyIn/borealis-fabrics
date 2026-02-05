@@ -232,3 +232,30 @@ export interface UploadFabricImageData {
   fabricId: number;
   sortOrder?: number;
 }
+
+export interface QuerySupplierFabricsParams extends PaginationParams {
+  fabricCode?: string;
+  fabricName?: string;
+}
+
+export interface QueryCustomerOrdersParams extends PaginationParams {
+  status?: OrderItemStatus;
+  customerPayStatus?: CustomerPayStatus;
+}
+
+export interface QueryFabricSuppliersParams extends PaginationParams {
+  supplierName?: string;
+}
+
+export interface QueryFabricPricingParams extends PaginationParams {
+  customerName?: string;
+}
+
+export interface CreateFabricPricingData {
+  customerId: number;
+  specialPrice: number;
+}
+
+export interface UpdateFabricPricingData {
+  specialPrice: number;
+}
