@@ -1006,16 +1006,16 @@ docker-compose logs -f    # 查看日志
 
 ### 14.2 Phase 2：核心模块
 
-#### Task 2.1：通用组件
+#### Task 2.1：通用组件 ✅
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 2.1.1 | 搜索表单 | `src/components/common/SearchForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.1.2 | 状态标签 | `src/components/common/StatusTag.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.1.3 | 金额显示 | `src/components/common/AmountDisplay.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.1.4 | 加载指示器 | `src/components/common/LoadingSpinner.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.1.5 | 错误边界 | `src/components/common/ErrorBoundary.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.1.6 | 确认弹窗 | `src/components/common/ConfirmModal.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.1.1 | 搜索表单 | `src/components/common/SearchForm.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.1.2 | 状态标签 | `src/components/common/StatusTag.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.1.3 | 金额显示 | `src/components/common/AmountDisplay.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.1.4 | 加载指示器 | `src/components/common/LoadingSpinner.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.1.5 | 错误边界 | `src/components/common/ErrorBoundary.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.1.6 | 确认弹窗 | `src/components/common/ConfirmModal.tsx` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 2.2：业务组件（Part 1）
 
