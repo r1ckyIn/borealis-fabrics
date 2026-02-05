@@ -3,7 +3,7 @@
  */
 
 import type { Rule } from 'antd/es/form';
-import { CREDIT_DAYS_MAX, CREDIT_DAYS_MIN } from './constants';
+import { CODE_PATTERNS, CREDIT_DAYS_MAX, CREDIT_DAYS_MIN } from './constants';
 
 // Phone number regex: Chinese mobile format 1[3-9]xxxxxxxxx
 const PHONE_REGEX = /^1[3-9]\d{9}$/;
@@ -11,10 +11,25 @@ const PHONE_REGEX = /^1[3-9]\d{9}$/;
 // Email regex: simple but effective
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Business code patterns
-const ORDER_CODE_REGEX = /^ORD-\d{4}-\d{4}$/;
-const QUOTE_CODE_REGEX = /^QT-\d{4}-\d{4}$/;
-const FABRIC_CODE_REGEX = /^BF-\d{4}-\d{4}$/;
+// =====================
+// Internal helpers
+// =====================
+
+/**
+ * Check if value is empty (null, undefined, or empty string).
+ */
+function isEmpty(value: unknown): boolean {
+  return value === null || value === undefined || value === '';
+}
+
+/**
+ * Parse value to number, returns NaN if invalid.
+ */
+function toNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value);
+  return NaN;
+}
 
 /**
  * Required field validation rule.
@@ -92,10 +107,8 @@ export function maxLength(
 export function positiveNumber(message: string = '请输入正数'): Rule {
   return {
     validator: (_, value) => {
-      if (value === null || value === undefined || value === '') {
-        return Promise.resolve();
-      }
-      const num = typeof value === 'string' ? parseFloat(value) : value;
+      if (isEmpty(value)) return Promise.resolve();
+      const num = toNumber(value);
       if (isNaN(num) || num <= 0) {
         return Promise.reject(new Error(message));
       }
@@ -112,10 +125,8 @@ export function positiveNumber(message: string = '请输入正数'): Rule {
 export function nonNegativeNumber(message: string = '请输入非负数'): Rule {
   return {
     validator: (_, value) => {
-      if (value === null || value === undefined || value === '') {
-        return Promise.resolve();
-      }
-      const num = typeof value === 'string' ? parseFloat(value) : value;
+      if (isEmpty(value)) return Promise.resolve();
+      const num = toNumber(value);
       if (isNaN(num) || num < 0) {
         return Promise.reject(new Error(message));
       }
@@ -132,10 +143,8 @@ export function nonNegativeNumber(message: string = '请输入非负数'): Rule 
 export function price(message: string = '请输入有效的价格'): Rule {
   return {
     validator: (_, value) => {
-      if (value === null || value === undefined || value === '') {
-        return Promise.resolve();
-      }
-      const num = typeof value === 'string' ? parseFloat(value) : value;
+      if (isEmpty(value)) return Promise.resolve();
+      const num = toNumber(value);
       if (isNaN(num) || num <= 0) {
         return Promise.reject(new Error(message));
       }
@@ -157,9 +166,7 @@ export function price(message: string = '请输入有效的价格'): Rule {
 export function creditDays(message: string = '账期天数必须在0-365之间'): Rule {
   return {
     validator: (_, value) => {
-      if (value === null || value === undefined || value === '') {
-        return Promise.resolve();
-      }
+      if (isEmpty(value)) return Promise.resolve();
       const num = typeof value === 'string' ? parseInt(value, 10) : value;
       if (isNaN(num) || num < CREDIT_DAYS_MIN || num > CREDIT_DAYS_MAX) {
         return Promise.reject(new Error(message));
@@ -177,10 +184,8 @@ export function creditDays(message: string = '账期天数必须在0-365之间')
 export function integer(message: string = '请输入整数'): Rule {
   return {
     validator: (_, value) => {
-      if (value === null || value === undefined || value === '') {
-        return Promise.resolve();
-      }
-      const num = typeof value === 'string' ? parseFloat(value) : value;
+      if (isEmpty(value)) return Promise.resolve();
+      const num = toNumber(value);
       if (isNaN(num) || !Number.isInteger(num)) {
         return Promise.reject(new Error(message));
       }
@@ -217,7 +222,7 @@ export function isValidPhone(phoneStr: string): boolean {
  * @returns true if valid order code
  */
 export function isValidOrderCode(code: string): boolean {
-  return ORDER_CODE_REGEX.test(code);
+  return CODE_PATTERNS.ORDER.test(code);
 }
 
 /**
@@ -226,7 +231,7 @@ export function isValidOrderCode(code: string): boolean {
  * @returns true if valid quote code
  */
 export function isValidQuoteCode(code: string): boolean {
-  return QUOTE_CODE_REGEX.test(code);
+  return CODE_PATTERNS.QUOTE.test(code);
 }
 
 /**
@@ -235,5 +240,5 @@ export function isValidQuoteCode(code: string): boolean {
  * @returns true if valid fabric code
  */
 export function isValidFabricCode(code: string): boolean {
-  return FABRIC_CODE_REGEX.test(code);
+  return CODE_PATTERNS.FABRIC.test(code);
 }

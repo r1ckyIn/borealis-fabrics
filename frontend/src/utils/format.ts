@@ -9,6 +9,19 @@ import {
   DECIMAL_PLACES,
 } from './constants';
 
+// =====================
+// Internal helpers
+// =====================
+
+/**
+ * Parse value to number, returns null if invalid.
+ */
+function parseNumber(value: number | string | null | undefined): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  return isNaN(num) ? null : num;
+}
+
 /**
  * Format a date string to the standard date format (YYYY-MM-DD).
  * @param dateStr - ISO date string or Date object
@@ -126,11 +139,8 @@ export function formatCurrency(
     showPlusSign = false,
   } = options;
 
-  if (amount === null || amount === undefined || amount === '') return '-';
-
-  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-
-  if (isNaN(num)) return '-';
+  const num = parseNumber(amount);
+  if (num === null) return '-';
 
   const sign = showPlusSign && num > 0 ? '+' : '';
   const formatted = Math.abs(num).toLocaleString('zh-CN', {
@@ -152,11 +162,8 @@ export function formatNumber(
   value: number | string | null | undefined,
   decimals: number = 0
 ): string {
-  if (value === null || value === undefined || value === '') return '-';
-
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-
-  if (isNaN(num)) return '-';
+  const num = parseNumber(value);
+  if (num === null) return '-';
 
   return num.toLocaleString('zh-CN', {
     minimumFractionDigits: decimals,
@@ -174,11 +181,8 @@ export function formatPercent(
   value: number | string | null | undefined,
   decimals: number = 1
 ): string {
-  if (value === null || value === undefined || value === '') return '-';
-
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-
-  if (isNaN(num)) return '-';
+  const num = parseNumber(value);
+  if (num === null) return '-';
 
   return `${(num * 100).toFixed(decimals)}%`;
 }
@@ -193,11 +197,8 @@ export function formatQuantity(
   qty: number | string | null | undefined,
   unit: string = '米'
 ): string {
-  if (qty === null || qty === undefined || qty === '') return '-';
-
-  const num = typeof qty === 'string' ? parseFloat(qty) : qty;
-
-  if (isNaN(num)) return '-';
+  const num = parseNumber(qty);
+  if (num === null) return '-';
 
   return `${formatNumber(num, 2)} ${unit}`;
 }
