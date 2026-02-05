@@ -94,4 +94,10 @@ export type {
   UpdateLogisticsData,
   QueryLogisticsParams,
   UploadFabricImageData,
+  QuerySupplierFabricsParams,
+  QueryCustomerOrdersParams,
+  QueryFabricSuppliersParams,
+  QueryFabricPricingParams,
+  CreateFabricPricingData,
+  UpdateFabricPricingData,
 } from './forms.types';

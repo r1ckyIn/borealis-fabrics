@@ -14,3 +14,6 @@ export {
 export * from './auth.api';
 export * from './file.api';
 export * from './system.api';
+export * from './supplier.api';
+export * from './customer.api';
+export * from './fabric.api';
