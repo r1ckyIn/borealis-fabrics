@@ -156,7 +156,7 @@ describe('CustomerController (e2e)', () => {
 
   interface MockCountMethod {
     count: jest.Mock;
-    findMany?: jest.Mock;
+    findMany: jest.Mock;
   }
 
   interface MockCustomerPricingMethods {
