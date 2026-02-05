@@ -960,11 +960,12 @@ docker-compose logs -f    # 查看日志
 
 #### Task 1.3：API 客户端
 
-| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
-|---|------|---------|------|-------|------|-----------|
-| 1.3.1 | Axios 实例 | `src/api/client.ts` | ✅ | ✅ | ✅ | ✅ |
-| 1.3.2 | 认证 API | `src/api/auth.api.ts` | ✅ | ✅ | ✅ | ✅ |
-| 1.3.3 | 系统 API | `src/api/system.api.ts` | ✅ | ✅ | ✅ | ✅ |
+| # | 功能 | 文件路径 | 状态 | 单元测试 | Build | Lint | Typecheck |
+|---|------|---------|------|---------|-------|------|-----------|
+| 1.3.1 | Axios 实例 | `src/api/client.ts` | ✅ | ✅ (9) | ✅ | ✅ | ✅ |
+| 1.3.2 | 认证 API | `src/api/auth.api.ts` | ✅ | - | ✅ | ✅ | ✅ |
+| 1.3.3 | 系统 API | `src/api/system.api.ts` | ✅ | - | ✅ | ✅ | ✅ |
+| 1.3.4 | API 导出 | `src/api/index.ts` | ✅ | - | ✅ | ✅ | ✅ |
 
 #### Task 1.4：Zustand Stores
 
