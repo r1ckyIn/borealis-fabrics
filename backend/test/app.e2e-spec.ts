@@ -5,6 +5,7 @@ import { App } from 'supertest/types';
 import { AppModule } from './../src/app.module';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 // Response type definitions
 interface ApiSuccessResponse<T> {
@@ -46,6 +47,8 @@ describe('AppController (e2e)', () => {
   });
 
   afterAll(async () => {
+    const prisma = app.get(PrismaService);
+    await prisma.$disconnect();
     await app.close();
   });
 
