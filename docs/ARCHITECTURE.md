@@ -1017,7 +1017,7 @@ docker-compose logs -f    # 查看日志
 | 2.1.5 | 错误边界 | `src/components/common/ErrorBoundary.tsx` | ✅ | ✅ | ✅ | ✅ |
 | 2.1.6 | 确认弹窗 | `src/components/common/ConfirmModal.tsx` | ✅ | ✅ | ✅ | ✅ |
 
-#### Task 2.2：业务组件（Part 1）
+#### Task 2.2：业务组件（Part 1） ✅
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
@@ -1027,13 +1027,13 @@ docker-compose logs -f    # 查看日志
 | 2.2.4 | 供应商选择器 | `src/components/business/SupplierSelector.tsx` | ✅ | ✅ | ✅ | ✅ |
 | 2.2.5 | 客户选择器 | `src/components/business/CustomerSelector.tsx` | ✅ | ✅ | ✅ | ✅ |
 
-#### Task 2.3：API 服务（核心）
+#### Task 2.3：API 服务（核心） ✅
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 2.3.1 | 面料 API | `src/api/fabric.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.3.2 | 供应商 API | `src/api/supplier.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.3.3 | 客户 API | `src/api/customer.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.3.1 | 面料 API | `src/api/fabric.api.ts` | ✅ | ✅ | ✅ | ✅ |
+| 2.3.2 | 供应商 API | `src/api/supplier.api.ts` | ✅ | ✅ | ✅ | ✅ |
+| 2.3.3 | 客户 API | `src/api/customer.api.ts` | ✅ | ✅ | ✅ | ✅ |
 | 2.3.4 | 文件 API | `src/api/file.api.ts` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 2.4：TanStack Query Hooks
