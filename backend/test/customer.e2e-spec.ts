@@ -206,7 +206,7 @@ describe('CustomerController (e2e)', () => {
       findFirst: jest.fn(),
     },
     order: { count: jest.fn(), findMany: jest.fn() },
-    quote: { count: jest.fn() },
+    quote: { count: jest.fn(), findMany: jest.fn() },
     // Transaction mock - passes the mock service to the callback
     $transaction: jest.fn(
       <T>(fn: (tx: MockPrismaServiceType) => Promise<T>): Promise<T> =>
