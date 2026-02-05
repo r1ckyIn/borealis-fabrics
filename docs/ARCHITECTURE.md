@@ -952,11 +952,11 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | 单元测试 | Build | Lint |
 |---|------|---------|------|---------|-------|------|
-| 1.2.1 | 日期/金额格式化 | `src/utils/format.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.2.2 | 表单验证规则 | `src/utils/validation.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.2.3 | 全局常量 | `src/utils/constants.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.2.4 | 订单状态工具 | `src/utils/statusHelpers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.2.5 | 工具导出 | `src/utils/index.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.2.1 | 日期/金额格式化 | `src/utils/format.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.2.2 | 表单验证规则 | `src/utils/validation.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.2.3 | 全局常量 | `src/utils/constants.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.2.4 | 订单状态工具 | `src/utils/statusHelpers.ts` | ✅ | ✅ | ✅ | ✅ |
+| 1.2.5 | 工具导出 | `src/utils/index.ts` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 1.3：API 客户端
 
