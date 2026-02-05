@@ -1070,10 +1070,10 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 2.7.1 | 客户列表 | `src/pages/customers/CustomerListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.7.2 | 客户详情 | `src/pages/customers/CustomerDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.7.3 | 客户表单页 | `src/pages/customers/CustomerFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.7.4 | 客户表单组件 | `src/components/forms/CustomerForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.7.1 | 客户列表 | `src/pages/customers/CustomerListPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.7.2 | 客户详情 | `src/pages/customers/CustomerDetailPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.7.3 | 客户表单页 | `src/pages/customers/CustomerFormPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.7.4 | 客户表单组件 | `src/components/forms/CustomerForm.tsx` | ✅ | ✅ | ✅ | ✅ |
 
 ---
 
