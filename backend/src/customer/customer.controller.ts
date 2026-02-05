@@ -25,9 +25,15 @@ import {
   CreateCustomerDto,
   CreateCustomerPricingDto,
   QueryCustomerDto,
+  QueryCustomerOrdersDto,
   UpdateCustomerDto,
   UpdateCustomerPricingDto,
+  CustomerOrderSortField,
 } from './dto';
+import {
+  OrderItemStatus,
+  CustomerPayStatus,
+} from '../order/enums/order-status.enum';
 
 @ApiTags('customers')
 @Controller('api/v1/customers')
@@ -65,6 +71,35 @@ export class CustomerController {
   @ApiResponse({ status: 200, description: 'Paginated customer list' })
   findAll(@Query() query: QueryCustomerDto) {
     return this.customerService.findAll(query);
+  }
+
+  @Get(':id/orders')
+  @ApiOperation({ summary: 'Get customer order history' })
+  @ApiParam({ name: 'id', description: 'Customer ID', type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'pageSize', required: false, type: Number })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: CustomerOrderSortField,
+  })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['asc', 'desc'] })
+  @ApiQuery({ name: 'status', required: false, enum: OrderItemStatus })
+  @ApiQuery({
+    name: 'customerPayStatus',
+    required: false,
+    enum: CustomerPayStatus,
+  })
+  @ApiQuery({ name: 'keyword', required: false, type: String })
+  @ApiQuery({ name: 'createdFrom', required: false, type: String })
+  @ApiQuery({ name: 'createdTo', required: false, type: String })
+  @ApiResponse({ status: 200, description: 'Paginated order list' })
+  @ApiResponse({ status: 404, description: 'Customer not found' })
+  findOrders(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: QueryCustomerOrdersDto,
+  ) {
+    return this.customerService.findOrders(id, query);
   }
 
   @Get(':id/pricing')

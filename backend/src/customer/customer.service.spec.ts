@@ -9,11 +9,17 @@ import {
   CreateCustomerDto,
   CreateCustomerPricingDto,
   QueryCustomerDto,
+  QueryCustomerOrdersDto,
   UpdateCustomerDto,
   UpdateCustomerPricingDto,
   CreditType,
   CustomerSortField,
+  CustomerOrderSortField,
 } from './dto';
+import {
+  OrderItemStatus,
+  CustomerPayStatus,
+} from '../order/enums/order-status.enum';
 
 describe('CustomerService', () => {
   let service: CustomerService;
@@ -39,7 +45,7 @@ describe('CustomerService', () => {
     delete: jest.fn(),
   };
   const fabricMock = { findFirst: jest.fn() };
-  const orderMock = { count: jest.fn() };
+  const orderMock = { count: jest.fn(), findMany: jest.fn() };
   const quoteMock = { count: jest.fn() };
 
   // Build the mock service with proper transaction support
@@ -1018,6 +1024,251 @@ describe('CustomerService', () => {
         'Customer pricing with ID 1 not found',
       );
       expect(customerPricingMock.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============================================================
+  // 2.2.11 Get Customer Orders Tests
+  // ============================================================
+  describe('findOrders', () => {
+    const mockCustomer = {
+      id: 1,
+      companyName: 'XYZ Furniture Co.',
+      contactName: 'Li Ming',
+      phone: '13800138000',
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockOrders = [
+      {
+        id: 1,
+        orderCode: 'ORD-2601-0001',
+        customerId: 1,
+        status: 'pending',
+        customerPayStatus: 'unpaid',
+        totalAmount: 1000.0,
+        createdAt: new Date('2026-01-15'),
+        updatedAt: new Date('2026-01-15'),
+        customer: {
+          id: 1,
+          companyName: 'XYZ Furniture Co.',
+          contactName: 'Li Ming',
+          phone: '13800138000',
+        },
+        items: [
+          {
+            id: 1,
+            fabricId: 10,
+            quantity: 100,
+            salePrice: 10.0,
+            subtotal: 1000.0,
+            status: 'pending',
+          },
+        ],
+      },
+      {
+        id: 2,
+        orderCode: 'ORD-2601-0002',
+        customerId: 1,
+        status: 'completed',
+        customerPayStatus: 'paid',
+        totalAmount: 2000.0,
+        createdAt: new Date('2026-01-10'),
+        updatedAt: new Date('2026-01-12'),
+        customer: {
+          id: 1,
+          companyName: 'XYZ Furniture Co.',
+          contactName: 'Li Ming',
+          phone: '13800138000',
+        },
+        items: [
+          {
+            id: 2,
+            fabricId: 20,
+            quantity: 200,
+            salePrice: 10.0,
+            subtotal: 2000.0,
+            status: 'completed',
+          },
+        ],
+      },
+    ];
+
+    it('should return paginated orders for valid customer', async () => {
+      const query: QueryCustomerOrdersDto = {};
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      orderMock.findMany.mockResolvedValue(mockOrders);
+      orderMock.count.mockResolvedValue(2);
+
+      const result = await service.findOrders(1, query);
+
+      expect(customerMock.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, isActive: true },
+      });
+      expect(orderMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { customerId: 1 },
+          skip: 0,
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
+      expect(result.items).toEqual(mockOrders);
+      expect(result.pagination).toEqual({
+        page: 1,
+        pageSize: 20,
+        total: 2,
+        totalPages: 1,
+      });
+    });
+
+    it('should throw NotFoundException for non-existent customer', async () => {
+      const query: QueryCustomerOrdersDto = {};
+      customerMock.findFirst.mockResolvedValue(null);
+
+      await expect(service.findOrders(999, query)).rejects.toThrow(
+        NotFoundException,
+      );
+      await expect(service.findOrders(999, query)).rejects.toThrow(
+        'Customer with ID 999 not found',
+      );
+      expect(orderMock.findMany).not.toHaveBeenCalled();
+    });
+
+    it('should filter by status', async () => {
+      const query: QueryCustomerOrdersDto = { status: OrderItemStatus.PENDING };
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      orderMock.findMany.mockResolvedValue([mockOrders[0]]);
+      orderMock.count.mockResolvedValue(1);
+
+      const result = await service.findOrders(1, query);
+
+      expect(orderMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { customerId: 1, status: 'PENDING' },
+        }),
+      );
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should filter by customerPayStatus', async () => {
+      const query: QueryCustomerOrdersDto = {
+        customerPayStatus: CustomerPayStatus.PAID,
+      };
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      orderMock.findMany.mockResolvedValue([mockOrders[1]]);
+      orderMock.count.mockResolvedValue(1);
+
+      const result = await service.findOrders(1, query);
+
+      expect(orderMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { customerId: 1, customerPayStatus: 'paid' },
+        }),
+      );
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should filter by keyword', async () => {
+      const query: QueryCustomerOrdersDto = { keyword: 'ORD-2601-0001' };
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      orderMock.findMany.mockResolvedValue([mockOrders[0]]);
+      orderMock.count.mockResolvedValue(1);
+
+      const result = await service.findOrders(1, query);
+
+      expect(orderMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            customerId: 1,
+            orderCode: { contains: 'ORD-2601-0001' },
+          },
+        }),
+      );
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should filter by date range', async () => {
+      const query: QueryCustomerOrdersDto = {
+        createdFrom: '2026-01-14',
+        createdTo: '2026-01-16',
+      };
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      orderMock.findMany.mockResolvedValue([mockOrders[0]]);
+      orderMock.count.mockResolvedValue(1);
+
+      const result = await service.findOrders(1, query);
+
+      expect(orderMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            customerId: 1,
+            createdAt: {
+              gte: new Date('2026-01-14'),
+              lte: new Date('2026-01-16'),
+            },
+          },
+        }),
+      );
+      expect(result.items).toHaveLength(1);
+    });
+
+    it('should return empty list when customer has no orders', async () => {
+      const query: QueryCustomerOrdersDto = {};
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      orderMock.findMany.mockResolvedValue([]);
+      orderMock.count.mockResolvedValue(0);
+
+      const result = await service.findOrders(1, query);
+
+      expect(result.items).toEqual([]);
+      expect(result.pagination.total).toBe(0);
+      expect(result.pagination.totalPages).toBe(0);
+    });
+
+    it('should support custom sorting', async () => {
+      const query: QueryCustomerOrdersDto = {
+        sortBy: CustomerOrderSortField.totalAmount,
+        sortOrder: 'asc',
+      };
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      orderMock.findMany.mockResolvedValue(mockOrders);
+      orderMock.count.mockResolvedValue(2);
+
+      await service.findOrders(1, query);
+
+      expect(orderMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: { totalAmount: 'asc' },
+        }),
+      );
+    });
+
+    it('should support custom pagination', async () => {
+      const query: QueryCustomerOrdersDto = {
+        page: 2,
+        pageSize: 10,
+      };
+      customerMock.findFirst.mockResolvedValue(mockCustomer);
+      orderMock.findMany.mockResolvedValue([]);
+      orderMock.count.mockResolvedValue(15);
+
+      const result = await service.findOrders(1, query);
+
+      expect(orderMock.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 10,
+          take: 10,
+        }),
+      );
+      expect(result.pagination).toEqual({
+        page: 2,
+        pageSize: 10,
+        total: 15,
+        totalPages: 2,
+      });
     });
   });
 });

@@ -8,15 +8,17 @@ import {
   CreateCustomerDto,
   CreateCustomerPricingDto,
   QueryCustomerDto,
+  QueryCustomerOrdersDto,
   UpdateCustomerDto,
   UpdateCustomerPricingDto,
 } from './dto';
-import { Customer, CustomerPricing, Prisma } from '@prisma/client';
+import { Customer, CustomerPricing, Order, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
   buildPaginatedResult,
   PaginatedResult,
 } from '../common/utils/pagination';
+import { ORDER_INCLUDE_LIST } from '../order/order.includes';
 
 // Transaction client type for Prisma interactive transactions
 type TransactionClient = Parameters<
@@ -333,5 +335,65 @@ export class CustomerService {
         where: { id: pricingId },
       });
     });
+  }
+
+  /**
+   * Find all orders for a customer with pagination and filtering.
+   * Throws NotFoundException if customer not found or soft-deleted.
+   */
+  async findOrders(
+    customerId: number,
+    query: QueryCustomerOrdersDto,
+  ): Promise<PaginatedResult<Order>> {
+    // Validate customer exists
+    await this.findOne(customerId);
+
+    // Build where clause
+    const where: Prisma.OrderWhereInput = {
+      customerId,
+    };
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    if (query.customerPayStatus) {
+      where.customerPayStatus = query.customerPayStatus;
+    }
+
+    if (query.keyword) {
+      where.orderCode = { contains: query.keyword };
+    }
+
+    if (query.createdFrom || query.createdTo) {
+      where.createdAt = {};
+      if (query.createdFrom) {
+        where.createdAt.gte = new Date(query.createdFrom);
+      }
+      if (query.createdTo) {
+        where.createdAt.lte = new Date(query.createdTo);
+      }
+    }
+
+    // Build pagination args
+    const paginationArgs = buildPaginationArgs(query);
+
+    // Build sort order
+    const sortBy = query.sortBy ?? 'createdAt';
+    const sortOrder = query.sortOrder ?? 'desc';
+    const orderBy = { [sortBy]: sortOrder };
+
+    // Execute queries in parallel
+    const [items, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        ...paginationArgs,
+        orderBy,
+        include: ORDER_INCLUDE_LIST,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return buildPaginatedResult(items, total, query);
   }
 }
