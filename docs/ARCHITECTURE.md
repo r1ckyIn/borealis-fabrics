@@ -1061,10 +1061,10 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 2.6.1 | 供应商列表 | `src/pages/suppliers/SupplierListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.6.2 | 供应商详情 | `src/pages/suppliers/SupplierDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.6.3 | 供应商表单页 | `src/pages/suppliers/SupplierFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.6.4 | 供应商表单组件 | `src/components/forms/SupplierForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.6.1 | 供应商列表 | `src/pages/suppliers/SupplierListPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.6.2 | 供应商详情 | `src/pages/suppliers/SupplierDetailPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.6.3 | 供应商表单页 | `src/pages/suppliers/SupplierFormPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 2.6.4 | 供应商表单组件 | `src/components/forms/SupplierForm.tsx` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 2.7：客户模块页面
 
@@ -1200,4 +1200,4 @@ docker-compose logs -f    # 查看日志
 **文档状态**：v2.1 - 阶段 4 前端开发进度追踪表已创建
 
 
-**最后更新**：2026-02-05
+**最后更新**：2026-02-06
