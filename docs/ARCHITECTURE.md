@@ -997,10 +997,10 @@ docker-compose logs -f    # 查看日志
 
 #### Task 1.7：认证页面
 
-| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
-|---|------|---------|------|-------|------|-----------|
-| 1.7.1 | 登录页 | `src/pages/auth/LoginPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.7.2 | OAuth 回调 | `src/pages/auth/OAuthCallback.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| # | 功能 | 文件路径 | 状态 | 单元测试 | Build | Lint | Typecheck |
+|---|------|---------|------|---------|-------|------|-----------|
+| 1.7.1 | 登录页 | `src/pages/auth/LoginPage.tsx` | ✅ | ✅ (5) | ✅ | ✅ | ✅ |
+| 1.7.2 | OAuth 回调 | `src/pages/auth/OAuthCallback.tsx` | ✅ | ✅ (8) | ✅ | ✅ | ✅ |
 
 ---
 
