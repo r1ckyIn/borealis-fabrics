@@ -64,3 +64,9 @@ export async function uploadFiles(
 
   return results;
 }
+
+export const fileApi = {
+  uploadFile,
+  deleteFile,
+  uploadFiles,
+};
