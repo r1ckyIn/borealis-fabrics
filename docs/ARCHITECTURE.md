@@ -1057,7 +1057,7 @@ docker-compose logs -f    # 查看日志
 | 2.5.3 | 面料表单页 | `src/pages/fabrics/FabricFormPage.tsx` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 2.5.4 | 面料表单组件 | `src/components/forms/FabricForm.tsx` | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-#### Task 2.6：供应商模块页面
+#### Task 2.6：供应商模块页面 ✅
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
