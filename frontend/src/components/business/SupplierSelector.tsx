@@ -110,12 +110,8 @@ export function SupplierSelector({
    * Handle selection change.
    */
   const handleChange = (selectedId: number | undefined): void => {
-    if (selectedId === undefined) {
-      onChange?.(undefined, undefined);
-    } else {
-      const supplier = supplierMapRef.current.get(selectedId);
-      onChange?.(selectedId, supplier);
-    }
+    const supplier = selectedId !== undefined ? supplierMapRef.current.get(selectedId) : undefined;
+    onChange?.(selectedId, supplier);
   };
 
   /**

@@ -30,6 +30,7 @@ export async function uploadFile(
     },
   });
 
+  // Response interceptor unwraps ApiResponse, so we cast directly
   return response as unknown as FileEntity;
 }
 

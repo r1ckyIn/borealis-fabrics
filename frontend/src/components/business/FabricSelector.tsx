@@ -101,12 +101,8 @@ export function FabricSelector({
    * Handle selection change.
    */
   const handleChange = (selectedId: number | undefined): void => {
-    if (selectedId === undefined) {
-      onChange?.(undefined, undefined);
-    } else {
-      const fabric = fabricMapRef.current.get(selectedId);
-      onChange?.(selectedId, fabric);
-    }
+    const fabric = selectedId !== undefined ? fabricMapRef.current.get(selectedId) : undefined;
+    onChange?.(selectedId, fabric);
   };
 
   /**

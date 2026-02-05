@@ -109,12 +109,8 @@ export function CustomerSelector({
    * Handle selection change.
    */
   const handleChange = (selectedId: number | undefined): void => {
-    if (selectedId === undefined) {
-      onChange?.(undefined, undefined);
-    } else {
-      const customer = customerMapRef.current.get(selectedId);
-      onChange?.(selectedId, customer);
-    }
+    const customer = selectedId !== undefined ? customerMapRef.current.get(selectedId) : undefined;
+    onChange?.(selectedId, customer);
   };
 
   /**

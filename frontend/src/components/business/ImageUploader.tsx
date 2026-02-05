@@ -3,7 +3,7 @@
  * Supports multiple images, preview, and deletion.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Upload, Modal, message, Image } from 'antd';
 import { PlusOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { UploadFile, UploadProps } from 'antd/es/upload';
@@ -67,10 +67,17 @@ export function ImageUploader({
   const [previewImage, setPreviewImage] = useState('');
   const [uploading, setUploading] = useState(false);
 
-  // Sync fileList when value changes externally
-  if (JSON.stringify(fileListToUrls(fileList)) !== JSON.stringify(value)) {
-    setFileList(urlsToFileList(value));
-  }
+  // Memoize current URLs to avoid unnecessary recalculations
+  const currentUrls = useMemo(() => fileListToUrls(fileList), [fileList]);
+
+  // Sync fileList when value changes externally (using useEffect instead of setState during render)
+  useEffect(() => {
+    const valueStr = JSON.stringify(value);
+    const currentStr = JSON.stringify(currentUrls);
+    if (valueStr !== currentStr) {
+      setFileList(urlsToFileList(value));
+    }
+  }, [value, currentUrls]);
 
   /**
    * Validate file before upload.
