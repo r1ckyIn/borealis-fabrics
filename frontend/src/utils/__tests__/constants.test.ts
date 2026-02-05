@@ -20,7 +20,7 @@ import {
 describe('constants', () => {
   describe('API configuration', () => {
     it('should have correct API base URL', () => {
-      expect(API_BASE_URL).toBe('/api');
+      expect(API_BASE_URL).toBe('/api/v1');
     });
 
     it('should have reasonable API timeout', () => {
