@@ -989,10 +989,11 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 1.6.1 | 主布局 | `src/routes/layouts/MainLayout.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.6.2 | 侧边栏 | `src/components/layout/Sidebar.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.6.3 | 顶部导航 | `src/components/layout/Header.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.6.4 | 页面容器 | `src/components/layout/PageContainer.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 1.6.1 | 主布局 | `src/routes/layouts/MainLayout.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 1.6.2 | 侧边栏 | `src/components/layout/Sidebar.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 1.6.3 | 顶部导航 | `src/components/layout/Header.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 1.6.4 | 页面容器 | `src/components/layout/PageContainer.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 1.6.5 | 组件导出 | `src/components/layout/index.ts` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 1.7：认证页面
 

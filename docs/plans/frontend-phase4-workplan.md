@@ -234,20 +234,21 @@ flowchart LR
 
 ---
 
-#### Task 1.6: Layout Components
+#### Task 1.6: Layout Components ✅
 **Files to create**:
 - `frontend/src/routes/layouts/MainLayout.tsx` - Main app layout
 - `frontend/src/components/layout/Sidebar.tsx` - Navigation sidebar
 - `frontend/src/components/layout/Header.tsx` - Top header bar
 - `frontend/src/components/layout/PageContainer.tsx` - Page wrapper with breadcrumbs
+- `frontend/src/components/layout/index.ts` - Component exports
 
 **Completion Criteria**:
-- [ ] MainLayout renders Sidebar + Header + Content
-- [ ] Sidebar shows navigation menu with icons
-- [ ] Sidebar collapsible functionality works
-- [ ] Header shows user info and logout button
-- [ ] PageContainer shows title and breadcrumbs
-- [ ] Responsive layout on tablet screens
+- [x] MainLayout renders Sidebar + Header + Content
+- [x] Sidebar shows navigation menu with icons
+- [x] Sidebar collapsible functionality works
+- [x] Header shows user info and logout button
+- [x] PageContainer shows title and breadcrumbs
+- [x] Responsive layout on tablet screens
 
 ---
 
