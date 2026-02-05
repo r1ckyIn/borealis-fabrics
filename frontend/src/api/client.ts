@@ -34,11 +34,9 @@ apiClient.interceptors.request.use(
 /** Response interceptor: Unwrap ApiResponse and handle errors. */
 apiClient.interceptors.response.use(
   (response: AxiosResponse<ApiResponse<unknown>>) => {
-    // Return unwrapped data directly
     return response.data.data as unknown as AxiosResponse;
   },
   (error: AxiosError<ApiError>) => {
-    // Handle 401 Unauthorized with race condition protection
     if (error.response?.status === 401 && !isRedirecting) {
       isRedirecting = true;
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
@@ -48,16 +46,11 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Safe error logging with fallback
-    try {
-      console.error('[API Error]', {
-        url: error.config?.url,
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-      });
-    } catch {
-      console.error('[API Error] Failed to log error details');
-    }
+    console.error('[API Error]', {
+      url: error.config?.url,
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+    });
 
     const apiError: ApiError = {
       code: error.response?.data?.code ?? error.response?.status ?? 500,
@@ -71,7 +64,7 @@ apiClient.interceptors.response.use(
 
 export default apiClient;
 
-/** Type-safe request helpers. */
+// Type-safe request helpers
 export function get<T>(url: string, params?: object): Promise<T> {
   return apiClient.get(url, { params }) as unknown as Promise<T>;
 }
@@ -92,7 +85,7 @@ export function del<T>(url: string): Promise<T> {
   return apiClient.delete(url) as unknown as Promise<T>;
 }
 
-/** Reset redirect flag (useful for testing). */
+/** Reset redirect flag for testing. */
 export function resetRedirectFlag(): void {
   isRedirecting = false;
 }
