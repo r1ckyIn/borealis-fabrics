@@ -969,12 +969,12 @@ docker-compose logs -f    # 查看日志
 
 #### Task 1.4：Zustand Stores
 
-| # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
-|---|------|---------|------|-------|------|-----------|
-| 1.4.1 | 认证状态 | `src/store/authStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.4.2 | UI 状态 | `src/store/uiStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.4.3 | 枚举缓存 | `src/store/enumStore.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 1.4.4 | Store 导出 | `src/store/index.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| # | 功能 | 文件路径 | 状态 | 单元测试 | Build | Lint | Typecheck |
+|---|------|---------|------|---------|-------|------|-----------|
+| 1.4.1 | 认证状态 | `src/store/authStore.ts` | ✅ | ✅ (16) | ✅ | ✅ | ✅ |
+| 1.4.2 | UI 状态 | `src/store/uiStore.ts` | ✅ | ✅ (14) | ✅ | ✅ | ✅ |
+| 1.4.3 | 枚举缓存 | `src/store/enumStore.ts` | ✅ | ✅ (18) | ✅ | ✅ | ✅ |
+| 1.4.4 | Store 导出 | `src/store/index.ts` | ✅ | - | ✅ | ✅ | ✅ |
 
 #### Task 1.5：路由配置
 
