@@ -948,11 +948,11 @@ docker-compose logs -f    # 查看日志
 | 2.2.9 | 更新客户特殊定价 | PATCH /customers/:id/pricing/:pricingId | ✅ | ✅ | ✅ | ✅ | ✅ |
 | 2.2.10 | 删除客户特殊定价 | DELETE /customers/:id/pricing/:pricingId | ✅ | ✅ | ✅ | ✅ | ✅ |
 
-#### 客户历史订单 API（依赖 OrderModule）
+#### 客户历史订单 API ✅ 已完成
 
 | # | 功能 | API 端点 | 状态 | 单元测试 | E2E | Build | Lint |
 |---|------|---------|------|---------|-----|-------|------|
-| 2.2.11 | 获取客户历史订单 | GET /customers/:id/orders | ⏳ | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.2.11 | 获取客户历史订单 | GET /customers/:id/orders | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 ### 13.3 FabricModule ✅ 已完成
 
@@ -1135,7 +1135,7 @@ docker-compose logs -f    # 查看日志
 | 3.2.16 | 获取订单的供应商付款列表（按订单-供应商维度） | GET /orders/:id/supplier-payments | ✅ | ✅ | ✅ |
 | 3.2.17 | 更新指定供应商的付款信息 | PATCH /orders/:id/supplier-payments/:supplierId | ✅ | ✅ | ✅ |
 
-> **注**：客户历史订单 API（GET /customers/:id/orders，原 2.2.11）依赖 OrderModule，在订单模块完成后作为 CustomerModule 附加功能实现。
+> **注**：客户历史订单 API（GET /customers/:id/orders，原 2.2.11）已实现，通过 CustomerModule 调用 OrderModule 数据。
 
 ### 14.3 LogisticsModule（物流管理）
 
@@ -1383,8 +1383,43 @@ docker-compose logs -f    # 查看日志
 
 **结论**：所有 P0 安全问题已修复，P1 业务问题已评估（部分为误报/业务决策），P2 代码质量问题留作长期改进
 
+### [2026-02-05] 阶段 3 需求对齐审查
+
+**审查内容**：验证阶段 3 所有 39 个 API 端点与需求文档的对齐情况
+
+**审查结果**：
+
+| 模块 | API 覆盖率 | 业务规则 | 测试覆盖 | 对齐状态 |
+|------|-----------|---------|---------|---------|
+| QuoteModule | 6/6 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
+| OrderModule | 17/17 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
+| LogisticsModule | 5/5 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
+| ImportModule | 4/4 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
+| AuthModule | 4/4 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
+| SystemModule | 3/3 (100%) | ✅ 完全符合 | ✅ | ✅ 完全对齐 |
+
+**技术服务对齐**：
+
+| 服务 | 状态 | 说明 |
+|------|------|------|
+| T.1 编号生成 (Redis INCR + DB Fallback) | ✅ | code-generator.service.ts |
+| T.2 报价过期定时任务 | ✅ | quote.scheduler.ts (@Cron 每小时) |
+| T.3 订单状态聚合计算 | ✅ | calculateAggregateStatus() |
+| T.4 金额自动计算 | ✅ | recalculateOrderTotals() |
+| T.5 付款流水记录 | 📝 | MVP 暂不需要，后期迭代 |
+
+**发现的改进点（不影响功能）**：
+
+| # | 问题 | 优先级 | 建议 |
+|---|------|--------|------|
+| 1 | 路由前缀不一致（部分模块缺少 api/v1） | 低 | 阶段 5 统一处理 |
+| 2 | 金额精度（JavaScript 数字计算） | 中 | 确保 DB 为 DECIMAL，考虑 decimal.js |
+| 3 | 付款流水记录（T.5） | 低 | 后期迭代支持 |
+
+**结论**：阶段 3 所有 39 个 API 端点与需求文档 100% 对齐，可进入阶段 4 前端开发
+
 ---
 
-**文档状态**：v1.4 - 阶段 3 业务流程模块全部完成（PR #30 SystemModule）
+**文档状态**：v1.6 - 2.2.11 客户历史订单 API 完成（PR #32）
 
 **最后更新**：2026-02-05
