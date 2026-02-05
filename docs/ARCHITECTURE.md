@@ -1036,17 +1036,17 @@ docker-compose logs -f    # 查看日志
 | 2.3.3 | 客户 API | `src/api/customer.api.ts` | ✅ | ✅ | ✅ | ✅ |
 | 2.3.4 | 文件 API | `src/api/file.api.ts` | ✅ | ✅ | ✅ | ✅ |
 
-#### Task 2.4：TanStack Query Hooks
+#### Task 2.4：TanStack Query Hooks ✅
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 2.4.1 | 面料 Hooks | `src/hooks/queries/useFabrics.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.4.2 | 供应商 Hooks | `src/hooks/queries/useSuppliers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.4.3 | 客户 Hooks | `src/hooks/queries/useCustomers.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.4.4 | 枚举 Hooks | `src/hooks/queries/useEnums.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.4.5 | 分页 Hook | `src/hooks/usePagination.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.4.6 | 防抖 Hook | `src/hooks/useDebounce.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 2.4.7 | 本地存储 Hook | `src/hooks/useLocalStorage.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 2.4.1 | 面料 Hooks | `src/hooks/queries/useFabrics.ts` | ✅ | ✅ | ✅ | ✅ |
+| 2.4.2 | 供应商 Hooks | `src/hooks/queries/useSuppliers.ts` | ✅ | ✅ | ✅ | ✅ |
+| 2.4.3 | 客户 Hooks | `src/hooks/queries/useCustomers.ts` | ✅ | ✅ | ✅ | ✅ |
+| 2.4.4 | 枚举 Hooks | `src/hooks/queries/useEnums.ts` | ✅ | ✅ | ✅ | ✅ |
+| 2.4.5 | 分页 Hook | `src/hooks/usePagination.ts` | ✅ | ✅ | ✅ | ✅ |
+| 2.4.6 | 防抖 Hook | `src/hooks/useDebounce.ts` | ✅ | ✅ | ✅ | ✅ |
+| 2.4.7 | 本地存储 Hook | `src/hooks/useLocalStorage.ts` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 2.5：面料模块页面
 
