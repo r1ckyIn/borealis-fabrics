@@ -142,9 +142,9 @@ export class ImportService {
       description?: string;
     }> = [];
 
-    // Get existing fabric codes
+    // Get existing fabric codes (check all records, not just active ones,
+    // to match database unique constraint behavior)
     const existingFabrics = await this.prisma.fabric.findMany({
-      where: { isActive: true },
       select: { fabricCode: true },
     });
     const existingCodes = new Set(existingFabrics.map((f) => f.fabricCode));
@@ -274,9 +274,9 @@ export class ImportService {
       creditDays?: number;
     }> = [];
 
-    // Get existing supplier names
+    // Get existing supplier names (check all records, not just active ones,
+    // to match database unique constraint behavior)
     const existingSuppliers = await this.prisma.supplier.findMany({
-      where: { isActive: true },
       select: { companyName: true },
     });
     const existingNames = new Set(existingSuppliers.map((s) => s.companyName));
