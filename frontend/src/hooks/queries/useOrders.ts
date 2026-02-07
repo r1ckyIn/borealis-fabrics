@@ -281,11 +281,14 @@ export function useCancelOrderItem() {
       itemId: number;
       data?: CancelOrderItemData;
     }) => orderApi.cancelOrderItem(orderId, itemId, data),
-    onSuccess: (_data, { orderId }) => {
+    onSuccess: (_data, { orderId, itemId }) => {
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
       queryClient.invalidateQueries({
         queryKey: orderKeys.timeline(orderId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: orderKeys.itemTimeline(orderId, itemId),
       });
       queryClient.invalidateQueries({
         queryKey: orderKeys.supplierPayments(orderId),
@@ -309,11 +312,14 @@ export function useRestoreOrderItem() {
       itemId: number;
       data?: RestoreOrderItemData;
     }) => orderApi.restoreOrderItem(orderId, itemId, data),
-    onSuccess: (_data, { orderId }) => {
+    onSuccess: (_data, { orderId, itemId }) => {
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
       queryClient.invalidateQueries({
         queryKey: orderKeys.timeline(orderId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: orderKeys.itemTimeline(orderId, itemId),
       });
       queryClient.invalidateQueries({
         queryKey: orderKeys.supplierPayments(orderId),
