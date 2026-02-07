@@ -85,7 +85,6 @@ export {
   useUpdateQuote,
   useDeleteQuote,
   useConvertQuoteToOrder,
-  type UpdateQuoteParams,
 } from './useQuotes';
 
 // Order hooks

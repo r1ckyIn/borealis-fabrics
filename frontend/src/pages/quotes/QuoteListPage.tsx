@@ -271,7 +271,6 @@ export default function QuoteListPage(): React.ReactElement {
             e.stopPropagation();
             fn();
           };
-          const isConverted = record.status === QuoteStatus.CONVERTED;
           const isActive = record.status === QuoteStatus.ACTIVE;
 
           return (
@@ -284,7 +283,7 @@ export default function QuoteListPage(): React.ReactElement {
               >
                 查看
               </Button>
-              {!isConverted && (
+              {isActive && (
                 <Button
                   type="text"
                   size="small"
@@ -294,7 +293,7 @@ export default function QuoteListPage(): React.ReactElement {
                   编辑
                 </Button>
               )}
-              {!isConverted && (
+              {isActive && (
                 <Button
                   type="text"
                   size="small"

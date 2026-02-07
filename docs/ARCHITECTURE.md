@@ -1133,9 +1133,9 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 3.7.1 | 导入 API | `src/api/import.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.7.2 | 导入页面 | `src/pages/import/ImportPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.7.3 | 导入结果弹窗 | `src/components/business/ImportResultModal.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.7.1 | 导入 API | `src/api/import.api.ts` | ✅ | ✅ | ✅ | ✅ |
+| 3.7.2 | 导入页面 | `src/pages/import/ImportPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.7.3 | 导入结果弹窗 | `src/components/business/ImportResultModal.tsx` | ✅ | ✅ | ✅ | ✅ |
 
 ---
 

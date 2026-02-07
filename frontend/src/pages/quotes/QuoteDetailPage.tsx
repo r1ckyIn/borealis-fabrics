@@ -12,6 +12,7 @@ import {
   Spin,
   Result,
   Space,
+  Tooltip,
   Typography,
   message,
 } from 'antd';
@@ -171,13 +172,15 @@ export default function QuoteDetailPage(): React.ReactElement {
       breadcrumbs={breadcrumbs}
       extra={
         <Space>
-          <Button
-            icon={<EditOutlined />}
-            disabled={!isActive}
-            onClick={() => navigate(`/quotes/${quoteId}/edit`)}
-          >
-            编辑
-          </Button>
+          <Tooltip title={!isActive ? '仅活跃状态的报价可编辑' : undefined}>
+            <Button
+              icon={<EditOutlined />}
+              disabled={!isActive}
+              onClick={() => navigate(`/quotes/${quoteId}/edit`)}
+            >
+              编辑
+            </Button>
+          </Tooltip>
           {isActive && (
             <Button
               type="primary"
@@ -187,14 +190,16 @@ export default function QuoteDetailPage(): React.ReactElement {
               转换为订单
             </Button>
           )}
-          <Button
-            danger
-            icon={<DeleteOutlined />}
-            disabled={isConverted}
-            onClick={() => setDeleteModalOpen(true)}
-          >
-            删除
-          </Button>
+          <Tooltip title={isConverted ? '已转换的报价无法删除' : undefined}>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              disabled={isConverted}
+              onClick={() => setDeleteModalOpen(true)}
+            >
+              删除
+            </Button>
+          </Tooltip>
         </Space>
       }
     >
