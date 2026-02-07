@@ -1090,10 +1090,10 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 3.2.1 | 报价列表 | `src/pages/quotes/QuoteListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.2.2 | 报价详情 | `src/pages/quotes/QuoteDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.2.3 | 报价表单页 | `src/pages/quotes/QuoteFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.2.4 | 报价表单组件 | `src/components/forms/QuoteForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.2.1 | 报价列表 | `src/pages/quotes/QuoteListPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.2.2 | 报价详情 | `src/pages/quotes/QuoteDetailPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.2.3 | 报价表单页 | `src/pages/quotes/QuoteFormPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.2.4 | 报价表单组件 | `src/components/forms/QuoteForm.tsx` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 3.3：业务组件（Part 2）
 
