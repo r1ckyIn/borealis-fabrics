@@ -15,6 +15,7 @@ import {
   useUpdateFabric,
 } from '@/hooks/queries/useFabrics';
 import type { CreateFabricData, UpdateFabricData } from '@/types';
+import { parseEntityId } from '@/utils';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -28,7 +29,7 @@ export default function FabricFormPage(): React.ReactElement {
   const navigate = useNavigate();
 
   const isEditMode = !!id;
-  const fabricId = id ? parseInt(id, 10) : undefined;
+  const fabricId = parseEntityId(id);
 
   // Fetch existing fabric data for edit mode
   const {

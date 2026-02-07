@@ -56,6 +56,9 @@ export {
   isValidFabricCode,
 } from './validation';
 
+// Entity ID parsing
+export { parseEntityId } from './parseEntityId';
+
 // Status helpers
 export {
   isValidStatusTransition,

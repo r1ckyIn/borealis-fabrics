@@ -22,7 +22,7 @@ import type { ColumnsType } from 'antd/es/table';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { useSupplier, useSupplierFabrics } from '@/hooks/queries/useSuppliers';
-import { formatDate, SUPPLIER_STATUS_TAG_COLORS } from '@/utils';
+import { formatDate, SUPPLIER_STATUS_TAG_COLORS, parseEntityId } from '@/utils';
 import {
   SUPPLIER_STATUS_LABELS,
   SettleType,
@@ -42,7 +42,7 @@ const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
 export default function SupplierDetailPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const supplierId = id ? parseInt(id, 10) : undefined;
+  const supplierId = parseEntityId(id);
 
   // Tab state
   const [activeTab, setActiveTab] = useState('info');
