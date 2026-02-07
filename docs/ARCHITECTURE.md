@@ -1099,17 +1099,17 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 3.3.1 | 订单时间线 | `src/components/business/OrderTimeline.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.3.2 | 订单状态流程 | `src/components/business/OrderStatusFlow.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.3.3 | 付款状态卡片 | `src/components/business/PaymentStatusCard.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.3.4 | 定价表格 | `src/components/business/PricingTable.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.3.1 | 订单时间线 | `src/components/business/OrderTimeline.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.3.2 | 订单状态流程 | `src/components/business/OrderStatusFlow.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.3.3 | 付款状态卡片 | `src/components/business/PaymentStatusCard.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.3.4 | 定价表格 | `src/components/business/PricingTable.tsx` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 3.4：订单 API 和 Hooks
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 3.4.1 | 订单 API | `src/api/order.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.4.2 | 订单 Hooks | `src/hooks/queries/useOrders.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.4.1 | 订单 API | `src/api/order.api.ts` | ✅ | ✅ | ✅ | ✅ |
+| 3.4.2 | 订单 Hooks | `src/hooks/queries/useOrders.ts` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 3.5：订单模块页面
 
