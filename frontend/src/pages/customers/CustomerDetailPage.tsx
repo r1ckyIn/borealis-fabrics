@@ -66,6 +66,13 @@ const { Text } = Typography;
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
 
+/** Map payment status to tag color. */
+const PAY_STATUS_COLORS: Record<CustomerPayStatus, string> = {
+  paid: 'green',
+  partial: 'orange',
+  unpaid: 'default',
+};
+
 /** Pricing form values type. */
 interface PricingFormValues {
   fabricId: number;
@@ -363,7 +370,7 @@ export default function CustomerDetailPage(): React.ReactElement {
         key: 'customerPayStatus',
         width: 100,
         render: (status: CustomerPayStatus) => (
-          <Tag color={status === 'paid' ? 'green' : status === 'partial' ? 'orange' : 'default'}>
+          <Tag color={PAY_STATUS_COLORS[status]}>
             {CUSTOMER_PAY_STATUS_LABELS[status]}
           </Tag>
         ),

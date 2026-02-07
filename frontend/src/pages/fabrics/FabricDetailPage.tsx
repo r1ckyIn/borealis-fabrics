@@ -54,8 +54,7 @@ import {
 } from '@/hooks/queries/useFabrics';
 import { getSuppliers } from '@/api/supplier.api';
 import { getCustomers } from '@/api/customer.api';
-import { formatDate, formatCurrency } from '@/utils/format';
-import { parseEntityId } from '@/utils';
+import { formatDate, formatCurrency, parseEntityId } from '@/utils';
 import type {
   FabricSupplier,
   CustomerPricing,
