@@ -142,5 +142,82 @@ describe('ImportPage', () => {
         expect(screen.getByText('面料导入结果')).toBeInTheDocument();
       });
     });
+
+    it('shows warning message when import has partial failures', async () => {
+      const user = userEvent.setup();
+      const { message } = await import('antd');
+      mockImportFabrics.mockResolvedValue({
+        successCount: 3,
+        failureCount: 2,
+        failures: [
+          { rowNumber: 2, identifier: 'FB001', reason: 'Duplicate' },
+          { rowNumber: 5, identifier: 'FB003', reason: 'Invalid data' },
+        ],
+      });
+
+      renderPage();
+
+      const file = new File(['test'], 'fabrics.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      await user.upload(input, file);
+
+      await waitFor(() => {
+        expect(message.warning).toHaveBeenCalledWith(
+          '导入完成: 3 成功, 2 失败'
+        );
+      });
+    });
+
+    it('shows error message when import fails completely', async () => {
+      const user = userEvent.setup();
+      const { message } = await import('antd');
+      mockImportFabrics.mockRejectedValue({ code: 400, message: 'Bad request' });
+
+      renderPage();
+
+      const file = new File(['test'], 'fabrics.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      await user.upload(input, file);
+
+      await waitFor(() => {
+        expect(message.error).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('Error Scenarios', () => {
+    it('shows error message when template download fails', async () => {
+      const user = userEvent.setup();
+      const { message } = await import('antd');
+      mockDownloadFabricTemplate.mockRejectedValue(new Error('Network error'));
+
+      renderPage();
+
+      await user.click(screen.getByText('下载面料导入模板'));
+
+      await waitFor(() => {
+        expect(message.error).toHaveBeenCalled();
+      });
+    });
+
+    it('shows server error message for 500 errors on download', async () => {
+      const user = userEvent.setup();
+      const { message } = await import('antd');
+      mockDownloadFabricTemplate.mockRejectedValue({ code: 500 });
+
+      renderPage();
+
+      await user.click(screen.getByText('下载面料导入模板'));
+
+      await waitFor(() => {
+        expect(message.error).toHaveBeenCalledWith('服务器错误，请稍后重试');
+      });
+    });
   });
 });
