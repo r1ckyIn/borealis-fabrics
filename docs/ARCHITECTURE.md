@@ -1083,8 +1083,8 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 3.1.1 | 报价 API | `src/api/quote.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.1.2 | 报价 Hooks | `src/hooks/queries/useQuotes.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.1.1 | 报价 API | `src/api/quote.api.ts` | ✅ | ✅ | ✅ | ✅ |
+| 3.1.2 | 报价 Hooks | `src/hooks/queries/useQuotes.ts` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 3.2：报价模块页面
 
