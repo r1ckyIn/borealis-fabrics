@@ -3,8 +3,26 @@
  * Creates realistic test data for entities.
  */
 
-import type { Fabric, Supplier, Customer, Address } from '@/types/entities.types';
-import { SupplierStatus, SettleType, CreditType } from '@/types/enums.types';
+import type {
+  Fabric,
+  Supplier,
+  Customer,
+  Address,
+  Order,
+  OrderItem,
+  Quote,
+  SupplierPayment,
+  OrderTimelineEntry,
+} from '@/types/entities.types';
+import type { AuthUser, LoginResponse } from '@/types/api.types';
+import {
+  SupplierStatus,
+  SettleType,
+  CreditType,
+  OrderItemStatus,
+  CustomerPayStatus,
+  QuoteStatus,
+} from '@/types/enums.types';
 
 let idCounter = 1;
 
@@ -131,4 +149,141 @@ export function createMockAddresses(count: number): Address[] {
       isDefault: i === 0,
     })
   );
+}
+
+export function createMockAuthUser(overrides?: Partial<AuthUser>): AuthUser {
+  const id = overrides?.id ?? getNextId();
+  return {
+    id,
+    weworkId: `wework_${id}`,
+    name: `测试用户 ${id}`,
+    avatar: undefined,
+    mobile: `1380000${String(id).padStart(4, '0')}`,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function createMockLoginResponse(
+  overrides?: Partial<LoginResponse>,
+): LoginResponse {
+  return {
+    token: `mock-jwt-token-${Date.now()}`,
+    user: createMockAuthUser(),
+    ...overrides,
+  };
+}
+
+export function createMockOrder(overrides?: Partial<Order>): Order {
+  const id = overrides?.id ?? getNextId();
+  return {
+    id,
+    orderCode: `ORD-${String(id).padStart(4, '0')}`,
+    customerId: 1,
+    status: OrderItemStatus.PENDING,
+    totalAmount: 10000,
+    customerPaid: 0,
+    customerPayStatus: CustomerPayStatus.UNPAID,
+    customerPayMethod: null,
+    customerCreditDays: null,
+    customerPaidAt: null,
+    deliveryAddress: null,
+    createdBy: null,
+    notes: null,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function createMockOrderItem(
+  overrides?: Partial<OrderItem>,
+): OrderItem {
+  const id = overrides?.id ?? getNextId();
+  return {
+    id,
+    orderId: 1,
+    fabricId: 1,
+    supplierId: 1,
+    quoteId: null,
+    quantity: 100,
+    salePrice: 60,
+    purchasePrice: 40,
+    subtotal: 6000,
+    status: OrderItemStatus.PENDING,
+    prevStatus: null,
+    deliveryDate: null,
+    notes: null,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function createMockQuote(overrides?: Partial<Quote>): Quote {
+  const id = overrides?.id ?? getNextId();
+  return {
+    id,
+    quoteCode: `QUO-${String(id).padStart(4, '0')}`,
+    customerId: 1,
+    fabricId: 1,
+    quantity: 200,
+    unitPrice: 55,
+    totalPrice: 11000,
+    validUntil: '2026-12-31T00:00:00.000Z',
+    status: QuoteStatus.ACTIVE,
+    notes: null,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function createMockSupplierPayment(
+  overrides?: Partial<SupplierPayment>,
+): SupplierPayment {
+  const id = overrides?.id ?? getNextId();
+  return {
+    id,
+    orderId: 1,
+    supplierId: 1,
+    payable: 4000,
+    paid: 0,
+    payStatus: CustomerPayStatus.UNPAID,
+    payMethod: null,
+    creditDays: null,
+    paidAt: null,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function createMockOrderTimelineEntry(
+  overrides?: Partial<OrderTimelineEntry>,
+): OrderTimelineEntry {
+  const id = overrides?.id ?? getNextId();
+  return {
+    id,
+    orderItemId: 1,
+    fromStatus: OrderItemStatus.INQUIRY,
+    toStatus: OrderItemStatus.PENDING,
+    operatorId: 1,
+    remark: null,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function createMockOrders(count: number): Order[] {
+  return Array.from({ length: count }, () => createMockOrder());
+}
+
+export function createMockOrderItems(count: number): OrderItem[] {
+  return Array.from({ length: count }, () => createMockOrderItem());
+}
+
+export function createMockQuotes(count: number): Quote[] {
+  return Array.from({ length: count }, () => createMockQuote());
 }
