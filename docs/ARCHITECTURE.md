@@ -1115,19 +1115,19 @@ docker-compose logs -f    # 查看日志
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 3.5.1 | 订单列表 | `src/pages/orders/OrderListPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.5.2 | 订单详情 | `src/pages/orders/OrderDetailPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.5.3 | 订单表单页 | `src/pages/orders/OrderFormPage.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.5.4 | 订单表单组件 | `src/components/forms/OrderForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.5.5 | 订单明细表单 | `src/components/forms/OrderItemForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.5.1 | 订单列表 | `src/pages/orders/OrderListPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.5.2 | 订单详情 | `src/pages/orders/OrderDetailPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.5.3 | 订单表单页 | `src/pages/orders/OrderFormPage.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.5.4 | 订单表单组件 | `src/components/forms/OrderForm.tsx` | ✅ | ✅ | ✅ | ✅ |
+| 3.5.5 | 订单明细表单 | `src/components/forms/OrderItemForm.tsx` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 3.6：物流 API 和集成
 
 | # | 功能 | 文件路径 | 状态 | Build | Lint | Typecheck |
 |---|------|---------|------|-------|------|-----------|
-| 3.6.1 | 物流 API | `src/api/logistics.api.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.6.2 | 物流 Hooks | `src/hooks/queries/useLogistics.ts` | ⏳ | ⏳ | ⏳ | ⏳ |
-| 3.6.3 | 物流表单 | `src/components/forms/LogisticsForm.tsx` | ⏳ | ⏳ | ⏳ | ⏳ |
+| 3.6.1 | 物流 API | `src/api/logistics.api.ts` | ✅ | ✅ | ✅ | ✅ |
+| 3.6.2 | 物流 Hooks | `src/hooks/queries/useLogistics.ts` | ✅ | ✅ | ✅ | ✅ |
+| 3.6.3 | 物流表单 | `src/components/forms/LogisticsForm.tsx` | ✅ | ✅ | ✅ | ✅ |
 
 #### Task 3.7：导入模块
 
