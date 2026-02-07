@@ -27,9 +27,15 @@ export function logout(): Promise<LogoutResponse> {
   return post<LogoutResponse>('/auth/logout');
 }
 
+/** Dev mode login (development only). */
+export function devLogin(): Promise<LoginResponse> {
+  return post<LoginResponse>('/auth/dev/login');
+}
+
 export const authApi = {
   getWeworkLoginUrl,
   handleOAuthCallback,
   getCurrentUser,
   logout,
+  devLogin,
 };

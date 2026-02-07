@@ -272,6 +272,51 @@ describe('AuthService', () => {
     });
   });
 
+  describe('devLogin', () => {
+    it('should create dev user and return token in development mode', async () => {
+      configService.get.mockReturnValue('development');
+
+      const mockUser = {
+        id: 1,
+        weworkId: 'dev-user',
+        name: 'Dev User',
+        avatar: null,
+        mobile: null,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prismaService.user.upsert.mockResolvedValue(mockUser);
+      jwtService.sign.mockReturnValue('dev-jwt-token');
+
+      const result = await service.devLogin();
+
+      expect(result.token).toBe('dev-jwt-token');
+      expect(result.user.weworkId).toBe('dev-user');
+      expect(result.user.name).toBe('Dev User');
+      expect(prismaService.user.upsert).toHaveBeenCalledWith({
+        where: { weworkId: 'dev-user' },
+        create: { weworkId: 'dev-user', name: 'Dev User' },
+        update: { name: 'Dev User' },
+      });
+    });
+
+    it('should throw UnauthorizedException in production mode', async () => {
+      configService.get.mockReturnValue('production');
+
+      await expect(service.devLogin()).rejects.toThrow(UnauthorizedException);
+      await expect(service.devLogin()).rejects.toThrow(
+        'Dev login is only available in development mode',
+      );
+    });
+
+    it('should throw UnauthorizedException when nodeEnv is undefined', async () => {
+      configService.get.mockReturnValue(undefined);
+
+      await expect(service.devLogin()).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
   describe('getUserInfo', () => {
     it('should return user info for valid user', async () => {
       const mockUser = {

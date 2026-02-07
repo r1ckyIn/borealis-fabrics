@@ -9,7 +9,7 @@
 
 import { LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Avatar, Dropdown, Layout, Space, theme } from 'antd';
+import { Avatar, Dropdown, Layout, Space, Tag, theme } from 'antd';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,13 +33,11 @@ export function Header({ collapsed, onToggleCollapse }: HeaderProps) {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { token } = theme.useToken();
 
-  // Handle logout
   const handleLogout = useCallback(() => {
     clearAuth();
     navigate('/login', { replace: true });
   }, [clearAuth, navigate]);
 
-  // User dropdown menu items
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'logout',
@@ -87,6 +85,7 @@ export function Header({ collapsed, onToggleCollapse }: HeaderProps) {
         <Space style={{ cursor: 'pointer' }}>
           <Avatar size="small" icon={<UserOutlined />} />
           <span>{user?.name ?? '用户'}</span>
+          {import.meta.env.DEV && <Tag color="warning">DEV</Tag>}
         </Space>
       </Dropdown>
     </AntHeader>

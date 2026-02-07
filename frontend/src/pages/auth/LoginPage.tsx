@@ -5,12 +5,13 @@
  * Redirects authenticated users to their intended destination.
  */
 
-import { WechatWorkOutlined } from '@ant-design/icons';
-import { Button, Card, Space, Typography } from 'antd';
-import { Navigate, useLocation } from 'react-router-dom';
+import { CodeOutlined, WechatWorkOutlined } from '@ant-design/icons';
+import { Button, Card, Divider, Space, Typography, message } from 'antd';
+import { useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
-import { getWeworkLoginUrl } from '@/api/auth.api';
-import { useIsAuthenticated, useIsInitializing } from '@/store';
+import { devLogin, getWeworkLoginUrl } from '@/api/auth.api';
+import { useAuthStore, useIsAuthenticated, useIsInitializing } from '@/store';
 
 const { Title, Text } = Typography;
 
@@ -20,26 +21,38 @@ interface LocationState {
 
 export default function LoginPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAuthenticated = useIsAuthenticated();
   const isInitializing = useIsInitializing();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const [devLoading, setDevLoading] = useState(false);
 
-  // Get redirect target from location state
   const state = location.state as LocationState | null;
   const from = state?.from || '/';
 
-  // Show loading during initialization
   if (isInitializing) {
     return null;
   }
 
-  // Redirect if already authenticated
   if (isAuthenticated) {
     return <Navigate to={from} replace />;
   }
 
-  // Handle WeWork OAuth login
   const handleLogin = () => {
     window.location.href = getWeworkLoginUrl();
+  };
+
+  const handleDevLogin = async () => {
+    setDevLoading(true);
+    try {
+      const response = await devLogin();
+      setAuth(response);
+      navigate(from, { replace: true });
+    } catch {
+      message.error('Dev login failed');
+    } finally {
+      setDevLoading(false);
+    }
   };
 
   return (
@@ -66,7 +79,6 @@ export default function LoginPage() {
         }}
       >
         <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-          {/* Logo placeholder */}
           <div
             style={{
               width: 80,
@@ -90,7 +102,6 @@ export default function LoginPage() {
             </Text>
           </div>
 
-          {/* Title */}
           <div>
             <Title level={3} style={{ marginBottom: 8 }}>
               铂润面料管理系统
@@ -98,7 +109,6 @@ export default function LoginPage() {
             <Text type="secondary">Borealis Fabrics Management System</Text>
           </div>
 
-          {/* Login button */}
           <Button
             type="primary"
             size="large"
@@ -114,6 +124,28 @@ export default function LoginPage() {
           >
             企业微信登录
           </Button>
+
+          {/* Dev login (development only, tree-shaken in production) */}
+          {import.meta.env.DEV && (
+            <>
+              <Divider style={{ margin: '8px 0' }}>Development Only</Divider>
+              <Button
+                size="large"
+                icon={<CodeOutlined />}
+                loading={devLoading}
+                onClick={handleDevLogin}
+                style={{
+                  width: '100%',
+                  height: 48,
+                  fontSize: 16,
+                  borderColor: '#fa8c16',
+                  color: '#fa8c16',
+                }}
+              >
+                Dev Login
+              </Button>
+            </>
+          )}
         </Space>
       </Card>
     </div>

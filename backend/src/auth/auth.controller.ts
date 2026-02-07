@@ -1,5 +1,6 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
   Post,
   Query,
@@ -21,7 +22,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RequestUser } from './interfaces';
-import { UserResponseDto, LogoutResponseDto } from './dto';
+import { LoginResponseDto, UserResponseDto, LogoutResponseDto } from './dto';
 import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from './constants';
 
 /**
@@ -81,30 +82,50 @@ export class AuthController {
     @Query('state') state: string,
     @Res() res: Response,
   ): Promise<void> {
-    // Get frontend URL from config
     const frontendUrl =
       this.configService.get<string>('cors.origins')?.[0] ||
       'http://localhost:5173';
 
     try {
       const result = await this.authService.handleOAuthCallback(code, state);
-
-      // Set token via HttpOnly cookie (secure in production)
       res.cookie(AUTH_COOKIE_NAME, result.token, this.getCookieOptions());
-
-      // Redirect to frontend success page
       res.redirect(`${frontendUrl}/auth/callback?success=true`);
     } catch (error) {
-      // Log the error for debugging
       this.logger.error('OAuth callback failed', error);
-
-      // Redirect to frontend with error indicator
       const errorMessage =
         error instanceof Error ? error.message : 'Authentication failed';
       res.redirect(
         `${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`,
       );
     }
+  }
+
+  /**
+   * Dev mode login - bypasses WeWork OAuth for local development.
+   * Only available when NODE_ENV=development.
+   */
+  @Post('dev/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Dev mode login (development only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Dev login successful',
+    type: LoginResponseDto,
+  })
+  @ApiResponse({ status: 403, description: 'Not in development mode' })
+  async devLogin(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<LoginResponseDto> {
+    const nodeEnv = this.configService.get<string>('nodeEnv');
+    if (nodeEnv !== 'development') {
+      throw new ForbiddenException(
+        'Dev login is only available in development mode',
+      );
+    }
+
+    const result = await this.authService.devLogin();
+    res.cookie(AUTH_COOKIE_NAME, result.token, this.getCookieOptions());
+    return result;
   }
 
   /**
@@ -140,10 +161,7 @@ export class AuthController {
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LogoutResponseDto> {
-    // Clear the HttpOnly auth cookie
     res.clearCookie(AUTH_COOKIE_NAME, this.getCookieOptions());
-
-    // Extract token from header or cookie and blacklist it
     const token =
       req.headers.authorization?.replace('Bearer ', '') ||
       (req.cookies as Record<string, string> | undefined)?.[AUTH_COOKIE_NAME] ||
