@@ -9,8 +9,7 @@ import { StatusTag } from '@/components/common/StatusTag';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { OrderStatusFlow } from '@/components/business/OrderStatusFlow';
 import { formatDate } from '@/utils';
-import type { Order } from '@/types';
-import type { OrderItemStatus } from '@/types';
+import type { Order, OrderItemStatus } from '@/types';
 
 const { Text } = Typography;
 

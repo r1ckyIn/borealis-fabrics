@@ -27,6 +27,12 @@ import type {
   UpdateLogisticsData,
 } from '@/types';
 
+/** Logistics row with extra fields from the parent order item. */
+interface LogisticsRow extends Logistics {
+  _fabricCode: string;
+  _orderItemId: number;
+}
+
 interface LogisticsModalState {
   open: boolean;
   mode: 'create' | 'edit';
@@ -101,7 +107,7 @@ export function OrderLogisticsSection({
   );
 
   // Flatten logistics from all order items
-  const allLogistics = useMemo(() => {
+  const allLogistics: LogisticsRow[] = useMemo(() => {
     if (!orderItems) return [];
     return orderItems.flatMap((item) =>
       (item.logistics ?? []).map((l) => ({
@@ -112,13 +118,13 @@ export function OrderLogisticsSection({
     );
   }, [orderItems]);
 
-  const columns: ColumnsType<Logistics & { _fabricCode?: string; _orderItemId?: number }> = useMemo(
+  const columns: ColumnsType<LogisticsRow> = useMemo(
     () => [
       {
         title: '面料',
         key: 'fabric',
         width: 120,
-        render: (_, record) => (record as { _fabricCode?: string })._fabricCode || '-',
+        render: (_, record) => record._fabricCode || '-',
       },
       {
         title: '物流公司',
@@ -200,7 +206,7 @@ export function OrderLogisticsSection({
                   open: true,
                   mode: 'create',
                   logistics: null,
-                  orderItemId: (record as { _orderItemId?: number })._orderItemId ?? record.orderItemId,
+                  orderItemId: record._orderItemId,
                 })
               }
             >

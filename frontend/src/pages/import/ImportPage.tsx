@@ -83,19 +83,14 @@ export default function ImportPage() {
         setResult(importResult);
         setShowResult(true);
 
-        if (importResult.failureCount === 0) {
-          const skippedInfo = importResult.skippedCount > 0
-            ? `, ${importResult.skippedCount} 条已存在跳过`
-            : '';
-          message.success(
-            `成功导入 ${importResult.successCount} 条记录${skippedInfo}`
-          );
+        const { successCount, skippedCount: skipped, failureCount } = importResult;
+        const skippedInfo = skipped > 0 ? `, ${skipped} 条已存在跳过` : '';
+
+        if (failureCount === 0) {
+          message.success(`成功导入 ${successCount} 条记录${skippedInfo}`);
         } else {
-          const skippedInfo = importResult.skippedCount > 0
-            ? `, ${importResult.skippedCount} 跳过`
-            : '';
           message.warning(
-            `导入完成: ${importResult.successCount} 成功${skippedInfo}, ${importResult.failureCount} 失败`
+            `导入完成: ${successCount} 成功${skippedInfo}, ${failureCount} 失败`
           );
         }
       } catch (error) {
