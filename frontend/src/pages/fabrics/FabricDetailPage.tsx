@@ -55,6 +55,7 @@ import {
 import { getSuppliers } from '@/api/supplier.api';
 import { getCustomers } from '@/api/customer.api';
 import { formatDate, formatCurrency } from '@/utils/format';
+import { parseEntityId } from '@/utils';
 import type {
   FabricSupplier,
   CustomerPricing,
@@ -92,7 +93,7 @@ const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
 export default function FabricDetailPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const fabricId = id ? parseInt(id, 10) : undefined;
+  const fabricId = parseEntityId(id);
 
   // Tab state
   const [activeTab, setActiveTab] = useState('info');

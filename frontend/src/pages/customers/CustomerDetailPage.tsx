@@ -45,7 +45,7 @@ import {
   useDeleteCustomerPricing,
 } from '@/hooks/queries/useCustomers';
 import { fabricApi } from '@/api';
-import { formatDate } from '@/utils';
+import { formatDate, parseEntityId } from '@/utils';
 import {
   CreditType,
   CREDIT_TYPE_LABELS,
@@ -79,7 +79,7 @@ interface PricingFormValues {
 export default function CustomerDetailPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const customerId = id ? parseInt(id, 10) : undefined;
+  const customerId = parseEntityId(id);
 
   // Tab state
   const [activeTab, setActiveTab] = useState('info');

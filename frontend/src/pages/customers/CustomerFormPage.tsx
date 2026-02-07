@@ -15,6 +15,7 @@ import {
   useUpdateCustomer,
 } from '@/hooks/queries/useCustomers';
 import type { CreateCustomerData, UpdateCustomerData } from '@/types';
+import { parseEntityId } from '@/utils';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -28,7 +29,7 @@ export default function CustomerFormPage(): React.ReactElement {
   const navigate = useNavigate();
 
   const isEditMode = !!id;
-  const customerId = id ? parseInt(id, 10) : undefined;
+  const customerId = parseEntityId(id);
 
   // Fetch existing customer data for edit mode
   const {

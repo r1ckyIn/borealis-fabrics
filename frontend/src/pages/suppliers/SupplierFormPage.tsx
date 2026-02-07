@@ -15,6 +15,7 @@ import {
   useUpdateSupplier,
 } from '@/hooks/queries/useSuppliers';
 import type { CreateSupplierData, UpdateSupplierData } from '@/types';
+import { parseEntityId } from '@/utils';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -28,7 +29,7 @@ export default function SupplierFormPage(): React.ReactElement {
   const navigate = useNavigate();
 
   const isEditMode = !!id;
-  const supplierId = id ? parseInt(id, 10) : undefined;
+  const supplierId = parseEntityId(id);
 
   // Fetch existing supplier data for edit mode
   const {
