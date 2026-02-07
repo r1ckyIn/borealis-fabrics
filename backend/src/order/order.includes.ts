@@ -68,6 +68,7 @@ export const ORDER_ITEM_INCLUDE_DETAIL = {
   supplier: { select: SUPPLIER_SELECT },
   quote: { select: QUOTE_SELECT },
   timelines: { orderBy: { createdAt: 'desc' as const } },
+  logistics: true,
 } as const satisfies Prisma.OrderItemInclude;
 
 /**
@@ -110,21 +111,9 @@ export const ORDER_INCLUDE_DETAIL = {
 export const ORDER_INCLUDE_UPDATE = ORDER_INCLUDE_DETAIL;
 
 /**
- * Order include for customer payment update response.
+ * Order include for customer payment update response (same shape as list).
  */
-export const ORDER_INCLUDE_PAYMENT = {
-  customer: { select: CUSTOMER_SELECT_BASIC },
-  items: {
-    select: {
-      id: true,
-      fabricId: true,
-      quantity: true,
-      salePrice: true,
-      subtotal: true,
-      status: true,
-    },
-  },
-} as const satisfies Prisma.OrderInclude;
+export const ORDER_INCLUDE_PAYMENT = ORDER_INCLUDE_LIST;
 
 /**
  * Order item include for getOrderItems (with recent timeline).
@@ -137,6 +126,7 @@ export const ORDER_ITEM_INCLUDE_WITH_TIMELINE = {
     orderBy: { createdAt: 'desc' as const },
     take: 5,
   },
+  logistics: true,
 } as const satisfies Prisma.OrderItemInclude;
 
 /**
