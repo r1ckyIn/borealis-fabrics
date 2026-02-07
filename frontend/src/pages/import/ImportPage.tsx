@@ -84,12 +84,18 @@ export default function ImportPage() {
         setShowResult(true);
 
         if (importResult.failureCount === 0) {
+          const skippedInfo = importResult.skippedCount > 0
+            ? `, ${importResult.skippedCount} 条已存在跳过`
+            : '';
           message.success(
-            `成功导入 ${importResult.successCount} 条记录`
+            `成功导入 ${importResult.successCount} 条记录${skippedInfo}`
           );
         } else {
+          const skippedInfo = importResult.skippedCount > 0
+            ? `, ${importResult.skippedCount} 跳过`
+            : '';
           message.warning(
-            `导入完成: ${importResult.successCount} 成功, ${importResult.failureCount} 失败`
+            `导入完成: ${importResult.successCount} 成功${skippedInfo}, ${importResult.failureCount} 失败`
           );
         }
       } catch (error) {

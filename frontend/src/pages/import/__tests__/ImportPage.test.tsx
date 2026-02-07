@@ -121,6 +121,7 @@ describe('ImportPage', () => {
       const user = userEvent.setup();
       mockImportFabrics.mockResolvedValue({
         successCount: 5,
+        skippedCount: 0,
         failureCount: 0,
         failures: [],
       });
@@ -148,6 +149,7 @@ describe('ImportPage', () => {
       const { message } = await import('antd');
       mockImportFabrics.mockResolvedValue({
         successCount: 3,
+        skippedCount: 0,
         failureCount: 2,
         failures: [
           { rowNumber: 2, identifier: 'FB001', reason: 'Duplicate' },
