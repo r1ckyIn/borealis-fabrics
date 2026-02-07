@@ -19,6 +19,7 @@ import {
   screen,
   waitFor,
   clearAuthState,
+  userEvent,
 } from './integrationTestUtils';
 
 // Mock at the API module boundary
@@ -132,13 +133,10 @@ describe('Auth Flow Integration', () => {
       const mockResponse = createMockLoginResponse();
       devLogin.mockResolvedValueOnce(mockResponse);
 
-      const { userEvent: _ue } = await import('@testing-library/user-event');
-      const user = _ue.setup();
-
+      const user = userEvent.setup();
       renderAuthRoutes(['/login']);
 
-      const devButton = screen.getByText('Dev Login');
-      await user.click(devButton);
+      await user.click(screen.getByText('Dev Login'));
 
       await waitFor(() => {
         const state = useAuthStore.getState();
@@ -154,13 +152,10 @@ describe('Auth Flow Integration', () => {
     it('Dev Login failure shows error message', async () => {
       devLogin.mockRejectedValueOnce(new Error('Network error'));
 
-      const { userEvent: _ue } = await import('@testing-library/user-event');
-      const user = _ue.setup();
-
+      const user = userEvent.setup();
       renderAuthRoutes(['/login']);
 
-      const devButton = screen.getByText('Dev Login');
-      await user.click(devButton);
+      await user.click(screen.getByText('Dev Login'));
 
       await waitFor(() => {
         expect(screen.getByText('Dev login failed')).toBeInTheDocument();

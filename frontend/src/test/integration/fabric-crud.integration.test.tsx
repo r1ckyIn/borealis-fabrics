@@ -26,41 +26,23 @@ import {
   userEvent,
 } from './integrationTestUtils';
 
-// Mock fabric API module
-vi.mock('@/api/fabric.api', () => ({
-  getFabrics: vi.fn(),
-  getFabric: vi.fn(),
-  createFabric: vi.fn(),
-  updateFabric: vi.fn(),
-  deleteFabric: vi.fn(),
-  uploadFabricImage: vi.fn(),
-  deleteFabricImage: vi.fn(),
-  getFabricSuppliers: vi.fn(),
-  addFabricSupplier: vi.fn(),
-  updateFabricSupplier: vi.fn(),
-  removeFabricSupplier: vi.fn(),
-  getFabricPricing: vi.fn(),
-  createFabricPricing: vi.fn(),
-  updateFabricPricing: vi.fn(),
-  deleteFabricPricing: vi.fn(),
-  fabricApi: {
-    getFabrics: vi.fn(),
-    getFabric: vi.fn(),
-    createFabric: vi.fn(),
-    updateFabric: vi.fn(),
-    deleteFabric: vi.fn(),
-    uploadFabricImage: vi.fn(),
-    deleteFabricImage: vi.fn(),
-    getFabricSuppliers: vi.fn(),
-    addFabricSupplier: vi.fn(),
-    updateFabricSupplier: vi.fn(),
-    removeFabricSupplier: vi.fn(),
-    getFabricPricing: vi.fn(),
-    createFabricPricing: vi.fn(),
-    updateFabricPricing: vi.fn(),
-    deleteFabricPricing: vi.fn(),
-  },
-}));
+const { mockModule } = vi.hoisted(() => {
+  function mockModule(fns: string[], nsKey: string): Record<string, unknown> {
+    const mocks: Record<string, unknown> = {};
+    for (const fn of fns) mocks[fn] = vi.fn();
+    mocks[nsKey] = { ...mocks };
+    return mocks;
+  }
+  return { mockModule };
+});
+
+vi.mock('@/api/fabric.api', () => mockModule(
+  ['getFabrics', 'getFabric', 'createFabric', 'updateFabric', 'deleteFabric',
+   'uploadFabricImage', 'deleteFabricImage',
+   'getFabricSuppliers', 'addFabricSupplier', 'updateFabricSupplier', 'removeFabricSupplier',
+   'getFabricPricing', 'createFabricPricing', 'updateFabricPricing', 'deleteFabricPricing'],
+  'fabricApi',
+));
 
 type FabricApiModule = typeof import('@/api/fabric.api');
 const { fabricApi } =

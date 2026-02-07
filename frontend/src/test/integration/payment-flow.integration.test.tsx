@@ -27,45 +27,24 @@ import {
   userEvent,
 } from './integrationTestUtils';
 
-// Mock order API
-vi.mock('@/api/order.api', () => ({
-  getOrders: vi.fn(),
-  getOrder: vi.fn(),
-  createOrder: vi.fn(),
-  updateOrder: vi.fn(),
-  deleteOrder: vi.fn(),
-  getOrderItems: vi.fn(),
-  addOrderItem: vi.fn(),
-  updateOrderItem: vi.fn(),
-  deleteOrderItem: vi.fn(),
-  updateOrderItemStatus: vi.fn(),
-  cancelOrderItem: vi.fn(),
-  restoreOrderItem: vi.fn(),
-  getOrderTimeline: vi.fn(),
-  getOrderItemTimeline: vi.fn(),
-  updateCustomerPayment: vi.fn(),
-  getSupplierPayments: vi.fn(),
-  updateSupplierPayment: vi.fn(),
-  orderApi: {
-    getOrders: vi.fn(),
-    getOrder: vi.fn(),
-    createOrder: vi.fn(),
-    updateOrder: vi.fn(),
-    deleteOrder: vi.fn(),
-    getOrderItems: vi.fn(),
-    addOrderItem: vi.fn(),
-    updateOrderItem: vi.fn(),
-    deleteOrderItem: vi.fn(),
-    updateOrderItemStatus: vi.fn(),
-    cancelOrderItem: vi.fn(),
-    restoreOrderItem: vi.fn(),
-    getOrderTimeline: vi.fn(),
-    getOrderItemTimeline: vi.fn(),
-    updateCustomerPayment: vi.fn(),
-    getSupplierPayments: vi.fn(),
-    updateSupplierPayment: vi.fn(),
-  },
-}));
+const { mockModule } = vi.hoisted(() => {
+  function mockModule(fns: string[], nsKey: string): Record<string, unknown> {
+    const mocks: Record<string, unknown> = {};
+    for (const fn of fns) mocks[fn] = vi.fn();
+    mocks[nsKey] = { ...mocks };
+    return mocks;
+  }
+  return { mockModule };
+});
+
+vi.mock('@/api/order.api', () => mockModule(
+  ['getOrders', 'getOrder', 'createOrder', 'updateOrder', 'deleteOrder',
+   'getOrderItems', 'addOrderItem', 'updateOrderItem', 'deleteOrderItem',
+   'updateOrderItemStatus', 'cancelOrderItem', 'restoreOrderItem',
+   'getOrderTimeline', 'getOrderItemTimeline',
+   'updateCustomerPayment', 'getSupplierPayments', 'updateSupplierPayment'],
+  'orderApi',
+));
 
 type OrderApiModule = typeof import('@/api/order.api');
 const { orderApi } =

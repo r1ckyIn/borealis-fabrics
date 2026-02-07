@@ -23,105 +23,51 @@ import {
   waitFor,
   clearAuthState,
   userEvent,
+  EMPTY_PAGINATED,
 } from './integrationTestUtils';
 
-// Mock order API
-vi.mock('@/api/order.api', () => ({
-  getOrders: vi.fn(),
-  getOrder: vi.fn(),
-  createOrder: vi.fn(),
-  updateOrder: vi.fn(),
-  deleteOrder: vi.fn(),
-  getOrderItems: vi.fn(),
-  addOrderItem: vi.fn(),
-  updateOrderItem: vi.fn(),
-  deleteOrderItem: vi.fn(),
-  updateOrderItemStatus: vi.fn(),
-  cancelOrderItem: vi.fn(),
-  restoreOrderItem: vi.fn(),
-  getOrderTimeline: vi.fn(),
-  getOrderItemTimeline: vi.fn(),
-  updateCustomerPayment: vi.fn(),
-  getSupplierPayments: vi.fn(),
-  updateSupplierPayment: vi.fn(),
-  orderApi: {
-    getOrders: vi.fn(),
-    getOrder: vi.fn(),
-    createOrder: vi.fn(),
-    updateOrder: vi.fn(),
-    deleteOrder: vi.fn(),
-    getOrderItems: vi.fn(),
-    addOrderItem: vi.fn(),
-    updateOrderItem: vi.fn(),
-    deleteOrderItem: vi.fn(),
-    updateOrderItemStatus: vi.fn(),
-    cancelOrderItem: vi.fn(),
-    restoreOrderItem: vi.fn(),
-    getOrderTimeline: vi.fn(),
-    getOrderItemTimeline: vi.fn(),
-    updateCustomerPayment: vi.fn(),
-    getSupplierPayments: vi.fn(),
-    updateSupplierPayment: vi.fn(),
-  },
-}));
+// Mock API modules -- order, fabric, supplier
+const { mockModule } = vi.hoisted(() => {
+  function mockModule(fns: string[], nsKey: string): Record<string, unknown> {
+    const mocks: Record<string, unknown> = {};
+    for (const fn of fns) mocks[fn] = vi.fn();
+    mocks[nsKey] = { ...mocks };
+    return mocks;
+  }
+  return { mockModule };
+});
 
-// Mock fabric API (used by FabricSelector in add/edit modal)
-vi.mock('@/api/fabric.api', () => ({
-  getFabrics: vi.fn().mockResolvedValue({ items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }),
-  getFabric: vi.fn(),
-  createFabric: vi.fn(),
-  updateFabric: vi.fn(),
-  deleteFabric: vi.fn(),
-  uploadFabricImage: vi.fn(),
-  deleteFabricImage: vi.fn(),
-  getFabricSuppliers: vi.fn(),
-  addFabricSupplier: vi.fn(),
-  updateFabricSupplier: vi.fn(),
-  removeFabricSupplier: vi.fn(),
-  getFabricPricing: vi.fn(),
-  createFabricPricing: vi.fn(),
-  updateFabricPricing: vi.fn(),
-  deleteFabricPricing: vi.fn(),
-  fabricApi: {
-    getFabrics: vi.fn(),
-    getFabric: vi.fn(),
-    createFabric: vi.fn(),
-    updateFabric: vi.fn(),
-    deleteFabric: vi.fn(),
-    uploadFabricImage: vi.fn(),
-    deleteFabricImage: vi.fn(),
-    getFabricSuppliers: vi.fn(),
-    addFabricSupplier: vi.fn(),
-    updateFabricSupplier: vi.fn(),
-    removeFabricSupplier: vi.fn(),
-    getFabricPricing: vi.fn(),
-    createFabricPricing: vi.fn(),
-    updateFabricPricing: vi.fn(),
-    deleteFabricPricing: vi.fn(),
-  },
-}));
-
-// Mock supplier API (used by SupplierSelector in add/edit modal)
-vi.mock('@/api/supplier.api', () => ({
-  getSuppliers: vi.fn().mockResolvedValue({ items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }),
-  getSupplier: vi.fn(),
-  createSupplier: vi.fn(),
-  updateSupplier: vi.fn(),
-  deleteSupplier: vi.fn(),
-  getSupplierFabrics: vi.fn(),
-  supplierApi: {
-    getSuppliers: vi.fn(),
-    getSupplier: vi.fn(),
-    createSupplier: vi.fn(),
-    updateSupplier: vi.fn(),
-    deleteSupplier: vi.fn(),
-    getSupplierFabrics: vi.fn(),
-  },
-}));
+vi.mock('@/api/order.api', () => mockModule(
+  ['getOrders', 'getOrder', 'createOrder', 'updateOrder', 'deleteOrder',
+   'getOrderItems', 'addOrderItem', 'updateOrderItem', 'deleteOrderItem',
+   'updateOrderItemStatus', 'cancelOrderItem', 'restoreOrderItem',
+   'getOrderTimeline', 'getOrderItemTimeline',
+   'updateCustomerPayment', 'getSupplierPayments', 'updateSupplierPayment'],
+  'orderApi',
+));
+vi.mock('@/api/fabric.api', () => mockModule(
+  ['getFabrics', 'getFabric', 'createFabric', 'updateFabric', 'deleteFabric',
+   'uploadFabricImage', 'deleteFabricImage',
+   'getFabricSuppliers', 'addFabricSupplier', 'updateFabricSupplier', 'removeFabricSupplier',
+   'getFabricPricing', 'createFabricPricing', 'updateFabricPricing', 'deleteFabricPricing'],
+  'fabricApi',
+));
+vi.mock('@/api/supplier.api', () => mockModule(
+  ['getSuppliers', 'getSupplier', 'createSupplier', 'updateSupplier', 'deleteSupplier',
+   'getSupplierFabrics'],
+  'supplierApi',
+));
 
 type OrderApiModule = typeof import('@/api/order.api');
+type FabricApiModule = typeof import('@/api/fabric.api');
+type SupplierApiModule = typeof import('@/api/supplier.api');
+
 const { orderApi } =
   vi.mocked(await vi.importMock<OrderApiModule>('@/api/order.api'));
+const { getFabrics } =
+  vi.mocked(await vi.importMock<FabricApiModule>('@/api/fabric.api'));
+const { getSuppliers } =
+  vi.mocked(await vi.importMock<SupplierApiModule>('@/api/supplier.api'));
 
 const mockFabric = createMockFabric({ id: 1, fabricCode: 'FAB-0001', name: '棉布' });
 const mockSupplier = createMockSupplier({ id: 1, companyName: '供应商A' });
@@ -157,7 +103,8 @@ describe('Order Status State Machine Integration', () => {
     clearAuthState();
     resetIdCounter();
     vi.clearAllMocks();
-    mockNavigate.mockClear();
+    getFabrics.mockResolvedValue(EMPTY_PAGINATED);
+    getSuppliers.mockResolvedValue(EMPTY_PAGINATED);
   });
 
   describe('Status display', () => {

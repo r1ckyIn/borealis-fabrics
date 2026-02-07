@@ -14,6 +14,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 
+import type { PaginatedResult } from '@/types/api.types';
 import { useAuthStore } from '@/store/authStore';
 import { createMockAuthUser } from '@/test/mocks/mockFactories';
 
@@ -97,6 +98,15 @@ export function clearAuthState(): void {
     isInitializing: false,
   });
 }
+
+/**
+ * Empty paginated API response for mocking list endpoints.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const EMPTY_PAGINATED: PaginatedResult<any> = {
+  items: [],
+  pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
+};
 
 // Re-export for convenience
 export * from '@testing-library/react';
