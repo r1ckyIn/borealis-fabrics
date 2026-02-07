@@ -4,7 +4,7 @@
  * and a calculated total display.
  */
 
-import { useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   Form,
   InputNumber,
@@ -87,7 +87,7 @@ export function QuoteForm({
   const unitPrice = Form.useWatch('unitPrice', form);
 
   const totalPrice = useMemo(() => {
-    if (quantity && unitPrice && quantity > 0 && unitPrice > 0) {
+    if (quantity && unitPrice) {
       return quantity * unitPrice;
     }
     return null;
@@ -108,16 +108,13 @@ export function QuoteForm({
   }, [initialValues, form]);
 
   /** Convert internal form values to CreateQuoteData and submit. */
-  const handleFinish = useCallback(
-    async (values: QuoteFormValues): Promise<void> => {
-      const submitData: CreateQuoteData = {
-        ...values,
-        validUntil: values.validUntil.format('YYYY-MM-DD'),
-      };
-      await onSubmit(submitData);
-    },
-    [onSubmit]
-  );
+  async function handleFinish(values: QuoteFormValues): Promise<void> {
+    const submitData: CreateQuoteData = {
+      ...values,
+      validUntil: values.validUntil.format('YYYY-MM-DD'),
+    };
+    await onSubmit(submitData);
+  }
 
   const isEditMode = mode === 'edit';
 
