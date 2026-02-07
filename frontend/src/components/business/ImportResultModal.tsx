@@ -16,7 +16,7 @@ export interface ImportResultModalProps {
   importType: 'fabric' | 'supplier';
 }
 
-const IMPORT_TYPE_LABELS: Record<string, string> = {
+const IMPORT_TYPE_LABELS: Record<ImportResultModalProps['importType'], string> = {
   fabric: '面料',
   supplier: '供应商',
 };

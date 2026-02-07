@@ -26,6 +26,16 @@ const ACCEPTED_MIME =
 
 type ImportTab = 'fabric' | 'supplier';
 
+interface TabConfig {
+  download: () => Promise<void>;
+  import: (file: File, onProgress?: (p: number) => void) => Promise<ImportResult>;
+}
+
+const TAB_CONFIG: Record<ImportTab, TabConfig> = {
+  fabric: { download: importApi.downloadFabricTemplate, import: importApi.importFabrics },
+  supplier: { download: importApi.downloadSupplierTemplate, import: importApi.importSuppliers },
+};
+
 export default function ImportPage() {
   const [activeTab, setActiveTab] = useState<ImportTab>('fabric');
   const [uploading, setUploading] = useState(false);
@@ -37,11 +47,7 @@ export default function ImportPage() {
   const handleDownloadTemplate = useCallback(async () => {
     setDownloadingTemplate(true);
     try {
-      if (activeTab === 'fabric') {
-        await importApi.downloadFabricTemplate();
-      } else {
-        await importApi.downloadSupplierTemplate();
-      }
+      await TAB_CONFIG[activeTab].download();
       message.success('模板下载成功');
     } catch {
       message.error('模板下载失败，请重试');
@@ -61,11 +67,7 @@ export default function ImportPage() {
       setUploadProgress(0);
 
       try {
-        const onProgress = (percent: number) => setUploadProgress(percent);
-        const importResult =
-          activeTab === 'fabric'
-            ? await importApi.importFabrics(file, onProgress)
-            : await importApi.importSuppliers(file, onProgress);
+        const importResult = await TAB_CONFIG[activeTab].import(file, setUploadProgress);
 
         setResult(importResult);
         setShowResult(true);

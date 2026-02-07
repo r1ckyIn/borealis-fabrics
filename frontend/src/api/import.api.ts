@@ -20,38 +20,32 @@ function triggerDownload(blob: Blob, filename: string): void {
 }
 
 /**
- * Download the fabric import Excel template.
+ * Download an import template as a blob and trigger a browser download.
+ * @param endpoint - API path for the template (e.g. '/import/templates/fabrics')
+ * @param filename - The filename for the downloaded file
  */
-export async function downloadFabricTemplate(): Promise<void> {
-  const response = await apiClient.get<Blob>('/import/templates/fabrics', {
+async function downloadTemplate(endpoint: string, filename: string): Promise<void> {
+  const response = await apiClient.get<Blob>(endpoint, {
     responseType: 'blob',
   });
-  triggerDownload(response as unknown as Blob, 'fabric_import_template.xlsx');
+  triggerDownload(response as unknown as Blob, filename);
 }
 
 /**
- * Download the supplier import Excel template.
- */
-export async function downloadSupplierTemplate(): Promise<void> {
-  const response = await apiClient.get<Blob>('/import/templates/suppliers', {
-    responseType: 'blob',
-  });
-  triggerDownload(response as unknown as Blob, 'supplier_import_template.xlsx');
-}
-
-/**
- * Import fabrics from an Excel file.
+ * Upload a file to an import endpoint and return the result.
+ * @param endpoint - API path for the import (e.g. '/import/fabrics')
  * @param file - The .xlsx file to import
  * @param onProgress - Optional upload progress callback (0-100)
  */
-export async function importFabrics(
+async function uploadImportFile(
+  endpoint: string,
   file: File,
   onProgress?: (percent: number) => void
 ): Promise<ImportResult> {
   const formData = new FormData();
   formData.append('file', file);
 
-  const response = await apiClient.post<ImportResult>('/import/fabrics', formData, {
+  const response = await apiClient.post<ImportResult>(endpoint, formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
     onUploadProgress: (progressEvent) => {
       if (onProgress && progressEvent.total) {
@@ -64,29 +58,30 @@ export async function importFabrics(
   return response as unknown as ImportResult;
 }
 
-/**
- * Import suppliers from an Excel file.
- * @param file - The .xlsx file to import
- * @param onProgress - Optional upload progress callback (0-100)
- */
-export async function importSuppliers(
+/** Download the fabric import Excel template. */
+export function downloadFabricTemplate(): Promise<void> {
+  return downloadTemplate('/import/templates/fabrics', 'fabric_import_template.xlsx');
+}
+
+/** Download the supplier import Excel template. */
+export function downloadSupplierTemplate(): Promise<void> {
+  return downloadTemplate('/import/templates/suppliers', 'supplier_import_template.xlsx');
+}
+
+/** Import fabrics from an Excel file. */
+export function importFabrics(
   file: File,
   onProgress?: (percent: number) => void
 ): Promise<ImportResult> {
-  const formData = new FormData();
-  formData.append('file', file);
+  return uploadImportFile('/import/fabrics', file, onProgress);
+}
 
-  const response = await apiClient.post<ImportResult>('/import/suppliers', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-    onUploadProgress: (progressEvent) => {
-      if (onProgress && progressEvent.total) {
-        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-        onProgress(percent);
-      }
-    },
-  });
-
-  return response as unknown as ImportResult;
+/** Import suppliers from an Excel file. */
+export function importSuppliers(
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<ImportResult> {
+  return uploadImportFile('/import/suppliers', file, onProgress);
 }
 
 export const importApi = {
