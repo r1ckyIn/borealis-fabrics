@@ -68,6 +68,7 @@ export const ORDER_ITEM_INCLUDE_DETAIL = {
   supplier: { select: SUPPLIER_SELECT },
   quote: { select: QUOTE_SELECT },
   timelines: { orderBy: { createdAt: 'desc' as const } },
+  logistics: true,
 } as const satisfies Prisma.OrderItemInclude;
 
 /**
@@ -137,6 +138,7 @@ export const ORDER_ITEM_INCLUDE_WITH_TIMELINE = {
     orderBy: { createdAt: 'desc' as const },
     take: 5,
   },
+  logistics: true,
 } as const satisfies Prisma.OrderItemInclude;
 
 /**
