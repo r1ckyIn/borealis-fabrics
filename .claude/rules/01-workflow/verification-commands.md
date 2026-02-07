@@ -1,22 +1,22 @@
-# 验证循环命令
+---
+paths:
+  - "**/backend/**"
+  - "**/frontend/**"
+---
 
-每次代码变更后必须执行完整的验证循环。
+# 验证命令
+
+本文件定义每次代码变更后必须执行的验证命令。
 
 ---
 
-## 后端验证
+## 后端验证命令
 
 ```bash
-# 进入后端目录
 cd backend
 
-# 构建验证
 pnpm build
-
-# 测试验证
 pnpm test
-
-# Lint 验证
 pnpm lint
 
 # All-in-one
@@ -25,22 +25,14 @@ pnpm build && pnpm test && pnpm lint
 
 ---
 
-## 前端验证
+## 前端验证命令
 
 ```bash
-# 进入前端目录
 cd frontend
 
-# 构建验证
 pnpm build
-
-# 测试验证
 pnpm test
-
-# Lint 验证
 pnpm lint
-
-# 类型验证
 pnpm typecheck
 
 # All-in-one
@@ -52,12 +44,10 @@ pnpm build && pnpm test && pnpm lint && pnpm typecheck
 ## E2E 测试
 
 ```bash
-# 后端 E2E 测试
 cd backend && pnpm test:e2e
 
-# 特定模块 E2E 测试
+# 特定模块
 cd backend && pnpm test:e2e -- --testPathPattern=supplier
-cd backend && pnpm test:e2e -- --testPathPattern=customer
 ```
 
 ---
@@ -65,32 +55,30 @@ cd backend && pnpm test:e2e -- --testPathPattern=customer
 ## 数据库迁移
 
 ```bash
-# 生成迁移
 cd backend && npx prisma migrate dev --name <migration-name>
-
-# 应用迁移
 cd backend && npx prisma migrate deploy
-
-# 重置数据库（开发环境）
 cd backend && npx prisma migrate reset
-
-# 生成 Prisma Client
 cd backend && npx prisma generate
 ```
 
 ---
 
-## 验证结果记录
+## 失败处理规则
 
-每个功能完成后，在 CLAUDE.md 中更新状态：
+如果任何验证步骤失败：
+
+1. **立即停止** - 不要继续下一步
+2. **分析错误原因** - 阅读错误信息
+3. **修复问题** - 做最小改动
+4. **重新运行所有验证步骤** - 确保修复没有引入新问题
+5. **全部通过后才能继续** - 不可跳过
+
+---
+
+## 验证结果记录格式
 
 | 功能 | 状态 | 测试 | Build | Lint | 备注 |
 |------|------|------|-------|------|------|
-| 功能名称 | ⏳/🔄/✅ | ⏳/✅ | ⏳/✅ | ⏳/✅ | 备注 |
+| 功能名称 | ⏳/🔄/✅ | ⏳/✅ | ⏳/✅ | ⏳/✅ | |
 
-### 状态图例
-
-- ⏳ 待开始
-- 🔄 进行中
-- ✅ 已完成
-- ❌ 失败待修复
+状态图例：⏳ 待开始 | 🔄 进行中 | ✅ 已完成 | ❌ 失败待修复
