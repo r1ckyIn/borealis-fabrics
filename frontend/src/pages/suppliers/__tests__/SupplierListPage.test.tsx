@@ -60,21 +60,16 @@ vi.mock('antd', async () => {
   };
 });
 
-// Mock supplier data
+// Mock supplier data - only include required fields and those asserted on
 const mockSuppliers: Supplier[] = [
   {
     id: 1,
     companyName: '东莞纺织有限公司',
     contactName: '张三',
     phone: '13800138000',
-    wechat: 'zhang_san',
-    email: 'zhangsan@example.com',
-    address: '广东省东莞市长安镇',
     status: SupplierStatus.ACTIVE,
-    billReceiveType: '增值税专用发票',
     settleType: SettleType.CREDIT,
     creditDays: 30,
-    notes: null,
     isActive: true,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
@@ -84,14 +79,8 @@ const mockSuppliers: Supplier[] = [
     companyName: '苏州丝绸厂',
     contactName: '李四',
     phone: '13900139000',
-    wechat: null,
-    email: null,
-    address: '江苏省苏州市吴中区',
     status: SupplierStatus.SUSPENDED,
-    billReceiveType: null,
     settleType: SettleType.PREPAY,
-    creditDays: null,
-    notes: null,
     isActive: true,
     createdAt: '2024-01-02T00:00:00.000Z',
     updatedAt: '2024-01-02T00:00:00.000Z',

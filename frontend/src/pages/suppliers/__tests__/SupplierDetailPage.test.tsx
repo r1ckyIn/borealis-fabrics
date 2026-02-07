@@ -43,7 +43,7 @@ vi.mock('antd', async () => {
   };
 });
 
-// Mock supplier data
+// Mock supplier data - only include required fields and those asserted on
 const mockSupplier: Supplier = {
   id: 1,
   companyName: '东莞纺织有限公司',
@@ -53,7 +53,6 @@ const mockSupplier: Supplier = {
   email: 'zhangsan@example.com',
   address: '广东省东莞市长安镇',
   status: SupplierStatus.ACTIVE,
-  billReceiveType: '增值税专用发票',
   settleType: SettleType.CREDIT,
   creditDays: 30,
   notes: '优质供应商',

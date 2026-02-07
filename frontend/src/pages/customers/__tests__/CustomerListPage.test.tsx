@@ -60,29 +60,14 @@ vi.mock('antd', async () => {
   };
 });
 
-// Mock customer data
+// Mock customer data - only include required fields and those asserted on
 const mockCustomers: Customer[] = [
   {
     id: 1,
     companyName: '上海服饰有限公司',
     contactName: '王五',
-    phone: '13700137000',
-    wechat: 'wang_wu',
-    email: 'wangwu@example.com',
-    addresses: [
-      {
-        province: '上海市',
-        city: '上海市',
-        district: '浦东新区',
-        detailAddress: '世纪大道100号',
-        contactName: '王五',
-        contactPhone: '13700137000',
-        isDefault: true,
-      },
-    ],
     creditType: CreditType.CREDIT,
     creditDays: 45,
-    notes: null,
     isActive: true,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
@@ -91,13 +76,7 @@ const mockCustomers: Customer[] = [
     id: 2,
     companyName: '北京纺织贸易公司',
     contactName: '赵六',
-    phone: '13600136000',
-    wechat: null,
-    email: null,
-    addresses: null,
     creditType: CreditType.PREPAY,
-    creditDays: null,
-    notes: null,
     isActive: true,
     createdAt: '2024-01-02T00:00:00.000Z',
     updatedAt: '2024-01-02T00:00:00.000Z',

@@ -45,18 +45,11 @@ vi.mock('antd', async () => {
   };
 });
 
-// Mock customer data
+// Mock customer data - only include required fields
 const mockCustomer: Customer = {
   id: 1,
   companyName: '上海服饰有限公司',
-  contactName: '王五',
-  phone: '13700137000',
-  wechat: 'wang_wu',
-  email: 'wangwu@example.com',
-  addresses: null,
   creditType: CreditType.CREDIT,
-  creditDays: 45,
-  notes: null,
   isActive: true,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
@@ -185,13 +178,15 @@ describe('CustomerFormPage', () => {
   });
 
   describe('Error Handling', () => {
-    it('should show error result when fetch fails', async () => {
+    beforeEach(() => {
       mockUseCustomer.mockReturnValue({
         data: undefined,
         isLoading: false,
         error: new Error('Network error'),
       });
+    });
 
+    it('should show error result when fetch fails', async () => {
       renderWithProviders(<CustomerFormPage />, {
         initialEntries: ['/customers/1/edit'],
       });
@@ -203,12 +198,6 @@ describe('CustomerFormPage', () => {
     });
 
     it('should show back to list button on error', async () => {
-      mockUseCustomer.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: new Error('Network error'),
-      });
-
       renderWithProviders(<CustomerFormPage />, {
         initialEntries: ['/customers/1/edit'],
       });
@@ -219,12 +208,6 @@ describe('CustomerFormPage', () => {
     });
 
     it('should show retry button on error', async () => {
-      mockUseCustomer.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: new Error('Network error'),
-      });
-
       renderWithProviders(<CustomerFormPage />, {
         initialEntries: ['/customers/1/edit'],
       });

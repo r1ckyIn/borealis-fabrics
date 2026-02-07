@@ -356,7 +356,6 @@ describe('CustomerDetailPage', () => {
       await user.click(addressesTab);
 
       await waitFor(() => {
-        // Check for address details - contactName and contactPhone shown together
         expect(screen.getByText(/王五 13700137000/)).toBeInTheDocument();
       });
     });
@@ -488,7 +487,6 @@ describe('CustomerDetailPage', () => {
       const addButton = screen.getByText('添加定价').closest('button');
       await user.click(addButton!);
 
-      // Modal title
       await waitFor(() => {
         expect(screen.getByText('添加特殊定价')).toBeInTheDocument();
       });

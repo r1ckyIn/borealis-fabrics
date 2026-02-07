@@ -45,20 +45,12 @@ vi.mock('antd', async () => {
   };
 });
 
-// Mock supplier data
+// Mock supplier data - only include required fields
 const mockSupplier: Supplier = {
   id: 1,
   companyName: '东莞纺织有限公司',
-  contactName: '张三',
-  phone: '13800138000',
-  wechat: 'zhang_san',
-  email: 'zhangsan@example.com',
-  address: '广东省东莞市长安镇',
   status: SupplierStatus.ACTIVE,
-  billReceiveType: '增值税专用发票',
   settleType: SettleType.CREDIT,
-  creditDays: 30,
-  notes: null,
   isActive: true,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
@@ -187,13 +179,15 @@ describe('SupplierFormPage', () => {
   });
 
   describe('Error Handling', () => {
-    it('should show error result when fetch fails', async () => {
+    beforeEach(() => {
       mockUseSupplier.mockReturnValue({
         data: undefined,
         isLoading: false,
         error: new Error('Network error'),
       });
+    });
 
+    it('should show error result when fetch fails', async () => {
       renderWithProviders(<SupplierFormPage />, {
         initialEntries: ['/suppliers/1/edit'],
       });
@@ -205,12 +199,6 @@ describe('SupplierFormPage', () => {
     });
 
     it('should show back to list button on error', async () => {
-      mockUseSupplier.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: new Error('Network error'),
-      });
-
       renderWithProviders(<SupplierFormPage />, {
         initialEntries: ['/suppliers/1/edit'],
       });
@@ -221,12 +209,6 @@ describe('SupplierFormPage', () => {
     });
 
     it('should show retry button on error', async () => {
-      mockUseSupplier.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: new Error('Network error'),
-      });
-
       renderWithProviders(<SupplierFormPage />, {
         initialEntries: ['/suppliers/1/edit'],
       });
