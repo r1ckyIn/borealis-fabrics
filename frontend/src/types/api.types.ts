@@ -85,15 +85,14 @@ export interface HealthResponse {
 
 /** Import result for Excel import operations. */
 export interface ImportResult {
-  total: number;
-  success: number;
-  skipped: number;
-  failed: number;
-  errors: ImportError[];
+  successCount: number;
+  failureCount: number;
+  failures: ImportFailure[];
 }
 
-/** Individual import error detail. */
-export interface ImportError {
-  row: number;
-  message: string;
+/** Individual import failure detail. */
+export interface ImportFailure {
+  rowNumber: number;
+  identifier: string;
+  reason: string;
 }

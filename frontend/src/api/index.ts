@@ -20,3 +20,4 @@ export * from './fabric.api';
 export * from './quote.api';
 export * from './order.api';
 export * from './logistics.api';
+export * from './import.api';

@@ -31,3 +31,6 @@ export type { OrderStatusFlowProps } from './OrderStatusFlow';
 
 export { OrderTimeline } from './OrderTimeline';
 export type { OrderTimelineProps } from './OrderTimeline';
+
+export { ImportResultModal } from './ImportResultModal';
+export type { ImportResultModalProps } from './ImportResultModal';
