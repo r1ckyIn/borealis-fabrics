@@ -6,8 +6,7 @@
 import { Card, Progress, Statistic, Tag, Row, Col, Button } from 'antd';
 import { EditOutlined } from '@ant-design/icons';
 
-import { formatCurrency } from '@/utils/format';
-import { formatDateTime } from '@/utils/format';
+import { formatCurrency, formatDateTime } from '@/utils/format';
 import {
   CUSTOMER_PAY_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
@@ -58,12 +57,12 @@ export function PaymentStatusCard({
     totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0;
 
   const statusColor = getPayStatusColor(payStatus);
-  const progressStrokeColor =
-    progressPercent >= 100
-      ? '#52c41a'
-      : progressPercent > 0
-        ? '#faad14'
-        : '#ff4d4f';
+  let progressStrokeColor = '#ff4d4f';
+  if (progressPercent >= 100) {
+    progressStrokeColor = '#52c41a';
+  } else if (progressPercent > 0) {
+    progressStrokeColor = '#faad14';
+  }
 
   const title =
     type === 'customer'
@@ -71,11 +70,7 @@ export function PaymentStatusCard({
       : `供应商付款${supplierName ? ` - ${supplierName}` : ''}`;
 
   const statusLabel =
-    type === 'customer'
-      ? (CUSTOMER_PAY_STATUS_LABELS[payStatus as CustomerPayStatus] ??
-        payStatus)
-      : (CUSTOMER_PAY_STATUS_LABELS[payStatus as CustomerPayStatus] ??
-        payStatus);
+    CUSTOMER_PAY_STATUS_LABELS[payStatus as CustomerPayStatus] ?? payStatus;
 
   const methodLabel = payMethod
     ? (PAYMENT_METHOD_LABELS[payMethod as PaymentMethod] ?? payMethod)

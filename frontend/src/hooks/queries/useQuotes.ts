@@ -11,6 +11,8 @@ import type {
   UpdateQuoteData,
 } from '@/types';
 
+import { orderKeys } from './useOrders';
+
 // =============================================================================
 // Query Keys
 // =============================================================================
@@ -101,8 +103,6 @@ export function useDeleteQuote() {
     },
   });
 }
-
-import { orderKeys } from './useOrders';
 
 /**
  * Convert a quote to an order.
