@@ -61,7 +61,8 @@ describe('ImportService', () => {
     it('should have correct sheet structure', async () => {
       const buffer = await service.generateFabricTemplate();
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await workbook.xlsx.load(buffer as any);
 
       // Check worksheets exist
       expect(workbook.worksheets.length).toBe(2);
@@ -72,7 +73,8 @@ describe('ImportService', () => {
     it('should have correct column headers', async () => {
       const buffer = await service.generateFabricTemplate();
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await workbook.xlsx.load(buffer as any);
 
       const worksheet = workbook.getWorksheet('Fabrics');
       const headerRow = worksheet!.getRow(1);
@@ -91,7 +93,8 @@ describe('ImportService', () => {
     it('should have example data row', async () => {
       const buffer = await service.generateFabricTemplate();
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await workbook.xlsx.load(buffer as any);
 
       const worksheet = workbook.getWorksheet('Fabrics');
       const dataRow = worksheet!.getRow(2);
@@ -115,7 +118,8 @@ describe('ImportService', () => {
     it('should have correct sheet structure', async () => {
       const buffer = await service.generateSupplierTemplate();
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await workbook.xlsx.load(buffer as any);
 
       expect(workbook.worksheets.length).toBe(2);
       expect(workbook.worksheets[0].name).toBe('Suppliers');
@@ -125,7 +129,8 @@ describe('ImportService', () => {
     it('should have correct column headers', async () => {
       const buffer = await service.generateSupplierTemplate();
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await workbook.xlsx.load(buffer as any);
 
       const worksheet = workbook.getWorksheet('Suppliers');
       const headerRow = worksheet!.getRow(1);
@@ -143,7 +148,8 @@ describe('ImportService', () => {
     it('should have example data row', async () => {
       const buffer = await service.generateSupplierTemplate();
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(buffer);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await workbook.xlsx.load(buffer as any);
 
       const worksheet = workbook.getWorksheet('Suppliers');
       const dataRow = worksheet!.getRow(2);
