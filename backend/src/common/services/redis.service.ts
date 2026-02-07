@@ -162,4 +162,36 @@ export class RedisService implements OnModuleDestroy {
       return false;
     }
   }
+
+  /**
+   * Delete a key from Redis.
+   * Returns false if Redis is unavailable.
+   */
+  async del(key: string): Promise<boolean> {
+    if (!this.isAvailable()) {
+      return false;
+    }
+
+    try {
+      await this.client!.del(key);
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `Redis DEL failed for key ${key}: ${(error as Error).message}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Ping Redis to check connection health.
+   * Returns 'PONG' if successful, throws if unavailable.
+   */
+  async ping(): Promise<string> {
+    if (!this.isAvailable()) {
+      throw new Error('Redis is not available');
+    }
+
+    return await this.client!.ping();
+  }
 }

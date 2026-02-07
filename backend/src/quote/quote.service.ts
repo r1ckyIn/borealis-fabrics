@@ -24,6 +24,71 @@ import {
 // Maximum retries for handling quote code conflicts
 const MAX_CODE_GENERATION_RETRIES = 3;
 
+// Reusable include configurations for quote queries
+const QUOTE_LIST_INCLUDE = {
+  customer: {
+    select: {
+      id: true,
+      companyName: true,
+      contactName: true,
+      phone: true,
+    },
+  },
+  fabric: {
+    select: {
+      id: true,
+      fabricCode: true,
+      name: true,
+      defaultPrice: true,
+    },
+  },
+} as const;
+
+const QUOTE_DETAIL_INCLUDE = {
+  customer: {
+    select: {
+      id: true,
+      companyName: true,
+      contactName: true,
+      phone: true,
+      email: true,
+      wechat: true,
+    },
+  },
+  fabric: {
+    select: {
+      id: true,
+      fabricCode: true,
+      name: true,
+      material: true,
+      color: true,
+      defaultPrice: true,
+    },
+  },
+} as const;
+
+/**
+ * Build date range filter for Prisma query.
+ * Returns undefined if both from and to are not provided.
+ */
+function buildDateRangeFilter(
+  from?: string,
+  to?: string,
+): { gte?: Date; lte?: Date } | undefined {
+  if (!from && !to) {
+    return undefined;
+  }
+
+  const filter: { gte?: Date; lte?: Date } = {};
+  if (from) {
+    filter.gte = new Date(from);
+  }
+  if (to) {
+    filter.lte = new Date(to);
+  }
+  return filter;
+}
+
 @Injectable()
 export class QuoteService {
   private readonly logger = new Logger(QuoteService.name);
@@ -115,78 +180,28 @@ export class QuoteService {
    * Find all quotes with optional filtering and pagination.
    */
   async findAll(query: QueryQuoteDto): Promise<PaginatedResult<Quote>> {
-    // Build where clause
-    const where: Prisma.QuoteWhereInput = {};
-
-    if (query.customerId) {
-      where.customerId = query.customerId;
-    }
-
-    if (query.fabricId) {
-      where.fabricId = query.fabricId;
-    }
-
-    if (query.status) {
-      where.status = query.status;
-    }
-
-    // Valid date range filter
-    if (query.validFrom || query.validTo) {
-      where.validUntil = {};
-      if (query.validFrom) {
-        where.validUntil.gte = new Date(query.validFrom);
-      }
-      if (query.validTo) {
-        where.validUntil.lte = new Date(query.validTo);
-      }
-    }
-
-    // Created date range filter
-    if (query.createdFrom || query.createdTo) {
-      where.createdAt = {};
-      if (query.createdFrom) {
-        where.createdAt.gte = new Date(query.createdFrom);
-      }
-      if (query.createdTo) {
-        where.createdAt.lte = new Date(query.createdTo);
-      }
-    }
-
-    // Build pagination args
-    const paginationArgs = buildPaginationArgs(query);
-
-    // Build sort order
-    const sortBy = query.sortBy ?? 'createdAt';
-    const sortOrder = query.sortOrder ?? 'desc';
-    const orderBy = { [sortBy]: sortOrder };
-
-    // Include relations
-    const include = {
-      customer: {
-        select: {
-          id: true,
-          companyName: true,
-          contactName: true,
-          phone: true,
-        },
-      },
-      fabric: {
-        select: {
-          id: true,
-          fabricCode: true,
-          name: true,
-          defaultPrice: true,
-        },
-      },
+    // Build where clause with date range filters
+    const where: Prisma.QuoteWhereInput = {
+      ...(query.customerId && { customerId: query.customerId }),
+      ...(query.fabricId && { fabricId: query.fabricId }),
+      ...(query.status && { status: query.status }),
+      validUntil: buildDateRangeFilter(query.validFrom, query.validTo),
+      createdAt: buildDateRangeFilter(query.createdFrom, query.createdTo),
     };
 
-    // Execute queries
+    // Build pagination and sort - DTO provides defaults, so nullish coalescing is only a safeguard
+    const paginationArgs = buildPaginationArgs(query);
+    const orderBy = {
+      [query.sortBy ?? 'createdAt']: query.sortOrder ?? 'desc',
+    };
+
+    // Execute queries in parallel
     const [items, total] = await Promise.all([
       this.prisma.quote.findMany({
         where,
         ...paginationArgs,
         orderBy,
-        include,
+        include: QUOTE_LIST_INCLUDE,
       }),
       this.prisma.quote.count({ where }),
     ]);
@@ -200,28 +215,7 @@ export class QuoteService {
   async findOne(id: number): Promise<Quote> {
     const quote = await this.prisma.quote.findUnique({
       where: { id },
-      include: {
-        customer: {
-          select: {
-            id: true,
-            companyName: true,
-            contactName: true,
-            phone: true,
-            email: true,
-            wechat: true,
-          },
-        },
-        fabric: {
-          select: {
-            id: true,
-            fabricCode: true,
-            name: true,
-            material: true,
-            color: true,
-            defaultPrice: true,
-          },
-        },
-      },
+      include: QUOTE_DETAIL_INCLUDE,
     });
 
     if (!quote) {
@@ -239,70 +233,54 @@ export class QuoteService {
    */
   async update(id: number, updateDto: UpdateQuoteDto): Promise<Quote> {
     // Validate validUntil is in the future if provided
-    let newValidUntil: Date | undefined;
-    if (updateDto.validUntil !== undefined) {
-      newValidUntil = new Date(updateDto.validUntil);
-      if (newValidUntil <= new Date()) {
-        throw new BadRequestException('validUntil must be a future date');
-      }
+    const newValidUntil = updateDto.validUntil
+      ? new Date(updateDto.validUntil)
+      : undefined;
+
+    if (newValidUntil && newValidUntil <= new Date()) {
+      throw new BadRequestException('validUntil must be a future date');
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // First, get the quote to calculate new totalPrice and check if status reset is needed
+      // Fetch quote to calculate new totalPrice and check status reset requirement
       const quote = await tx.quote.findUnique({ where: { id } });
 
       if (!quote) {
         throw new NotFoundException(`Quote with ID ${id} not found`);
       }
 
-      // Build update data
-      const data: Prisma.QuoteUpdateInput = {};
+      // Calculate new values with fallback to existing
+      const quantity = updateDto.quantity ?? Number(quote.quantity);
+      const unitPrice = updateDto.unitPrice ?? Number(quote.unitPrice);
 
-      if (updateDto.quantity !== undefined) {
-        data.quantity = updateDto.quantity;
-      }
+      // Determine if status should reset to active (extending validity on expired quote)
+      const shouldResetStatus =
+        newValidUntil && (quote.status as QuoteStatus) === QuoteStatus.EXPIRED;
 
-      if (updateDto.unitPrice !== undefined) {
-        data.unitPrice = updateDto.unitPrice;
-      }
+      // Build update data - only include fields that are being updated
+      const data: Prisma.QuoteUpdateManyMutationInput = {
+        ...(updateDto.quantity !== undefined && {
+          quantity: updateDto.quantity,
+        }),
+        ...(updateDto.unitPrice !== undefined && {
+          unitPrice: updateDto.unitPrice,
+        }),
+        ...(newValidUntil && { validUntil: newValidUntil }),
+        ...(updateDto.notes !== undefined && { notes: updateDto.notes }),
+        ...(shouldResetStatus && { status: QuoteStatus.ACTIVE }),
+        totalPrice: quantity * unitPrice,
+      };
 
-      if (newValidUntil !== undefined) {
-        data.validUntil = newValidUntil;
-
-        // If extending validity on expired quote and new date is in future,
-        // reset status to active
-        if ((quote.status as QuoteStatus) === QuoteStatus.EXPIRED) {
-          data.status = QuoteStatus.ACTIVE;
-        }
-      }
-
-      if (updateDto.notes !== undefined) {
-        data.notes = updateDto.notes;
-      }
-
-      // Recalculate totalPrice if quantity or unitPrice changes
-      const newQuantity =
-        updateDto.quantity !== undefined
-          ? updateDto.quantity
-          : Number(quote.quantity);
-      const newUnitPrice =
-        updateDto.unitPrice !== undefined
-          ? updateDto.unitPrice
-          : Number(quote.unitPrice);
-      data.totalPrice = newQuantity * newUnitPrice;
-
-      // Use updateMany with status condition for atomic check-and-update
-      // This prevents race conditions where status changes between read and update
+      // Atomic conditional update to prevent race conditions
       const updateResult = await tx.quote.updateMany({
         where: {
           id,
           status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
         },
-        data: data as Prisma.QuoteUpdateManyMutationInput,
+        data,
       });
 
       if (updateResult.count === 0) {
-        // Quote exists but status is converted (race condition or actual state)
         throw new ConflictException('Cannot update a converted quote');
       }
 

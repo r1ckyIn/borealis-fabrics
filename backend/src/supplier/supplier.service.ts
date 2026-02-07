@@ -17,6 +17,7 @@ import {
   buildPaginatedResult,
   PaginatedResult,
 } from '../common/utils/pagination';
+import { toNumber, toNumberRequired } from '../common/utils/decimal';
 
 @Injectable()
 export class SupplierService {
@@ -303,16 +304,14 @@ export class SupplierService {
         fabricCode: fs.fabric.fabricCode,
         name: fs.fabric.name,
         color: fs.fabric.color,
-        weight: fs.fabric.weight ? Number(fs.fabric.weight) : null,
-        width: fs.fabric.width ? Number(fs.fabric.width) : null,
-        defaultPrice: fs.fabric.defaultPrice
-          ? Number(fs.fabric.defaultPrice)
-          : null,
+        weight: toNumber(fs.fabric.weight),
+        width: toNumber(fs.fabric.width),
+        defaultPrice: toNumber(fs.fabric.defaultPrice),
       },
       supplierRelation: {
         fabricSupplierId: fs.id,
-        purchasePrice: Number(fs.purchasePrice),
-        minOrderQty: fs.minOrderQty ? Number(fs.minOrderQty) : null,
+        purchasePrice: toNumberRequired(fs.purchasePrice),
+        minOrderQty: toNumber(fs.minOrderQty),
         leadTimeDays: fs.leadTimeDays,
       },
     }));

@@ -8,19 +8,61 @@ import {
   CreateCustomerDto,
   CreateCustomerPricingDto,
   QueryCustomerDto,
+  QueryCustomerOrdersDto,
   UpdateCustomerDto,
   UpdateCustomerPricingDto,
 } from './dto';
-import { Customer, CustomerPricing, Prisma } from '@prisma/client';
+import { Customer, CustomerPricing, Order, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
   buildPaginatedResult,
   PaginatedResult,
 } from '../common/utils/pagination';
+import { ORDER_INCLUDE_LIST } from '../order/order.includes';
+
+// Transaction client type for Prisma interactive transactions
+type TransactionClient = Parameters<
+  Parameters<PrismaService['$transaction']>[0]
+>[0];
 
 @Injectable()
 export class CustomerService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Validate customer exists and is active within a transaction.
+   * @throws NotFoundException if customer not found or soft-deleted
+   */
+  private async validateCustomerExists(
+    tx: TransactionClient,
+    customerId: number,
+  ): Promise<void> {
+    const customer = await tx.customer.findFirst({
+      where: { id: customerId, isActive: true },
+    });
+    if (!customer) {
+      throw new NotFoundException(`Customer with ID ${customerId} not found`);
+    }
+  }
+
+  /**
+   * Validate pricing exists and belongs to the customer.
+   * @throws NotFoundException if pricing not found or doesn't belong to customer
+   */
+  private async validatePricingBelongsToCustomer(
+    tx: TransactionClient,
+    customerId: number,
+    pricingId: number,
+  ): Promise<void> {
+    const pricing = await tx.customerPricing.findUnique({
+      where: { id: pricingId },
+    });
+    if (!pricing || pricing.customerId !== customerId) {
+      throw new NotFoundException(
+        `Customer pricing with ID ${pricingId} not found`,
+      );
+    }
+  }
 
   /**
    * Create a new customer.
@@ -218,13 +260,7 @@ export class CustomerService {
     createDto: CreateCustomerPricingDto,
   ): Promise<CustomerPricing> {
     return this.prisma.$transaction(async (tx) => {
-      // Verify customer exists and is active
-      const customer = await tx.customer.findFirst({
-        where: { id: customerId, isActive: true },
-      });
-      if (!customer) {
-        throw new NotFoundException(`Customer with ID ${customerId} not found`);
-      }
+      await this.validateCustomerExists(tx, customerId);
 
       // Verify fabric exists and is active
       const fabric = await tx.fabric.findFirst({
@@ -271,23 +307,8 @@ export class CustomerService {
     updateDto: UpdateCustomerPricingDto,
   ): Promise<CustomerPricing> {
     return this.prisma.$transaction(async (tx) => {
-      // Verify customer exists and is active
-      const customer = await tx.customer.findFirst({
-        where: { id: customerId, isActive: true },
-      });
-      if (!customer) {
-        throw new NotFoundException(`Customer with ID ${customerId} not found`);
-      }
-
-      // Verify pricing exists and belongs to this customer
-      const pricing = await tx.customerPricing.findUnique({
-        where: { id: pricingId },
-      });
-      if (!pricing || pricing.customerId !== customerId) {
-        throw new NotFoundException(
-          `Customer pricing with ID ${pricingId} not found`,
-        );
-      }
+      await this.validateCustomerExists(tx, customerId);
+      await this.validatePricingBelongsToCustomer(tx, customerId, pricingId);
 
       return tx.customerPricing.update({
         where: { id: pricingId },
@@ -306,28 +327,73 @@ export class CustomerService {
    */
   async removePricing(customerId: number, pricingId: number): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      // Verify customer exists and is active
-      const customer = await tx.customer.findFirst({
-        where: { id: customerId, isActive: true },
-      });
-      if (!customer) {
-        throw new NotFoundException(`Customer with ID ${customerId} not found`);
-      }
-
-      // Verify pricing exists and belongs to this customer
-      const pricing = await tx.customerPricing.findUnique({
-        where: { id: pricingId },
-      });
-      if (!pricing || pricing.customerId !== customerId) {
-        throw new NotFoundException(
-          `Customer pricing with ID ${pricingId} not found`,
-        );
-      }
+      await this.validateCustomerExists(tx, customerId);
+      await this.validatePricingBelongsToCustomer(tx, customerId, pricingId);
 
       // Delete the pricing record
       await tx.customerPricing.delete({
         where: { id: pricingId },
       });
     });
+  }
+
+  /**
+   * Find all orders for a customer with pagination and filtering.
+   * Throws NotFoundException if customer not found or soft-deleted.
+   */
+  async findOrders(
+    customerId: number,
+    query: QueryCustomerOrdersDto,
+  ): Promise<PaginatedResult<Order>> {
+    // Validate customer exists
+    await this.findOne(customerId);
+
+    // Build where clause
+    const where: Prisma.OrderWhereInput = {
+      customerId,
+    };
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    if (query.customerPayStatus) {
+      where.customerPayStatus = query.customerPayStatus;
+    }
+
+    if (query.keyword) {
+      where.orderCode = { contains: query.keyword };
+    }
+
+    if (query.createdFrom || query.createdTo) {
+      where.createdAt = {};
+      if (query.createdFrom) {
+        where.createdAt.gte = new Date(query.createdFrom);
+      }
+      if (query.createdTo) {
+        where.createdAt.lte = new Date(query.createdTo);
+      }
+    }
+
+    // Build pagination args
+    const paginationArgs = buildPaginationArgs(query);
+
+    // Build sort order
+    const sortBy = query.sortBy ?? 'createdAt';
+    const sortOrder = query.sortOrder ?? 'desc';
+    const orderBy = { [sortBy]: sortOrder };
+
+    // Execute queries in parallel
+    const [items, total] = await Promise.all([
+      this.prisma.order.findMany({
+        where,
+        ...paginationArgs,
+        orderBy,
+        include: ORDER_INCLUDE_LIST,
+      }),
+      this.prisma.order.count({ where }),
+    ]);
+
+    return buildPaginatedResult(items, total, query);
   }
 }

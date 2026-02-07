@@ -10,11 +10,8 @@ import {
 import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/common.module';
+import { trimTransform } from '../../common/transforms';
 import { OrderItemStatus, CustomerPayStatus } from '../enums/order-status.enum';
-
-// Trim transform helper
-const trimTransform = ({ value }: { value: unknown }): string | undefined =>
-  typeof value === 'string' ? value.trim() : undefined;
 
 /**
  * Allowed sort fields for Order queries.

@@ -75,6 +75,43 @@ interface CustomerPricingData {
   };
 }
 
+interface OrderItemData {
+  id: number;
+  fabricId: number;
+  quantity: number;
+  salePrice: number;
+  subtotal: number;
+  status: string;
+}
+
+interface OrderData {
+  id: number;
+  orderCode: string;
+  customerId: number;
+  status: string;
+  customerPayStatus: string;
+  totalAmount: number;
+  createdAt: string;
+  updatedAt: string;
+  customer: {
+    id: number;
+    companyName: string;
+    contactName: string;
+    phone: string;
+  };
+  items: OrderItemData[];
+}
+
+interface PaginatedOrderData {
+  items: OrderData[];
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 describe('CustomerController (e2e)', () => {
   let app: INestApplication<App>;
 
@@ -119,6 +156,7 @@ describe('CustomerController (e2e)', () => {
 
   interface MockCountMethod {
     count: jest.Mock;
+    findMany: jest.Mock;
   }
 
   interface MockCustomerPricingMethods {
@@ -167,8 +205,8 @@ describe('CustomerController (e2e)', () => {
     fabric: {
       findFirst: jest.fn(),
     },
-    order: { count: jest.fn() },
-    quote: { count: jest.fn() },
+    order: { count: jest.fn(), findMany: jest.fn() },
+    quote: { count: jest.fn(), findMany: jest.fn() },
     // Transaction mock - passes the mock service to the callback
     $transaction: jest.fn(
       <T>(fn: (tx: MockPrismaServiceType) => Promise<T>): Promise<T> =>
@@ -1394,6 +1432,187 @@ describe('CustomerController (e2e)', () => {
     it('should return 400 for invalid pricing ID format', async () => {
       const response = await request(app.getHttpServer())
         .delete('/api/v1/customers/1/pricing/invalid')
+        .expect(400);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(400);
+    });
+  });
+
+  // ============================================================
+  // GET /api/v1/customers/:id/orders - Get Customer Orders (2.2.11)
+  // ============================================================
+  describe('GET /api/v1/customers/:id/orders', () => {
+    const mockOrders = [
+      {
+        id: 1,
+        orderCode: 'ORD-2601-0001',
+        customerId: 1,
+        status: 'PENDING',
+        customerPayStatus: 'unpaid',
+        totalAmount: 1000.0,
+        createdAt: new Date('2026-01-15'),
+        updatedAt: new Date('2026-01-15'),
+        customer: {
+          id: 1,
+          companyName: 'XYZ Furniture Co.',
+          contactName: 'Li Ming',
+          phone: '13800138000',
+        },
+        items: [
+          {
+            id: 1,
+            fabricId: 10,
+            quantity: 100,
+            salePrice: 10.0,
+            subtotal: 1000.0,
+            status: 'PENDING',
+          },
+        ],
+      },
+      {
+        id: 2,
+        orderCode: 'ORD-2601-0002',
+        customerId: 1,
+        status: 'COMPLETED',
+        customerPayStatus: 'paid',
+        totalAmount: 2000.0,
+        createdAt: new Date('2026-01-10'),
+        updatedAt: new Date('2026-01-12'),
+        customer: {
+          id: 1,
+          companyName: 'XYZ Furniture Co.',
+          contactName: 'Li Ming',
+          phone: '13800138000',
+        },
+        items: [
+          {
+            id: 2,
+            fabricId: 20,
+            quantity: 200,
+            salePrice: 10.0,
+            subtotal: 2000.0,
+            status: 'COMPLETED',
+          },
+        ],
+      },
+    ];
+
+    it('should return paginated orders', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.order.findMany.mockResolvedValue(mockOrders);
+      mockPrismaService.order.count.mockResolvedValue(2);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/customers/1/orders')
+        .expect(200);
+
+      const body = response.body as ApiSuccessResponse<PaginatedOrderData>;
+      expect(body.code).toBe(200);
+      expect(body.message).toBe('success');
+      expect(body.data.items).toHaveLength(2);
+      expect(body.data.pagination).toBeDefined();
+      expect(body.data.pagination.page).toBe(1);
+      expect(body.data.pagination.total).toBe(2);
+    });
+
+    it('should return 404 for non-existent customer', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(null);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/customers/999/orders')
+        .expect(404);
+
+      const body = response.body as ApiErrorResponse;
+      expect(body.code).toBe(404);
+      expect(body.message).toContain('not found');
+    });
+
+    it('should filter by status', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.order.findMany.mockResolvedValue([mockOrders[0]]);
+      mockPrismaService.order.count.mockResolvedValue(1);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/customers/1/orders?status=PENDING')
+        .expect(200);
+
+      const body = response.body as ApiSuccessResponse<PaginatedOrderData>;
+      expect(body.data.items).toHaveLength(1);
+      expect(mockPrismaService.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          where: expect.objectContaining({
+            customerId: 1,
+            status: 'PENDING',
+          }),
+        }),
+      );
+    });
+
+    it('should filter by date range', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.order.findMany.mockResolvedValue([mockOrders[0]]);
+      mockPrismaService.order.count.mockResolvedValue(1);
+
+      await request(app.getHttpServer())
+        .get(
+          '/api/v1/customers/1/orders?createdFrom=2026-01-14&createdTo=2026-01-16',
+        )
+        .expect(200);
+
+      expect(mockPrismaService.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          where: expect.objectContaining({
+            customerId: 1,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            createdAt: expect.objectContaining({
+              gte: new Date('2026-01-14'),
+              lte: new Date('2026-01-16'),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should return empty items for customer with no orders', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.order.findMany.mockResolvedValue([]);
+      mockPrismaService.order.count.mockResolvedValue(0);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/customers/1/orders')
+        .expect(200);
+
+      const body = response.body as ApiSuccessResponse<PaginatedOrderData>;
+      expect(body.data.items).toEqual([]);
+      expect(body.data.pagination.total).toBe(0);
+    });
+
+    it('should support custom pagination', async () => {
+      mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
+      mockPrismaService.order.findMany.mockResolvedValue([]);
+      mockPrismaService.order.count.mockResolvedValue(15);
+
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/customers/1/orders?page=2&pageSize=10')
+        .expect(200);
+
+      expect(mockPrismaService.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          skip: 10,
+          take: 10,
+        }),
+      );
+      const body = response.body as ApiSuccessResponse<PaginatedOrderData>;
+      expect(body.data.pagination.page).toBe(2);
+      expect(body.data.pagination.pageSize).toBe(10);
+    });
+
+    it('should return 400 for invalid customer ID format', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/v1/customers/invalid/orders')
         .expect(400);
 
       const body = response.body as ApiErrorResponse;

@@ -1,9 +1,16 @@
-import { IsInt, IsOptional, IsString, IsEnum, Min, Max } from 'class-validator';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsEnum,
+  MaxLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationDto } from '../../common/utils/pagination';
 
 /**
- * Allowed sort fields for logistics queries (whitelist for SQL injection prevention)
+ * Allowed sort fields for logistics queries (whitelist for SQL injection prevention).
  */
 export enum LogisticsSortField {
   ID = 'id',
@@ -14,30 +21,11 @@ export enum LogisticsSortField {
   TRACKING_NO = 'trackingNo',
 }
 
-export class QueryLogisticsDto {
-  @ApiPropertyOptional({
-    description: 'Page number (1-based)',
-    example: 1,
-    default: 1,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page?: number = 1;
-
-  @ApiPropertyOptional({
-    description: 'Number of items per page',
-    example: 20,
-    default: 20,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @Max(100)
-  pageSize?: number = 20;
-
+/**
+ * Query parameters for logistics list with filtering and pagination.
+ * Extends PaginationDto to inherit page, pageSize, sortBy, sortOrder.
+ */
+export class QueryLogisticsDto extends PaginationDto {
   @ApiPropertyOptional({
     description: 'Sort field',
     enum: LogisticsSortField,
@@ -45,16 +33,7 @@ export class QueryLogisticsDto {
   })
   @IsOptional()
   @IsEnum(LogisticsSortField)
-  sortBy?: LogisticsSortField = LogisticsSortField.CREATED_AT;
-
-  @ApiPropertyOptional({
-    description: 'Sort order',
-    enum: ['asc', 'desc'],
-    default: 'desc',
-  })
-  @IsOptional()
-  @IsString()
-  sortOrder?: 'asc' | 'desc' = 'desc';
+  override sortBy?: string = LogisticsSortField.CREATED_AT;
 
   @ApiPropertyOptional({
     description: 'Filter by order ID',
@@ -80,6 +59,7 @@ export class QueryLogisticsDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   trackingNo?: string;
 
   @ApiPropertyOptional({
@@ -88,5 +68,6 @@ export class QueryLogisticsDto {
   })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   carrier?: string;
 }

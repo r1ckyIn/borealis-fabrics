@@ -8,49 +8,11 @@ import {
   Max,
   MaxLength,
   IsNotEmpty,
-  registerDecorator,
-  ValidationOptions,
-  ValidationArguments,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-
-/**
- * Custom validator: creditDays is only allowed when settleType is 'credit'.
- * If settleType is 'prepay' and creditDays is provided, validation fails.
- *
- * Note: This validator checks 'settleType' field (used in Supplier model).
- * CustomerModule has a similar validator that checks 'creditType' field.
- * The field name difference is intentional per database schema design.
- */
-function IsCreditDaysValid(validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
-    registerDecorator({
-      name: 'isCreditDaysValid',
-      target: object.constructor,
-      propertyName: propertyName,
-      options: validationOptions,
-      validator: {
-        validate(value: unknown, args: ValidationArguments) {
-          const obj = args.object as { settleType?: string };
-          // If creditDays is not provided, always valid
-          if (value === undefined || value === null) {
-            return true;
-          }
-          // creditDays is only valid when settleType is 'credit'
-          return obj.settleType === 'credit';
-        },
-        defaultMessage() {
-          return 'creditDays can only be set when settleType is credit';
-        },
-      },
-    });
-  };
-}
-
-// Trim transform helper
-const trimTransform = ({ value }: { value: unknown }): string | undefined =>
-  typeof value === 'string' ? value.trim() : undefined;
+import { trimTransform } from '../../common/transforms';
+import { IsCreditDaysValidFor } from '../../common/validators/credit-days.validator';
 
 export enum SupplierStatus {
   ACTIVE = 'active',
@@ -156,7 +118,7 @@ export class CreateSupplierDto {
   @IsInt()
   @Min(0)
   @Max(365)
-  @IsCreditDaysValid()
+  @IsCreditDaysValidFor('settleType')
   creditDays?: number;
 
   @ApiPropertyOptional({

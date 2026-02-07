@@ -18,6 +18,7 @@ import { QuoteModule } from './quote/quote.module';
 import { OrderModule } from './order/order.module';
 import { LogisticsModule } from './logistics/logistics.module';
 import { ImportModule } from './import/import.module';
+import { SystemModule } from './system/system.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { HealthController } from './common/health/health.controller';
@@ -67,6 +68,7 @@ import configuration from './config/configuration';
     OrderModule,
     LogisticsModule,
     ImportModule,
+    SystemModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -244,7 +244,7 @@ describe('OrderService', () => {
         NotFoundException,
       );
       await expect(service.create(createDto)).rejects.toThrow(
-        'Fabrics not found: 1',
+        'Fabric not found: 1',
       );
     });
 
@@ -260,7 +260,7 @@ describe('OrderService', () => {
       mockPrismaService.fabric.findMany.mockResolvedValue([mockFabric]); // Only fabric 1 found
 
       await expect(service.create(multiItemDto)).rejects.toThrow(
-        'Fabrics not found: 2',
+        'Fabric not found: 2',
       );
     });
 
@@ -284,7 +284,7 @@ describe('OrderService', () => {
         NotFoundException,
       );
       await expect(service.create(dtoWithSupplier)).rejects.toThrow(
-        'Suppliers not found: 999',
+        'Supplier not found: 999',
       );
     });
 
@@ -308,7 +308,7 @@ describe('OrderService', () => {
         NotFoundException,
       );
       await expect(service.create(dtoWithQuote)).rejects.toThrow(
-        'Quotes not found: 999',
+        'Quote not found: 999',
       );
     });
 
@@ -748,11 +748,12 @@ describe('OrderService', () => {
 
       expect(mockPrismaService.customer.findFirst).toHaveBeenCalledWith({
         where: { id: 2, isActive: true },
+        select: { id: true },
       });
       expect(mockPrismaService.order.update).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
-            customerId: 2,
+            customer: { connect: { id: 2 } },
           }),
         }),
       );
@@ -1684,45 +1685,55 @@ describe('OrderService - Order Items Methods', () => {
   });
 
   describe('updateSupplierPayment', () => {
-    it('should update existing supplier payment', async () => {
-      const mockPayment = { id: 1, orderId: 1, supplierId: 1, paid: 0 };
-      const updatedPayment = { ...mockPayment, paid: 500 };
+    it('should update existing supplier payment using upsert', async () => {
+      const upsertedPayment = {
+        id: 1,
+        orderId: 1,
+        supplierId: 1,
+        payable: 0,
+        paid: 500,
+        supplier: {
+          id: 1,
+          companyName: 'Test',
+          contactName: 'Contact',
+          phone: '123',
+        },
+      };
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.supplierPayment.findUnique.mockResolvedValue(
-        mockPayment,
-      );
-      mockPrismaService.supplierPayment.update.mockResolvedValue(
-        updatedPayment,
+      mockPrismaService.supplier.findFirst.mockResolvedValue({
+        id: 1,
+        isActive: true,
+      });
+      mockPrismaService.supplierPayment.upsert.mockResolvedValue(
+        upsertedPayment,
       );
 
       const result = await service.updateSupplierPayment(1, 1, { paid: 500 });
 
       expect(result.paid).toBe(500);
+      expect(mockPrismaService.supplierPayment.upsert).toHaveBeenCalled();
     });
 
-    it('should create new supplier payment if not exists', async () => {
+    it('should create new supplier payment via upsert if not exists', async () => {
       const newPayment = {
         id: 1,
         orderId: 1,
         supplierId: 1,
         payable: 0,
         paid: 500,
+        supplier: {
+          id: 1,
+          companyName: 'Test',
+          contactName: 'Contact',
+          phone: '123',
+        },
       };
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.supplierPayment.findUnique.mockResolvedValue(null);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
         isActive: true,
       });
-      mockPrismaService.supplierPayment.create.mockResolvedValue({
-        id: 1,
-        orderId: 1,
-        supplierId: 1,
-        payable: 0,
-        paid: 0,
-        payStatus: 'unpaid',
-      });
-      mockPrismaService.supplierPayment.update.mockResolvedValue(newPayment);
+      mockPrismaService.supplierPayment.upsert.mockResolvedValue(newPayment);
 
       const result = await service.updateSupplierPayment(1, 1, { paid: 500 });
 
@@ -1737,9 +1748,8 @@ describe('OrderService - Order Items Methods', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw NotFoundException when supplier not found for new payment', async () => {
+    it('should throw NotFoundException when supplier not found', async () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
-      mockPrismaService.supplierPayment.findUnique.mockResolvedValue(null);
       mockPrismaService.supplier.findFirst.mockResolvedValue(null);
 
       await expect(
