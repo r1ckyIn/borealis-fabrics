@@ -130,6 +130,7 @@ export class ImportService {
     }
 
     const failures: ImportFailureDto[] = [];
+    let skippedCount = 0;
     const fabricsToCreate: Array<{
       fabricCode: string;
       name: string;
@@ -185,13 +186,9 @@ export class ImportService {
         return;
       }
 
-      // Check if fabric already exists
+      // Check if fabric already exists (skip, not failure)
       if (existingCodes.has(fabricCode)) {
-        failures.push({
-          rowNumber,
-          identifier: fabricCode,
-          reason: 'Fabric with this fabricCode already exists',
-        });
+        skippedCount++;
         return;
       }
 
@@ -240,6 +237,7 @@ export class ImportService {
 
     return {
       successCount: fabricsToCreate.length,
+      skippedCount,
       failureCount: failures.length,
       failures,
     };
@@ -263,6 +261,7 @@ export class ImportService {
     }
 
     const failures: ImportFailureDto[] = [];
+    let skippedCount = 0;
     const suppliersToCreate: Array<{
       companyName: string;
       contactName?: string;
@@ -307,13 +306,9 @@ export class ImportService {
         return;
       }
 
-      // Check if supplier already exists
+      // Check if supplier already exists (skip, not failure)
       if (existingNames.has(companyName)) {
-        failures.push({
-          rowNumber,
-          identifier: companyName,
-          reason: 'Supplier with this companyName already exists',
-        });
+        skippedCount++;
         return;
       }
 
@@ -397,6 +392,7 @@ export class ImportService {
 
     return {
       successCount: suppliersToCreate.length,
+      skippedCount,
       failureCount: failures.length,
       failures,
     };

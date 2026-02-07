@@ -135,6 +135,48 @@ export function useSupplierPayments(
 }
 
 // =============================================================================
+// Invalidation Helpers
+// =============================================================================
+
+/** Logistics query key (avoid circular import from useLogistics). */
+const LOGISTICS_ALL_KEY = ['logistics'] as const;
+
+interface InvalidateOptions {
+  orderId: number;
+  itemId?: number;
+  includeTimeline?: boolean;
+  includeSupplierPayments?: boolean;
+  includeLogistics?: boolean;
+}
+
+/** Invalidate order-related query caches after a mutation. */
+function invalidateOrderCaches(
+  queryClient: ReturnType<typeof useQueryClient>,
+  options: InvalidateOptions
+): void {
+  const { orderId, itemId, includeTimeline, includeSupplierPayments, includeLogistics } = options;
+
+  queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
+  queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
+  queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+
+  if (includeTimeline) {
+    queryClient.invalidateQueries({ queryKey: orderKeys.timeline(orderId) });
+    if (itemId !== undefined) {
+      queryClient.invalidateQueries({ queryKey: orderKeys.itemTimeline(orderId, itemId) });
+    }
+  }
+
+  if (includeSupplierPayments) {
+    queryClient.invalidateQueries({ queryKey: orderKeys.supplierPayments(orderId) });
+  }
+
+  if (includeLogistics) {
+    queryClient.invalidateQueries({ queryKey: LOGISTICS_ALL_KEY });
+  }
+}
+
+// =============================================================================
 // Mutation Hooks
 // =============================================================================
 
@@ -190,9 +232,7 @@ export function useAddOrderItem() {
       data: AddOrderItemData;
     }) => orderApi.addOrderItem(orderId, data),
     onSuccess: (_data, { orderId }) => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      invalidateOrderCaches(queryClient, { orderId, includeLogistics: true });
     },
   });
 }
@@ -212,9 +252,7 @@ export function useUpdateOrderItem() {
       data: UpdateOrderItemData;
     }) => orderApi.updateOrderItem(orderId, itemId, data),
     onSuccess: (_data, { orderId }) => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      invalidateOrderCaches(queryClient, { orderId, includeLogistics: true });
     },
   });
 }
@@ -232,9 +270,7 @@ export function useDeleteOrderItem() {
       itemId: number;
     }) => orderApi.deleteOrderItem(orderId, itemId),
     onSuccess: (_data, { orderId }) => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      invalidateOrderCaches(queryClient, { orderId, includeLogistics: true });
     },
   });
 }
@@ -254,15 +290,7 @@ export function useUpdateOrderItemStatus() {
       data: UpdateOrderItemStatusData;
     }) => orderApi.updateOrderItemStatus(orderId, itemId, data),
     onSuccess: (_data, { orderId, itemId }) => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
-      queryClient.invalidateQueries({
-        queryKey: orderKeys.timeline(orderId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderKeys.itemTimeline(orderId, itemId),
-      });
-      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      invalidateOrderCaches(queryClient, { orderId, itemId, includeTimeline: true });
     },
   });
 }
@@ -282,18 +310,12 @@ export function useCancelOrderItem() {
       data?: CancelOrderItemData;
     }) => orderApi.cancelOrderItem(orderId, itemId, data),
     onSuccess: (_data, { orderId, itemId }) => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
-      queryClient.invalidateQueries({
-        queryKey: orderKeys.timeline(orderId),
+      invalidateOrderCaches(queryClient, {
+        orderId,
+        itemId,
+        includeTimeline: true,
+        includeSupplierPayments: true,
       });
-      queryClient.invalidateQueries({
-        queryKey: orderKeys.itemTimeline(orderId, itemId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderKeys.supplierPayments(orderId),
-      });
-      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
   });
 }
@@ -313,18 +335,12 @@ export function useRestoreOrderItem() {
       data?: RestoreOrderItemData;
     }) => orderApi.restoreOrderItem(orderId, itemId, data),
     onSuccess: (_data, { orderId, itemId }) => {
-      queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
-      queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
-      queryClient.invalidateQueries({
-        queryKey: orderKeys.timeline(orderId),
+      invalidateOrderCaches(queryClient, {
+        orderId,
+        itemId,
+        includeTimeline: true,
+        includeSupplierPayments: true,
       });
-      queryClient.invalidateQueries({
-        queryKey: orderKeys.itemTimeline(orderId, itemId),
-      });
-      queryClient.invalidateQueries({
-        queryKey: orderKeys.supplierPayments(orderId),
-      });
-      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
   });
 }
@@ -369,61 +385,4 @@ export function useUpdateSupplierPayment() {
       });
     },
   });
-}
-
-// =============================================================================
-// Utility Types
-// =============================================================================
-
-/** Parameters for useUpdateOrder mutation. */
-export interface UpdateOrderParams {
-  id: number;
-  data: UpdateOrderData;
-}
-
-/** Parameters for useAddOrderItem mutation. */
-export interface AddOrderItemParams {
-  orderId: number;
-  data: AddOrderItemData;
-}
-
-/** Parameters for useUpdateOrderItem mutation. */
-export interface UpdateOrderItemParams {
-  orderId: number;
-  itemId: number;
-  data: UpdateOrderItemData;
-}
-
-/** Parameters for useUpdateOrderItemStatus mutation. */
-export interface UpdateOrderItemStatusParams {
-  orderId: number;
-  itemId: number;
-  data: UpdateOrderItemStatusData;
-}
-
-/** Parameters for useCancelOrderItem mutation. */
-export interface CancelOrderItemParams {
-  orderId: number;
-  itemId: number;
-  data?: CancelOrderItemData;
-}
-
-/** Parameters for useRestoreOrderItem mutation. */
-export interface RestoreOrderItemParams {
-  orderId: number;
-  itemId: number;
-  data?: RestoreOrderItemData;
-}
-
-/** Parameters for useUpdateCustomerPayment mutation. */
-export interface UpdateCustomerPaymentParams {
-  orderId: number;
-  data: UpdateCustomerPaymentData;
-}
-
-/** Parameters for useUpdateSupplierPayment mutation. */
-export interface UpdateSupplierPaymentParams {
-  orderId: number;
-  supplierId: number;
-  data: UpdateSupplierPaymentData;
 }

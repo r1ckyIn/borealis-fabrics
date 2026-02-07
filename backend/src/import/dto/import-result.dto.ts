@@ -21,6 +21,9 @@ export class ImportResultDto {
   @ApiProperty({ description: 'Number of successfully imported records' })
   successCount!: number;
 
+  @ApiProperty({ description: 'Number of skipped records (already exist)' })
+  skippedCount!: number;
+
   @ApiProperty({ description: 'Number of failed records' })
   failureCount!: number;
 

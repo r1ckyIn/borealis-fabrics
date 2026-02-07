@@ -101,6 +101,7 @@ describe('ImportController', () => {
 
       const mockResult: ImportResultDto = {
         successCount: 5,
+        skippedCount: 0,
         failureCount: 1,
         failures: [
           {
@@ -134,6 +135,7 @@ describe('ImportController', () => {
 
       const mockResult: ImportResultDto = {
         successCount: 3,
+        skippedCount: 0,
         failureCount: 2,
         failures: [
           {

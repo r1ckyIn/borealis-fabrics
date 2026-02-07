@@ -2,8 +2,8 @@
  * ImportResultModal - Displays import operation results with success/failure statistics.
  */
 
-import { Modal, Table, Tag, Space, Typography } from 'antd';
-import { CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Modal, Table, Tag, Space, Typography, Empty } from 'antd';
+import { CheckCircleOutlined, CloseCircleOutlined, MinusCircleOutlined } from '@ant-design/icons';
 
 import type { ImportResult, ImportFailure } from '@/types';
 
@@ -57,12 +57,17 @@ export function ImportResultModal({
       footer={null}
       width={640}
     >
-      {result && (
+      {result ? (
         <>
           <Space size="large" style={{ marginBottom: 16 }}>
             <Tag icon={<CheckCircleOutlined />} color="success">
               成功: {result.successCount}
             </Tag>
+            {result.skippedCount > 0 && (
+              <Tag icon={<MinusCircleOutlined />} color="warning">
+                跳过: {result.skippedCount}
+              </Tag>
+            )}
             <Tag icon={<CloseCircleOutlined />} color="error">
               失败: {result.failureCount}
             </Tag>
@@ -84,6 +89,8 @@ export function ImportResultModal({
             </>
           )}
         </>
+      ) : (
+        <Empty description="暂无导入结果" />
       )}
     </Modal>
   );

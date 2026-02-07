@@ -525,21 +525,21 @@ flowchart LR
 - `frontend/src/components/business/ImportResultModal.tsx`
 
 **Completion Criteria**:
-- [ ] Download template buttons work (fabric, supplier)
-- [ ] File upload with drag-drop
-- [ ] Progress indicator during import
-- [ ] Result modal shows success/skipped/failed counts
-- [ ] Failed rows listed with reasons
+- [x] Download template buttons work (fabric, supplier)
+- [x] File upload with drag-drop
+- [x] Progress indicator during import
+- [x] Result modal shows success/skipped/failed counts
+- [x] Failed rows listed with reasons
 
 ---
 
 #### Phase 3 Completion Criteria
-- [ ] Quote module fully functional with conversion
-- [ ] Order module handles all 9 states
-- [ ] Payment tracking works (customer and supplier)
-- [ ] Logistics records manageable
-- [ ] Import with result reporting
-- [ ] All acceptance criteria from Design Doc met
+- [x] Quote module fully functional with conversion
+- [x] Order module handles all 9 states
+- [x] Payment tracking works (customer and supplier)
+- [x] Logistics records manageable
+- [x] Import with result reporting
+- [x] All acceptance criteria from Design Doc met
 
 #### Phase 3 Operational Verification
 1. Create quote -> Convert to order -> Verify order created with PENDING status

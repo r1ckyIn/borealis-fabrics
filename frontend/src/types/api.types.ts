@@ -86,6 +86,7 @@ export interface HealthResponse {
 /** Import result for Excel import operations. */
 export interface ImportResult {
   successCount: number;
+  skippedCount: number;
   failureCount: number;
   failures: ImportFailure[];
 }

@@ -9,17 +9,26 @@ import type { ImportResult } from '@/types';
 
 const successResult: ImportResult = {
   successCount: 10,
+  skippedCount: 0,
   failureCount: 0,
   failures: [],
 };
 
 const mixedResult: ImportResult = {
   successCount: 8,
+  skippedCount: 0,
   failureCount: 2,
   failures: [
     { rowNumber: 3, identifier: 'FB-001', reason: 'Duplicate fabricCode' },
     { rowNumber: 7, identifier: 'FB-005', reason: 'Missing required field: name' },
   ],
+};
+
+const skippedResult: ImportResult = {
+  successCount: 5,
+  skippedCount: 3,
+  failureCount: 0,
+  failures: [],
 };
 
 describe('ImportResultModal', () => {
@@ -78,6 +87,32 @@ describe('ImportResultModal', () => {
     expect(screen.getByText('Duplicate fabricCode')).toBeInTheDocument();
     expect(screen.getByText('FB-005')).toBeInTheDocument();
     expect(screen.getByText('Missing required field: name')).toBeInTheDocument();
+  });
+
+  it('displays skipped count when there are skipped records', () => {
+    render(
+      <ImportResultModal
+        open={true}
+        result={skippedResult}
+        onClose={vi.fn()}
+        importType="fabric"
+      />
+    );
+
+    expect(screen.getByText(/跳过: 3/)).toBeInTheDocument();
+  });
+
+  it('does not show skipped tag when skippedCount is zero', () => {
+    render(
+      <ImportResultModal
+        open={true}
+        result={successResult}
+        onClose={vi.fn()}
+        importType="fabric"
+      />
+    );
+
+    expect(screen.queryByText(/跳过/)).not.toBeInTheDocument();
   });
 
   it('does not show failure table when all succeed', () => {

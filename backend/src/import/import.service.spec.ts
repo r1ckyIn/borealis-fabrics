@@ -229,8 +229,9 @@ describe('ImportService', () => {
       const result = await service.importFabrics(file);
 
       expect(result.successCount).toBe(0);
-      expect(result.failureCount).toBe(1);
-      expect(result.failures[0].reason).toContain('already exists');
+      expect(result.skippedCount).toBe(1);
+      expect(result.failureCount).toBe(0);
+      expect(result.failures).toHaveLength(0);
     });
 
     it('should fail when fabricCode is missing', async () => {
@@ -410,8 +411,9 @@ describe('ImportService', () => {
       const result = await service.importSuppliers(file);
 
       expect(result.successCount).toBe(0);
-      expect(result.failureCount).toBe(1);
-      expect(result.failures[0].reason).toContain('already exists');
+      expect(result.skippedCount).toBe(1);
+      expect(result.failureCount).toBe(0);
+      expect(result.failures).toHaveLength(0);
     });
 
     it('should fail when companyName is missing', async () => {

@@ -66,9 +66,9 @@ async function searchFabrics(keyword: string) {
   return result.items;
 }
 
-/** Disable today and past dates (backend requires strictly future date). */
+/** Disable past dates but allow today. */
 function disabledDate(current: Dayjs): boolean {
-  return !current.isAfter(dayjs(), 'day');
+  return current.isBefore(dayjs(), 'day');
 }
 
 export function QuoteForm({
@@ -105,7 +105,8 @@ export function QuoteForm({
         notes: initialValues.notes ?? undefined,
       });
     }
-  }, [initialValues, form]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialValues]);
 
   /** Convert internal form values to CreateQuoteData and submit. */
   async function handleFinish(values: QuoteFormValues): Promise<void> {

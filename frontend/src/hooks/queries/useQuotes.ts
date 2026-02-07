@@ -120,12 +120,3 @@ export function useConvertQuoteToOrder() {
   });
 }
 
-// =============================================================================
-// Utility Types
-// =============================================================================
-
-/** Parameters for useUpdateQuote mutation. */
-export interface UpdateQuoteParams {
-  id: number;
-  data: UpdateQuoteData;
-}

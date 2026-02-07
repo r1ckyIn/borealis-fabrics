@@ -85,7 +85,6 @@ export {
   useUpdateQuote,
   useDeleteQuote,
   useConvertQuoteToOrder,
-  type UpdateQuoteParams,
 } from './useQuotes';
 
 // Order hooks
@@ -108,14 +107,6 @@ export {
   useRestoreOrderItem,
   useUpdateCustomerPayment,
   useUpdateSupplierPayment,
-  type UpdateOrderParams,
-  type AddOrderItemParams,
-  type UpdateOrderItemParams,
-  type UpdateOrderItemStatusParams,
-  type CancelOrderItemParams,
-  type RestoreOrderItemParams,
-  type UpdateCustomerPaymentParams,
-  type UpdateSupplierPaymentParams,
 } from './useOrders';
 
 // Logistics hooks

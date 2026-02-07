@@ -99,11 +99,29 @@ export function LogisticsForm({
           <Input placeholder="请输入联系人姓名" />
         </Form.Item>
 
-        <Form.Item name="contactPhone" label="联系电话">
+        <Form.Item
+          name="contactPhone"
+          label="联系电话"
+          rules={[
+            {
+              pattern: /^[\d\-+() ]{0,20}$/,
+              message: '请输入有效的电话号码',
+            },
+          ]}
+        >
           <Input placeholder="请输入联系电话" />
         </Form.Item>
 
-        <Form.Item name="trackingNo" label="物流单号">
+        <Form.Item
+          name="trackingNo"
+          label="物流单号"
+          rules={[
+            {
+              pattern: /^[A-Za-z0-9-]{0,50}$/,
+              message: '物流单号仅支持字母、数字和连字符',
+            },
+          ]}
+        >
           <Input placeholder="请输入物流单号" />
         </Form.Item>
 

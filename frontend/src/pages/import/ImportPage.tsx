@@ -3,7 +3,7 @@
  * Supports fabric and supplier bulk import via Excel files.
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Card, Tabs, Button, Upload, Progress, Space, Typography, message } from 'antd';
 import {
   DownloadOutlined,
@@ -44,13 +44,22 @@ export default function ImportPage() {
   const [showResult, setShowResult] = useState(false);
   const [downloadingTemplate, setDownloadingTemplate] = useState(false);
 
+  // Track which tab the import was initiated from (MF-7)
+  const resultTabRef = useRef<ImportTab>(activeTab);
+
   const handleDownloadTemplate = useCallback(async () => {
     setDownloadingTemplate(true);
     try {
       await TAB_CONFIG[activeTab].download();
       message.success('模板下载成功');
-    } catch {
-      message.error('模板下载失败，请重试');
+    } catch (error) {
+      console.error('Template download failed:', error);
+      const apiError = error as { code?: number };
+      if (apiError.code && apiError.code >= 500) {
+        message.error('服务器错误，请稍后重试');
+      } else {
+        message.error('模板下载失败，请检查网络连接');
+      }
     } finally {
       setDownloadingTemplate(false);
     }
@@ -58,31 +67,42 @@ export default function ImportPage() {
 
   const handleImport = useCallback(
     async (file: File) => {
-      if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
-        message.error(`文件大小不能超过 ${MAX_FILE_SIZE_MB}MB`);
-        return;
-      }
+      // Capture the active tab at import time (MF-7)
+      resultTabRef.current = activeTab;
 
       setUploading(true);
       setUploadProgress(0);
 
       try {
-        const importResult = await TAB_CONFIG[activeTab].import(file, setUploadProgress);
+        const importResult = await TAB_CONFIG[activeTab].import(file, (percent) => {
+          // Cap upload progress at 90% until response arrives (SF-7)
+          setUploadProgress(Math.min(percent, 90));
+        });
 
+        setUploadProgress(100);
         setResult(importResult);
         setShowResult(true);
 
-        if (importResult.failureCount === 0) {
-          message.success(
-            `成功导入 ${importResult.successCount} 条记录`
-          );
+        const { successCount, skippedCount: skipped, failureCount } = importResult;
+        const skippedInfo = skipped > 0 ? `, ${skipped} 条已存在跳过` : '';
+
+        if (failureCount === 0) {
+          message.success(`成功导入 ${successCount} 条记录${skippedInfo}`);
         } else {
           message.warning(
-            `导入完成: ${importResult.successCount} 成功, ${importResult.failureCount} 失败`
+            `导入完成: ${successCount} 成功${skippedInfo}, ${failureCount} 失败`
           );
         }
-      } catch {
-        message.error('导入失败，请检查文件格式后重试');
+      } catch (error) {
+        console.error('Import failed:', error);
+        const apiError = error as { code?: number; message?: string };
+        if (apiError.code && apiError.code >= 500) {
+          message.error('服务器处理失败，请稍后重试');
+        } else if (apiError.message?.includes('format') || apiError.message?.includes('格式')) {
+          message.error('文件格式错误，请检查是否使用了正确的模板');
+        } else {
+          message.error('导入失败，请检查文件格式后重试');
+        }
       } finally {
         setUploading(false);
         setUploadProgress(0);
@@ -93,12 +113,20 @@ export default function ImportPage() {
 
   const beforeUpload = useCallback(
     (file: UploadFile) => {
-      const isXlsx =
-        file.type === ACCEPTED_MIME || file.name?.endsWith('.xlsx');
-      if (!isXlsx) {
+      // Validate file size first (SF-8)
+      if (file.size && file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+        message.error(`文件大小不能超过 ${MAX_FILE_SIZE_MB}MB`);
+        return Upload.LIST_IGNORE;
+      }
+
+      // Validate file type: both MIME type AND extension must match (MF-6)
+      const hasXlsxExtension = file.name?.endsWith('.xlsx') ?? false;
+      const hasXlsxMime = file.type === ACCEPTED_MIME;
+      if (!hasXlsxExtension || !hasXlsxMime) {
         message.error('仅支持 .xlsx 格式的 Excel 文件');
         return Upload.LIST_IGNORE;
       }
+
       handleImport(file as unknown as File);
       return false;
     },
@@ -139,6 +167,7 @@ export default function ImportPage() {
         beforeUpload={beforeUpload}
         disabled={uploading}
         multiple={false}
+        aria-label={`上传${label}Excel文件`}
       >
         <p className="ant-upload-drag-icon">
           {uploading ? <FileExcelOutlined /> : <InboxOutlined />}
@@ -191,7 +220,7 @@ export default function ImportPage() {
         open={showResult}
         result={result}
         onClose={() => setShowResult(false)}
-        importType={activeTab}
+        importType={resultTabRef.current}
       />
     </PageContainer>
   );
