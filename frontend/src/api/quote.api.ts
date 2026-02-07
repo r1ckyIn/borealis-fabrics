@@ -13,10 +13,6 @@ import type {
 
 import { get, post, patch, del } from './client';
 
-// =============================================================================
-// Basic CRUD
-// =============================================================================
-
 /** Get paginated list of quotes. */
 export function getQuotes(
   params?: QueryQuoteParams
@@ -46,10 +42,6 @@ export function updateQuote(
 export function deleteQuote(id: number): Promise<void> {
   return del<void>(`/quotes/${id}`);
 }
-
-// =============================================================================
-// Business Operations
-// =============================================================================
 
 /** Convert a quote to an order. */
 export function convertQuoteToOrder(id: number): Promise<Order> {

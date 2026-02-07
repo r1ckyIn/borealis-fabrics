@@ -114,8 +114,8 @@ export function useConvertQuoteToOrder() {
   return useMutation({
     mutationFn: (id: number) => quoteApi.convertQuoteToOrder(id),
     onSuccess: (_data, id) => {
-      queryClient.invalidateQueries({ queryKey: quoteKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: quoteKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: ORDER_CACHE_KEY });
     },
   });
