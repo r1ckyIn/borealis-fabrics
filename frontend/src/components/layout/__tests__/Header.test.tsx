@@ -140,6 +140,16 @@ describe('Header', () => {
     expect(screen.getByText('用户')).toBeInTheDocument();
   });
 
+  it('should render DEV tag in development mode', () => {
+    render(
+      <MemoryRouter>
+        <Header collapsed={false} onToggleCollapse={mockOnToggleCollapse} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('DEV')).toBeInTheDocument();
+  });
+
   it('should call clearAuth and navigate to /login on logout', async () => {
     const user = userEvent.setup();
     const clearAuthSpy = vi.spyOn(useAuthStore.getState(), 'clearAuth');

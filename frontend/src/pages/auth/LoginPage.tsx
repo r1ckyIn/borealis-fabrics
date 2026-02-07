@@ -5,12 +5,13 @@
  * Redirects authenticated users to their intended destination.
  */
 
-import { WechatWorkOutlined } from '@ant-design/icons';
-import { Button, Card, Space, Typography } from 'antd';
-import { Navigate, useLocation } from 'react-router-dom';
+import { CodeOutlined, WechatWorkOutlined } from '@ant-design/icons';
+import { Button, Card, Divider, Space, Typography, message } from 'antd';
+import { useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
-import { getWeworkLoginUrl } from '@/api/auth.api';
-import { useIsAuthenticated, useIsInitializing } from '@/store';
+import { devLogin, getWeworkLoginUrl } from '@/api/auth.api';
+import { useAuthStore, useIsAuthenticated, useIsInitializing } from '@/store';
 
 const { Title, Text } = Typography;
 
@@ -20,8 +21,11 @@ interface LocationState {
 
 export default function LoginPage() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isAuthenticated = useIsAuthenticated();
   const isInitializing = useIsInitializing();
+  const setAuth = useAuthStore((s) => s.setAuth);
+  const [devLoading, setDevLoading] = useState(false);
 
   // Get redirect target from location state
   const state = location.state as LocationState | null;
@@ -40,6 +44,20 @@ export default function LoginPage() {
   // Handle WeWork OAuth login
   const handleLogin = () => {
     window.location.href = getWeworkLoginUrl();
+  };
+
+  // Handle dev mode login
+  const handleDevLogin = async () => {
+    setDevLoading(true);
+    try {
+      const response = await devLogin();
+      setAuth(response);
+      navigate(from, { replace: true });
+    } catch {
+      message.error('Dev login failed');
+    } finally {
+      setDevLoading(false);
+    }
   };
 
   return (
@@ -114,6 +132,28 @@ export default function LoginPage() {
           >
             企业微信登录
           </Button>
+
+          {/* Dev login (development only, tree-shaken in production) */}
+          {import.meta.env.DEV && (
+            <>
+              <Divider style={{ margin: '8px 0' }}>Development Only</Divider>
+              <Button
+                size="large"
+                icon={<CodeOutlined />}
+                loading={devLoading}
+                onClick={handleDevLogin}
+                style={{
+                  width: '100%',
+                  height: 48,
+                  fontSize: 16,
+                  borderColor: '#fa8c16',
+                  color: '#fa8c16',
+                }}
+              >
+                Dev Login
+              </Button>
+            </>
+          )}
         </Space>
       </Card>
     </div>

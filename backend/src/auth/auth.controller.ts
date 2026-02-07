@@ -1,5 +1,6 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
   Post,
   Query,
@@ -21,7 +22,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RequestUser } from './interfaces';
-import { UserResponseDto, LogoutResponseDto } from './dto';
+import { LoginResponseDto, UserResponseDto, LogoutResponseDto } from './dto';
 import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from './constants';
 
 /**
@@ -105,6 +106,34 @@ export class AuthController {
         `${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`,
       );
     }
+  }
+
+  /**
+   * Dev mode login - bypasses WeWork OAuth for local development.
+   * Only available when NODE_ENV=development.
+   */
+  @Post('dev/login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Dev mode login (development only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Dev login successful',
+    type: LoginResponseDto,
+  })
+  @ApiResponse({ status: 403, description: 'Not in development mode' })
+  async devLogin(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<LoginResponseDto> {
+    const nodeEnv = this.configService.get<string>('nodeEnv');
+    if (nodeEnv !== 'development') {
+      throw new ForbiddenException(
+        'Dev login is only available in development mode',
+      );
+    }
+
+    const result = await this.authService.devLogin();
+    res.cookie(AUTH_COOKIE_NAME, result.token, this.getCookieOptions());
+    return result;
   }
 
   /**

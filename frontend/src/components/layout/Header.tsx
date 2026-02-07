@@ -9,7 +9,7 @@
 
 import { LogoutOutlined, MenuFoldOutlined, MenuUnfoldOutlined, UserOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Avatar, Dropdown, Layout, Space, theme } from 'antd';
+import { Avatar, Dropdown, Layout, Space, Tag, theme } from 'antd';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -87,6 +87,7 @@ export function Header({ collapsed, onToggleCollapse }: HeaderProps) {
         <Space style={{ cursor: 'pointer' }}>
           <Avatar size="small" icon={<UserOutlined />} />
           <span>{user?.name ?? '用户'}</span>
+          {import.meta.env.DEV && <Tag color="warning">DEV</Tag>}
         </Space>
       </Dropdown>
     </AntHeader>
