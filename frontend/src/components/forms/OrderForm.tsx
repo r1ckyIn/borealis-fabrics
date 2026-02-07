@@ -96,23 +96,8 @@ export function OrderForm({
 
   /** Convert form values to API data and submit. */
   async function handleFinish(values: OrderFormValues): Promise<void> {
-    const submitData: CreateOrderData = {
-      customerId: values.customerId,
-      deliveryAddress: values.deliveryAddress,
-      notes: values.notes,
-      items: (values.items ?? []).map((item) => ({
-        fabricId: item.fabricId,
-        supplierId: item.supplierId,
-        quantity: item.quantity,
-        salePrice: item.salePrice,
-        purchasePrice: item.purchasePrice,
-        deliveryDate: item.deliveryDate?.format('YYYY-MM-DD'),
-        notes: item.notes,
-      })),
-    };
-
-    // Edit mode only sends address/notes
     if (isEditMode) {
+      // Edit mode only sends address/notes
       await onSubmit({
         customerId: values.customerId,
         deliveryAddress: values.deliveryAddress,
@@ -120,7 +105,20 @@ export function OrderForm({
         items: [],
       });
     } else {
-      await onSubmit(submitData);
+      await onSubmit({
+        customerId: values.customerId,
+        deliveryAddress: values.deliveryAddress,
+        notes: values.notes,
+        items: (values.items ?? []).map((item) => ({
+          fabricId: item.fabricId,
+          supplierId: item.supplierId,
+          quantity: item.quantity,
+          salePrice: item.salePrice,
+          purchasePrice: item.purchasePrice,
+          deliveryDate: item.deliveryDate?.format('YYYY-MM-DD'),
+          notes: item.notes,
+        })),
+      });
     }
   }
 

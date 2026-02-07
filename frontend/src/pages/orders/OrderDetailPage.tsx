@@ -106,6 +106,20 @@ const { TextArea } = Input;
 
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
 
+interface LogisticsModalState {
+  open: boolean;
+  mode: 'create' | 'edit';
+  logistics: Logistics | null;
+  orderItemId: number | null;
+}
+
+const LOGISTICS_MODAL_CLOSED: LogisticsModalState = {
+  open: false,
+  mode: 'create',
+  logistics: null,
+  orderItemId: null,
+};
+
 /** Search helpers for selectors. */
 async function searchFabrics(keyword: string) {
   const result = await getFabrics({ keyword, pageSize: 20 });
@@ -165,12 +179,7 @@ export default function OrderDetailPage(): React.ReactElement {
     open: boolean;
     payment: SupplierPayment | null;
   }>({ open: false, payment: null });
-  const [logisticsModal, setLogisticsModal] = useState<{
-    open: boolean;
-    mode: 'create' | 'edit';
-    logistics: Logistics | null;
-    orderItemId: number | null;
-  }>({ open: false, mode: 'create', logistics: null, orderItemId: null });
+  const [logisticsModal, setLogisticsModal] = useState(LOGISTICS_MODAL_CLOSED);
 
   // Forms
   const [statusForm] = Form.useForm();
@@ -522,12 +531,7 @@ export default function OrderDetailPage(): React.ReactElement {
           });
           message.success('物流信息已更新');
         }
-        setLogisticsModal({
-          open: false,
-          mode: 'create',
-          logistics: null,
-          orderItemId: null,
-        });
+        setLogisticsModal(LOGISTICS_MODAL_CLOSED);
       } catch {
         message.error('操作失败，请重试');
       }
@@ -1427,14 +1431,7 @@ export default function OrderDetailPage(): React.ReactElement {
         initialValues={logisticsModal.logistics}
         orderItemId={logisticsModal.orderItemId ?? undefined}
         onSubmit={handleLogisticsSubmit}
-        onCancel={() =>
-          setLogisticsModal({
-            open: false,
-            mode: 'create',
-            logistics: null,
-            orderItemId: null,
-          })
-        }
+        onCancel={() => setLogisticsModal(LOGISTICS_MODAL_CLOSED)}
         loading={
           createLogisticsMutation.isPending || updateLogisticsMutation.isPending
         }

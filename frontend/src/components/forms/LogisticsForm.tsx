@@ -61,27 +61,19 @@ export function LogisticsForm({
   async function handleOk(): Promise<void> {
     const values = await form.validateFields();
 
+    const shared = {
+      carrier: values.carrier,
+      contactName: values.contactName,
+      contactPhone: values.contactPhone,
+      trackingNo: values.trackingNo,
+      shippedAt: values.shippedAt?.toISOString(),
+      notes: values.notes,
+    };
+
     if (isEditMode) {
-      const updateData: UpdateLogisticsData = {
-        carrier: values.carrier,
-        contactName: values.contactName,
-        contactPhone: values.contactPhone,
-        trackingNo: values.trackingNo,
-        shippedAt: values.shippedAt?.toISOString(),
-        notes: values.notes,
-      };
-      await onSubmit(updateData);
+      await onSubmit(shared as UpdateLogisticsData);
     } else {
-      const createData: CreateLogisticsData = {
-        orderItemId: orderItemId!,
-        carrier: values.carrier,
-        contactName: values.contactName,
-        contactPhone: values.contactPhone,
-        trackingNo: values.trackingNo,
-        shippedAt: values.shippedAt?.toISOString(),
-        notes: values.notes,
-      };
-      await onSubmit(createData);
+      await onSubmit({ ...shared, orderItemId: orderItemId! } as CreateLogisticsData);
     }
   }
 

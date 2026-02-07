@@ -111,21 +111,9 @@ export const ORDER_INCLUDE_DETAIL = {
 export const ORDER_INCLUDE_UPDATE = ORDER_INCLUDE_DETAIL;
 
 /**
- * Order include for customer payment update response.
+ * Order include for customer payment update response (same shape as list).
  */
-export const ORDER_INCLUDE_PAYMENT = {
-  customer: { select: CUSTOMER_SELECT_BASIC },
-  items: {
-    select: {
-      id: true,
-      fabricId: true,
-      quantity: true,
-      salePrice: true,
-      subtotal: true,
-      status: true,
-    },
-  },
-} as const satisfies Prisma.OrderInclude;
+export const ORDER_INCLUDE_PAYMENT = ORDER_INCLUDE_LIST;
 
 /**
  * Order item include for getOrderItems (with recent timeline).
