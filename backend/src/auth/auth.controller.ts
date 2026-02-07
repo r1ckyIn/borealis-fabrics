@@ -82,24 +82,16 @@ export class AuthController {
     @Query('state') state: string,
     @Res() res: Response,
   ): Promise<void> {
-    // Get frontend URL from config
     const frontendUrl =
       this.configService.get<string>('cors.origins')?.[0] ||
       'http://localhost:5173';
 
     try {
       const result = await this.authService.handleOAuthCallback(code, state);
-
-      // Set token via HttpOnly cookie (secure in production)
       res.cookie(AUTH_COOKIE_NAME, result.token, this.getCookieOptions());
-
-      // Redirect to frontend success page
       res.redirect(`${frontendUrl}/auth/callback?success=true`);
     } catch (error) {
-      // Log the error for debugging
       this.logger.error('OAuth callback failed', error);
-
-      // Redirect to frontend with error indicator
       const errorMessage =
         error instanceof Error ? error.message : 'Authentication failed';
       res.redirect(
@@ -169,10 +161,7 @@ export class AuthController {
     @Req() req: AuthenticatedRequest,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LogoutResponseDto> {
-    // Clear the HttpOnly auth cookie
     res.clearCookie(AUTH_COOKIE_NAME, this.getCookieOptions());
-
-    // Extract token from header or cookie and blacklist it
     const token =
       req.headers.authorization?.replace('Bearer ', '') ||
       (req.cookies as Record<string, string> | undefined)?.[AUTH_COOKIE_NAME] ||

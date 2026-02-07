@@ -56,8 +56,6 @@ export class AuthService {
     }
 
     const state = this.generateState();
-
-    // Store state in Redis for CSRF protection (wait for completion)
     await this.redisService.setex(
       `${OAUTH_STATE_PREFIX}${state}`,
       OAUTH_STATE_TTL,
@@ -83,22 +81,14 @@ export class AuthService {
     code: string,
     state: string,
   ): Promise<LoginResponseDto> {
-    // Validate state parameter (CSRF protection)
     const isValidState = await this.validateState(state);
     if (!isValidState) {
       throw new UnauthorizedException('Invalid or expired OAuth state');
     }
 
-    // Get WeWork access token
     const accessToken = await this.getWeWorkAccessToken();
-
-    // Get user info from WeWork
     const userInfo = await this.getWeWorkUserInfo(accessToken, code);
-
-    // Upsert user in database
     const user = await this.upsertUser(userInfo);
-
-    // Generate JWT token
     const token = this.generateToken(user);
 
     return {
@@ -182,7 +172,6 @@ export class AuthService {
     if (value === null) {
       return false;
     }
-    // Delete state after validation to prevent replay attacks
     await this.redisService.del(key);
     return true;
   }

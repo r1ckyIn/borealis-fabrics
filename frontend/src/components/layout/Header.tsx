@@ -33,13 +33,11 @@ export function Header({ collapsed, onToggleCollapse }: HeaderProps) {
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const { token } = theme.useToken();
 
-  // Handle logout
   const handleLogout = useCallback(() => {
     clearAuth();
     navigate('/login', { replace: true });
   }, [clearAuth, navigate]);
 
-  // User dropdown menu items
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'logout',

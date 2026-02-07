@@ -27,26 +27,21 @@ export default function LoginPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const [devLoading, setDevLoading] = useState(false);
 
-  // Get redirect target from location state
   const state = location.state as LocationState | null;
   const from = state?.from || '/';
 
-  // Show loading during initialization
   if (isInitializing) {
     return null;
   }
 
-  // Redirect if already authenticated
   if (isAuthenticated) {
     return <Navigate to={from} replace />;
   }
 
-  // Handle WeWork OAuth login
   const handleLogin = () => {
     window.location.href = getWeworkLoginUrl();
   };
 
-  // Handle dev mode login
   const handleDevLogin = async () => {
     setDevLoading(true);
     try {
@@ -84,7 +79,6 @@ export default function LoginPage() {
         }}
       >
         <Space orientation="vertical" size="large" style={{ width: '100%' }}>
-          {/* Logo placeholder */}
           <div
             style={{
               width: 80,
@@ -108,7 +102,6 @@ export default function LoginPage() {
             </Text>
           </div>
 
-          {/* Title */}
           <div>
             <Title level={3} style={{ marginBottom: 8 }}>
               铂润面料管理系统
@@ -116,7 +109,6 @@ export default function LoginPage() {
             <Text type="secondary">Borealis Fabrics Management System</Text>
           </div>
 
-          {/* Login button */}
           <Button
             type="primary"
             size="large"
