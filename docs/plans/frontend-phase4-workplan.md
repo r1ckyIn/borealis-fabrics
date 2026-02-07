@@ -562,11 +562,11 @@ flowchart LR
 - `frontend/src/test/*.test.tsx` - Integration tests for critical flows
 
 **Test Coverage**:
-- [ ] Auth flow (login redirect, OAuth callback, logout)
-- [ ] Fabric CRUD with API
-- [ ] Order status change with state machine validation
-- [ ] Payment update flows
-- [ ] Quote to Order conversion
+- [x] Auth flow (login redirect, OAuth callback, logout)
+- [x] Fabric CRUD with API
+- [x] Order status change with state machine validation
+- [x] Payment update flows
+- [x] Quote to Order conversion
 
 ---
 
