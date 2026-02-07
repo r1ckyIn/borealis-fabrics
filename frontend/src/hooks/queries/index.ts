@@ -75,3 +75,15 @@ export {
   type UpdateCustomerPricingParams,
   type DeleteCustomerPricingParams,
 } from './useCustomers';
+
+// Quote hooks
+export {
+  quoteKeys,
+  useQuotes,
+  useQuote,
+  useCreateQuote,
+  useUpdateQuote,
+  useDeleteQuote,
+  useConvertQuoteToOrder,
+  type UpdateQuoteParams,
+} from './useQuotes';
