@@ -469,11 +469,14 @@ describe('FabricDetailPage', () => {
       const addButton = screen.getByText('添加客户定价').closest('button');
       await user.click(addButton!);
 
-      // Modal title
-      await waitFor(() => {
-        expect(screen.getAllByText('添加客户定价').length).toBeGreaterThanOrEqual(2);
-      });
-    });
+      // Modal title (increased timeout for Modal animation in jsdom)
+      await waitFor(
+        () => {
+          expect(screen.getAllByText('添加客户定价').length).toBeGreaterThanOrEqual(2);
+        },
+        { timeout: 10000 }
+      );
+    }, 15000);
   });
 
   describe('Basic Info Display', () => {
