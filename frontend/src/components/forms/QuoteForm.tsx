@@ -66,9 +66,9 @@ async function searchFabrics(keyword: string) {
   return result.items;
 }
 
-/** Disable dates before today. */
+/** Disable today and past dates (backend requires strictly future date). */
 function disabledDate(current: Dayjs): boolean {
-  return current.isBefore(dayjs().startOf('day'));
+  return !current.isAfter(dayjs(), 'day');
 }
 
 export function QuoteForm({
