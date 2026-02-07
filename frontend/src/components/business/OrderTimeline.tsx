@@ -5,9 +5,16 @@
 
 import { Timeline, Tag, Typography, Spin, Empty } from 'antd';
 
-import type { OrderTimelineEntry, OrderItemStatus } from '@/types';
+import { OrderItemStatus } from '@/types';
+import type { OrderTimelineEntry } from '@/types';
 import { getStatusLabel, getStatusColor } from '@/utils/statusHelpers';
 import { formatDateTime } from '@/utils/format';
+
+const VALID_STATUSES = new Set<string>(Object.values(OrderItemStatus));
+
+function isValidOrderItemStatus(value: unknown): value is OrderItemStatus {
+  return typeof value === 'string' && VALID_STATUSES.has(value);
+}
 
 const { Text } = Typography;
 
@@ -35,8 +42,12 @@ export function OrderTimeline({
   }
 
   const timelineItems = entries.map((entry) => {
-    const toStatus = entry.toStatus as OrderItemStatus;
-    const fromStatus = entry.fromStatus as OrderItemStatus | null;
+    const toStatus = isValidOrderItemStatus(entry.toStatus)
+      ? entry.toStatus
+      : OrderItemStatus.INQUIRY;
+    const fromStatus = isValidOrderItemStatus(entry.fromStatus)
+      ? entry.fromStatus
+      : null;
 
     const statusTransition = fromStatus ? (
       <span>

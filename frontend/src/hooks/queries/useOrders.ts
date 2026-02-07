@@ -177,6 +177,9 @@ export function useDeleteOrder() {
   });
 }
 
+/** Logistics query key (avoid circular import from useLogistics). */
+const LOGISTICS_ALL_KEY = ['logistics'] as const;
+
 /** Add an item to an order. */
 export function useAddOrderItem() {
   const queryClient = useQueryClient();
@@ -193,6 +196,7 @@ export function useAddOrderItem() {
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: LOGISTICS_ALL_KEY });
     },
   });
 }
@@ -215,6 +219,7 @@ export function useUpdateOrderItem() {
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: LOGISTICS_ALL_KEY });
     },
   });
 }
@@ -235,6 +240,7 @@ export function useDeleteOrderItem() {
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.items(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: LOGISTICS_ALL_KEY });
     },
   });
 }
