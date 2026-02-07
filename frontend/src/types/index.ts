@@ -16,7 +16,7 @@ export type {
   SystemEnumsResponse,
   HealthResponse,
   ImportResult,
-  ImportError,
+  ImportFailure,
 } from './api.types';
 
 export {

@@ -34,6 +34,10 @@ apiClient.interceptors.request.use(
 /** Response interceptor: Unwrap ApiResponse and handle errors. */
 apiClient.interceptors.response.use(
   (response: AxiosResponse<ApiResponse<unknown>>) => {
+    // Blob responses (e.g. file downloads) are not wrapped in ApiResponse
+    if (response.config?.responseType === 'blob') {
+      return response.data as unknown as AxiosResponse;
+    }
     return response.data.data as unknown as AxiosResponse;
   },
   (error: AxiosError<ApiError>) => {

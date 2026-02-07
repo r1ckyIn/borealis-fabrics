@@ -115,6 +115,20 @@ describe('API Client', () => {
 
       expect(result).toBeNull();
     });
+
+    it('should return raw data for blob responses without unwrapping', () => {
+      const blobData = new Blob(['test'], { type: 'application/octet-stream' });
+      const response = {
+        data: blobData,
+        config: { responseType: 'blob' },
+      };
+
+      const result = responseSuccessInterceptor(
+        response as unknown as { data: { data: unknown } }
+      );
+
+      expect(result).toBe(blobData);
+    });
   });
 
   describe('Error Interceptor', () => {

@@ -492,15 +492,15 @@ flowchart LR
 - `frontend/src/components/forms/OrderItemForm.tsx`
 
 **Completion Criteria**:
-- [ ] List shows aggregate status and payment status
-- [ ] Detail shows items with individual statuses
-- [ ] Detail shows customer payment card
-- [ ] Detail shows supplier payment cards (per supplier)
-- [ ] Status change buttons follow state machine rules
-- [ ] Cancel/restore functionality works
-- [ ] Timeline shows all status changes
-- [ ] Add/edit/delete items works
-- [ ] Amount calculations correct (subtotal, total, payables)
+- [x] List shows aggregate status and payment status
+- [x] Detail shows items with individual statuses
+- [x] Detail shows customer payment card
+- [x] Detail shows supplier payment cards (per supplier)
+- [x] Status change buttons follow state machine rules
+- [x] Cancel/restore functionality works
+- [x] Timeline shows all status changes
+- [x] Add/edit/delete items works
+- [x] Amount calculations correct (subtotal, total, payables)
 
 ---
 
@@ -511,10 +511,10 @@ flowchart LR
 - `frontend/src/components/forms/LogisticsForm.tsx` - Logistics form
 
 **Completion Criteria**:
-- [ ] Logistics form integrated in order detail
-- [ ] Create logistics linked to order item
-- [ ] Logistics info displays in order timeline
-- [ ] Edit/delete logistics works
+- [x] Logistics form integrated in order detail
+- [x] Create logistics linked to order item
+- [x] Logistics info displays in order timeline
+- [x] Edit/delete logistics works
 
 ---
 
