@@ -41,12 +41,6 @@ const VALID_XLSX_MIME_TYPES = [
 const XLSX_MAGIC_BYTES = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
 
 /**
- * XLSX content type for response headers
- */
-const XLSX_CONTENT_TYPE =
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
-/**
  * Custom file validator for Excel files
  * Checks both MIME type and file extension, plus validates magic bytes
  */
@@ -77,47 +71,6 @@ class ExcelFileValidator extends FileValidator {
   }
 }
 
-/**
- * Create common exception factory for file upload validation
- */
-function createFileExceptionFactory(error: string): BadRequestException {
-  if (error === 'File is required') {
-    return new BadRequestException('File is required');
-  }
-  if (error.includes('size')) {
-    return new BadRequestException('File size exceeds 10MB limit');
-  }
-  if (error.includes('type') || error.includes('Validation failed')) {
-    return new BadRequestException(
-      'Invalid file type. Only .xlsx files are allowed',
-    );
-  }
-  return new BadRequestException(error);
-}
-
-/**
- * Common file validators for Excel import
- */
-const EXCEL_FILE_VALIDATORS = [
-  new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
-  new ExcelFileValidator({}),
-];
-
-/**
- * Common API body schema for file upload
- */
-const FILE_UPLOAD_BODY_SCHEMA = {
-  type: 'object' as const,
-  properties: {
-    file: {
-      type: 'string' as const,
-      format: 'binary',
-      description: 'Excel file (.xlsx)',
-    },
-  },
-  required: ['file'],
-};
-
 @ApiTags('Import')
 @Controller('import')
 export class ImportController {
@@ -131,11 +84,22 @@ export class ImportController {
   @ApiResponse({
     status: 200,
     description: 'Excel template file',
-    content: { [XLSX_CONTENT_TYPE]: {} },
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {},
+    },
   })
   async downloadFabricTemplate(@Res() res: Response): Promise<void> {
     const buffer = await this.importService.generateFabricTemplate();
-    this.sendExcelResponse(res, buffer, 'fabric_import_template.xlsx');
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=fabric_import_template.xlsx',
+    );
+    res.send(buffer);
   }
 
   /**
@@ -146,23 +110,21 @@ export class ImportController {
   @ApiResponse({
     status: 200,
     description: 'Excel template file',
-    content: { [XLSX_CONTENT_TYPE]: {} },
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {},
+    },
   })
   async downloadSupplierTemplate(@Res() res: Response): Promise<void> {
     const buffer = await this.importService.generateSupplierTemplate();
-    this.sendExcelResponse(res, buffer, 'supplier_import_template.xlsx');
-  }
 
-  /**
-   * Send Excel file response with proper headers
-   */
-  private sendExcelResponse(
-    res: Response,
-    buffer: Buffer,
-    filename: string,
-  ): void {
-    res.setHeader('Content-Type', XLSX_CONTENT_TYPE);
-    res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=supplier_import_template.xlsx',
+    );
     res.send(buffer);
   }
 
@@ -173,7 +135,19 @@ export class ImportController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Import fabrics from Excel file' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: FILE_UPLOAD_BODY_SCHEMA })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Excel file (.xlsx)',
+        },
+      },
+      required: ['file'],
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Import result',
@@ -183,9 +157,25 @@ export class ImportController {
   async importFabrics(
     @UploadedFile(
       new ParseFilePipe({
-        validators: EXCEL_FILE_VALIDATORS,
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
+          new ExcelFileValidator({}),
+        ],
         fileIsRequired: true,
-        exceptionFactory: createFileExceptionFactory,
+        exceptionFactory: (error) => {
+          if (error === 'File is required') {
+            return new BadRequestException('File is required');
+          }
+          if (error.includes('size')) {
+            return new BadRequestException('File size exceeds 10MB limit');
+          }
+          if (error.includes('type') || error.includes('Validation failed')) {
+            return new BadRequestException(
+              'Invalid file type. Only .xlsx files are allowed',
+            );
+          }
+          return new BadRequestException(error);
+        },
       }),
     )
     file: Express.Multer.File,
@@ -200,7 +190,19 @@ export class ImportController {
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Import suppliers from Excel file' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: FILE_UPLOAD_BODY_SCHEMA })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Excel file (.xlsx)',
+        },
+      },
+      required: ['file'],
+    },
+  })
   @ApiResponse({
     status: 201,
     description: 'Import result',
@@ -210,9 +212,25 @@ export class ImportController {
   async importSuppliers(
     @UploadedFile(
       new ParseFilePipe({
-        validators: EXCEL_FILE_VALIDATORS,
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
+          new ExcelFileValidator({}),
+        ],
         fileIsRequired: true,
-        exceptionFactory: createFileExceptionFactory,
+        exceptionFactory: (error) => {
+          if (error === 'File is required') {
+            return new BadRequestException('File is required');
+          }
+          if (error.includes('size')) {
+            return new BadRequestException('File size exceeds 10MB limit');
+          }
+          if (error.includes('type') || error.includes('Validation failed')) {
+            return new BadRequestException(
+              'Invalid file type. Only .xlsx files are allowed',
+            );
+          }
+          return new BadRequestException(error);
+        },
       }),
     )
     file: Express.Multer.File,
