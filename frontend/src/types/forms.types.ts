@@ -137,6 +137,10 @@ export interface QueryQuoteParams extends PaginationParams {
   customerId?: number;
   fabricId?: number;
   status?: QuoteStatus;
+  validFrom?: string;
+  validTo?: string;
+  createdFrom?: string;
+  createdTo?: string;
 }
 
 export interface AddOrderItemData {
