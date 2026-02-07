@@ -218,3 +218,18 @@ export interface PaymentRecord {
   supplier?: Supplier;
   operator?: User;
 }
+
+export interface OrderTimelineEntry {
+  id: number;
+  orderItemId: number;
+  fromStatus: string | null;
+  toStatus: string;
+  operatorId: number | null;
+  remark: string | null;
+  createdAt: string;
+  orderItem?: {
+    id: number;
+    fabric: { id: number; fabricCode: string; name: string };
+  };
+  operator?: { id: number; name: string; avatar: string | null };
+}

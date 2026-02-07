@@ -186,8 +186,16 @@ export interface CancelOrderItemData {
 
 export interface QueryOrderParams extends PaginationParams {
   customerId?: number;
+  fabricId?: number;
   status?: OrderItemStatus;
   customerPayStatus?: CustomerPayStatus;
+  keyword?: string;
+  createdFrom?: string;
+  createdTo?: string;
+}
+
+export interface RestoreOrderItemData {
+  reason?: string;
 }
 
 export interface UpdateCustomerPaymentData {

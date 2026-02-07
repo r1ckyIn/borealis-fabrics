@@ -59,6 +59,7 @@ export type {
   Logistics,
   SupplierPayment,
   PaymentRecord,
+  OrderTimelineEntry,
 } from './entities.types';
 
 export type {
@@ -86,6 +87,7 @@ export type {
   UpdateOrderItemData,
   UpdateOrderItemStatusData,
   CancelOrderItemData,
+  RestoreOrderItemData,
   QueryOrderParams,
   UpdateCustomerPaymentData,
   UpdateSupplierPaymentData,

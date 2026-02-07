@@ -102,8 +102,7 @@ export function useDeleteQuote() {
   });
 }
 
-// TODO: Replace local constant with orderKeys import from useOrders (Task 3.4)
-const ORDER_CACHE_KEY = ['orders'] as const;
+import { orderKeys } from './useOrders';
 
 /**
  * Convert a quote to an order.
@@ -116,7 +115,7 @@ export function useConvertQuoteToOrder() {
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: quoteKeys.lists() });
       queryClient.invalidateQueries({ queryKey: quoteKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: ORDER_CACHE_KEY });
+      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
     },
   });
 }

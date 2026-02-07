@@ -18,3 +18,4 @@ export * from './supplier.api';
 export * from './customer.api';
 export * from './fabric.api';
 export * from './quote.api';
+export * from './order.api';
