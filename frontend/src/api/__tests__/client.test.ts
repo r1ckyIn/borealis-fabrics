@@ -68,18 +68,44 @@ describe('API Client', () => {
   });
 
   describe('Request Interceptor', () => {
-    it('should add Authorization header when token exists', () => {
-      localStorage.setItem(STORAGE_KEYS.TOKEN, 'test-token');
+    it('should add Authorization header when token exists in Zustand persist format', () => {
+      const persistData = JSON.stringify({
+        state: { user: { id: 1 }, token: 'test-jwt-token' },
+        version: 0,
+      });
+      localStorage.setItem(STORAGE_KEYS.TOKEN, persistData);
 
       const config = { headers: {} as Record<string, string> };
       const result = requestInterceptor(config);
 
       expect(result).toEqual({
-        headers: { Authorization: 'Bearer test-token' },
+        headers: { Authorization: 'Bearer test-jwt-token' },
       });
     });
 
     it('should not add Authorization header when token is missing', () => {
+      const config = { headers: {} as Record<string, string> };
+      const result = requestInterceptor(config);
+
+      expect(result).toEqual({ headers: {} });
+    });
+
+    it('should not add Authorization header when persist data has no token', () => {
+      const persistData = JSON.stringify({
+        state: { user: null, token: null },
+        version: 0,
+      });
+      localStorage.setItem(STORAGE_KEYS.TOKEN, persistData);
+
+      const config = { headers: {} as Record<string, string> };
+      const result = requestInterceptor(config);
+
+      expect(result).toEqual({ headers: {} });
+    });
+
+    it('should not add Authorization header when persist data is invalid JSON', () => {
+      localStorage.setItem(STORAGE_KEYS.TOKEN, 'invalid-json');
+
       const config = { headers: {} as Record<string, string> };
       const result = requestInterceptor(config);
 
