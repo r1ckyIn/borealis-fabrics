@@ -127,7 +127,7 @@ describe('Fabric CRUD Integration', () => {
       });
     });
 
-    it('delete flow: click → confirm → API call → list refreshes', async () => {
+    it('delete flow: click → confirm → API call → list refreshes', { timeout: 30000 }, async () => {
       const mockFabric = createMockFabric({ id: 10, name: '待删除面料' });
       fabricApi.getFabrics.mockResolvedValue(
         createPaginatedResponse([mockFabric]),

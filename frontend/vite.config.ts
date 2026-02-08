@@ -38,5 +38,22 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     testTimeout: 15000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'text-summary'],
+      include: [
+        'src/utils/statusHelpers.ts',
+        'src/utils/format.ts',
+        'src/utils/validation.ts',
+        'src/api/client.ts',
+        'src/store/authStore.ts',
+      ],
+      thresholds: {
+        statements: 80,
+        branches: 80,
+        functions: 80,
+        lines: 80,
+      },
+    },
   },
 });
