@@ -9,7 +9,6 @@ export {
   useAuthStore,
   useIsAuthenticated,
   useIsInitializing,
-  useToken,
   useUser,
 } from './authStore';
 export type { AuthActions, AuthState, AuthStore } from './authStore';

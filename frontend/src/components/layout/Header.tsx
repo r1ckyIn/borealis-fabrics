@@ -13,6 +13,7 @@ import { Avatar, Dropdown, Layout, Space, Tag, theme } from 'antd';
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { logout } from '@/api/auth.api';
 import { useAuthStore, useUser } from '@/store';
 
 const { Header: AntHeader } = Layout;
@@ -34,6 +35,7 @@ export function Header({ collapsed, onToggleCollapse }: HeaderProps) {
   const { token } = theme.useToken();
 
   const handleLogout = useCallback(() => {
+    logout().catch(() => {});
     clearAuth();
     navigate('/login', { replace: true });
   }, [clearAuth, navigate]);

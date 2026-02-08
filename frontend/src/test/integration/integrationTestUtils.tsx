@@ -83,7 +83,6 @@ export function renderIntegration(
 export function setupAuthenticatedState(): void {
   useAuthStore.setState({
     user: createMockAuthUser({ id: 1 }),
-    token: 'mock-jwt-token',
     isInitializing: false,
   });
 }
@@ -94,7 +93,6 @@ export function setupAuthenticatedState(): void {
 export function clearAuthState(): void {
   useAuthStore.setState({
     user: null,
-    token: null,
     isInitializing: false,
   });
 }

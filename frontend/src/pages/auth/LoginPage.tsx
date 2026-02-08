@@ -24,7 +24,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const isAuthenticated = useIsAuthenticated();
   const isInitializing = useIsInitializing();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const setUser = useAuthStore((s) => s.setUser);
   const [devLoading, setDevLoading] = useState(false);
 
   const state = location.state as LocationState | null;
@@ -46,7 +46,7 @@ export default function LoginPage() {
     setDevLoading(true);
     try {
       const response = await devLogin();
-      setAuth(response);
+      setUser(response.user);
       navigate(from, { replace: true });
     } catch {
       message.error('Dev login failed');

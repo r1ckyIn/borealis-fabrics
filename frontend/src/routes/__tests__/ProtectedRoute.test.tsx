@@ -31,7 +31,7 @@ describe('ProtectedRoute', () => {
     // Reset store state
     useAuthStore.setState({
       user: null,
-      token: null,
+
       isInitializing: false,
     });
     vi.clearAllMocks();
@@ -41,7 +41,7 @@ describe('ProtectedRoute', () => {
   it('should show FullPageSpinner while initializing', () => {
     useAuthStore.setState({
       user: null,
-      token: null,
+
       isInitializing: true,
     });
 
@@ -64,7 +64,7 @@ describe('ProtectedRoute', () => {
   it('should redirect to /login when not authenticated', () => {
     useAuthStore.setState({
       user: null,
-      token: null,
+
       isInitializing: false,
     });
 
@@ -87,7 +87,7 @@ describe('ProtectedRoute', () => {
   it('should pass original path in redirect state', () => {
     useAuthStore.setState({
       user: null,
-      token: null,
+
       isInitializing: false,
     });
 
@@ -115,7 +115,7 @@ describe('ProtectedRoute', () => {
         createdAt: '2024-01-01',
         updatedAt: '2024-01-01',
       },
-      token: 'valid-token',
+
       isInitializing: false,
     });
 

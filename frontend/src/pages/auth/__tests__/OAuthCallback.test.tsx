@@ -1,5 +1,8 @@
 /**
- * Tests for OAuthCallback component.
+ * Tests for OAuthCallback component (cookie-based auth flow).
+ *
+ * Backend redirects to /auth/callback?success=true after setting HttpOnly cookie.
+ * Frontend calls GET /auth/me to fetch user info.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -7,15 +10,15 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { LoginResponse } from '@/types';
+import type { AuthUser } from '@/types';
 import { useAuthStore } from '@/store';
 
 import OAuthCallback from '../OAuthCallback';
 
 // Mock auth API
-const mockHandleOAuthCallback = vi.fn();
+const mockGetCurrentUser = vi.fn();
 vi.mock('@/api/auth.api', () => ({
-  handleOAuthCallback: (code: string) => mockHandleOAuthCallback(code),
+  getCurrentUser: () => mockGetCurrentUser(),
   getWeworkLoginUrl: vi.fn(() => 'https://wework.example.com/oauth'),
 }));
 
@@ -29,15 +32,12 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-const mockLoginResponse: LoginResponse = {
-  token: 'mock-jwt-token',
-  user: {
-    id: 1,
-    weworkId: 'wework-123',
-    name: 'Test User',
-    createdAt: '2024-01-01T00:00:00Z',
-    updatedAt: '2024-01-01T00:00:00Z',
-  },
+const mockUser: AuthUser = {
+  id: 1,
+  weworkId: 'wework-123',
+  name: 'Test User',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
 };
 
 function renderWithRouter(searchParams: string) {
@@ -55,7 +55,6 @@ describe('OAuthCallback', () => {
   beforeEach(() => {
     useAuthStore.setState({
       user: null,
-      token: null,
       isInitializing: false,
     });
     vi.clearAllMocks();
@@ -66,66 +65,72 @@ describe('OAuthCallback', () => {
     vi.useRealTimers();
   });
 
-  it('should show loading state initially', () => {
-    mockHandleOAuthCallback.mockReturnValue(new Promise(() => {})); // Never resolves
+  it('should show loading state when success=true', () => {
+    mockGetCurrentUser.mockReturnValue(new Promise(() => {})); // Never resolves
 
-    renderWithRouter('?code=test-code');
+    renderWithRouter('?success=true');
 
     expect(screen.getByText('正在登录...')).toBeInTheDocument();
   });
 
-  it('should call handleOAuthCallback with code from URL', async () => {
-    mockHandleOAuthCallback.mockResolvedValue(mockLoginResponse);
+  it('should call getCurrentUser on success=true', async () => {
+    mockGetCurrentUser.mockResolvedValue(mockUser);
 
-    renderWithRouter('?code=test-auth-code');
+    renderWithRouter('?success=true');
 
     await waitFor(() => {
-      expect(mockHandleOAuthCallback).toHaveBeenCalledWith('test-auth-code');
+      expect(mockGetCurrentUser).toHaveBeenCalled();
     });
   });
 
-  it('should set auth and navigate on successful callback', async () => {
-    mockHandleOAuthCallback.mockResolvedValue(mockLoginResponse);
+  it('should set user and navigate on successful callback', async () => {
+    mockGetCurrentUser.mockResolvedValue(mockUser);
 
-    renderWithRouter('?code=test-code');
+    renderWithRouter('?success=true');
 
     // Wait for success state
     await waitFor(() => {
       expect(screen.getByText('登录成功')).toBeInTheDocument();
     });
 
-    // Check auth was set
+    // Check user was set (no token)
     const state = useAuthStore.getState();
-    expect(state.token).toBe('mock-jwt-token');
-    expect(state.user).toEqual(mockLoginResponse.user);
+    expect(state.user).toEqual(mockUser);
 
     // Advance timer and check navigation
     vi.advanceTimersByTime(500);
     expect(mockNavigate).toHaveBeenCalledWith('/', { replace: true });
   });
 
-  it('should show error when code is missing', () => {
+  it('should show error when no success param', () => {
     renderWithRouter('');
 
     // Error is rendered immediately (no async)
     expect(screen.getByText('登录失败')).toBeInTheDocument();
-    expect(screen.getByText('缺少授权码，请重新登录')).toBeInTheDocument();
+    expect(screen.getByText('缺少授权信息，请重新登录')).toBeInTheDocument();
+  });
+
+  it('should show error from error param', () => {
+    renderWithRouter('?error=AuthorizationFailed');
+
+    expect(screen.getByText('登录失败')).toBeInTheDocument();
+    expect(screen.getByText('AuthorizationFailed')).toBeInTheDocument();
   });
 
   it('should show error on API failure', async () => {
-    mockHandleOAuthCallback.mockRejectedValue(new Error('Invalid code'));
+    mockGetCurrentUser.mockRejectedValue(new Error('Invalid session'));
 
-    renderWithRouter('?code=invalid-code');
+    renderWithRouter('?success=true');
 
     await waitFor(() => {
       expect(screen.getByText('登录失败')).toBeInTheDocument();
-      expect(screen.getByText('Invalid code')).toBeInTheDocument();
+      expect(screen.getByText('Invalid session')).toBeInTheDocument();
     });
   });
 
   it('should have retry button that redirects to WeWork OAuth', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    mockHandleOAuthCallback.mockRejectedValue(new Error('Error'));
+    mockGetCurrentUser.mockRejectedValue(new Error('Error'));
 
     // Mock window.location
     const originalLocation = window.location;
@@ -134,7 +139,7 @@ describe('OAuthCallback', () => {
       writable: true,
     });
 
-    renderWithRouter('?code=bad-code');
+    renderWithRouter('?success=true');
 
     await waitFor(() => {
       expect(screen.getByText('登录失败')).toBeInTheDocument();
@@ -153,9 +158,9 @@ describe('OAuthCallback', () => {
   });
 
   it('should have link to go back to login page', async () => {
-    mockHandleOAuthCallback.mockRejectedValue(new Error('Error'));
+    mockGetCurrentUser.mockRejectedValue(new Error('Error'));
 
-    renderWithRouter('?code=bad-code');
+    renderWithRouter('?success=true');
 
     await waitFor(() => {
       expect(screen.getByText('登录失败')).toBeInTheDocument();
@@ -166,9 +171,9 @@ describe('OAuthCallback', () => {
   });
 
   it('should show generic error message when error has no message', async () => {
-    mockHandleOAuthCallback.mockRejectedValue({});
+    mockGetCurrentUser.mockRejectedValue({});
 
-    renderWithRouter('?code=bad-code');
+    renderWithRouter('?success=true');
 
     await waitFor(() => {
       expect(screen.getByText('登录失败，请重试')).toBeInTheDocument();

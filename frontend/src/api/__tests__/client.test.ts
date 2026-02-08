@@ -1,10 +1,13 @@
 /**
  * Tests for API client interceptors and helpers.
+ *
+ * Auth uses HttpOnly cookies (withCredentials: true).
+ * No request interceptor injects tokens — cookies are sent automatically by the browser.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ROUTES, STORAGE_KEYS } from '@/utils/constants';
+import { ROUTES } from '@/utils/constants';
 
 // Mock axios before importing client
 vi.mock('axios', () => {
@@ -19,7 +22,7 @@ vi.mock('axios', () => {
       response: { use: vi.fn() },
     },
     defaults: {
-      baseURL: '/api',
+      baseURL: '/api/v1',
     },
   };
 
@@ -31,7 +34,6 @@ vi.mock('axios', () => {
 });
 
 describe('API Client', () => {
-  let requestInterceptor: (config: { headers: Record<string, string> }) => unknown;
   let responseSuccessInterceptor: (response: { data: { data: unknown } }) => unknown;
   let responseErrorInterceptor: (error: unknown) => unknown;
 
@@ -49,12 +51,8 @@ describe('API Client', () => {
 
     const instance = mockCreate.mock.results[0]?.value;
     if (instance) {
-      const requestUse = instance.interceptors.request.use;
       const responseUse = instance.interceptors.response.use;
 
-      if (requestUse.mock.calls[0]) {
-        requestInterceptor = requestUse.mock.calls[0][0];
-      }
       if (responseUse.mock.calls[0]) {
         responseSuccessInterceptor = responseUse.mock.calls[0][0];
         responseErrorInterceptor = responseUse.mock.calls[0][1];
@@ -67,49 +65,21 @@ describe('API Client', () => {
     localStorage.clear();
   });
 
-  describe('Request Interceptor', () => {
-    it('should add Authorization header when token exists in Zustand persist format', () => {
-      const persistData = JSON.stringify({
-        state: { user: { id: 1 }, token: 'test-jwt-token' },
-        version: 0,
-      });
-      localStorage.setItem(STORAGE_KEYS.TOKEN, persistData);
+  describe('Client Configuration', () => {
+    it('should create axios instance with withCredentials', async () => {
+      vi.resetModules();
 
-      const config = { headers: {} as Record<string, string> };
-      const result = requestInterceptor(config);
+      const axios = await import('axios');
+      const mockCreate = axios.default.create as ReturnType<typeof vi.fn>;
+      mockCreate.mockClear();
 
-      expect(result).toEqual({
-        headers: { Authorization: 'Bearer test-jwt-token' },
-      });
-    });
+      await import('../client');
 
-    it('should not add Authorization header when token is missing', () => {
-      const config = { headers: {} as Record<string, string> };
-      const result = requestInterceptor(config);
-
-      expect(result).toEqual({ headers: {} });
-    });
-
-    it('should not add Authorization header when persist data has no token', () => {
-      const persistData = JSON.stringify({
-        state: { user: null, token: null },
-        version: 0,
-      });
-      localStorage.setItem(STORAGE_KEYS.TOKEN, persistData);
-
-      const config = { headers: {} as Record<string, string> };
-      const result = requestInterceptor(config);
-
-      expect(result).toEqual({ headers: {} });
-    });
-
-    it('should not add Authorization header when persist data is invalid JSON', () => {
-      localStorage.setItem(STORAGE_KEYS.TOKEN, 'invalid-json');
-
-      const config = { headers: {} as Record<string, string> };
-      const result = requestInterceptor(config);
-
-      expect(result).toEqual({ headers: {} });
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          withCredentials: true,
+        })
+      );
     });
   });
 
@@ -178,10 +148,7 @@ describe('API Client', () => {
       });
     });
 
-    it('should clear storage and redirect on 401 error', async () => {
-      localStorage.setItem(STORAGE_KEYS.TOKEN, 'old-token');
-      localStorage.setItem(STORAGE_KEYS.USER, 'user-data');
-
+    it('should redirect on 401 error', async () => {
       // Reset redirect flag
       const { resetRedirectFlag } = await import('../client');
       resetRedirectFlag();
@@ -201,8 +168,6 @@ describe('API Client', () => {
         data: null,
       });
 
-      expect(localStorage.getItem(STORAGE_KEYS.TOKEN)).toBeNull();
-      expect(localStorage.getItem(STORAGE_KEYS.USER)).toBeNull();
       expect(window.location.href).toBe(ROUTES.LOGIN);
     });
 

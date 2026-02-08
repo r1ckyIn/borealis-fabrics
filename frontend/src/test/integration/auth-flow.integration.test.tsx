@@ -1,5 +1,5 @@
 /**
- * Integration tests for the authentication flow.
+ * Integration tests for the authentication flow (cookie-based).
  *
  * Mocks at the API module level while keeping authStore,
  * React Router, and components running with real code.
@@ -12,7 +12,7 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import LoginPage from '@/pages/auth/LoginPage';
 import OAuthCallback from '@/pages/auth/OAuthCallback';
 import { useAuthStore } from '@/store/authStore';
-import { createMockLoginResponse } from '@/test/mocks/mockFactories';
+import { createMockAuthUser, createMockLoginResponse } from '@/test/mocks/mockFactories';
 
 import {
   renderIntegration,
@@ -25,14 +25,13 @@ import {
 // Mock at the API module boundary
 vi.mock('@/api/auth.api', () => ({
   getWeworkLoginUrl: vi.fn(() => '/api/v1/auth/wework/login'),
-  handleOAuthCallback: vi.fn(),
-  devLogin: vi.fn(),
   getCurrentUser: vi.fn(),
+  devLogin: vi.fn(),
   logout: vi.fn(),
 }));
 
 type AuthApiModule = typeof import('@/api/auth.api');
-const { handleOAuthCallback, devLogin } =
+const { getCurrentUser, devLogin } =
   vi.mocked(await vi.importMock<AuthApiModule>('@/api/auth.api'));
 
 /**
@@ -91,8 +90,7 @@ describe('Auth Flow Integration', () => {
 
     it('redirects already-authenticated user away from login', async () => {
       useAuthStore.setState({
-        user: createMockLoginResponse().user,
-        token: 'existing-token',
+        user: createMockAuthUser(),
         isInitializing: false,
       });
 
@@ -105,8 +103,7 @@ describe('Auth Flow Integration', () => {
 
     it('redirects to from location after login', async () => {
       useAuthStore.setState({
-        user: createMockLoginResponse().user,
-        token: 'existing-token',
+        user: createMockAuthUser(),
         isInitializing: false,
       });
 
@@ -140,7 +137,6 @@ describe('Auth Flow Integration', () => {
 
       await waitFor(() => {
         const state = useAuthStore.getState();
-        expect(state.token).toBe(mockResponse.token);
         expect(state.user).toEqual(mockResponse.user);
       });
 
@@ -164,30 +160,29 @@ describe('Auth Flow Integration', () => {
   });
 
   describe('OAuthCallback', () => {
-    it('exchanges code for token and navigates to home on success', async () => {
+    it('fetches user on success=true and navigates to home', async () => {
       vi.useFakeTimers({ shouldAdvanceTime: true });
 
-      const mockResponse = createMockLoginResponse();
-      handleOAuthCallback.mockResolvedValueOnce(mockResponse);
+      const mockUser = createMockAuthUser();
+      getCurrentUser.mockResolvedValueOnce(mockUser);
 
-      renderAuthRoutes(['/auth/callback?code=test-auth-code']);
+      renderAuthRoutes(['/auth/callback?success=true']);
 
       // Should show loading state
       expect(screen.getByText('正在登录...')).toBeInTheDocument();
 
       // Wait for success
       await waitFor(() => {
-        expect(handleOAuthCallback).toHaveBeenCalledWith('test-auth-code');
+        expect(getCurrentUser).toHaveBeenCalled();
       });
 
       await waitFor(() => {
         expect(screen.getByText('登录成功')).toBeInTheDocument();
       });
 
-      // Verify auth store was updated
+      // Verify auth store was updated (user only, no token)
       const state = useAuthStore.getState();
-      expect(state.token).toBe(mockResponse.token);
-      expect(state.user).toEqual(mockResponse.user);
+      expect(state.user).toEqual(mockUser);
 
       // Advance timer for navigation
       vi.advanceTimersByTime(600);
@@ -200,11 +195,11 @@ describe('Auth Flow Integration', () => {
     });
 
     it('shows error when OAuth callback fails', async () => {
-      handleOAuthCallback.mockRejectedValueOnce(
+      getCurrentUser.mockRejectedValueOnce(
         new Error('Authorization failed'),
       );
 
-      renderAuthRoutes(['/auth/callback?code=bad-code']);
+      renderAuthRoutes(['/auth/callback?success=true']);
 
       await waitFor(() => {
         expect(screen.getByText('登录失败')).toBeInTheDocument();
@@ -215,11 +210,11 @@ describe('Auth Flow Integration', () => {
       expect(screen.getByText('返回登录')).toBeInTheDocument();
     });
 
-    it('shows error immediately when code is missing', () => {
+    it('shows error immediately when success param is missing', () => {
       renderAuthRoutes(['/auth/callback']);
 
       expect(screen.getByText('登录失败')).toBeInTheDocument();
-      expect(handleOAuthCallback).not.toHaveBeenCalled();
+      expect(getCurrentUser).not.toHaveBeenCalled();
     });
   });
 });

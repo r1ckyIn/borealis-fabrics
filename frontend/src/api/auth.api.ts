@@ -1,8 +1,10 @@
 /**
  * Authentication API endpoints.
+ *
+ * Auth uses HttpOnly cookies. The frontend never handles JWT tokens directly.
  */
 
-import type { AuthUser, LoginResponse, LogoutResponse } from '@/types';
+import type { AuthUser, LoginResponse } from '@/types';
 import { API_BASE_URL } from '@/utils/constants';
 
 import { get, post } from './client';
@@ -12,29 +14,23 @@ export function getWeworkLoginUrl(): string {
   return `${API_BASE_URL}/auth/wework/login`;
 }
 
-/** Exchange OAuth code for JWT token. */
-export function handleOAuthCallback(code: string): Promise<LoginResponse> {
-  return get<LoginResponse>('/auth/wework/callback', { code });
-}
-
-/** Get current authenticated user. */
+/** Get current authenticated user (cookie sent automatically). */
 export function getCurrentUser(): Promise<AuthUser> {
   return get<AuthUser>('/auth/me');
 }
 
 /** Logout and invalidate session. */
-export function logout(): Promise<LogoutResponse> {
-  return post<LogoutResponse>('/auth/logout');
+export function logout(): Promise<void> {
+  return post<void>('/auth/logout');
 }
 
-/** Dev mode login (development only). */
+/** Dev mode login (development only). Returns user info; cookie set by backend. */
 export function devLogin(): Promise<LoginResponse> {
   return post<LoginResponse>('/auth/dev/login');
 }
 
 export const authApi = {
   getWeworkLoginUrl,
-  handleOAuthCallback,
   getCurrentUser,
   logout,
   devLogin,
