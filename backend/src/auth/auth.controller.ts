@@ -11,6 +11,7 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
@@ -58,6 +59,7 @@ export class AuthController {
   /**
    * 3.5.1 WeWork OAuth login - redirects to WeWork authorization page.
    */
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Get('wework/login')
   @ApiOperation({ summary: 'Initiate WeWork OAuth login' })
   @ApiResponse({
@@ -73,6 +75,7 @@ export class AuthController {
    * 3.5.2 WeWork OAuth callback - exchanges code for JWT token.
    * Token is set via HttpOnly cookie instead of URL parameter for security.
    */
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Get('wework/callback')
   @ApiOperation({ summary: 'WeWork OAuth callback handler' })
   @ApiResponse({ status: 302, description: 'Redirect to frontend with token' })
@@ -104,6 +107,7 @@ export class AuthController {
    * Dev mode login - bypasses WeWork OAuth for local development.
    * Only available when NODE_ENV=development.
    */
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @Post('dev/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Dev mode login (development only)' })

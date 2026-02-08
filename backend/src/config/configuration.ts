@@ -9,6 +9,10 @@ const validateProductionConfig = () => {
       'COS_SECRET_KEY',
       'COS_BUCKET',
       'COS_REGION',
+      'WEWORK_CORP_ID',
+      'WEWORK_SECRET',
+      'WEWORK_REDIRECT_URI',
+      'CORS_ORIGINS',
     ];
 
     const missing = requiredVars.filter((v) => !process.env[v]);
@@ -21,6 +25,13 @@ const validateProductionConfig = () => {
     // Ensure JWT_SECRET is not the default value
     if (process.env.JWT_SECRET === 'dev-secret') {
       throw new Error('JWT_SECRET must be set to a secure value in production');
+    }
+
+    // Ensure JWT_SECRET has sufficient length (32+ chars)
+    if ((process.env.JWT_SECRET?.length ?? 0) < 32) {
+      throw new Error(
+        'JWT_SECRET must be at least 32 characters in production',
+      );
     }
   }
 };
