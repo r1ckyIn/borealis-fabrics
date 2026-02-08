@@ -31,8 +31,7 @@ export const SIDEBAR_COLLAPSED_WIDTH = 80;
 
 // Storage keys
 export const STORAGE_KEYS = {
-  TOKEN: 'bf_token',
-  USER: 'bf_user',
+  AUTH: 'bf_auth',
   SIDEBAR_COLLAPSED: 'bf_sidebar_collapsed',
 } as const;
 

@@ -11,6 +11,11 @@ import { useAuthStore } from '@/store';
 
 import { Header } from '../Header';
 
+// Mock auth API
+vi.mock('@/api/auth.api', () => ({
+  logout: vi.fn(() => Promise.resolve()),
+}));
+
 // Track navigation
 const mockNavigate = vi.fn();
 
@@ -37,7 +42,6 @@ describe('Header', () => {
   beforeEach(() => {
     useAuthStore.setState({
       user: mockUser,
-      token: 'mock-token',
       isInitializing: false,
     });
     vi.clearAllMocks();
@@ -127,7 +131,6 @@ describe('Header', () => {
   it('should display default value when user is null', () => {
     useAuthStore.setState({
       user: null,
-      token: null,
       isInitializing: false,
     });
 

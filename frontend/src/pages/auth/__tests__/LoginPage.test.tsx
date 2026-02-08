@@ -1,5 +1,5 @@
 /**
- * Tests for LoginPage component.
+ * Tests for LoginPage component (cookie-based auth).
  */
 
 import { render, screen } from '@testing-library/react';
@@ -47,7 +47,6 @@ describe('LoginPage', () => {
     // Reset store state
     useAuthStore.setState({
       user: null,
-      token: null,
       isInitializing: false,
     });
     vi.clearAllMocks();
@@ -98,10 +97,9 @@ describe('LoginPage', () => {
   });
 
   it('should redirect authenticated user to home', () => {
-    // Set authenticated state
+    // Set authenticated state (user only, no token)
     useAuthStore.setState({
       user: mockUser,
-      token: 'mock-token',
       isInitializing: false,
     });
 
@@ -118,7 +116,6 @@ describe('LoginPage', () => {
   it('should redirect to original location after login', () => {
     useAuthStore.setState({
       user: mockUser,
-      token: 'mock-token',
       isInitializing: false,
     });
 
@@ -183,7 +180,6 @@ describe('LoginPage', () => {
   it('should return null during initialization', () => {
     useAuthStore.setState({
       user: null,
-      token: null,
       isInitializing: true,
     });
 

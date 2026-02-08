@@ -918,7 +918,7 @@ frontend/src/main.tsx - Keep as is (entry point)
 
 ### API Integration
 - Base URL via Vite proxy: `/api` -> `http://localhost:3000`
-- JWT token in Authorization header: `Bearer {token}`
+- Auth via HttpOnly cookie (withCredentials: true), no client-side token storage
 - All endpoints documented in ARCHITECTURE.md Section 9.4
 
 ### Testing Strategy

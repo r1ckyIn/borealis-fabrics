@@ -13,8 +13,35 @@ async function bootstrap() {
   // Pino logger
   app.useLogger(app.get(Logger));
 
-  // Security
-  app.use(helmet());
+  // Security headers via Helmet
+  const isProduction =
+    (configService.get<string>('nodeEnv') || 'development') === 'production';
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: isProduction
+            ? ["'self'"]
+            : ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          styleSrc: ["'self'", "'unsafe-inline'"], // Ant Design inline styles
+          imgSrc: ["'self'", 'data:'],
+          connectSrc: isProduction
+            ? ["'self'"]
+            : ["'self'", 'ws://localhost:*'], // Vite HMR WebSocket in dev
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          frameAncestors: ["'none'"],
+          baseUri: ["'self'"],
+          formAction: ["'self'"],
+        },
+      },
+      hsts: {
+        maxAge: 31536000, // 1 year
+        includeSubDomains: true,
+      },
+    }),
+  );
 
   // Cookie parser for HttpOnly cookie authentication
   app.use(cookieParser());
@@ -36,8 +63,7 @@ async function bootstrap() {
   });
 
   // Swagger - only expose in non-production environments
-  const nodeEnv = configService.get<string>('nodeEnv') || 'development';
-  if (nodeEnv !== 'production') {
+  if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('Borealis Fabrics API')
       .setDescription('Fabric trading management system API')

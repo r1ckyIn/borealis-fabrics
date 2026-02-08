@@ -1,8 +1,9 @@
 /**
  * OAuth callback handler page.
  *
- * Handles WeWork OAuth redirect and exchanges authorization code for JWT token.
- * Shows loading state during token exchange, handles errors with retry option.
+ * Backend handles the OAuth code exchange and sets HttpOnly cookie,
+ * then redirects here with ?success=true or ?error=<message>.
+ * On success, fetches current user via cookie-authenticated /auth/me endpoint.
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -10,42 +11,53 @@ import { useEffect, useRef, useState } from 'react';
 import { Alert, Button, Result, Spin, Typography } from 'antd';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { getWeworkLoginUrl, handleOAuthCallback } from '@/api/auth.api';
+import { getCurrentUser, getWeworkLoginUrl } from '@/api/auth.api';
 import { useAuthStore } from '@/store';
 
 const { Text } = Typography;
 
 type CallbackStatus = 'loading' | 'success' | 'error';
 
+const fullPageCenter: React.CSSProperties = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
 export default function OAuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const setAuth = useAuthStore((state) => state.setAuth);
+  const setUser = useAuthStore((state) => state.setUser);
 
-  const code = searchParams.get('code');
+  const success = searchParams.get('success');
+  const errorParam = searchParams.get('error');
 
-  // Initialize state based on whether code exists
-  // This avoids calling setState in effect for missing code case
-  const [status, setStatus] = useState<CallbackStatus>(() =>
-    code ? 'loading' : 'error'
-  );
-  const [errorMessage, setErrorMessage] = useState<string>(() =>
-    code ? '' : '缺少授权码，请重新登录'
-  );
+  // Initialize state based on URL params
+  const [status, setStatus] = useState<CallbackStatus>(() => {
+    if (errorParam) return 'error';
+    if (success === 'true') return 'loading';
+    return 'error';
+  });
+  const [errorMessage, setErrorMessage] = useState<string>(() => {
+    if (errorParam) return errorParam;
+    if (success !== 'true') return '缺少授权信息，请重新登录';
+    return '';
+  });
   const effectRan = useRef(false);
 
   useEffect(() => {
-    // Skip if no code (already handled by initial state)
-    if (!code) return;
+    // Skip if not a success callback (already handled by initial state)
+    if (success !== 'true') return;
 
     // Prevent double execution in strict mode
     if (effectRan.current) return;
     effectRan.current = true;
 
-    // Exchange code for token
-    handleOAuthCallback(code)
-      .then((response) => {
-        setAuth(response);
+    // Fetch current user using the cookie set by backend
+    getCurrentUser()
+      .then((user) => {
+        setUser(user);
         setStatus('success');
         // Navigate to home after brief success message
         setTimeout(() => {
@@ -56,7 +68,7 @@ export default function OAuthCallback() {
         setStatus('error');
         setErrorMessage(err.message || '登录失败，请重试');
       });
-  }, [code, setAuth, navigate]);
+  }, [success, setUser, navigate]);
 
   // Handle retry by redirecting to WeWork OAuth
   const handleRetry = () => {
@@ -66,16 +78,7 @@ export default function OAuthCallback() {
   // Loading state
   if (status === 'loading') {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          gap: 16,
-        }}
-      >
+      <div style={{ ...fullPageCenter, flexDirection: 'column', gap: 16 }}>
         <Spin size="large" />
         <Text>正在登录...</Text>
       </div>
@@ -85,14 +88,7 @@ export default function OAuthCallback() {
   // Success state
   if (status === 'success') {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <div style={fullPageCenter}>
         <Result status="success" title="登录成功" subTitle="正在跳转..." />
       </div>
     );
@@ -100,15 +96,7 @@ export default function OAuthCallback() {
 
   // Error state
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-      }}
-    >
+    <div style={{ ...fullPageCenter, padding: 24 }}>
       <Result
         status="error"
         title="登录失败"

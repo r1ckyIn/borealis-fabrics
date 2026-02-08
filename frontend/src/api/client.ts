@@ -1,12 +1,15 @@
 /**
  * Axios client instance with interceptors.
+ *
+ * Uses HttpOnly cookies for authentication (withCredentials: true).
+ * No token is stored or managed client-side.
  */
 
 import axios from 'axios';
-import type { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import type { AxiosError, AxiosResponse } from 'axios';
 
 import type { ApiError, ApiResponse } from '@/types';
-import { API_BASE_URL, API_TIMEOUT, ROUTES, STORAGE_KEYS } from '@/utils/constants';
+import { API_BASE_URL, API_TIMEOUT, ROUTES } from '@/utils/constants';
 
 /** Flag to prevent multiple 401 redirects. */
 let isRedirecting = false;
@@ -17,34 +20,8 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
-
-/**
- * Extract JWT token from Zustand persist storage.
- * Zustand stores as JSON: {"state":{"user":...,"token":"jwt"},"version":0}
- */
-function getPersistedToken(): string | null {
-  const raw = localStorage.getItem(STORAGE_KEYS.TOKEN);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as { state?: { token?: string } };
-    return parsed?.state?.token ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** Request interceptor: Attach JWT token to Authorization header. */
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = getPersistedToken();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error: AxiosError) => Promise.reject(error)
-);
 
 /** Response interceptor: Unwrap ApiResponse and handle errors. */
 apiClient.interceptors.response.use(
@@ -58,8 +35,6 @@ apiClient.interceptors.response.use(
   (error: AxiosError<ApiError>) => {
     if (error.response?.status === 401 && !isRedirecting) {
       isRedirecting = true;
-      localStorage.removeItem(STORAGE_KEYS.TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.USER);
       if (!window.location.pathname.includes(ROUTES.LOGIN)) {
         window.location.href = ROUTES.LOGIN;
       }

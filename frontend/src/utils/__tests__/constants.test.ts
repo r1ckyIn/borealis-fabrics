@@ -98,8 +98,7 @@ describe('constants', () => {
 
   describe('Storage keys', () => {
     it('should have all required storage keys', () => {
-      expect(STORAGE_KEYS.TOKEN).toBe('bf_token');
-      expect(STORAGE_KEYS.USER).toBe('bf_user');
+      expect(STORAGE_KEYS.AUTH).toBe('bf_auth');
       expect(STORAGE_KEYS.SIDEBAR_COLLAPSED).toBe('bf_sidebar_collapsed');
     });
 

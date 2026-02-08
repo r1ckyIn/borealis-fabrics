@@ -1,10 +1,12 @@
 /**
- * Authentication store for managing JWT tokens and user state.
+ * Authentication store for managing user state.
  *
- * Uses Zustand with persist middleware to store auth data in localStorage.
+ * JWT is stored in HttpOnly cookies (set by backend).
+ * This store only holds the user object for UI display.
+ * Uses Zustand with persist middleware to cache user data in localStorage.
  */
 
-import type { AuthUser, LoginResponse } from '@/types';
+import type { AuthUser } from '@/types';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -13,19 +15,15 @@ import { STORAGE_KEYS } from '@/utils/constants';
 export interface AuthState {
   /** Current authenticated user, null if not logged in. */
   user: AuthUser | null;
-  /** JWT token for API authentication. */
-  token: string | null;
   /** Whether authentication state is being initialized. */
   isInitializing: boolean;
 }
 
 export interface AuthActions {
-  /** Set auth data from login response. */
-  setAuth: (response: LoginResponse) => void;
+  /** Set user from login/OAuth response. */
+  setUser: (user: AuthUser | null) => void;
   /** Clear all auth data on logout. */
   clearAuth: () => void;
-  /** Update user information. */
-  setUser: (user: AuthUser | null) => void;
   /** Set initialization status. */
   setInitializing: (initializing: boolean) => void;
   /** Check if user is authenticated. */
@@ -36,7 +34,6 @@ export type AuthStore = AuthState & AuthActions;
 
 const initialState: AuthState = {
   user: null,
-  token: null,
   isInitializing: true,
 };
 
@@ -45,16 +42,12 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       ...initialState,
 
-      setAuth: (response) => {
-        set({ user: response.user, token: response.token, isInitializing: false });
+      setUser: (user) => {
+        set({ user, isInitializing: false });
       },
 
       clearAuth: () => {
-        set({ user: null, token: null, isInitializing: false });
-      },
-
-      setUser: (user) => {
-        set({ user });
+        set({ user: null, isInitializing: false });
       },
 
       setInitializing: (isInitializing) => {
@@ -62,15 +55,14 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       isAuthenticated: () => {
-        const { token, user } = get();
-        return token !== null && user !== null;
+        const { user } = get();
+        return user !== null;
       },
     }),
     {
-      name: STORAGE_KEYS.TOKEN,
+      name: STORAGE_KEYS.AUTH,
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
       }),
       onRehydrateStorage: () => (state) => {
         // Mark initialization as complete after rehydration
@@ -84,8 +76,7 @@ export const useAuthStore = create<AuthStore>()(
 
 // Selector hooks for common use cases
 export const useUser = () => useAuthStore((state) => state.user);
-export const useToken = () => useAuthStore((state) => state.token);
 export const useIsAuthenticated = () =>
-  useAuthStore((state) => state.token !== null && state.user !== null);
+  useAuthStore((state) => state.user !== null);
 export const useIsInitializing = () =>
   useAuthStore((state) => state.isInitializing);
