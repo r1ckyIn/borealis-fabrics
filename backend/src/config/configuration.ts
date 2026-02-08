@@ -11,6 +11,7 @@ const validateProductionConfig = () => {
       'COS_REGION',
       'WEWORK_CORP_ID',
       'WEWORK_SECRET',
+      'WEWORK_AGENT_ID',
       'WEWORK_REDIRECT_URI',
       'CORS_ORIGINS',
     ];
