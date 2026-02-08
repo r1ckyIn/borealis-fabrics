@@ -18,6 +18,13 @@ const { Text } = Typography;
 
 type CallbackStatus = 'loading' | 'success' | 'error';
 
+const fullPageCenter: React.CSSProperties = {
+  minHeight: '100vh',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
 export default function OAuthCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -71,16 +78,7 @@ export default function OAuthCallback() {
   // Loading state
   if (status === 'loading') {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          gap: 16,
-        }}
-      >
+      <div style={{ ...fullPageCenter, flexDirection: 'column', gap: 16 }}>
         <Spin size="large" />
         <Text>正在登录...</Text>
       </div>
@@ -90,14 +88,7 @@ export default function OAuthCallback() {
   // Success state
   if (status === 'success') {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
+      <div style={fullPageCenter}>
         <Result status="success" title="登录成功" subTitle="正在跳转..." />
       </div>
     );
@@ -105,15 +96,7 @@ export default function OAuthCallback() {
 
   // Error state
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
-      }}
-    >
+    <div style={{ ...fullPageCenter, padding: 24 }}>
       <Result
         status="error"
         title="登录失败"

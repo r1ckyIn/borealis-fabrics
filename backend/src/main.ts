@@ -63,8 +63,7 @@ async function bootstrap() {
   });
 
   // Swagger - only expose in non-production environments
-  const nodeEnv = configService.get<string>('nodeEnv') || 'development';
-  if (nodeEnv !== 'production') {
+  if (!isProduction) {
     const config = new DocumentBuilder()
       .setTitle('Borealis Fabrics API')
       .setDescription('Fabric trading management system API')

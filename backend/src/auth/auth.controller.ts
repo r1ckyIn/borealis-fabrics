@@ -26,9 +26,10 @@ import { RequestUser } from './interfaces';
 import { LoginResponseDto, UserResponseDto, LogoutResponseDto } from './dto';
 import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from './constants';
 
-/**
- * Extended Express Request with authenticated user.
- */
+/** Rate limit override for authentication endpoints (5 req/min). */
+const AUTH_THROTTLE = { default: { ttl: 60000, limit: 5 } } as const;
+
+/** Extended Express Request with authenticated user. */
 interface AuthenticatedRequest extends Request {
   user: RequestUser;
 }
@@ -59,7 +60,7 @@ export class AuthController {
   /**
    * 3.5.1 WeWork OAuth login - redirects to WeWork authorization page.
    */
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle(AUTH_THROTTLE)
   @Get('wework/login')
   @ApiOperation({ summary: 'Initiate WeWork OAuth login' })
   @ApiResponse({
@@ -75,7 +76,7 @@ export class AuthController {
    * 3.5.2 WeWork OAuth callback - exchanges code for JWT token.
    * Token is set via HttpOnly cookie instead of URL parameter for security.
    */
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle(AUTH_THROTTLE)
   @Get('wework/callback')
   @ApiOperation({ summary: 'WeWork OAuth callback handler' })
   @ApiResponse({ status: 302, description: 'Redirect to frontend with token' })
@@ -107,7 +108,7 @@ export class AuthController {
    * Dev mode login - bypasses WeWork OAuth for local development.
    * Only available when NODE_ENV=development.
    */
-  @Throttle({ default: { ttl: 60000, limit: 5 } })
+  @Throttle(AUTH_THROTTLE)
   @Post('dev/login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Dev mode login (development only)' })
