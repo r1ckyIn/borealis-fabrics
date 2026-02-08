@@ -816,8 +816,8 @@ enum SupplierStatus {
 | 阶段 1 | 项目骨架搭建 | ✅ 已完成 |
 | 阶段 2 | 核心数据模块 | ✅ 已完成 |
 | 阶段 3 | 业务流程模块 | ✅ 已完成 |
-| 阶段 4 | 前端开发 | ⏳ 待开始 |
-| 阶段 5 | 集成测试与安全加固 | ⏳ 待开始 |
+| 阶段 4 | 前端开发 | ✅ 已完成 |
+| 阶段 5 | 集成测试与安全加固 | ✅ 已完成 |
 | 阶段 6 | 部署上线 | ⏳ 待开始 |
 
 ### 10.2 当前进度详情
@@ -1186,7 +1186,53 @@ docker-compose logs -f    # 查看日志
 
 ---
 
-### 14.5 状态图例
+### 14.5 阶段 5：集成测试与安全加固
+
+**目标**：修复 E2E 测试问题、前端安全迁移、后端安全加固
+
+#### Task 5.1：修复后端 E2E 测试 Open Handles
+
+| # | 功能 | 状态 | 说明 |
+|---|------|------|------|
+| 5.1.1 | system.e2e-spec.ts 替换 AppModule | ✅ | 避免 ScheduleModule/cron 保持进程存活 |
+| 5.1.2 | app.e2e-spec.ts 替换 AppModule | ✅ | 避免 RedisService ioredis 连接泄露 |
+| 5.1.3 | import.e2e-spec.ts 修复断言 | ✅ | 对齐 skippedCount 而非 failureCount |
+
+#### Task 5.2：前端 Token 存储迁移（localStorage → HttpOnly Cookie）
+
+| # | 功能 | 状态 | 说明 |
+|---|------|------|------|
+| 5.2.1 | axios 添加 withCredentials | ✅ | Cookie 由浏览器自动发送 |
+| 5.2.2 | authStore 移除 token | ✅ | isAuthenticated 仅检查 user |
+| 5.2.3 | OAuthCallback 使用 success 参数 | ✅ | 后端设 cookie 后重定向 ?success=true |
+| 5.2.4 | LoginPage 改用 setUser | ✅ | devLogin 只存用户信息 |
+| 5.2.5 | 移除请求拦截器 token 注入 | ✅ | 不再需要手动注入 Authorization |
+| 5.2.6 | 更新所有相关测试（17 文件） | ✅ | 753 tests 全部通过 |
+
+#### Task 5.3：安全头与生产安全配置
+
+| # | 功能 | 状态 | 说明 |
+|---|------|------|------|
+| 5.3.1 | Helmet CSP 配置 | ✅ | defaultSrc, scriptSrc, styleSrc 等 |
+| 5.3.2 | HSTS 配置 | ✅ | maxAge=1 year, includeSubDomains |
+| 5.3.3 | Auth 端点速率限制 | ✅ | @Throttle 5 req/min |
+| 5.3.4 | 生产环境变量验证 | ✅ | WeWork/CORS/JWT_SECRET 长度检查 |
+| 5.3.5 | Docker 密码外部化 | ✅ | 使用环境变量替代硬编码 |
+| 5.3.6 | .env.production.example | ✅ | 文档化所有必需变量 |
+| 5.3.7 | 安全头 E2E 测试 | ✅ | CSP, HSTS, X-Content-Type-Options |
+
+#### Task 5.4：最终质量门 & 文档
+
+| # | 检查项 | 状态 |
+|---|--------|------|
+| 5.4.1 | Backend: 24 suites (608 tests) + 11 E2E suites (434 tests) | ✅ |
+| 5.4.2 | Frontend: 51 files (753 tests), build/lint/typecheck clean | ✅ |
+| 5.4.3 | 安全检查（无硬编码密钥、无注入漏洞） | ✅ |
+| 5.4.4 | ARCHITECTURE.md 更新 | ✅ |
+| 5.4.5 | SECURITY.md 创建 | ✅ |
+| 5.4.6 | CLAUDE.md 更新 | ✅ |
+
+### 14.6 状态图例
 
 | 图标 | 含义 |
 |-----|------|
@@ -1197,7 +1243,7 @@ docker-compose logs -f    # 查看日志
 
 ---
 
-**文档状态**：v2.1 - 阶段 4 前端开发进度追踪表已创建
+**文档状态**：v2.2 - 阶段 5 集成测试与安全加固完成
 
 
-**最后更新**：2026-02-06
+**最后更新**：2026-02-08
