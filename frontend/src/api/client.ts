@@ -19,10 +19,25 @@ const apiClient = axios.create({
   },
 });
 
+/**
+ * Extract JWT token from Zustand persist storage.
+ * Zustand stores as JSON: {"state":{"user":...,"token":"jwt"},"version":0}
+ */
+function getPersistedToken(): string | null {
+  const raw = localStorage.getItem(STORAGE_KEYS.TOKEN);
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as { state?: { token?: string } };
+    return parsed?.state?.token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Request interceptor: Attach JWT token to Authorization header. */
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    const token = getPersistedToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
