@@ -17,6 +17,7 @@ interface ApiSuccessResponse<T> {
 
 interface ImportResultData {
   successCount: number;
+  skippedCount: number;
   failureCount: number;
   failures: Array<{
     rowNumber: number;
@@ -215,7 +216,7 @@ describe('ImportController (e2e)', () => {
       expect(body.data.failureCount).toBe(0);
     }, 30000);
 
-    it('should report failures for existing fabrics', async () => {
+    it('should skip existing fabrics instead of reporting as failures', async () => {
       const buffer = await createMockExcelFile('Fabrics', fabricColumns, [
         { fabricCode: 'FB-EXISTING', name: 'Existing Fabric' },
         { fabricCode: 'FB-NEW', name: 'New Fabric' },
@@ -237,9 +238,8 @@ describe('ImportController (e2e)', () => {
 
       const body = response.body as ApiSuccessResponse<ImportResultData>;
       expect(body.data.successCount).toBe(1);
-      expect(body.data.failureCount).toBe(1);
-      expect(body.data.failures[0].identifier).toBe('FB-EXISTING');
-      expect(body.data.failures[0].reason).toContain('already exists');
+      expect(body.data.skippedCount).toBe(1);
+      expect(body.data.failureCount).toBe(0);
     }, 30000);
   });
 
@@ -288,7 +288,7 @@ describe('ImportController (e2e)', () => {
       expect(body.data.failureCount).toBe(0);
     }, 30000);
 
-    it('should report failures for existing suppliers', async () => {
+    it('should skip existing suppliers instead of reporting as failures', async () => {
       const buffer = await createMockExcelFile('Suppliers', supplierColumns, [
         { companyName: 'Existing Co' },
         { companyName: 'New Co' },
@@ -310,8 +310,8 @@ describe('ImportController (e2e)', () => {
 
       const body = response.body as ApiSuccessResponse<ImportResultData>;
       expect(body.data.successCount).toBe(1);
-      expect(body.data.failureCount).toBe(1);
-      expect(body.data.failures[0].identifier).toBe('Existing Co');
+      expect(body.data.skippedCount).toBe(1);
+      expect(body.data.failureCount).toBe(0);
     }, 30000);
   });
 });

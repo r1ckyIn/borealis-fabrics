@@ -2,8 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { App } from 'supertest/types';
-import { AppModule } from '../src/app.module';
+import { ConfigModule } from '@nestjs/config';
+import { SystemModule } from '../src/system/system.module';
+import { CommonModule } from '../src/common/common.module';
+import { PrismaModule } from '../src/prisma/prisma.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { RedisService } from '../src/common/services/redis.service';
+import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
+import configuration from '../src/config/configuration';
 
 // Response type definitions
 interface ApiSuccessResponse<T> {
@@ -31,8 +37,16 @@ describe('SystemController (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+      imports: [
+        ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+        PrismaModule,
+        CommonModule,
+        SystemModule,
+      ],
+    })
+      .overrideProvider(RedisService)
+      .useValue({ ping: jest.fn(), isAvailable: jest.fn(() => false) })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(
@@ -43,6 +57,7 @@ describe('SystemController (e2e)', () => {
         transformOptions: { enableImplicitConversion: true },
       }),
     );
+    app.useGlobalInterceptors(new TransformInterceptor());
     await app.init();
   });
 
