@@ -108,60 +108,60 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUGF-01 | TBD | Pending |
-| BUGF-02 | TBD | Pending |
-| BUGF-03 | TBD | Pending |
-| BUGF-04 | TBD | Pending |
-| BUGF-05 | TBD | Pending |
-| BUGF-06 | TBD | Pending |
-| FEAT-01 | TBD | Pending |
-| FEAT-02 | TBD | Pending |
-| FEAT-03 | TBD | Pending |
-| FEAT-04 | TBD | Pending |
-| FEAT-05 | TBD | Pending |
-| QUAL-01 | TBD | Pending |
-| QUAL-02 | TBD | Pending |
-| QUAL-03 | TBD | Pending |
-| QUAL-04 | TBD | Pending |
-| QUAL-05 | TBD | Pending |
-| QUAL-06 | TBD | Pending |
-| QUAL-07 | TBD | Pending |
-| QUAL-08 | TBD | Pending |
-| QUAL-09 | TBD | Pending |
-| TEST-01 | TBD | Pending |
-| TEST-02 | TBD | Pending |
-| TEST-03 | TBD | Pending |
-| TEST-04 | TBD | Pending |
-| TEST-05 | TBD | Pending |
-| TEST-06 | TBD | Pending |
-| TEST-07 | TBD | Pending |
-| MCAT-01 | TBD | Pending |
-| MCAT-02 | TBD | Pending |
-| MCAT-03 | TBD | Pending |
-| MCAT-04 | TBD | Pending |
-| MCAT-05 | TBD | Pending |
-| MCAT-06 | TBD | Pending |
-| MCAT-07 | TBD | Pending |
-| MCAT-08 | TBD | Pending |
-| MCAT-09 | TBD | Pending |
-| MCAT-10 | TBD | Pending |
-| MCAT-11 | TBD | Pending |
-| MCAT-12 | TBD | Pending |
-| DATA-01 | TBD | Pending |
-| DATA-02 | TBD | Pending |
-| DATA-03 | TBD | Pending |
-| DATA-04 | TBD | Pending |
-| DATA-05 | TBD | Pending |
-| DATA-06 | TBD | Pending |
-| DATA-07 | TBD | Pending |
-| DATA-08 | TBD | Pending |
-| DATA-09 | TBD | Pending |
+| BUGF-01 | Phase 1 | Pending |
+| BUGF-02 | Phase 1 | Pending |
+| BUGF-03 | Phase 1 | Pending |
+| BUGF-04 | Phase 1 | Pending |
+| BUGF-05 | Phase 1 | Pending |
+| BUGF-06 | Phase 1 | Pending |
+| FEAT-01 | Phase 2 | Pending |
+| FEAT-02 | Phase 2 | Pending |
+| FEAT-03 | Phase 2 | Pending |
+| FEAT-04 | Phase 2 | Pending |
+| FEAT-05 | Phase 2 | Pending |
+| QUAL-01 | Phase 3 | Pending |
+| QUAL-02 | Phase 3 | Pending |
+| QUAL-03 | Phase 4 | Pending |
+| QUAL-04 | Phase 4 | Pending |
+| QUAL-05 | Phase 4 | Pending |
+| QUAL-06 | Phase 3 | Pending |
+| QUAL-07 | Phase 4 | Pending |
+| QUAL-08 | Phase 4 | Pending |
+| QUAL-09 | Phase 4 | Pending |
+| TEST-01 | Phase 2 | Pending |
+| TEST-02 | Phase 2 | Pending |
+| TEST-03 | Phase 2 | Pending |
+| TEST-04 | Phase 3 | Pending |
+| TEST-05 | Phase 3 | Pending |
+| TEST-06 | Phase 4 | Pending |
+| TEST-07 | Phase 4 | Pending |
+| MCAT-01 | Phase 5 | Pending |
+| MCAT-02 | Phase 5 | Pending |
+| MCAT-03 | Phase 5 | Pending |
+| MCAT-04 | Phase 5 | Pending |
+| MCAT-05 | Phase 6 | Pending |
+| MCAT-06 | Phase 6 | Pending |
+| MCAT-07 | Phase 7 | Pending |
+| MCAT-08 | Phase 7 | Pending |
+| MCAT-09 | Phase 5 | Pending |
+| MCAT-10 | Phase 8 | Pending |
+| MCAT-11 | Phase 8 | Pending |
+| MCAT-12 | Phase 8 | Pending |
+| DATA-01 | Phase 9 | Pending |
+| DATA-02 | Phase 9 | Pending |
+| DATA-03 | Phase 10 | Pending |
+| DATA-04 | Phase 10 | Pending |
+| DATA-05 | Phase 10 | Pending |
+| DATA-06 | Phase 10 | Pending |
+| DATA-07 | Phase 10 | Pending |
+| DATA-08 | Phase 6 | Pending |
+| DATA-09 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 43 total
-- Mapped to phases: 0
-- Unmapped: 43 ⚠️
+- v1 requirements: 48 total
+- Mapped to phases: 48
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after initial definition*
+*Last updated: 2026-03-17 after roadmap creation*
