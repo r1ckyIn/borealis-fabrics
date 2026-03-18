@@ -25,6 +25,19 @@ export class QuerySupplierDto extends PaginationDto {
   @IsOptional()
   @IsEnum(SupplierSortField)
   sortBy?: SupplierSortField = SupplierSortField.createdAt;
+
+  @ApiPropertyOptional({
+    description:
+      'Unified keyword search across companyName, contactName, phone',
+    example: 'Textiles',
+  })
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.trim() : undefined,
+  )
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
   @ApiPropertyOptional({
     description: 'Filter by company name (fuzzy search)',
     example: 'Textiles',

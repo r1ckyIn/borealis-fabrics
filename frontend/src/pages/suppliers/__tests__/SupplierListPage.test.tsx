@@ -358,5 +358,135 @@ describe('SupplierListPage', () => {
         expect(document.querySelector('.ant-empty')).toBeInTheDocument();
       });
     });
+
+    it('should show custom empty text with action button', async () => {
+      mockUseSuppliers.mockReturnValue({
+        data: {
+          items: [],
+          pagination: { total: 0, page: 1, pageSize: 20, totalPages: 0 },
+        },
+        isLoading: false,
+        isFetching: false,
+      });
+
+      renderWithProviders(<SupplierListPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('暂无供应商数据')).toBeInTheDocument();
+      });
+    });
+
+    it('should navigate to create page from empty state button', async () => {
+      const user = userEvent.setup();
+
+      mockUseSuppliers.mockReturnValue({
+        data: {
+          items: [],
+          pagination: { total: 0, page: 1, pageSize: 20, totalPages: 0 },
+        },
+        isLoading: false,
+        isFetching: false,
+      });
+
+      renderWithProviders(<SupplierListPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('暂无供应商数据')).toBeInTheDocument();
+      });
+
+      // Find the button inside the empty state (not the header button)
+      const emptyContainer = document.querySelector('.ant-empty');
+      const createButton = emptyContainer?.querySelector('button');
+      expect(createButton).toBeTruthy();
+      await user.click(createButton!);
+
+      expect(mockNavigate).toHaveBeenCalledWith('/suppliers/new');
+    });
+  });
+
+  describe('Delete Error Handling', () => {
+    it('should show specific error message on delete 409 conflict', async () => {
+      const { message: antdMessage } = await import('antd');
+      const user = userEvent.setup();
+
+      const mockMutateAsync = vi.fn().mockRejectedValue({
+        code: 409,
+        message: 'SUPPLIER_HAS_ORDERS',
+        data: null,
+      });
+
+      mockUseDeleteSupplier.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithProviders(<SupplierListPage />);
+
+      // Click delete button
+      await waitFor(() => {
+        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
+      });
+      const deleteButtons = screen.getAllByText('删除');
+      await user.click(deleteButtons[0]);
+
+      // Confirm deletion in modal
+      await waitFor(() => {
+        expect(screen.getByText('确认删除')).toBeInTheDocument();
+      });
+
+      const confirmButton = document.querySelector(
+        '.ant-modal-footer .ant-btn-dangerous'
+      ) as HTMLButtonElement;
+      expect(confirmButton).toBeTruthy();
+      await user.click(confirmButton);
+
+      await waitFor(() => {
+        expect(antdMessage.error).toHaveBeenCalledWith(
+          '该供应商有关联的订单，无法删除'
+        );
+      });
+    });
+
+    it('should show generic error message on delete 500 error', async () => {
+      const { message: antdMessage } = await import('antd');
+      const user = userEvent.setup();
+
+      const mockMutateAsync = vi.fn().mockRejectedValue({
+        code: 500,
+        message: 'Internal Server Error',
+        data: null,
+      });
+
+      mockUseDeleteSupplier.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithProviders(<SupplierListPage />);
+
+      // Click delete button
+      await waitFor(() => {
+        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
+      });
+      const deleteButtons = screen.getAllByText('删除');
+      await user.click(deleteButtons[0]);
+
+      // Confirm deletion in modal
+      await waitFor(() => {
+        expect(screen.getByText('确认删除')).toBeInTheDocument();
+      });
+
+      const confirmButton = document.querySelector(
+        '.ant-modal-footer .ant-btn-dangerous'
+      ) as HTMLButtonElement;
+      expect(confirmButton).toBeTruthy();
+      await user.click(confirmButton);
+
+      await waitFor(() => {
+        expect(antdMessage.error).toHaveBeenCalledWith(
+          '服务器错误，请稍后重试'
+        );
+      });
+    });
   });
 });

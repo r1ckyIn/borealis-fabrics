@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Spin, message, Result, Button } from 'antd';
+import { Card, Form, Spin, message, Result, Button } from 'antd';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SupplierForm } from '@/components/forms/SupplierForm';
@@ -14,8 +14,9 @@ import {
   useCreateSupplier,
   useUpdateSupplier,
 } from '@/hooks/queries/useSuppliers';
-import type { CreateSupplierData, UpdateSupplierData } from '@/types';
+import type { CreateSupplierData, UpdateSupplierData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
+import { getErrorMessage, parseFieldError } from '@/utils/errorMessages';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -30,6 +31,7 @@ export default function SupplierFormPage(): React.ReactElement {
 
   const isEditMode = !!id;
   const supplierId = parseEntityId(id);
+  const [form] = Form.useForm<CreateSupplierData>();
 
   // Fetch existing supplier data for edit mode
   const {
@@ -46,6 +48,8 @@ export default function SupplierFormPage(): React.ReactElement {
 
   /**
    * Handle form submission for both create and edit.
+   * Uses getErrorMessage for Chinese error display and parseFieldError
+   * for inline field validation on 400/422 responses.
    */
   const handleSubmit = useCallback(
     async (values: CreateSupplierData): Promise<void> => {
@@ -62,12 +66,22 @@ export default function SupplierFormPage(): React.ReactElement {
         }
         navigate('/suppliers');
       } catch (error) {
-        // Error is already handled by TanStack Query error handling
         console.error('Submit error:', error);
-        message.error(isEditMode ? '更新失败，请重试' : '创建失败，请重试');
+        const apiError = error as ApiError;
+        // For validation errors, attempt inline field error display
+        if ((apiError.code === 400 || apiError.code === 422) && apiError.message) {
+          const fieldMatch = parseFieldError(apiError.message);
+          if (fieldMatch) {
+            form.setFields([
+              { name: fieldMatch.field as keyof CreateSupplierData, errors: [fieldMatch.message] },
+            ]);
+            return;
+          }
+        }
+        message.error(getErrorMessage(apiError));
       }
     },
-    [isEditMode, supplierId, createMutation, updateMutation, navigate]
+    [isEditMode, supplierId, createMutation, updateMutation, navigate, form]
   );
 
   /** Navigate back to supplier list. */
@@ -139,6 +153,7 @@ export default function SupplierFormPage(): React.ReactElement {
     >
       <Card>
         <SupplierForm
+          form={form}
           initialValues={supplier}
           onSubmit={handleSubmit}
           onCancel={goToList}

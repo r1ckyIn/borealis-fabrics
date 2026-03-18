@@ -86,6 +86,56 @@ export function getErrorMessage(error: ApiError): string {
 }
 
 /**
+ * Mapping of known backend field names to form field names.
+ * Used by parseFieldError to match validation messages to form fields.
+ */
+const FIELD_NAME_MAP: Record<string, string> = {
+  companyName: 'companyName',
+  contactName: 'contactName',
+  phone: 'phone',
+  wechat: 'wechat',
+  email: 'email',
+  address: 'address',
+  status: 'status',
+  billReceiveType: 'billReceiveType',
+  settleType: 'settleType',
+  creditDays: 'creditDays',
+  notes: 'notes',
+  creditType: 'creditType',
+  fabricCode: 'fabricCode',
+  name: 'name',
+  quantity: 'quantity',
+  unitPrice: 'unitPrice',
+  validUntil: 'validUntil',
+};
+
+/**
+ * Parse a backend validation error message to extract field name and message.
+ *
+ * Backend NestJS ValidationPipe typically returns messages like:
+ * - "companyName should not be empty"
+ * - "companyName must be a string"
+ * - "email must be an email"
+ *
+ * @param msg - The error message string from backend
+ * @returns Parsed field and message, or null if no field match found
+ */
+export function parseFieldError(
+  msg: string
+): { field: string; message: string } | null {
+  if (!msg || typeof msg !== 'string') return null;
+
+  // Check if the message starts with a known field name
+  for (const [backendField, formField] of Object.entries(FIELD_NAME_MAP)) {
+    if (msg.startsWith(backendField)) {
+      return { field: formField, message: msg };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Get a user-friendly Chinese error message for delete operations.
  *
  * Provides entity-specific 404 messages and delegates to getErrorMessage

@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, message, Typography, Tag } from 'antd';
+import { Card, Table, Button, Space, message, Typography, Tag, Empty } from 'antd';
 import { PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -21,7 +21,8 @@ import {
   SettleType,
   SETTLE_TYPE_LABELS,
 } from '@/types';
-import type { Supplier, QuerySupplierParams } from '@/types';
+import type { Supplier, QuerySupplierParams, ApiError } from '@/types';
+import { getDeleteErrorMessage } from '@/utils/errorMessages';
 
 const { Text } = Typography;
 
@@ -117,7 +118,7 @@ export default function SupplierListPage(): React.ReactElement {
     setSupplierToDelete(null);
   }, []);
 
-  /** Handle delete confirmation with 409 error handling. */
+  /** Handle delete confirmation with error handling via getDeleteErrorMessage. */
   const handleDeleteConfirm = useCallback(async (): Promise<void> => {
     if (!supplierToDelete) return;
 
@@ -127,12 +128,7 @@ export default function SupplierListPage(): React.ReactElement {
       closeDeleteModal();
     } catch (error: unknown) {
       console.error('Delete error:', error);
-      const axiosError = error as { response?: { status?: number } };
-      if (axiosError.response?.status === 409) {
-        message.error('该供应商有关联的活跃订单，无法删除');
-      } else {
-        message.error('删除失败，请重试');
-      }
+      message.error(getDeleteErrorMessage(error as ApiError, '供应商'));
     }
   }, [supplierToDelete, deleteMutation, closeDeleteModal]);
 
@@ -292,6 +288,22 @@ export default function SupplierListPage(): React.ReactElement {
           onRow={handleRowClick}
           scroll={{ x: 1200 }}
           size="middle"
+          locale={{
+            emptyText: (
+              <Empty
+                description="暂无供应商数据"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              >
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={goToCreate}
+                >
+                  新建供应商
+                </Button>
+              </Empty>
+            ),
+          }}
         />
       </Card>
 
