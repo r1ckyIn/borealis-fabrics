@@ -28,6 +28,14 @@
 
 **Requirements:** BUGF-01, BUGF-02, BUGF-03, BUGF-04, BUGF-05, BUGF-06
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Audit all frontend-backend mismatches + create error message utility
+- [ ] 01-02-PLAN.md — Fix Supplier + Customer modules (search, errors, loading, empty states)
+- [ ] 01-03-PLAN.md — Fix Fabric + Quote modules (search, 501 handling, errors, loading)
+- [ ] 01-04-PLAN.md — Fix Order + Logistics + Import modules (P0 import fix, sub-components)
+
 **Success Criteria:**
 1. User clicks any button on any page and sees expected result without console errors
 2. User fills and submits any form and data persists to database
