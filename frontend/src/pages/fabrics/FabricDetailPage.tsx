@@ -39,6 +39,8 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { SupplierSelector } from '@/components/business/SupplierSelector';
 import { CustomerSelector } from '@/components/business/CustomerSelector';
+import { getErrorMessage } from '@/utils/errorMessages';
+import type { ApiError } from '@/types/api.types';
 import {
   useFabric,
   useFabricSuppliers,
@@ -196,9 +198,9 @@ export default function FabricDetailPage(): React.ReactElement {
         message.success('供应商信息更新成功');
       }
       closeSupplierModal();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Supplier modal error:', error);
-      message.error('操作失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [fabricId, supplierForm, supplierModal, addSupplierMutation, updateSupplierMutation, closeSupplierModal]);
 
@@ -208,9 +210,9 @@ export default function FabricDetailPage(): React.ReactElement {
       try {
         await removeSupplierMutation.mutateAsync({ fabricId, supplierId });
         message.success('供应商已移除');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Remove supplier error:', error);
-        message.error('移除失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [fabricId, removeSupplierMutation]
@@ -257,9 +259,9 @@ export default function FabricDetailPage(): React.ReactElement {
         message.success('客户定价更新成功');
       }
       closePricingModal();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Pricing modal error:', error);
-      message.error('操作失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [fabricId, pricingForm, pricingModal, createPricingMutation, updatePricingMutation, closePricingModal]);
 
@@ -269,9 +271,9 @@ export default function FabricDetailPage(): React.ReactElement {
       try {
         await deletePricingMutation.mutateAsync({ fabricId, pricingId });
         message.success('客户定价已删除');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Delete pricing error:', error);
-        message.error('删除失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [fabricId, deletePricingMutation]
@@ -292,9 +294,9 @@ export default function FabricDetailPage(): React.ReactElement {
         });
         message.success('图片上传成功');
         return false; // Prevent default upload behavior
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Upload error:', error);
-        message.error('上传失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
         return false;
       }
     },
@@ -308,9 +310,9 @@ export default function FabricDetailPage(): React.ReactElement {
       try {
         await deleteImageMutation.mutateAsync({ fabricId, imageId });
         message.success('图片已删除');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Delete image error:', error);
-        message.error('删除失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [fabricId, deleteImageMutation]

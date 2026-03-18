@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Spin, message, Result, Button } from 'antd';
+import { Card, Spin, message, Result, Button, Form } from 'antd';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { FabricForm } from '@/components/forms/FabricForm';
@@ -14,7 +14,8 @@ import {
   useCreateFabric,
   useUpdateFabric,
 } from '@/hooks/queries/useFabrics';
-import type { CreateFabricData, UpdateFabricData } from '@/types';
+import { getErrorMessage } from '@/utils/errorMessages';
+import type { CreateFabricData, UpdateFabricData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
 
 /** Centered loading spinner style. */
@@ -28,6 +29,7 @@ export default function FabricFormPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const [form] = Form.useForm<CreateFabricData>();
   const isEditMode = !!id;
   const fabricId = parseEntityId(id);
 
@@ -61,13 +63,30 @@ export default function FabricFormPage(): React.ReactElement {
           message.success('面料创建成功');
         }
         navigate('/fabrics');
-      } catch (error) {
-        // Error is already handled by TanStack Query error handling
+      } catch (error: unknown) {
         console.error('Submit error:', error);
-        message.error(isEditMode ? '更新失败，请重试' : '创建失败，请重试');
+        const apiError = error as ApiError;
+
+        // For 400/422 validation errors, try to set inline field errors
+        if (apiError.code === 400 || apiError.code === 422) {
+          // If backend returns field-specific message, try to map to form field
+          const fieldMap: Record<string, string> = {
+            FABRIC_CODE_EXISTS: 'fabricCode',
+          };
+          const fieldName = fieldMap[apiError.message];
+          if (fieldName) {
+            form.setFields([
+              { name: fieldName as keyof CreateFabricData, errors: [getErrorMessage(apiError)] },
+            ]);
+            return;
+          }
+        }
+
+        // Non-field errors: show toast
+        message.error(getErrorMessage(apiError));
       }
     },
-    [isEditMode, fabricId, createMutation, updateMutation, navigate]
+    [isEditMode, fabricId, createMutation, updateMutation, navigate, form]
   );
 
   /** Navigate back to fabric list. */
@@ -139,6 +158,7 @@ export default function FabricFormPage(): React.ReactElement {
     >
       <Card>
         <FabricForm
+          form={form}
           initialValues={fabric}
           onSubmit={handleSubmit}
           onCancel={goToList}

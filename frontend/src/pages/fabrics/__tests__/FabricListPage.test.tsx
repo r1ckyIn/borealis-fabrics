@@ -346,7 +346,7 @@ describe('FabricListPage', () => {
   });
 
   describe('Empty State', () => {
-    it('should show empty table when no data', async () => {
+    it('should show empty table with action button when no data', async () => {
       mockUseFabrics.mockReturnValue({
         data: {
           items: [],
@@ -358,9 +358,61 @@ describe('FabricListPage', () => {
 
       renderWithProviders(<FabricListPage />);
 
-      // Ant Design empty text
+      // Custom empty state with description and action button
       await waitFor(() => {
         expect(document.querySelector('.ant-empty')).toBeInTheDocument();
+      });
+
+      // Action button in empty state should navigate to create page
+      await waitFor(() => {
+        const emptyContainer = document.querySelector('.ant-empty');
+        expect(emptyContainer).toBeInTheDocument();
+        const actionButton = emptyContainer?.querySelector('button');
+        expect(actionButton).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Delete Error Handling', () => {
+    it('should show Chinese error message on delete failure', async () => {
+      const { message: antdMessage } = await import('antd');
+      const user = userEvent.setup();
+
+      const mockMutateAsync = vi.fn().mockRejectedValue({
+        code: 409,
+        message: 'FABRIC_HAS_ORDERS',
+        data: null,
+      });
+      mockUseDeleteFabric.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithProviders(<FabricListPage />);
+
+      // Open delete modal
+      await waitFor(() => {
+        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
+      });
+
+      const deleteButtons = screen.getAllByText('删除');
+      await user.click(deleteButtons[0]);
+
+      // Wait for modal
+      await waitFor(() => {
+        expect(screen.getByText('确认删除')).toBeInTheDocument();
+      });
+
+      // Click confirm in modal
+      const confirmButton = document.querySelector('.ant-modal-footer .ant-btn-dangerous');
+      expect(confirmButton).toBeInTheDocument();
+      await user.click(confirmButton!);
+
+      // Verify Chinese error message was shown
+      await waitFor(() => {
+        expect(antdMessage.error).toHaveBeenCalledWith(
+          '该面料有关联的订单，无法删除'
+        );
       });
     });
   });

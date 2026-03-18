@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, message, Typography, Tag } from 'antd';
+import { Card, Table, Button, Space, message, Typography, Tag, Empty } from 'antd';
 import { PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -15,7 +15,8 @@ import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
 import { useFabrics, useDeleteFabric } from '@/hooks/queries/useFabrics';
-import type { Fabric, QueryFabricParams } from '@/types';
+import { getDeleteErrorMessage } from '@/utils/errorMessages';
+import type { Fabric, QueryFabricParams, ApiError } from '@/types';
 
 const { Text } = Typography;
 
@@ -106,9 +107,9 @@ export default function FabricListPage(): React.ReactElement {
       await deleteMutation.mutateAsync(fabricToDelete.id);
       message.success(`面料 "${fabricToDelete.name}" 已删除`);
       closeDeleteModal();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Delete error:', error);
-      message.error('删除失败，请重试');
+      message.error(getDeleteErrorMessage(error as ApiError, '面料'));
     }
   }, [fabricToDelete, deleteMutation, closeDeleteModal]);
 
@@ -259,6 +260,15 @@ export default function FabricListPage(): React.ReactElement {
           pagination={{
             ...paginationProps,
             total: data?.pagination.total ?? 0,
+          }}
+          locale={{
+            emptyText: (
+              <Empty description="暂无面料数据" image={Empty.PRESENTED_IMAGE_SIMPLE}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
+                  新建面料
+                </Button>
+              </Empty>
+            ),
           }}
           onChange={handleTableChange as Parameters<typeof Table<Fabric>>['0']['onChange']}
           onRow={handleRowClick}

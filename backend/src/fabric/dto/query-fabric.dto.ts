@@ -27,6 +27,17 @@ export class QueryFabricDto extends PaginationDto {
   sortBy?: FabricSortField = FabricSortField.createdAt;
 
   @ApiPropertyOptional({
+    description: 'Unified keyword search across fabricCode, name, and color',
+    example: 'Cotton',
+  })
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.trim() : undefined,
+  )
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter by fabric code (fuzzy search)',
     example: 'FB-2401',
   })

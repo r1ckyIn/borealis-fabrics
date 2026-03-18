@@ -142,6 +142,15 @@ export class FabricService {
       isActive: query.isActive ?? true,
     };
 
+    // Unified keyword search across fabricCode, name, and color
+    if (query.keyword) {
+      where.OR = [
+        { fabricCode: { contains: query.keyword } },
+        { name: { contains: query.keyword } },
+        { color: { contains: query.keyword } },
+      ];
+    }
+
     if (query.fabricCode) {
       where.fabricCode = { contains: query.fabricCode };
     }
