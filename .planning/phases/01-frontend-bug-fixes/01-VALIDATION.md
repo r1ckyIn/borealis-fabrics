@@ -38,16 +38,17 @@ created: 2026-03-17
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | BUGF-01 | unit + integration | `pnpm test` | ✅ | ⬜ pending |
-| TBD | TBD | TBD | BUGF-02 | unit + integration | `pnpm test` | ✅ | ⬜ pending |
-| TBD | TBD | TBD | BUGF-03 | unit + integration | `pnpm test` | ✅ | ⬜ pending |
-| TBD | TBD | TBD | BUGF-04 | unit + integration | `pnpm test` | ✅ | ⬜ pending |
-| TBD | TBD | TBD | BUGF-05 | unit + integration | `pnpm test` | ✅ | ⬜ pending |
-| TBD | TBD | TBD | BUGF-06 | unit + integration | `pnpm test` | ✅ | ⬜ pending |
+| 01-01-T1 | 01 | 1 | BUGF-05, BUGF-06 | document audit | `test -f .planning/phases/01-frontend-bug-fixes/01-AUDIT.md && grep -q '## Summary' .planning/phases/01-frontend-bug-fixes/01-AUDIT.md && [ $(grep -c 'BUG-' .planning/phases/01-frontend-bug-fixes/01-AUDIT.md) -ge 5 ]` | N/A | ⬜ pending |
+| 01-01-T2 | 01 | 1 | BUGF-06 | unit | `cd frontend && pnpm test -- --run src/utils/__tests__/errorMessages.test.ts` | ❌ (to create) | ⬜ pending |
+| 01-02-T1 | 02 | 2 | BUGF-01~06 | unit + integration | `cd frontend && pnpm test -- --run src/pages/suppliers/__tests__/` | ✅ | ⬜ pending |
+| 01-02-T2 | 02 | 2 | BUGF-01~06 | unit + integration | `cd frontend && pnpm test -- --run src/pages/customers/__tests__/` | ✅ | ⬜ pending |
+| 01-03-T1 | 03 | 2 | BUGF-01~06 | unit + integration | `cd frontend && pnpm test -- --run src/pages/fabrics/__tests__/` | ✅ | ⬜ pending |
+| 01-03-T2 | 03 | 2 | BUGF-01~06 | unit + integration | `cd frontend && pnpm test -- --run src/pages/quotes/__tests__/` | ❌ (to create) | ⬜ pending |
+| 01-04-T1 | 04 | 2 | BUGF-01~06 | unit + integration | `cd backend && pnpm test -- --testPathPattern import && cd ../frontend && pnpm test -- --run src/pages/import/__tests__/` | ✅ | ⬜ pending |
+| 01-04-T2 | 04 | 2 | BUGF-01~06 | unit + integration | `cd frontend && pnpm test -- --run src/pages/orders/__tests__/` | ❌ (to create) | ⬜ pending |
+| 01-04-T3 | 04 | 2 | BUGF-01~06 | manual | Full business flow verification in browser | N/A | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
-
-*Note: Task IDs will be populated after PLAN.md creation.*
 
 ---
 
@@ -66,6 +67,7 @@ Existing infrastructure covers all phase requirements. Both frontend and backend
 | List page pagination/search/filter | BUGF-03 | UX flow requires browser interaction | Navigate pages, use search, apply filters |
 | Detail pages display all fields | BUGF-04 | Visual completeness check | Open each detail page, verify all fields |
 | Error messages show Chinese text | BUGF-06 | UX verification | Trigger errors, verify Chinese messages |
+| Inline field validation errors display on form fields | BUGF-06 | Form UX requires visual verification | Submit invalid form data, verify inline errors on fields |
 
 *User will perform manual frontend verification after each module per CONTEXT.md decision.*
 
