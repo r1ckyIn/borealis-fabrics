@@ -72,7 +72,7 @@ class ExcelFileValidator extends FileValidator {
 }
 
 @ApiTags('Import')
-@Controller('import')
+@Controller('api/v1/import')
 export class ImportController {
   constructor(private readonly importService: ImportService) {}
 
