@@ -112,8 +112,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | BUGF-02 | Phase 1 | Pending |
 | BUGF-03 | Phase 1 | Pending |
 | BUGF-04 | Phase 1 | Pending |
-| BUGF-05 | Phase 1 | Pending |
-| BUGF-06 | Phase 1 | Pending |
+| BUGF-05 | Phase 1 | In Progress (audit done, fixes in Plans 02-04) |
+| BUGF-06 | Phase 1 | In Progress (error utility done, integration in Plans 02-04) |
 | FEAT-01 | Phase 2 | Pending |
 | FEAT-02 | Phase 2 | Pending |
 | FEAT-03 | Phase 2 | Pending |
