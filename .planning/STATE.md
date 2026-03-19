@@ -14,14 +14,14 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | 1 |
 | Name | Frontend Bug Fixes |
 | Status | Executing |
-| Current Plan | 3 of 4 |
+| Current Plan | 4 of 4 |
 | Branch | feature/gsd-01-frontend-bug-fixes |
 
 ## Progress
 
 | Phase | Status | Plans |
 |-------|--------|-------|
-| 1 — Frontend Bug Fixes | ◐ Executing | 2/4 |
+| 1 — Frontend Bug Fixes | ◐ Executing | 3/4 |
 | 2 — Core Feature Implementation | ○ Not Started | — |
 | 3 — Backend Service Decomposition | ○ Not Started | — |
 | 4 — Frontend Component Decomposition | ○ Not Started | — |
@@ -53,6 +53,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-19 | Form.useForm() at page level, pass to form component | Enables setFields() for inline validation from error handler |
 | 2026-03-19 | parseFieldError via prefix matching of field names | Simple but effective for NestJS class-validator messages |
 | 2026-03-19 | Backend keyword OR-based search (not LIKE concat) | Better readability and maintainability with Prisma |
+| 2026-03-19 | 501 uses message.warning() not message.error() | Indicates "not yet available" vs "something broke" |
 
 ## Session Log
 
@@ -61,7 +62,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-17 | Phase 1 discuss | Context gathered | `.planning/phases/01-frontend-bug-fixes/01-CONTEXT.md` |
 | 2026-03-19 | Phase 1 Plan 01 | Completed 01-01-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-01-SUMMARY.md` |
 | 2026-03-19 | Phase 1 Plan 02 | Completed 01-02-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-02-SUMMARY.md` |
+| 2026-03-19 | Phase 1 Plan 03 | Completed 01-03-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-03-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-19 (Plan 02 complete)*
+*Last updated: 2026-03-19 (Plan 03 complete)*
