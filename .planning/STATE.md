@@ -14,14 +14,14 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | 1 |
 | Name | Frontend Bug Fixes |
 | Status | Executing |
-| Current Plan | 2 of 4 |
+| Current Plan | 3 of 4 |
 | Branch | feature/gsd-01-frontend-bug-fixes |
 
 ## Progress
 
 | Phase | Status | Plans |
 |-------|--------|-------|
-| 1 — Frontend Bug Fixes | ◐ Executing | 1/4 |
+| 1 — Frontend Bug Fixes | ◐ Executing | 2/4 |
 | 2 — Core Feature Implementation | ○ Not Started | — |
 | 3 — Backend Service Decomposition | ○ Not Started | — |
 | 4 — Frontend Component Decomposition | ○ Not Started | — |
@@ -50,6 +50,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-19 | Error code resolution: ERROR_CODE_MESSAGES > HTTP_STATUS > raw message > fallback | Standard pattern for all error display |
 | 2026-03-19 | Add keyword to backend DTOs (not rename frontend fields) | Better UX with unified search |
 | 2026-03-19 | Auth controller prefix fix = P2 | Works via Vite proxy, consistency only |
+| 2026-03-19 | Form.useForm() at page level, pass to form component | Enables setFields() for inline validation from error handler |
+| 2026-03-19 | parseFieldError via prefix matching of field names | Simple but effective for NestJS class-validator messages |
+| 2026-03-19 | Backend keyword OR-based search (not LIKE concat) | Better readability and maintainability with Prisma |
 
 ## Session Log
 
@@ -57,7 +60,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 |------|---------|------------|--------|
 | 2026-03-17 | Phase 1 discuss | Context gathered | `.planning/phases/01-frontend-bug-fixes/01-CONTEXT.md` |
 | 2026-03-19 | Phase 1 Plan 01 | Completed 01-01-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-01-SUMMARY.md` |
+| 2026-03-19 | Phase 1 Plan 02 | Completed 01-02-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-19*
+*Last updated: 2026-03-19 (Plan 02 complete)*

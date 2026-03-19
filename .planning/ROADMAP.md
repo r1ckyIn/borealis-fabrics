@@ -9,7 +9,7 @@
 
 | # | Phase | Milestone | Goal | Requirements |
 |---|-------|-----------|------|--------------|
-| 1 | Frontend Bug Fixes | M1 | Every existing UI feature works correctly | BUGF-01~06 |
+| 1 | 2/4 | In Progress|  | BUGF-01~06 |
 | 2 | Core Feature Implementation | M1 | Quote-to-order + COS file storage end-to-end | FEAT-01~05, TEST-01~03 |
 | 3 | Backend Service Decomposition | M1 | Services decomposed + any types eliminated | QUAL-01~02, QUAL-06, TEST-04~05 |
 | 4 | Frontend Component Decomposition | M1 | Components decomposed + all tests pass | QUAL-03~09, TEST-06~07 |
@@ -28,7 +28,7 @@
 
 **Requirements:** BUGF-01, BUGF-02, BUGF-03, BUGF-04, BUGF-05, BUGF-06
 
-**Plans:** 4 plans
+**Plans:** 2/4 plans executed
 
 Plans:
 - [x] 01-01-PLAN.md — Audit all frontend-backend mismatches + create error message utility
