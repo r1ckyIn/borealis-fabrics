@@ -26,6 +26,7 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { StatusTag } from '@/components/common/StatusTag';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
+import { getDeleteErrorMessage, getErrorMessage } from '@/utils/errorMessages';
 import {
   useQuote,
   useDeleteQuote,
@@ -33,6 +34,7 @@ import {
 } from '@/hooks/queries/useQuotes';
 import { formatDate, formatQuantity, parseEntityId } from '@/utils';
 import { QuoteStatus } from '@/types';
+import type { ApiError } from '@/types/api.types';
 
 const { Text } = Typography;
 
@@ -86,12 +88,7 @@ export default function QuoteDetailPage(): React.ReactElement {
       navigate('/quotes');
     } catch (error: unknown) {
       console.error('Delete error:', error);
-      const axiosError = error as { response?: { status?: number } };
-      if (axiosError.response?.status === 409) {
-        message.error('该报价已关联订单，无法删除');
-      } else {
-        message.error('删除失败，请重试');
-      }
+      message.error(getDeleteErrorMessage(error as ApiError, '报价单'));
     }
   }, [quoteId, deleteMutation, navigate]);
 
@@ -104,9 +101,15 @@ export default function QuoteDetailPage(): React.ReactElement {
       message.success('报价已成功转换为订单');
       setConvertModalOpen(false);
       navigate(`/orders/${order.id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Convert error:', error);
-      message.error('转换失败，请重试');
+      const apiError = error as ApiError;
+      if (apiError.code === 501) {
+        message.warning(getErrorMessage(apiError));
+      } else {
+        message.error(getErrorMessage(apiError));
+      }
+      setConvertModalOpen(false);
     }
   }, [quoteId, convertMutation, navigate]);
 

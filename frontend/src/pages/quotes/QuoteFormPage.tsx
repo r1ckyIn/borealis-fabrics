@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Spin, message, Result, Button } from 'antd';
+import { Card, Spin, message, Result, Button, Form } from 'antd';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { QuoteForm } from '@/components/forms/QuoteForm';
@@ -14,8 +14,9 @@ import {
   useCreateQuote,
   useUpdateQuote,
 } from '@/hooks/queries/useQuotes';
+import { getErrorMessage } from '@/utils/errorMessages';
 import { QuoteStatus } from '@/types';
-import type { CreateQuoteData, UpdateQuoteData } from '@/types';
+import type { CreateQuoteData, UpdateQuoteData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
 
 /** Centered loading spinner style. */
@@ -29,6 +30,7 @@ export default function QuoteFormPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
+  const [form] = Form.useForm();
   const isEditMode = !!id;
   const quoteId = parseEntityId(id);
 
@@ -60,12 +62,30 @@ export default function QuoteFormPage(): React.ReactElement {
           message.success('报价创建成功');
         }
         navigate('/quotes');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Submit error:', error);
-        message.error(isEditMode ? '更新失败，请重试' : '创建失败，请重试');
+        const apiError = error as ApiError;
+
+        // For 400/422 validation errors, try to set inline field errors
+        if (apiError.code === 400 || apiError.code === 422) {
+          const fieldMap: Record<string, string> = {
+            QUOTE_ALREADY_CONVERTED: 'status',
+            QUOTE_EXPIRED: 'validUntil',
+          };
+          const fieldName = fieldMap[apiError.message];
+          if (fieldName) {
+            form.setFields([
+              { name: fieldName, errors: [getErrorMessage(apiError)] },
+            ]);
+            return;
+          }
+        }
+
+        // Non-field errors: show toast
+        message.error(getErrorMessage(apiError));
       }
     },
-    [isEditMode, quoteId, createMutation, updateMutation, navigate]
+    [isEditMode, quoteId, createMutation, updateMutation, navigate, form]
   );
 
   /** Navigate back to quote list. */
@@ -153,6 +173,7 @@ export default function QuoteFormPage(): React.ReactElement {
     >
       <Card>
         <QuoteForm
+          form={form}
           initialValues={quote}
           onSubmit={handleSubmit}
           onCancel={goToList}

@@ -194,12 +194,13 @@ describe('Fabric CRUD Integration', () => {
       renderFabricRoutes();
       const user = userEvent.setup();
 
-      // Wait for the page to render; "新建面料" appears as the page button
+      // Wait for the page to render; "新建面料" appears in header and empty state
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /新建面料/ })).toBeInTheDocument();
+        expect(screen.getAllByRole('button', { name: /新建面料/ }).length).toBeGreaterThan(0);
       });
 
-      await user.click(screen.getByRole('button', { name: /新建面料/ }));
+      // Click the first "新建面料" button (header button)
+      await user.click(screen.getAllByRole('button', { name: /新建面料/ })[0]);
 
       // FabricFormPage in create mode shows "面料编码" form field
       await waitFor(() => {

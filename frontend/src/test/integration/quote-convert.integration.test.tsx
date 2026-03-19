@@ -153,7 +153,11 @@ describe('Quote Conversion Integration', () => {
       });
 
       quoteApi.getQuote.mockResolvedValue(quote);
-      quoteApi.convertQuoteToOrder.mockRejectedValue(new Error('Server error'));
+      quoteApi.convertQuoteToOrder.mockRejectedValue({
+        code: 500,
+        message: 'Internal Server Error',
+        data: null,
+      });
 
       renderQuoteRoutes();
       const user = userEvent.setup();
@@ -172,9 +176,9 @@ describe('Quote Conversion Integration', () => {
       const okButton = modalFooter!.querySelector('.ant-btn-primary') as HTMLButtonElement;
       await user.click(okButton);
 
-      // Error message should appear
+      // Error message should appear (mapped from HTTP status code 500)
       await waitFor(() => {
-        expect(screen.getByText('转换失败，请重试')).toBeInTheDocument();
+        expect(screen.getByText('服务器错误，请稍后重试')).toBeInTheDocument();
       });
 
       // Should stay on quote page (quoteCode still visible in title)
@@ -229,8 +233,9 @@ describe('Quote Conversion Integration', () => {
 
       quoteApi.getQuote.mockResolvedValue(quote);
       quoteApi.deleteQuote.mockRejectedValue({
-        response: { status: 409 },
-        message: 'Conflict',
+        code: 409,
+        message: 'QUOTE_ALREADY_CONVERTED',
+        data: null,
       });
 
       renderQuoteRoutes();
@@ -251,7 +256,7 @@ describe('Quote Conversion Integration', () => {
       await user.click(okButton);
 
       await waitFor(() => {
-        expect(screen.getByText('该报价已关联订单，无法删除')).toBeInTheDocument();
+        expect(screen.getByText('该报价单已转为订单')).toBeInTheDocument();
       });
     });
   });

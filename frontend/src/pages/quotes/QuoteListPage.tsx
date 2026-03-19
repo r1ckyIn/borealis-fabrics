@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, message, Typography } from 'antd';
+import { Card, Table, Button, Space, message, Typography, Empty } from 'antd';
 import {
   PlusOutlined,
   EyeOutlined,
@@ -32,7 +32,8 @@ import {
   QuoteStatus,
   QUOTE_STATUS_LABELS,
 } from '@/types';
-import type { Quote, QueryQuoteParams } from '@/types';
+import { getDeleteErrorMessage, getErrorMessage } from '@/utils/errorMessages';
+import type { Quote, QueryQuoteParams, ApiError } from '@/types';
 
 const { Text } = Typography;
 
@@ -149,12 +150,7 @@ export default function QuoteListPage(): React.ReactElement {
       closeDeleteModal();
     } catch (error: unknown) {
       console.error('Delete error:', error);
-      const axiosError = error as { response?: { status?: number } };
-      if (axiosError.response?.status === 409) {
-        message.error('该报价已关联订单，无法删除');
-      } else {
-        message.error('删除失败，请重试');
-      }
+      message.error(getDeleteErrorMessage(error as ApiError, '报价单'));
     }
   }, [quoteToDelete, deleteMutation, closeDeleteModal]);
 
@@ -179,9 +175,15 @@ export default function QuoteListPage(): React.ReactElement {
       message.success(`报价 "${quoteToConvert.quoteCode}" 已成功转换为订单`);
       closeConvertModal();
       navigate(`/orders/${order.id}`);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Convert error:', error);
-      message.error('转换失败，请重试');
+      const apiError = error as ApiError;
+      if (apiError.code === 501) {
+        message.warning(getErrorMessage(apiError));
+      } else {
+        message.error(getErrorMessage(apiError));
+      }
+      closeConvertModal();
     }
   }, [quoteToConvert, convertMutation, closeConvertModal, navigate]);
 
@@ -358,6 +360,15 @@ export default function QuoteListPage(): React.ReactElement {
           pagination={{
             ...paginationProps,
             total: data?.pagination.total ?? 0,
+          }}
+          locale={{
+            emptyText: (
+              <Empty description="暂无报价单数据" image={Empty.PRESENTED_IMAGE_SIMPLE}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
+                  新建报价单
+                </Button>
+              </Empty>
+            ),
           }}
           onChange={handleTableChange as Parameters<typeof Table<Quote>>['0']['onChange']}
           onRow={handleRowClick}
