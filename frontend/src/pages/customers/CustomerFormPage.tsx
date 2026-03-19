@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Spin, message, Result, Button } from 'antd';
+import { Card, Form, Spin, message, Result, Button } from 'antd';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { CustomerForm } from '@/components/forms/CustomerForm';
@@ -14,8 +14,9 @@ import {
   useCreateCustomer,
   useUpdateCustomer,
 } from '@/hooks/queries/useCustomers';
-import type { CreateCustomerData, UpdateCustomerData } from '@/types';
+import type { CreateCustomerData, UpdateCustomerData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
+import { getErrorMessage, parseFieldError } from '@/utils/errorMessages';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -30,6 +31,7 @@ export default function CustomerFormPage(): React.ReactElement {
 
   const isEditMode = !!id;
   const customerId = parseEntityId(id);
+  const [form] = Form.useForm<CreateCustomerData>();
 
   // Fetch existing customer data for edit mode
   const {
@@ -46,6 +48,8 @@ export default function CustomerFormPage(): React.ReactElement {
 
   /**
    * Handle form submission for both create and edit.
+   * Uses getErrorMessage for Chinese error display and parseFieldError
+   * for inline field validation on 400/422 responses.
    */
   const handleSubmit = useCallback(
     async (values: CreateCustomerData): Promise<void> => {
@@ -62,12 +66,22 @@ export default function CustomerFormPage(): React.ReactElement {
         }
         navigate('/customers');
       } catch (error) {
-        // Error is already handled by TanStack Query error handling
         console.error('Submit error:', error);
-        message.error(isEditMode ? '更新失败，请重试' : '创建失败，请重试');
+        const apiError = error as ApiError;
+        // For validation errors, attempt inline field error display
+        if ((apiError.code === 400 || apiError.code === 422) && apiError.message) {
+          const fieldMatch = parseFieldError(apiError.message);
+          if (fieldMatch) {
+            form.setFields([
+              { name: fieldMatch.field as keyof CreateCustomerData, errors: [fieldMatch.message] },
+            ]);
+            return;
+          }
+        }
+        message.error(getErrorMessage(apiError));
       }
     },
-    [isEditMode, customerId, createMutation, updateMutation, navigate]
+    [isEditMode, customerId, createMutation, updateMutation, navigate, form]
   );
 
   /** Navigate back to customer list. */
@@ -139,6 +153,7 @@ export default function CustomerFormPage(): React.ReactElement {
     >
       <Card>
         <CustomerForm
+          form={form}
           initialValues={customer}
           onSubmit={handleSubmit}
           onCancel={goToList}

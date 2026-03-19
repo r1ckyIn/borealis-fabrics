@@ -22,6 +22,7 @@ import {
   useUpdateCustomerPayment,
   useUpdateSupplierPayment,
 } from '@/hooks/queries/useOrders';
+import { getErrorMessage } from '@/utils/errorMessages';
 import {
   CustomerPayStatus,
   CUSTOMER_PAY_STATUS_LABELS,
@@ -33,6 +34,7 @@ import type {
   SupplierPayment,
   UpdateCustomerPaymentData,
   UpdateSupplierPaymentData,
+  ApiError,
 } from '@/types';
 
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -130,7 +132,7 @@ export function CustomerPaymentTab({
       setModalOpen(false);
     } catch (error) {
       console.error('Update customer payment failed:', error);
-      message.error('更新失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, form, mutation]);
 
@@ -217,7 +219,7 @@ export function SupplierPaymentsTab({
       setModalState({ open: false, payment: null });
     } catch (error) {
       console.error('Update supplier payment failed:', error);
-      message.error('更新失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, modalState, form, mutation]);
 

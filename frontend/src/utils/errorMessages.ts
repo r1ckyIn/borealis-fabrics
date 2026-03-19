@@ -107,6 +107,13 @@ const FIELD_NAME_MAP: Record<string, string> = {
   quantity: 'quantity',
   unitPrice: 'unitPrice',
   validUntil: 'validUntil',
+  customerId: 'customerId',
+  deliveryAddress: 'deliveryAddress',
+  salePrice: 'salePrice',
+  purchasePrice: 'purchasePrice',
+  deliveryDate: 'deliveryDate',
+  carrier: 'carrier',
+  trackingNo: 'trackingNo',
 };
 
 /**

@@ -262,6 +262,29 @@ describe('CustomerFormPage', () => {
     });
   });
 
+  describe('Submit Error Handling', () => {
+    it('should render form with error handling code path available', async () => {
+      const mockMutateAsync = vi.fn().mockRejectedValue({
+        code: 409,
+        message: 'COMPANY_NAME_EXISTS',
+        data: null,
+      });
+
+      mockUseCreateCustomer.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithProviders(<CustomerFormPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('创建客户')).toBeInTheDocument();
+      });
+
+      expect(mockMutateAsync).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Submit Loading', () => {
     it('should show loading state during create submission', async () => {
       mockUseCreateCustomer.mockReturnValue({

@@ -237,7 +237,10 @@ export interface CreateLogisticsData {
 export type UpdateLogisticsData = Partial<Omit<CreateLogisticsData, 'orderItemId'>>;
 
 export interface QueryLogisticsParams extends PaginationParams {
+  orderId?: number;
   orderItemId?: number;
+  trackingNo?: string;
+  carrier?: string;
 }
 
 export interface UploadFabricImageData {

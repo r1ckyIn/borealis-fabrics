@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, message, Typography } from 'antd';
+import { Card, Table, Button, Space, Empty, message, Typography } from 'antd';
 import {
   PlusOutlined,
   EyeOutlined,
@@ -23,13 +23,14 @@ import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
 import { useOrders, useDeleteOrder } from '@/hooks/queries/useOrders';
 import { formatDate } from '@/utils';
+import { getDeleteErrorMessage } from '@/utils/errorMessages';
 import {
   OrderItemStatus,
   ORDER_ITEM_STATUS_LABELS,
   CustomerPayStatus,
   CUSTOMER_PAY_STATUS_LABELS,
 } from '@/types';
-import type { Order, QueryOrderParams } from '@/types';
+import type { Order, QueryOrderParams, ApiError } from '@/types';
 
 const { Text } = Typography;
 
@@ -164,7 +165,7 @@ export default function OrderListPage(): React.ReactElement {
       closeDeleteModal();
     } catch (error: unknown) {
       console.error('Delete error:', error);
-      message.error('删除失败，请重试');
+      message.error(getDeleteErrorMessage(error as ApiError, '订单'));
     }
   }, [orderToDelete, deleteMutation, closeDeleteModal]);
 
@@ -316,6 +317,13 @@ export default function OrderListPage(): React.ReactElement {
           dataSource={data?.items ?? []}
           rowKey="id"
           loading={isLoading}
+          locale={{
+            emptyText: (
+              <Empty description="暂无订单数据">
+                <Button type="primary" onClick={goToCreate}>新建订单</Button>
+              </Empty>
+            ),
+          }}
           pagination={{
             ...paginationProps,
             total: data?.pagination.total ?? 0,

@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, message, Typography } from 'antd';
+import { Card, Table, Button, Space, message, Typography, Empty } from 'antd';
 import { PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
@@ -15,7 +15,8 @@ import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { usePagination } from '@/hooks/usePagination';
 import { useCustomers, useDeleteCustomer } from '@/hooks/queries/useCustomers';
 import { CreditType, CREDIT_TYPE_LABELS } from '@/types';
-import type { Customer, QueryCustomerParams } from '@/types';
+import type { Customer, QueryCustomerParams, ApiError } from '@/types';
+import { getDeleteErrorMessage } from '@/utils/errorMessages';
 
 const { Text } = Typography;
 
@@ -98,7 +99,7 @@ export default function CustomerListPage(): React.ReactElement {
     setCustomerToDelete(null);
   }, []);
 
-  /** Handle delete confirmation with 409 error handling. */
+  /** Handle delete confirmation with error handling via getDeleteErrorMessage. */
   const handleDeleteConfirm = useCallback(async (): Promise<void> => {
     if (!customerToDelete) return;
 
@@ -108,12 +109,7 @@ export default function CustomerListPage(): React.ReactElement {
       closeDeleteModal();
     } catch (error: unknown) {
       console.error('Delete error:', error);
-      const axiosError = error as { response?: { status?: number } };
-      if (axiosError.response?.status === 409) {
-        message.error('该客户有关联的活跃订单，无法删除');
-      } else {
-        message.error('删除失败，请重试');
-      }
+      message.error(getDeleteErrorMessage(error as ApiError, '客户'));
     }
   }, [customerToDelete, deleteMutation, closeDeleteModal]);
 
@@ -262,6 +258,22 @@ export default function CustomerListPage(): React.ReactElement {
           onRow={handleRowClick}
           scroll={{ x: 1000 }}
           size="middle"
+          locale={{
+            emptyText: (
+              <Empty
+                description="暂无客户数据"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              >
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={goToCreate}
+                >
+                  新建客户
+                </Button>
+              </Empty>
+            ),
+          }}
         />
       </Card>
 

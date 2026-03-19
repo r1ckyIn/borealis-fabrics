@@ -130,6 +130,15 @@ export class CustomerService {
       isActive: query.isActive ?? true,
     };
 
+    // Unified keyword search across companyName, contactName, phone
+    if (query.keyword) {
+      where.OR = [
+        { companyName: { contains: query.keyword } },
+        { contactName: { contains: query.keyword } },
+        { phone: { contains: query.keyword } },
+      ];
+    }
+
     if (query.companyName) {
       where.companyName = { contains: query.companyName };
     }

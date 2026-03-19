@@ -26,6 +26,18 @@ export class QueryCustomerDto extends PaginationDto {
   sortBy?: CustomerSortField = CustomerSortField.createdAt;
 
   @ApiPropertyOptional({
+    description:
+      'Unified keyword search across companyName, contactName, phone',
+    example: 'Furniture',
+  })
+  @Transform(({ value }): string | undefined =>
+    typeof value === 'string' ? value.trim() : undefined,
+  )
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter by company name (fuzzy search)',
     example: 'Furniture',
   })
