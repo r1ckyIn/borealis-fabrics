@@ -55,11 +55,13 @@ import {
   canCancelItem,
   canRestoreItem,
 } from '@/utils';
+import { getErrorMessage } from '@/utils/errorMessages';
 import { OrderItemStatus } from '@/types';
 import type {
   OrderItem,
   AddOrderItemData,
   UpdateOrderItemData,
+  ApiError,
 } from '@/types';
 
 const { Text } = Typography;
@@ -142,7 +144,7 @@ export function OrderItemsSection({
       setStatusModal({ open: false, item: null, targetStatus: null });
     } catch (error) {
       console.error('Status change failed:', error);
-      message.error('状态更新失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, statusModal, updateStatusMutation]);
 
@@ -168,7 +170,7 @@ export function OrderItemsSection({
       setCancelModal({ open: false, item: null });
     } catch (error) {
       console.error('Cancel item failed:', error);
-      message.error('取消失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, cancelModal, cancelForm, cancelItemMutation]);
 
@@ -183,7 +185,7 @@ export function OrderItemsSection({
       setRestoreModal({ open: false, item: null });
     } catch (error) {
       console.error('Restore item failed:', error);
-      message.error('恢复失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, restoreModal, restoreItemMutation]);
 
@@ -210,7 +212,7 @@ export function OrderItemsSection({
       setAddItemModal(false);
     } catch (error) {
       console.error('Add item failed:', error);
-      message.error('添加失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, addItemForm, addItemMutation]);
 
@@ -251,7 +253,7 @@ export function OrderItemsSection({
       setEditItemModal({ open: false, item: null });
     } catch (error) {
       console.error('Edit item failed:', error);
-      message.error('更新失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, editItemModal, editItemForm, updateItemMutation]);
 
@@ -262,7 +264,7 @@ export function OrderItemsSection({
         message.success('明细已删除');
       } catch (error) {
         console.error('Delete item failed:', error);
-        message.error('删除失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [orderId, deleteItemMutation]

@@ -5,7 +5,7 @@ import { EnumsResponseDto } from './dto/enums-response.dto';
 import { HealthResponseDto, ReadyResponseDto } from './dto/health-response.dto';
 
 @ApiTags('System')
-@Controller('api/v1/system')
+@Controller('system')
 export class SystemController {
   constructor(private readonly systemService: SystemService) {}
 

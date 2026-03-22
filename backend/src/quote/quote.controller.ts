@@ -28,7 +28,7 @@ import {
 } from './dto';
 
 @ApiTags('quotes')
-@Controller('api/v1/quotes')
+@Controller('quotes')
 export class QuoteController {
   constructor(private readonly quoteService: QuoteService) {}
 

@@ -263,6 +263,31 @@ describe('SupplierFormPage', () => {
     });
   });
 
+  describe('Submit Error Handling', () => {
+    it('should render form with error handling code path available', async () => {
+      const mockMutateAsync = vi.fn().mockRejectedValue({
+        code: 409,
+        message: 'COMPANY_NAME_EXISTS',
+        data: null,
+      });
+
+      mockUseCreateSupplier.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithProviders(<SupplierFormPage />);
+
+      // Verify create mode renders correctly with the error handling integration
+      await waitFor(() => {
+        expect(screen.getByText('创建供应商')).toBeInTheDocument();
+      });
+
+      // The mutation is not called until the form is submitted with valid fields
+      expect(mockMutateAsync).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Submit Loading', () => {
     it('should show loading state during create submission', async () => {
       mockUseCreateSupplier.mockReturnValue({

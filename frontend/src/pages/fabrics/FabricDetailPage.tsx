@@ -36,9 +36,12 @@ import type { ColumnsType } from 'antd/es/table';
 import type { RcFile } from 'antd/es/upload/interface';
 
 import { PageContainer } from '@/components/layout/PageContainer';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { SupplierSelector } from '@/components/business/SupplierSelector';
 import { CustomerSelector } from '@/components/business/CustomerSelector';
+import { getErrorMessage, getDeleteErrorMessage } from '@/utils/errorMessages';
+import type { ApiError } from '@/types/api.types';
 import {
   useFabric,
   useFabricSuppliers,
@@ -51,6 +54,7 @@ import {
   useCreateFabricPricing,
   useUpdateFabricPricing,
   useDeleteFabricPricing,
+  useDeleteFabric,
 } from '@/hooks/queries/useFabrics';
 import { getSuppliers } from '@/api/supplier.api';
 import { getCustomers } from '@/api/customer.api';
@@ -96,6 +100,22 @@ export default function FabricDetailPage(): React.ReactElement {
 
   // Tab state
   const [activeTab, setActiveTab] = useState('info');
+  const [deleteFabricModalOpen, setDeleteFabricModalOpen] = useState(false);
+
+  // Delete fabric mutation
+  const deleteFabricMutation = useDeleteFabric();
+
+  const handleDeleteFabric = useCallback(async (): Promise<void> => {
+    if (!fabricId) return;
+    try {
+      await deleteFabricMutation.mutateAsync(fabricId);
+      message.success('面料已删除');
+      navigate('/fabrics');
+    } catch (error) {
+      console.error('Delete fabric failed:', error);
+      message.error(getDeleteErrorMessage(error as ApiError, '面料'));
+    }
+  }, [fabricId, deleteFabricMutation, navigate]);
 
   // Modal states
   const [supplierModal, setSupplierModal] = useState<ModalState<FabricSupplier>>({
@@ -196,9 +216,9 @@ export default function FabricDetailPage(): React.ReactElement {
         message.success('供应商信息更新成功');
       }
       closeSupplierModal();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Supplier modal error:', error);
-      message.error('操作失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [fabricId, supplierForm, supplierModal, addSupplierMutation, updateSupplierMutation, closeSupplierModal]);
 
@@ -208,9 +228,9 @@ export default function FabricDetailPage(): React.ReactElement {
       try {
         await removeSupplierMutation.mutateAsync({ fabricId, supplierId });
         message.success('供应商已移除');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Remove supplier error:', error);
-        message.error('移除失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [fabricId, removeSupplierMutation]
@@ -257,9 +277,9 @@ export default function FabricDetailPage(): React.ReactElement {
         message.success('客户定价更新成功');
       }
       closePricingModal();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Pricing modal error:', error);
-      message.error('操作失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [fabricId, pricingForm, pricingModal, createPricingMutation, updatePricingMutation, closePricingModal]);
 
@@ -269,9 +289,9 @@ export default function FabricDetailPage(): React.ReactElement {
       try {
         await deletePricingMutation.mutateAsync({ fabricId, pricingId });
         message.success('客户定价已删除');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Delete pricing error:', error);
-        message.error('删除失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [fabricId, deletePricingMutation]
@@ -292,9 +312,9 @@ export default function FabricDetailPage(): React.ReactElement {
         });
         message.success('图片上传成功');
         return false; // Prevent default upload behavior
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Upload error:', error);
-        message.error('上传失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
         return false;
       }
     },
@@ -308,9 +328,9 @@ export default function FabricDetailPage(): React.ReactElement {
       try {
         await deleteImageMutation.mutateAsync({ fabricId, imageId });
         message.success('图片已删除');
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Delete image error:', error);
-        message.error('删除失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [fabricId, deleteImageMutation]
@@ -695,13 +715,22 @@ export default function FabricDetailPage(): React.ReactElement {
       title={fabric.name}
       breadcrumbs={breadcrumbs}
       extra={
-        <Button
-          type="primary"
-          icon={<EditOutlined />}
-          onClick={() => navigate(`/fabrics/${fabricId}/edit`)}
-        >
-          编辑面料
-        </Button>
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => navigate(`/fabrics/${fabricId}/edit`)}
+          >
+            编辑
+          </Button>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => setDeleteFabricModalOpen(true)}
+          >
+            删除
+          </Button>
+        </Space>
       }
     >
       <Card>
@@ -764,6 +793,23 @@ export default function FabricDetailPage(): React.ReactElement {
           </Form.Item>
         </Form>
       </Modal>
+
+      <ConfirmModal
+        open={deleteFabricModalOpen}
+        title="确认删除"
+        content={
+          <>
+            确定要删除面料 <Text strong>"{fabric.name}"</Text> 吗？
+            <br />
+            <Text type="secondary">此操作不可恢复</Text>
+          </>
+        }
+        onConfirm={handleDeleteFabric}
+        onCancel={() => setDeleteFabricModalOpen(false)}
+        confirmText="删除"
+        danger
+        loading={deleteFabricMutation.isPending}
+      />
     </PageContainer>
   );
 }

@@ -1,27 +1,21 @@
 /**
  * Order list page with search, filter, and pagination.
- * Displays order data in a table with CRUD operations.
+ * Displays order data in a table with view operation.
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, message, Typography } from 'antd';
-import {
-  PlusOutlined,
-  EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
-} from '@ant-design/icons';
+import { Card, Table, Button, Empty, Typography } from 'antd';
+import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchForm, type SearchField } from '@/components/common/SearchForm';
-import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { StatusTag } from '@/components/common/StatusTag';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
-import { useOrders, useDeleteOrder } from '@/hooks/queries/useOrders';
+import { useOrders } from '@/hooks/queries/useOrders';
 import { formatDate } from '@/utils';
 import {
   OrderItemStatus,
@@ -92,10 +86,6 @@ export default function OrderListPage(): React.ReactElement {
   // Search state
   const [searchParams, setSearchParams] = useState<QueryOrderParams>({});
 
-  // Delete confirmation modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
-
   // Combined query params
   const combinedParams: QueryOrderParams = useMemo(
     () => ({
@@ -107,9 +97,6 @@ export default function OrderListPage(): React.ReactElement {
 
   // Fetch orders with pagination
   const { data, isLoading, isFetching } = useOrders(combinedParams);
-
-  // Mutations
-  const deleteMutation = useDeleteOrder();
 
   /** Handle search form submission with date range conversion. */
   const handleSearch = useCallback(
@@ -139,51 +126,7 @@ export default function OrderListPage(): React.ReactElement {
 
   /** Navigate to order pages. */
   const goToDetail = useCallback((o: Order) => navigate(`/orders/${o.id}`), [navigate]);
-  const goToEdit = useCallback((o: Order) => navigate(`/orders/${o.id}/edit`), [navigate]);
   const goToCreate = useCallback(() => navigate('/orders/new'), [navigate]);
-
-  /** Open delete confirmation modal. */
-  const openDeleteModal = useCallback((order: Order): void => {
-    setOrderToDelete(order);
-    setDeleteModalOpen(true);
-  }, []);
-
-  /** Close delete modal and reset state. */
-  const closeDeleteModal = useCallback((): void => {
-    setDeleteModalOpen(false);
-    setOrderToDelete(null);
-  }, []);
-
-  /** Handle delete confirmation. */
-  const handleDeleteConfirm = useCallback(async (): Promise<void> => {
-    if (!orderToDelete) return;
-
-    try {
-      await deleteMutation.mutateAsync(orderToDelete.id);
-      message.success(`订单 "${orderToDelete.orderCode}" 已删除`);
-      closeDeleteModal();
-    } catch (error: unknown) {
-      console.error('Delete error:', error);
-      message.error('删除失败，请重试');
-    }
-  }, [orderToDelete, deleteMutation, closeDeleteModal]);
-
-  /** Handle row click to navigate to detail. */
-  const handleRowClick = useCallback(
-    (record: Order) => ({
-      onClick: () => goToDetail(record),
-      style: { cursor: 'pointer' },
-    }),
-    [goToDetail]
-  );
-
-  /** Check if order can be deleted (INQUIRY status and unpaid). */
-  function canDelete(order: Order): boolean {
-    return (
-      order.status === OrderItemStatus.INQUIRY &&
-      order.customerPayStatus === CustomerPayStatus.UNPAID
-    );
-  }
 
   // Table columns configuration
   const columns: ColumnsType<Order> = useMemo(
@@ -238,49 +181,21 @@ export default function OrderListPage(): React.ReactElement {
       {
         title: '操作',
         key: 'actions',
-        width: 180,
+        width: 80,
         fixed: 'right',
-        render: (_, record) => {
-          const stopAndRun = (fn: () => void) => (e: React.MouseEvent) => {
-            e.stopPropagation();
-            fn();
-          };
-
-          return (
-            <Space size="small">
-              <Button
-                type="text"
-                size="small"
-                icon={<EyeOutlined />}
-                onClick={stopAndRun(() => goToDetail(record))}
-              >
-                查看
-              </Button>
-              <Button
-                type="text"
-                size="small"
-                icon={<EditOutlined />}
-                onClick={stopAndRun(() => goToEdit(record))}
-              >
-                编辑
-              </Button>
-              {canDelete(record) && (
-                <Button
-                  type="text"
-                  size="small"
-                  danger
-                  icon={<DeleteOutlined />}
-                  onClick={stopAndRun(() => openDeleteModal(record))}
-                >
-                  删除
-                </Button>
-              )}
-            </Space>
-          );
-        },
+        render: (_, record) => (
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => goToDetail(record)}
+          >
+            查看
+          </Button>
+        ),
       },
     ],
-    [goToDetail, goToEdit, openDeleteModal]
+    [goToDetail]
   );
 
   // Breadcrumb configuration
@@ -316,34 +231,24 @@ export default function OrderListPage(): React.ReactElement {
           dataSource={data?.items ?? []}
           rowKey="id"
           loading={isLoading}
+          locale={{
+            emptyText: (
+              <Empty description="暂无订单数据">
+                <Button type="primary" onClick={goToCreate}>新建订单</Button>
+              </Empty>
+            ),
+          }}
           pagination={{
             ...paginationProps,
             total: data?.pagination.total ?? 0,
           }}
           onChange={handleTableChange as Parameters<typeof Table<Order>>['0']['onChange']}
-          onRow={handleRowClick}
+
           scroll={{ x: 1100 }}
           size="middle"
         />
       </Card>
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        open={deleteModalOpen}
-        title="确认删除"
-        content={
-          <>
-            确定要删除订单 <Text strong>"{orderToDelete?.orderCode}"</Text> 吗？
-            <br />
-            <Text type="secondary">此操作不可恢复</Text>
-          </>
-        }
-        onConfirm={handleDeleteConfirm}
-        onCancel={closeDeleteModal}
-        confirmText="删除"
-        danger
-        loading={deleteMutation.isPending}
-      />
     </PageContainer>
   );
 }

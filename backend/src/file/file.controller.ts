@@ -74,7 +74,7 @@ function validateFilename(filename: string): void {
 }
 
 @ApiTags('files')
-@Controller('api/v1/files')
+@Controller('files')
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 

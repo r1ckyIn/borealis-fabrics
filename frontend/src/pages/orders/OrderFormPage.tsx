@@ -14,8 +14,9 @@ import {
   useCreateOrder,
   useUpdateOrder,
 } from '@/hooks/queries/useOrders';
-import type { CreateOrderData, UpdateOrderData } from '@/types';
+import type { CreateOrderData, UpdateOrderData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
+import { getErrorMessage, parseFieldError } from '@/utils/errorMessages';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -62,7 +63,15 @@ export default function OrderFormPage(): React.ReactElement {
         navigate('/orders');
       } catch (error) {
         console.error('Submit error:', error);
-        message.error(isEditMode ? '更新失败，请重试' : '创建失败，请重试');
+        const apiError = error as ApiError;
+        if ((apiError.code === 400 || apiError.code === 422) && apiError.message) {
+          const fieldMatch = parseFieldError(apiError.message);
+          if (fieldMatch) {
+            message.error(fieldMatch.message);
+            return;
+          }
+        }
+        message.error(getErrorMessage(apiError));
       }
     },
     [isEditMode, orderId, createMutation, updateMutation, navigate]

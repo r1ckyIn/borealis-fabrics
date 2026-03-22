@@ -29,7 +29,7 @@ import {
 } from './dto';
 
 @ApiTags('suppliers')
-@Controller('api/v1/suppliers')
+@Controller('suppliers')
 export class SupplierController {
   constructor(private readonly supplierService: SupplierService) {}
 

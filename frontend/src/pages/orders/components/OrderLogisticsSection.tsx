@@ -20,11 +20,13 @@ import {
   useDeleteLogistics,
 } from '@/hooks/queries/useLogistics';
 import { formatDate } from '@/utils';
+import { getErrorMessage } from '@/utils/errorMessages';
 import type {
   OrderItem,
   Logistics,
   CreateLogisticsData,
   UpdateLogisticsData,
+  ApiError,
 } from '@/types';
 
 /** Logistics row with extra fields from the parent order item. */
@@ -87,7 +89,7 @@ export function OrderLogisticsSection({
         setLogisticsModal(LOGISTICS_MODAL_CLOSED);
       } catch (error) {
         console.error('Logistics operation failed:', error);
-        message.error('操作失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [logisticsModal, createMutation, updateMutation]
@@ -100,7 +102,7 @@ export function OrderLogisticsSection({
         message.success('物流信息已删除');
       } catch (error) {
         console.error('Delete logistics failed:', error);
-        message.error('删除失败，请重试');
+        message.error(getErrorMessage(error as ApiError));
       }
     },
     [deleteMutation]

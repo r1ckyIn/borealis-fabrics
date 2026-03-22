@@ -15,7 +15,8 @@ import type { UploadFile } from 'antd';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { ImportResultModal } from '@/components/business';
 import { importApi } from '@/api/import.api';
-import type { ImportResult } from '@/types';
+import { getErrorMessage } from '@/utils/errorMessages';
+import type { ApiError, ImportResult } from '@/types';
 
 const { Dragger } = Upload;
 const { Text, Paragraph } = Typography;
@@ -54,12 +55,7 @@ export default function ImportPage() {
       message.success('模板下载成功');
     } catch (error) {
       console.error('Template download failed:', error);
-      const apiError = error as { code?: number };
-      if (apiError.code && apiError.code >= 500) {
-        message.error('服务器错误，请稍后重试');
-      } else {
-        message.error('模板下载失败，请检查网络连接');
-      }
+      message.error(getErrorMessage(error as ApiError));
     } finally {
       setDownloadingTemplate(false);
     }
@@ -95,14 +91,7 @@ export default function ImportPage() {
         }
       } catch (error) {
         console.error('Import failed:', error);
-        const apiError = error as { code?: number; message?: string };
-        if (apiError.code && apiError.code >= 500) {
-          message.error('服务器处理失败，请稍后重试');
-        } else if (apiError.message?.includes('format') || apiError.message?.includes('格式')) {
-          message.error('文件格式错误，请检查是否使用了正确的模板');
-        } else {
-          message.error('导入失败，请检查文件格式后重试');
-        }
+        message.error(getErrorMessage(error as ApiError));
       } finally {
         setUploading(false);
         setUploadProgress(0);

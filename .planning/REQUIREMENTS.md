@@ -9,12 +9,12 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 
 ### Bug Fix (BUGF)
 
-- [ ] **BUGF-01**: All frontend buttons respond correctly without console errors
-- [ ] **BUGF-02**: All frontend forms submit successfully and save data to backend
-- [ ] **BUGF-03**: All frontend list pages load data with correct pagination
-- [ ] **BUGF-04**: All frontend detail pages display complete entity data
-- [ ] **BUGF-05**: Frontend API calls match backend endpoint signatures (path, params, body)
-- [ ] **BUGF-06**: Frontend error messages display user-friendly Chinese text, not raw error objects
+- [x] **BUGF-01**: All frontend buttons respond correctly without console errors
+- [x] **BUGF-02**: All frontend forms submit successfully and save data to backend
+- [x] **BUGF-03**: All frontend list pages load data with correct pagination
+- [x] **BUGF-04**: All frontend detail pages display complete entity data
+- [x] **BUGF-05**: Frontend API calls match backend endpoint signatures (path, params, body)
+- [x] **BUGF-06**: Frontend error messages display user-friendly Chinese text, not raw error objects
 
 ### Core Feature Fix (FEAT)
 
@@ -108,12 +108,12 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BUGF-01 | Phase 1 | Pending |
-| BUGF-02 | Phase 1 | Pending |
-| BUGF-03 | Phase 1 | Pending |
-| BUGF-04 | Phase 1 | Pending |
-| BUGF-05 | Phase 1 | Pending |
-| BUGF-06 | Phase 1 | Pending |
+| BUGF-01 | Phase 1 | Complete |
+| BUGF-02 | Phase 1 | Complete |
+| BUGF-03 | Phase 1 | Complete |
+| BUGF-04 | Phase 1 | Complete |
+| BUGF-05 | Phase 1 | In Progress (audit done, fixes in Plans 02-04) |
+| BUGF-06 | Phase 1 | In Progress (error utility done, integration in Plans 02-04) |
 | FEAT-01 | Phase 2 | Pending |
 | FEAT-02 | Phase 2 | Pending |
 | FEAT-03 | Phase 2 | Pending |

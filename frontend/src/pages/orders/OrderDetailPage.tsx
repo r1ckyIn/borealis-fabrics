@@ -29,7 +29,9 @@ import {
   useDeleteOrder,
 } from '@/hooks/queries/useOrders';
 import { parseEntityId, calculateAggregateStatus } from '@/utils';
+import { getDeleteErrorMessage } from '@/utils/errorMessages';
 import { OrderItemStatus } from '@/types';
+import type { ApiError } from '@/types';
 
 import { OrderInfoSection } from './components/OrderInfoSection';
 import { OrderItemsSection } from './components/OrderItemsSection';
@@ -103,7 +105,7 @@ export default function OrderDetailPage(): React.ReactElement {
       navigate('/orders');
     } catch (error) {
       console.error('Delete order failed:', error);
-      message.error('删除失败，请重试');
+      message.error(getDeleteErrorMessage(error as ApiError, '订单'));
     }
   }, [orderId, deleteMutation, navigate]);
 

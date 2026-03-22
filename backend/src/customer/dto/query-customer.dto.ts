@@ -2,6 +2,7 @@ import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
+import { trimTransform } from '../../common/transforms';
 import { CreditType } from './create-customer.dto';
 
 /**
@@ -26,12 +27,20 @@ export class QueryCustomerDto extends PaginationDto {
   sortBy?: CustomerSortField = CustomerSortField.createdAt;
 
   @ApiPropertyOptional({
+    description:
+      'Unified keyword search across companyName, contactName, phone',
+    example: 'Furniture',
+  })
+  @Transform(trimTransform)
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter by company name (fuzzy search)',
     example: 'Furniture',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
-  )
+  @Transform(trimTransform)
   @IsOptional()
   @IsString()
   companyName?: string;

@@ -211,7 +211,7 @@ describe('ImportPage', () => {
     it('shows server error message for 500 errors on download', async () => {
       const user = userEvent.setup();
       const { message } = await import('antd');
-      mockDownloadFabricTemplate.mockRejectedValue({ code: 500 });
+      mockDownloadFabricTemplate.mockRejectedValue({ code: 500, message: 'Internal Server Error', data: null });
 
       renderPage();
 
@@ -219,6 +219,25 @@ describe('ImportPage', () => {
 
       await waitFor(() => {
         expect(message.error).toHaveBeenCalledWith('服务器错误，请稍后重试');
+      });
+    });
+
+    it('shows specific error message via getErrorMessage for upload failures', async () => {
+      const user = userEvent.setup();
+      const { message } = await import('antd');
+      mockImportFabrics.mockRejectedValue({ code: 400, message: 'Invalid file type', data: null });
+
+      renderPage();
+
+      const file = new File(['test'], 'fabrics.xlsx', {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      await user.upload(input, file);
+
+      await waitFor(() => {
+        expect(message.error).toHaveBeenCalledWith('请求参数错误');
       });
     });
   });

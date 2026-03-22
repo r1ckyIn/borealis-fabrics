@@ -43,9 +43,12 @@ import {
   useCreateCustomerPricing,
   useUpdateCustomerPricing,
   useDeleteCustomerPricing,
+  useDeleteCustomer,
 } from '@/hooks/queries/useCustomers';
 import { fabricApi } from '@/api';
 import { formatDate, parseEntityId } from '@/utils';
+import { getDeleteErrorMessage } from '@/utils/errorMessages';
+import type { ApiError } from '@/types';
 import {
   CreditType,
   CREDIT_TYPE_LABELS,
@@ -90,6 +93,22 @@ export default function CustomerDetailPage(): React.ReactElement {
 
   // Tab state
   const [activeTab, setActiveTab] = useState('info');
+  const [deleteCustomerModalOpen, setDeleteCustomerModalOpen] = useState(false);
+
+  // Delete customer mutation
+  const deleteCustomerMutation = useDeleteCustomer();
+
+  const handleDeleteCustomer = useCallback(async (): Promise<void> => {
+    if (!customerId) return;
+    try {
+      await deleteCustomerMutation.mutateAsync(customerId);
+      message.success('客户已删除');
+      navigate('/customers');
+    } catch (error) {
+      console.error('Delete customer failed:', error);
+      message.error(getDeleteErrorMessage(error as ApiError, '客户'));
+    }
+  }, [customerId, deleteCustomerMutation, navigate]);
 
   // Pricing modal state
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
@@ -577,13 +596,22 @@ export default function CustomerDetailPage(): React.ReactElement {
       title={customer.companyName}
       breadcrumbs={breadcrumbs}
       extra={
-        <Button
-          type="primary"
-          icon={<EditOutlined />}
-          onClick={() => navigate(`/customers/${customerId}/edit`)}
-        >
-          编辑客户
-        </Button>
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => navigate(`/customers/${customerId}/edit`)}
+          >
+            编辑
+          </Button>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => setDeleteCustomerModalOpen(true)}
+          >
+            删除
+          </Button>
+        </Space>
       }
     >
       <Card>
@@ -652,6 +680,23 @@ export default function CustomerDetailPage(): React.ReactElement {
         confirmText="删除"
         danger
         loading={deletePricingMutation.isPending}
+      />
+
+      <ConfirmModal
+        open={deleteCustomerModalOpen}
+        title="确认删除"
+        content={
+          <>
+            确定要删除客户 <Text strong>"{customer.companyName}"</Text> 吗？
+            <br />
+            <Text type="secondary">此操作不可恢复</Text>
+          </>
+        }
+        onConfirm={handleDeleteCustomer}
+        onCancel={() => setDeleteCustomerModalOpen(false)}
+        confirmText="删除"
+        danger
+        loading={deleteCustomerMutation.isPending}
       />
     </PageContainer>
   );
