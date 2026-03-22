@@ -106,12 +106,12 @@ describe('ImportController (e2e)', () => {
   };
 
   // ============================================================
-  // 3.4.3 GET /api/v1/import/templates/fabrics
+  // 3.4.3 GET /import/templates/fabrics
   // ============================================================
-  describe('GET /api/v1/import/templates/fabrics', () => {
+  describe('GET /import/templates/fabrics', () => {
     it('should return Excel template file', async () => {
       const response = await request(app.getHttpServer())
-        .get('/api/v1/import/templates/fabrics')
+        .get('/import/templates/fabrics')
         .responseType('blob')
         .expect(200);
 
@@ -126,7 +126,7 @@ describe('ImportController (e2e)', () => {
 
     it('should return valid Excel file that can be parsed', async () => {
       const response = await request(app.getHttpServer())
-        .get('/api/v1/import/templates/fabrics')
+        .get('/import/templates/fabrics')
         .responseType('blob')
         .expect(200);
 
@@ -141,12 +141,12 @@ describe('ImportController (e2e)', () => {
   });
 
   // ============================================================
-  // 3.4.4 GET /api/v1/import/templates/suppliers
+  // 3.4.4 GET /import/templates/suppliers
   // ============================================================
-  describe('GET /api/v1/import/templates/suppliers', () => {
+  describe('GET /import/templates/suppliers', () => {
     it('should return Excel template file', async () => {
       const response = await request(app.getHttpServer())
-        .get('/api/v1/import/templates/suppliers')
+        .get('/import/templates/suppliers')
         .responseType('blob')
         .expect(200);
 
@@ -161,7 +161,7 @@ describe('ImportController (e2e)', () => {
 
     it('should return valid Excel file that can be parsed', async () => {
       const response = await request(app.getHttpServer())
-        .get('/api/v1/import/templates/suppliers')
+        .get('/import/templates/suppliers')
         .responseType('blob')
         .expect(200);
 
@@ -176,9 +176,9 @@ describe('ImportController (e2e)', () => {
   });
 
   // ============================================================
-  // 3.4.1 POST /api/v1/import/fabrics
+  // 3.4.1 POST /import/fabrics
   // ============================================================
-  describe('POST /api/v1/import/fabrics', () => {
+  describe('POST /import/fabrics', () => {
     const fabricColumns = [
       { header: 'fabricCode*', key: 'fabricCode', width: 20 },
       { header: 'name*', key: 'name', width: 25 },
@@ -201,7 +201,7 @@ describe('ImportController (e2e)', () => {
       mockPrismaService.fabric.create.mockResolvedValue({ id: 1 });
 
       const response = await request(app.getHttpServer())
-        .post('/api/v1/import/fabrics')
+        .post('/import/fabrics')
         .attach('file', buffer, {
           filename: 'test.xlsx',
           contentType:
@@ -228,7 +228,7 @@ describe('ImportController (e2e)', () => {
       mockPrismaService.fabric.create.mockResolvedValue({ id: 1 });
 
       const response = await request(app.getHttpServer())
-        .post('/api/v1/import/fabrics')
+        .post('/import/fabrics')
         .attach('file', buffer, {
           filename: 'test.xlsx',
           contentType:
@@ -244,9 +244,9 @@ describe('ImportController (e2e)', () => {
   });
 
   // ============================================================
-  // 3.4.2 POST /api/v1/import/suppliers
+  // 3.4.2 POST /import/suppliers
   // ============================================================
-  describe('POST /api/v1/import/suppliers', () => {
+  describe('POST /import/suppliers', () => {
     const supplierColumns = [
       { header: 'companyName*', key: 'companyName', width: 30 },
       { header: 'contactName', key: 'contactName', width: 20 },
@@ -273,7 +273,7 @@ describe('ImportController (e2e)', () => {
       mockPrismaService.supplier.create.mockResolvedValue({ id: 1 });
 
       const response = await request(app.getHttpServer())
-        .post('/api/v1/import/suppliers')
+        .post('/import/suppliers')
         .attach('file', buffer, {
           filename: 'test.xlsx',
           contentType:
@@ -300,7 +300,7 @@ describe('ImportController (e2e)', () => {
       mockPrismaService.supplier.create.mockResolvedValue({ id: 1 });
 
       const response = await request(app.getHttpServer())
-        .post('/api/v1/import/suppliers')
+        .post('/import/suppliers')
         .attach('file', buffer, {
           filename: 'test.xlsx',
           contentType:
