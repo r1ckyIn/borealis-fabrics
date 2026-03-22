@@ -15,13 +15,18 @@ import {
   Table,
   Typography,
   Tag,
+  Space,
+  message,
 } from 'antd';
-import { EditOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
 import { PageContainer } from '@/components/layout/PageContainer';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
-import { useSupplier, useSupplierFabrics } from '@/hooks/queries/useSuppliers';
+import { useSupplier, useSupplierFabrics, useDeleteSupplier } from '@/hooks/queries/useSuppliers';
+import { getDeleteErrorMessage } from '@/utils/errorMessages';
+import type { ApiError } from '@/types';
 import { formatDate, SUPPLIER_STATUS_TAG_COLORS, parseEntityId } from '@/utils';
 import {
   SUPPLIER_STATUS_LABELS,
@@ -46,6 +51,22 @@ export default function SupplierDetailPage(): React.ReactElement {
 
   // Tab state
   const [activeTab, setActiveTab] = useState('info');
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  // Delete mutation
+  const deleteMutation = useDeleteSupplier();
+
+  const handleDelete = useCallback(async (): Promise<void> => {
+    if (!supplierId) return;
+    try {
+      await deleteMutation.mutateAsync(supplierId);
+      message.success('供应商已删除');
+      navigate('/suppliers');
+    } catch (error) {
+      console.error('Delete supplier failed:', error);
+      message.error(getDeleteErrorMessage(error as ApiError, '供应商'));
+    }
+  }, [supplierId, deleteMutation, navigate]);
 
   // Fetch supplier data
   const {
@@ -274,18 +295,44 @@ export default function SupplierDetailPage(): React.ReactElement {
       title={supplier.companyName}
       breadcrumbs={breadcrumbs}
       extra={
-        <Button
-          type="primary"
-          icon={<EditOutlined />}
-          onClick={() => navigate(`/suppliers/${supplierId}/edit`)}
-        >
-          编辑供应商
-        </Button>
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => navigate(`/suppliers/${supplierId}/edit`)}
+          >
+            编辑
+          </Button>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => setDeleteModalOpen(true)}
+          >
+            删除
+          </Button>
+        </Space>
       }
     >
       <Card>
         <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
       </Card>
+
+      <ConfirmModal
+        open={deleteModalOpen}
+        title="确认删除"
+        content={
+          <>
+            确定要删除供应商 <Text strong>"{supplier.companyName}"</Text> 吗？
+            <br />
+            <Text type="secondary">此操作不可恢复</Text>
+          </>
+        }
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteModalOpen(false)}
+        confirmText="删除"
+        danger
+        loading={deleteMutation.isPending}
+      />
     </PageContainer>
   );
 }

@@ -16,7 +16,7 @@ import {
 } from '@/hooks/queries/useOrders';
 import type { CreateOrderData, UpdateOrderData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
-import { getErrorMessage } from '@/utils/errorMessages';
+import { getErrorMessage, parseFieldError } from '@/utils/errorMessages';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -63,7 +63,15 @@ export default function OrderFormPage(): React.ReactElement {
         navigate('/orders');
       } catch (error) {
         console.error('Submit error:', error);
-        message.error(getErrorMessage(error as ApiError));
+        const apiError = error as ApiError;
+        if ((apiError.code === 400 || apiError.code === 422) && apiError.message) {
+          const fieldMatch = parseFieldError(apiError.message);
+          if (fieldMatch) {
+            message.error(fieldMatch.message);
+            return;
+          }
+        }
+        message.error(getErrorMessage(apiError));
       }
     },
     [isEditMode, orderId, createMutation, updateMutation, navigate]

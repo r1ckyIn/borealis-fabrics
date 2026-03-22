@@ -36,10 +36,11 @@ import type { ColumnsType } from 'antd/es/table';
 import type { RcFile } from 'antd/es/upload/interface';
 
 import { PageContainer } from '@/components/layout/PageContainer';
+import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { SupplierSelector } from '@/components/business/SupplierSelector';
 import { CustomerSelector } from '@/components/business/CustomerSelector';
-import { getErrorMessage } from '@/utils/errorMessages';
+import { getErrorMessage, getDeleteErrorMessage } from '@/utils/errorMessages';
 import type { ApiError } from '@/types/api.types';
 import {
   useFabric,
@@ -53,6 +54,7 @@ import {
   useCreateFabricPricing,
   useUpdateFabricPricing,
   useDeleteFabricPricing,
+  useDeleteFabric,
 } from '@/hooks/queries/useFabrics';
 import { getSuppliers } from '@/api/supplier.api';
 import { getCustomers } from '@/api/customer.api';
@@ -98,6 +100,22 @@ export default function FabricDetailPage(): React.ReactElement {
 
   // Tab state
   const [activeTab, setActiveTab] = useState('info');
+  const [deleteFabricModalOpen, setDeleteFabricModalOpen] = useState(false);
+
+  // Delete fabric mutation
+  const deleteFabricMutation = useDeleteFabric();
+
+  const handleDeleteFabric = useCallback(async (): Promise<void> => {
+    if (!fabricId) return;
+    try {
+      await deleteFabricMutation.mutateAsync(fabricId);
+      message.success('面料已删除');
+      navigate('/fabrics');
+    } catch (error) {
+      console.error('Delete fabric failed:', error);
+      message.error(getDeleteErrorMessage(error as ApiError, '面料'));
+    }
+  }, [fabricId, deleteFabricMutation, navigate]);
 
   // Modal states
   const [supplierModal, setSupplierModal] = useState<ModalState<FabricSupplier>>({
@@ -697,13 +715,22 @@ export default function FabricDetailPage(): React.ReactElement {
       title={fabric.name}
       breadcrumbs={breadcrumbs}
       extra={
-        <Button
-          type="primary"
-          icon={<EditOutlined />}
-          onClick={() => navigate(`/fabrics/${fabricId}/edit`)}
-        >
-          编辑面料
-        </Button>
+        <Space>
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => navigate(`/fabrics/${fabricId}/edit`)}
+          >
+            编辑
+          </Button>
+          <Button
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => setDeleteFabricModalOpen(true)}
+          >
+            删除
+          </Button>
+        </Space>
       }
     >
       <Card>
@@ -766,6 +793,23 @@ export default function FabricDetailPage(): React.ReactElement {
           </Form.Item>
         </Form>
       </Modal>
+
+      <ConfirmModal
+        open={deleteFabricModalOpen}
+        title="确认删除"
+        content={
+          <>
+            确定要删除面料 <Text strong>"{fabric.name}"</Text> 吗？
+            <br />
+            <Text type="secondary">此操作不可恢复</Text>
+          </>
+        }
+        onConfirm={handleDeleteFabric}
+        onCancel={() => setDeleteFabricModalOpen(false)}
+        confirmText="删除"
+        danger
+        loading={deleteFabricMutation.isPending}
+      />
     </PageContainer>
   );
 }
