@@ -2,6 +2,7 @@ import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
+import { trimTransform } from '../../common/transforms';
 import { SupplierStatus, SettleType } from './create-supplier.dto';
 
 /**
@@ -31,9 +32,7 @@ export class QuerySupplierDto extends PaginationDto {
       'Unified keyword search across companyName, contactName, phone',
     example: 'Textiles',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
-  )
+  @Transform(trimTransform)
   @IsOptional()
   @IsString()
   keyword?: string;
@@ -42,9 +41,7 @@ export class QuerySupplierDto extends PaginationDto {
     description: 'Filter by company name (fuzzy search)',
     example: 'Textiles',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
-  )
+  @Transform(trimTransform)
   @IsOptional()
   @IsString()
   companyName?: string;

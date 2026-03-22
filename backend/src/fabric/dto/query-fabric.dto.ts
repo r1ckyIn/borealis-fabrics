@@ -2,6 +2,7 @@ import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
+import { trimTransform } from '../../common/transforms';
 
 /**
  * Allowed sort fields for Fabric queries.
@@ -30,9 +31,7 @@ export class QueryFabricDto extends PaginationDto {
     description: 'Unified keyword search across fabricCode, name, and color',
     example: 'Cotton',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
-  )
+  @Transform(trimTransform)
   @IsOptional()
   @IsString()
   keyword?: string;
@@ -41,9 +40,7 @@ export class QueryFabricDto extends PaginationDto {
     description: 'Filter by fabric code (fuzzy search)',
     example: 'FB-2401',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
-  )
+  @Transform(trimTransform)
   @IsOptional()
   @IsString()
   fabricCode?: string;
@@ -52,9 +49,7 @@ export class QueryFabricDto extends PaginationDto {
     description: 'Filter by fabric name (fuzzy search)',
     example: 'Cotton',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
-  )
+  @Transform(trimTransform)
   @IsOptional()
   @IsString()
   name?: string;
@@ -63,9 +58,7 @@ export class QueryFabricDto extends PaginationDto {
     description: 'Filter by color (exact match)',
     example: 'Navy Blue',
   })
-  @Transform(({ value }): string | undefined =>
-    typeof value === 'string' ? value.trim() : undefined,
-  )
+  @Transform(trimTransform)
   @IsOptional()
   @IsString()
   color?: string;
