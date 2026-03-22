@@ -14,11 +14,9 @@ import { OrderItemStatus, CustomerPayStatus } from '@/types';
 
 // Mock hooks
 const mockUseOrders = vi.fn();
-const mockUseDeleteOrder = vi.fn();
 
 vi.mock('@/hooks/queries/useOrders', () => ({
   useOrders: (...args: unknown[]) => mockUseOrders(...args),
-  useDeleteOrder: () => mockUseDeleteOrder(),
 }));
 
 // Mock usePagination
@@ -45,18 +43,6 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-  };
-});
-
-// Mock antd message
-vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
-  return {
-    ...actual,
-    message: {
-      success: vi.fn(),
-      error: vi.fn(),
-    },
   };
 });
 
@@ -127,11 +113,6 @@ describe('OrderListPage', () => {
       data: mockPaginatedResult,
       isLoading: false,
       isFetching: false,
-    });
-
-    mockUseDeleteOrder.mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue(undefined),
-      isPending: false,
     });
   });
 
@@ -208,90 +189,6 @@ describe('OrderListPage', () => {
     });
   });
 
-  describe('Delete Error Handling', () => {
-    it('should show specific error message on delete 409 conflict', async () => {
-      const { message: antdMessage } = await import('antd');
-      const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 409,
-        message: 'ORDER_HAS_PAYMENTS',
-        data: null,
-      });
-
-      mockUseDeleteOrder.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
-      });
-
-      renderWithProviders(<OrderListPage />);
-
-      // Click delete button on first order (INQUIRY + UNPAID)
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      // Confirm deletion
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      const confirmButton = document.querySelector(
-        '.ant-modal-footer .ant-btn-dangerous'
-      ) as HTMLButtonElement;
-      expect(confirmButton).toBeTruthy();
-      await user.click(confirmButton);
-
-      await waitFor(() => {
-        expect(antdMessage.error).toHaveBeenCalledWith(
-          '该订单有付款记录，无法删除'
-        );
-      });
-    });
-
-    it('should show generic error message on delete 500 error', async () => {
-      const { message: antdMessage } = await import('antd');
-      const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 500,
-        message: 'Internal Server Error',
-        data: null,
-      });
-
-      mockUseDeleteOrder.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
-      });
-
-      renderWithProviders(<OrderListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      const confirmButton = document.querySelector(
-        '.ant-modal-footer .ant-btn-dangerous'
-      ) as HTMLButtonElement;
-      expect(confirmButton).toBeTruthy();
-      await user.click(confirmButton);
-
-      await waitFor(() => {
-        expect(antdMessage.error).toHaveBeenCalledWith(
-          '服务器错误，请稍后重试'
-        );
-      });
-    });
-  });
-
   describe('Navigation', () => {
     it('should navigate to create page', async () => {
       const user = userEvent.setup();
@@ -307,15 +204,16 @@ describe('OrderListPage', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/orders/new');
     });
 
-    it('should navigate to detail page on row click', async () => {
+    it('should navigate to detail page when clicking view button', async () => {
       const user = userEvent.setup();
       renderWithProviders(<OrderListPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('客户A公司')).toBeInTheDocument();
+        expect(screen.getAllByText('查看').length).toBeGreaterThan(0);
       });
 
-      await user.click(screen.getByText('客户A公司'));
+      const viewButtons = screen.getAllByText('查看');
+      await user.click(viewButtons[0]);
 
       expect(mockNavigate).toHaveBeenCalledWith('/orders/1');
     });

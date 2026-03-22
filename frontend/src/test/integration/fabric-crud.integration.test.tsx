@@ -127,61 +127,22 @@ describe('Fabric CRUD Integration', () => {
       });
     });
 
-    it('delete flow: click → confirm → API call → list refreshes', { timeout: 30000 }, async () => {
-      const mockFabric = createMockFabric({ id: 10, name: '待删除面料' });
-      fabricApi.getFabrics.mockResolvedValue(
-        createPaginatedResponse([mockFabric]),
-      );
-      fabricApi.deleteFabric.mockResolvedValue(undefined);
-
-      renderFabricRoutes();
-      const user = userEvent.setup();
-
-      // Wait for data to load
-      await waitFor(() => {
-        expect(screen.getByText('待删除面料')).toBeInTheDocument();
-      });
-
-      // Click delete button in the table row actions
-      const deleteButtons = screen.getAllByRole('button', { name: /删除/ });
-      await user.click(deleteButtons[0]);
-
-      // Confirm modal should appear
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      // After deletion, API called with refreshed list
-      fabricApi.getFabrics.mockResolvedValue(createPaginatedResponse([]));
-
-      // Find the modal footer and click the confirm button
-      // Ant Design Modal renders ok button in .ant-modal-footer
-      const modalFooter = document.querySelector('.ant-modal-footer');
-      expect(modalFooter).not.toBeNull();
-      const okButton = modalFooter!.querySelector('.ant-btn-dangerous') as HTMLButtonElement;
-      expect(okButton).not.toBeNull();
-      await user.click(okButton);
-
-      await waitFor(() => {
-        expect(fabricApi.deleteFabric).toHaveBeenCalledWith(10);
-      });
-    });
-
-    it('navigates to detail page on row click', async () => {
+    it('navigates to detail page via view button', async () => {
       const mockFabric = createMockFabric({ id: 5 });
       fabricApi.getFabrics.mockResolvedValue(
         createPaginatedResponse([mockFabric]),
       );
 
       renderFabricRoutes();
+      const user = userEvent.setup();
 
       await waitFor(() => {
         expect(screen.getByText(mockFabric.fabricCode)).toBeInTheDocument();
       });
 
-      // Click the row (the fabric code text)
-      const fabricCodeCell = screen.getByText(mockFabric.fabricCode);
-      await userEvent.setup().click(fabricCodeCell);
+      // Click the view button in the actions column
+      const viewButtons = screen.getAllByText('查看');
+      await user.click(viewButtons[0]);
 
       await waitFor(() => {
         expect(screen.getByText('Detail Page')).toBeInTheDocument();

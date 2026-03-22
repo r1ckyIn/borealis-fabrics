@@ -1,22 +1,20 @@
 /**
  * Fabric list page with search, filter, and pagination.
- * Displays fabric data in a table with CRUD operations.
+ * Displays fabric data in a table with view operation.
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, message, Typography, Tag, Empty } from 'antd';
-import { PlusOutlined, EyeOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Typography, Tag, Empty } from 'antd';
+import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchForm, type SearchField } from '@/components/common/SearchForm';
-import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
-import { useFabrics, useDeleteFabric } from '@/hooks/queries/useFabrics';
-import { getDeleteErrorMessage } from '@/utils/errorMessages';
-import type { Fabric, QueryFabricParams, ApiError } from '@/types';
+import { useFabrics } from '@/hooks/queries/useFabrics';
+import type { Fabric, QueryFabricParams } from '@/types';
 
 const { Text } = Typography;
 
@@ -48,10 +46,6 @@ export default function FabricListPage(): React.ReactElement {
   // Search state
   const [searchParams, setSearchParams] = useState<QueryFabricParams>({});
 
-  // Delete confirmation modal state
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [fabricToDelete, setFabricToDelete] = useState<Fabric | null>(null);
-
   // Combined query params
   const combinedParams: QueryFabricParams = useMemo(
     () => ({
@@ -63,9 +57,6 @@ export default function FabricListPage(): React.ReactElement {
 
   // Fetch fabrics with pagination
   const { data, isLoading, isFetching } = useFabrics(combinedParams);
-
-  // Delete mutation
-  const deleteMutation = useDeleteFabric();
 
   /** Handle search form submission. */
   const handleSearch = useCallback(
@@ -84,43 +75,7 @@ export default function FabricListPage(): React.ReactElement {
 
   /** Navigate to fabric pages. */
   const goToDetail = useCallback((f: Fabric) => navigate(`/fabrics/${f.id}`), [navigate]);
-  const goToEdit = useCallback((f: Fabric) => navigate(`/fabrics/${f.id}/edit`), [navigate]);
   const goToCreate = useCallback(() => navigate('/fabrics/new'), [navigate]);
-
-  /** Open delete confirmation modal. */
-  const openDeleteModal = useCallback((fabric: Fabric): void => {
-    setFabricToDelete(fabric);
-    setDeleteModalOpen(true);
-  }, []);
-
-  /** Close delete modal and reset state. */
-  const closeDeleteModal = useCallback((): void => {
-    setDeleteModalOpen(false);
-    setFabricToDelete(null);
-  }, []);
-
-  /** Handle delete confirmation. */
-  const handleDeleteConfirm = useCallback(async (): Promise<void> => {
-    if (!fabricToDelete) return;
-
-    try {
-      await deleteMutation.mutateAsync(fabricToDelete.id);
-      message.success(`面料 "${fabricToDelete.name}" 已删除`);
-      closeDeleteModal();
-    } catch (error: unknown) {
-      console.error('Delete error:', error);
-      message.error(getDeleteErrorMessage(error as ApiError, '面料'));
-    }
-  }, [fabricToDelete, deleteMutation, closeDeleteModal]);
-
-  /** Handle row click to navigate to detail. */
-  const handleRowClick = useCallback(
-    (record: Fabric) => ({
-      onClick: () => goToDetail(record),
-      style: { cursor: 'pointer' },
-    }),
-    [goToDetail]
-  );
 
   // Table columns configuration
   const columns: ColumnsType<Fabric> = useMemo(
@@ -155,7 +110,7 @@ export default function FabricListPage(): React.ReactElement {
         width: 110,
         align: 'right',
         render: (weight: number | null) =>
-          weight !== null ? weight.toFixed(2) : <Text type="secondary">-</Text>,
+          weight != null ? Number(weight).toFixed(2) : <Text type="secondary">-</Text>,
       },
       {
         title: '幅宽 (cm)',
@@ -198,30 +153,21 @@ export default function FabricListPage(): React.ReactElement {
       {
         title: '操作',
         key: 'actions',
-        width: 150,
+        width: 80,
         fixed: 'right',
-        render: (_, record) => {
-          const stopAndRun = (fn: () => void) => (e: React.MouseEvent) => {
-            e.stopPropagation();
-            fn();
-          };
-          return (
-            <Space size="small">
-              <Button type="text" size="small" icon={<EyeOutlined />} onClick={stopAndRun(() => goToDetail(record))}>
-                查看
-              </Button>
-              <Button type="text" size="small" icon={<EditOutlined />} onClick={stopAndRun(() => goToEdit(record))}>
-                编辑
-              </Button>
-              <Button type="text" size="small" danger icon={<DeleteOutlined />} onClick={stopAndRun(() => openDeleteModal(record))}>
-                删除
-              </Button>
-            </Space>
-          );
-        },
+        render: (_, record) => (
+          <Button
+            type="link"
+            size="small"
+            icon={<EyeOutlined />}
+            onClick={() => goToDetail(record)}
+          >
+            查看
+          </Button>
+        ),
       },
     ],
-    [goToDetail, goToEdit, openDeleteModal]
+    [goToDetail]
   );
 
   // Breadcrumb configuration
@@ -271,29 +217,12 @@ export default function FabricListPage(): React.ReactElement {
             ),
           }}
           onChange={handleTableChange as Parameters<typeof Table<Fabric>>['0']['onChange']}
-          onRow={handleRowClick}
+
           scroll={{ x: 1200 }}
           size="middle"
         />
       </Card>
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmModal
-        open={deleteModalOpen}
-        title="确认删除"
-        content={
-          <>
-            确定要删除面料 <Text strong>"{fabricToDelete?.name}"</Text> 吗？
-            <br />
-            <Text type="secondary">此操作不可恢复</Text>
-          </>
-        }
-        onConfirm={handleDeleteConfirm}
-        onCancel={closeDeleteModal}
-        confirmText="删除"
-        danger
-        loading={deleteMutation.isPending}
-      />
     </PageContainer>
   );
 }

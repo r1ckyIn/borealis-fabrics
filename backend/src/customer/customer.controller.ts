@@ -36,7 +36,7 @@ import {
 } from '../order/enums/order-status.enum';
 
 @ApiTags('customers')
-@Controller('api/v1/customers')
+@Controller('customers')
 export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 

@@ -13,11 +13,9 @@ import type { Fabric, PaginatedResult } from '@/types';
 
 // Mock hooks
 const mockUseFabrics = vi.fn();
-const mockUseDeleteFabric = vi.fn();
 
 vi.mock('@/hooks/queries/useFabrics', () => ({
   useFabrics: (...args: unknown[]) => mockUseFabrics(...args),
-  useDeleteFabric: () => mockUseDeleteFabric(),
 }));
 
 // Mock usePagination
@@ -44,18 +42,6 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-  };
-});
-
-// Mock antd message
-vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
-  return {
-    ...actual,
-    message: {
-      success: vi.fn(),
-      error: vi.fn(),
-    },
   };
 });
 
@@ -146,11 +132,6 @@ describe('FabricListPage', () => {
       data: mockPaginatedResult,
       isLoading: false,
       isFetching: false,
-    });
-
-    mockUseDeleteFabric.mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue(undefined),
-      isPending: false,
     });
   });
 
@@ -248,101 +229,6 @@ describe('FabricListPage', () => {
 
       expect(mockNavigate).toHaveBeenCalledWith('/fabrics/1');
     });
-
-    it('should navigate to edit page when clicking edit button', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<FabricListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('编辑').length).toBeGreaterThan(0);
-      });
-
-      const editButtons = screen.getAllByText('编辑');
-      await user.click(editButtons[0]);
-
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics/1/edit');
-    });
-  });
-
-  describe('Delete', () => {
-    it('should open delete confirmation modal', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<FabricListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-
-      // Click the first delete button (in table row)
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-    });
-
-    it('should show fabric name in delete confirmation', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<FabricListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        // Wait for the modal to open
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      // The confirmation modal should contain the fabric name in quotes
-      await waitFor(() => {
-        expect(screen.getByText(/"高档涤纶面料"/)).toBeInTheDocument();
-      });
-    });
-
-    it('should have delete modal with warning text', async () => {
-      const user = userEvent.setup();
-
-      renderWithProviders(<FabricListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      // Wait for modal and verify title is shown
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      // Verify the modal is open (ant-modal class should exist)
-      await waitFor(() => {
-        expect(document.querySelector('.ant-modal')).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Row Click', () => {
-    it('should navigate to detail on row click', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<FabricListPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('FB-2401-0001')).toBeInTheDocument();
-      });
-
-      // Click on fabric code cell (part of row)
-      const fabricCodeCell = screen.getByText('FB-2401-0001');
-      await user.click(fabricCodeCell);
-
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics/1');
-    });
   });
 
   describe('Empty State', () => {
@@ -369,50 +255,6 @@ describe('FabricListPage', () => {
         expect(emptyContainer).toBeInTheDocument();
         const actionButton = emptyContainer?.querySelector('button');
         expect(actionButton).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Delete Error Handling', () => {
-    it('should show Chinese error message on delete failure', async () => {
-      const { message: antdMessage } = await import('antd');
-      const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 409,
-        message: 'FABRIC_HAS_ORDERS',
-        data: null,
-      });
-      mockUseDeleteFabric.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
-      });
-
-      renderWithProviders(<FabricListPage />);
-
-      // Open delete modal
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      // Wait for modal
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      // Click confirm in modal
-      const confirmButton = document.querySelector('.ant-modal-footer .ant-btn-dangerous');
-      expect(confirmButton).toBeInTheDocument();
-      await user.click(confirmButton!);
-
-      // Verify Chinese error message was shown
-      await waitFor(() => {
-        expect(antdMessage.error).toHaveBeenCalledWith(
-          '该面料有关联的订单，无法删除'
-        );
       });
     });
   });

@@ -49,7 +49,7 @@ const ALLOWED_IMAGE_TYPES = [
 ];
 
 @ApiTags('fabrics')
-@Controller('api/v1/fabrics')
+@Controller('fabrics')
 export class FabricController {
   constructor(private readonly fabricService: FabricService) {}
 

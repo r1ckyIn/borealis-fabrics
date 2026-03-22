@@ -14,13 +14,9 @@ import type { Quote, PaginatedResult } from '@/types';
 
 // Mock hooks
 const mockUseQuotes = vi.fn();
-const mockUseDeleteQuote = vi.fn();
-const mockUseConvertQuoteToOrder = vi.fn();
 
 vi.mock('@/hooks/queries/useQuotes', () => ({
   useQuotes: (...args: unknown[]) => mockUseQuotes(...args),
-  useDeleteQuote: () => mockUseDeleteQuote(),
-  useConvertQuoteToOrder: () => mockUseConvertQuoteToOrder(),
 }));
 
 // Mock usePagination
@@ -47,19 +43,6 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-  };
-});
-
-// Mock antd message
-vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
-  return {
-    ...actual,
-    message: {
-      success: vi.fn(),
-      error: vi.fn(),
-      warning: vi.fn(),
-    },
   };
 });
 
@@ -154,16 +137,6 @@ describe('QuoteListPage', () => {
       isLoading: false,
       isFetching: false,
     });
-
-    mockUseDeleteQuote.mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue(undefined),
-      isPending: false,
-    });
-
-    mockUseConvertQuoteToOrder.mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue({ id: 1 }),
-      isPending: false,
-    });
   });
 
   describe('Rendering', () => {
@@ -217,89 +190,33 @@ describe('QuoteListPage', () => {
     });
   });
 
-  describe('Delete Error Handling', () => {
-    it('should show Chinese error message on delete failure', async () => {
-      const { message: antdMessage } = await import('antd');
+  describe('Navigation', () => {
+    it('should navigate to create page when clicking new button', async () => {
       const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 409,
-        message: 'QUOTE_ALREADY_CONVERTED',
-        data: null,
-      });
-      mockUseDeleteQuote.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
-      });
-
       renderWithProviders(<QuoteListPage />);
 
-      // Open delete modal (only visible for ACTIVE quotes)
       await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
+        expect(screen.getByText('新建报价')).toBeInTheDocument();
       });
 
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
+      const newButton = screen.getByText('新建报价').closest('button');
+      await user.click(newButton!);
 
-      // Wait for modal
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      // Click confirm
-      const confirmButton = document.querySelector('.ant-modal-footer .ant-btn-dangerous');
-      expect(confirmButton).toBeInTheDocument();
-      await user.click(confirmButton!);
-
-      // Verify Chinese error message
-      await waitFor(() => {
-        expect(antdMessage.error).toHaveBeenCalledWith(
-          '该报价单已转为订单'
-        );
-      });
+      expect(mockNavigate).toHaveBeenCalledWith('/quotes/new');
     });
-  });
 
-  describe('Convert to Order', () => {
-    it('should show warning message on 501 convert error', async () => {
-      const { message: antdMessage } = await import('antd');
+    it('should navigate to detail page when clicking view button', async () => {
       const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 501,
-        message: 'NOT_IMPLEMENTED',
-        data: null,
-      });
-      mockUseConvertQuoteToOrder.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
-      });
-
       renderWithProviders(<QuoteListPage />);
 
-      // Find convert button (only visible for ACTIVE quotes)
       await waitFor(() => {
-        expect(screen.getAllByText('转订单').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('查看').length).toBeGreaterThan(0);
       });
 
-      const convertButtons = screen.getAllByText('转订单');
-      await user.click(convertButtons[0]);
+      const viewButtons = screen.getAllByText('查看');
+      await user.click(viewButtons[0]);
 
-      // Wait for convert modal to open
-      await waitFor(() => {
-        expect(screen.getAllByText('确认转换').length).toBeGreaterThanOrEqual(2);
-      });
-
-      // Click confirm button in convert modal footer
-      const confirmButton = document.querySelector('.ant-modal-footer .ant-btn-primary');
-      expect(confirmButton).toBeInTheDocument();
-      await user.click(confirmButton!);
-
-      // Verify warning message was shown (not error)
-      await waitFor(() => {
-        expect(antdMessage.warning).toHaveBeenCalledWith('该功能暂未实现');
-      });
+      expect(mockNavigate).toHaveBeenCalledWith('/quotes/1');
     });
   });
 

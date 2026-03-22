@@ -14,11 +14,9 @@ import { CreditType } from '@/types';
 
 // Mock hooks
 const mockUseCustomers = vi.fn();
-const mockUseDeleteCustomer = vi.fn();
 
 vi.mock('@/hooks/queries/useCustomers', () => ({
   useCustomers: (...args: unknown[]) => mockUseCustomers(...args),
-  useDeleteCustomer: () => mockUseDeleteCustomer(),
 }));
 
 // Mock usePagination
@@ -45,18 +43,6 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-  };
-});
-
-// Mock antd message
-vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
-  return {
-    ...actual,
-    message: {
-      success: vi.fn(),
-      error: vi.fn(),
-    },
   };
 });
 
@@ -122,11 +108,6 @@ describe('CustomerListPage', () => {
       data: mockPaginatedResult,
       isLoading: false,
       isFetching: false,
-    });
-
-    mockUseDeleteCustomer.mockReturnValue({
-      mutateAsync: vi.fn().mockResolvedValue(undefined),
-      isPending: false,
     });
   });
 
@@ -238,94 +219,6 @@ describe('CustomerListPage', () => {
 
       expect(mockNavigate).toHaveBeenCalledWith('/customers/1');
     });
-
-    it('should navigate to edit page when clicking edit button', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('编辑').length).toBeGreaterThan(0);
-      });
-
-      const editButtons = screen.getAllByText('编辑');
-      await user.click(editButtons[0]);
-
-      expect(mockNavigate).toHaveBeenCalledWith('/customers/1/edit');
-    });
-  });
-
-  describe('Delete', () => {
-    it('should open delete confirmation modal', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-    });
-
-    it('should show customer name in delete confirmation', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText(/"上海服饰有限公司"/)).toBeInTheDocument();
-      });
-    });
-
-    it('should have delete modal with warning text', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      await waitFor(() => {
-        expect(document.querySelector('.ant-modal')).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Row Click', () => {
-    it('should navigate to detail on row click', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerListPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('上海服饰有限公司')).toBeInTheDocument();
-      });
-
-      const companyNameCell = screen.getByText('上海服饰有限公司');
-      await user.click(companyNameCell);
-
-      expect(mockNavigate).toHaveBeenCalledWith('/customers/1');
-    });
   });
 
   describe('Empty State', () => {
@@ -387,88 +280,6 @@ describe('CustomerListPage', () => {
       await user.click(createButton!);
 
       expect(mockNavigate).toHaveBeenCalledWith('/customers/new');
-    });
-  });
-
-  describe('Delete Error Handling', () => {
-    it('should show specific error message on delete 409 conflict', async () => {
-      const { message: antdMessage } = await import('antd');
-      const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 409,
-        message: 'CUSTOMER_HAS_ORDERS',
-        data: null,
-      });
-
-      mockUseDeleteCustomer.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
-      });
-
-      renderWithProviders(<CustomerListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      const confirmButton = document.querySelector(
-        '.ant-modal-footer .ant-btn-dangerous'
-      ) as HTMLButtonElement;
-      expect(confirmButton).toBeTruthy();
-      await user.click(confirmButton);
-
-      await waitFor(() => {
-        expect(antdMessage.error).toHaveBeenCalledWith(
-          '该客户有关联的订单，无法删除'
-        );
-      });
-    });
-
-    it('should show generic error message on delete 500 error', async () => {
-      const { message: antdMessage } = await import('antd');
-      const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 500,
-        message: 'Internal Server Error',
-        data: null,
-      });
-
-      mockUseDeleteCustomer.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
-      });
-
-      renderWithProviders(<CustomerListPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
-      });
-      const deleteButtons = screen.getAllByText('删除');
-      await user.click(deleteButtons[0]);
-
-      await waitFor(() => {
-        expect(screen.getByText('确认删除')).toBeInTheDocument();
-      });
-
-      const confirmButton = document.querySelector(
-        '.ant-modal-footer .ant-btn-dangerous'
-      ) as HTMLButtonElement;
-      expect(confirmButton).toBeTruthy();
-      await user.click(confirmButton);
-
-      await waitFor(() => {
-        expect(antdMessage.error).toHaveBeenCalledWith(
-          '服务器错误，请稍后重试'
-        );
-      });
     });
   });
 });
