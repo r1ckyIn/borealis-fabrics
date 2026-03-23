@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AUTH_COOKIE_OPTIONS } from './constants';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { createMockAuthRequest } from '../../test/helpers/mock-builders';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -27,16 +28,7 @@ describe('AuthController', () => {
     return res as Response;
   };
 
-  const mockAuthenticatedRequest = (userId = 1) => ({
-    user: {
-      id: userId,
-      weworkId: 'test-user-id',
-      name: 'Test User',
-    },
-    headers: {
-      authorization: 'Bearer test-token',
-    },
-  });
+  const mockAuthenticatedRequest = createMockAuthRequest;
 
   beforeEach(async () => {
     authService = {
@@ -236,8 +228,7 @@ describe('AuthController', () => {
       authService.getUserInfo.mockResolvedValue(mockUser);
       const req = mockAuthenticatedRequest();
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const result = await controller.me(req as any);
+      const result = await controller.me(req);
 
       expect(authService.getUserInfo).toHaveBeenCalledWith(1);
       expect(result).toEqual(mockUser);
@@ -251,8 +242,7 @@ describe('AuthController', () => {
       const req = mockAuthenticatedRequest();
       const res = mockResponse();
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const result = await controller.logout(req as any, res);
+      const result = await controller.logout(req, res);
 
       expect(authService.logout).toHaveBeenCalledWith('test-token', req.user);
       expect(result).toEqual(mockLogoutResponse);
@@ -265,8 +255,7 @@ describe('AuthController', () => {
       const req = mockAuthenticatedRequest();
       const res = mockResponse();
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await controller.logout(req as any, res);
+      await controller.logout(req, res);
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(res.clearCookie).toHaveBeenCalledWith('bf_auth_token', {
@@ -282,8 +271,7 @@ describe('AuthController', () => {
       const req = mockAuthenticatedRequest();
       const res = mockResponse();
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await controller.logout(req as any, res);
+      await controller.logout(req, res);
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(res.clearCookie).toHaveBeenCalledWith('bf_auth_token', {
@@ -295,14 +283,10 @@ describe('AuthController', () => {
     it('should handle missing authorization header', async () => {
       const mockLogoutResponse = { message: 'Logged out successfully' };
       authService.logout.mockResolvedValue(mockLogoutResponse);
-      const req = {
-        user: { id: 1, weworkId: 'test', name: 'Test' },
-        headers: {},
-      };
+      const req = createMockAuthRequest(1, { authorization: '' });
       const res = mockResponse();
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      const result = await controller.logout(req as any, res);
+      const result = await controller.logout(req, res);
 
       expect(authService.logout).toHaveBeenCalledWith('', req.user);
       expect(result).toEqual(mockLogoutResponse);

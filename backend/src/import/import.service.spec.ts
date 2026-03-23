@@ -3,20 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { ImportService } from './import.service';
 import { PrismaService } from '../prisma/prisma.service';
-
-/**
- * Load an Excel buffer into a workbook.
- *
- * ExcelJS typings declare `load(buffer: Buffer)` using the unparameterized
- * Buffer type, but @types/node >= 22 changed Buffer to `Buffer<ArrayBufferLike>`.
- * This wrapper isolates the necessary cast so individual tests stay clean.
- */
-async function loadWorkbook(buffer: Buffer): Promise<ExcelJS.Workbook> {
-  const workbook = new ExcelJS.Workbook();
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  await workbook.xlsx.load(buffer as any);
-  return workbook;
-}
+import { loadTestWorkbook } from '../../test/helpers/mock-builders';
 
 describe('ImportService', () => {
   let service: ImportService;
@@ -74,7 +61,7 @@ describe('ImportService', () => {
 
     it('should have correct sheet structure', async () => {
       const buffer = await service.generateFabricTemplate();
-      const workbook = await loadWorkbook(buffer);
+      const workbook = await loadTestWorkbook(buffer);
 
       expect(workbook.worksheets.length).toBe(2);
       expect(workbook.worksheets[0].name).toBe('Fabrics');
@@ -83,7 +70,7 @@ describe('ImportService', () => {
 
     it('should have correct column headers', async () => {
       const buffer = await service.generateFabricTemplate();
-      const workbook = await loadWorkbook(buffer);
+      const workbook = await loadTestWorkbook(buffer);
 
       const worksheet = workbook.getWorksheet('Fabrics');
       const headerRow = worksheet!.getRow(1);
@@ -101,7 +88,7 @@ describe('ImportService', () => {
 
     it('should have example data row', async () => {
       const buffer = await service.generateFabricTemplate();
-      const workbook = await loadWorkbook(buffer);
+      const workbook = await loadTestWorkbook(buffer);
 
       const worksheet = workbook.getWorksheet('Fabrics');
       const dataRow = worksheet!.getRow(2);
@@ -124,7 +111,7 @@ describe('ImportService', () => {
 
     it('should have correct sheet structure', async () => {
       const buffer = await service.generateSupplierTemplate();
-      const workbook = await loadWorkbook(buffer);
+      const workbook = await loadTestWorkbook(buffer);
 
       expect(workbook.worksheets.length).toBe(2);
       expect(workbook.worksheets[0].name).toBe('Suppliers');
@@ -133,7 +120,7 @@ describe('ImportService', () => {
 
     it('should have correct column headers', async () => {
       const buffer = await service.generateSupplierTemplate();
-      const workbook = await loadWorkbook(buffer);
+      const workbook = await loadTestWorkbook(buffer);
 
       const worksheet = workbook.getWorksheet('Suppliers');
       const headerRow = worksheet!.getRow(1);
@@ -150,7 +137,7 @@ describe('ImportService', () => {
 
     it('should have example data row', async () => {
       const buffer = await service.generateSupplierTemplate();
-      const workbook = await loadWorkbook(buffer);
+      const workbook = await loadTestWorkbook(buffer);
 
       const worksheet = workbook.getWorksheet('Suppliers');
       const dataRow = worksheet!.getRow(2);

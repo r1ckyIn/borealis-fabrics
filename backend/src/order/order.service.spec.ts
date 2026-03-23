@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CodeGeneratorService, CodePrefix } from '../common/services';
 import {
   OrderItemStatus,
+  CustomerPayStatus,
   isValidStatusTransition,
   canModifyItem,
   canDeleteItem,
@@ -1645,7 +1646,7 @@ describe('OrderService - Order Items Methods', () => {
 
       const result = await service.updateCustomerPayment(1, {
         customerPaid: 1000,
-        customerPayStatus: 'partial' as any,
+        customerPayStatus: CustomerPayStatus.PARTIAL,
       });
 
       expect(result.customerPaid).toBe(1000);
