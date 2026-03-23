@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import {
   NotFoundException,
@@ -9,7 +11,6 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CodeGeneratorService, CodePrefix } from '../common/services';
 import {
   OrderItemStatus,
-  CustomerPayStatus,
   isValidStatusTransition,
   canModifyItem,
   canDeleteItem,

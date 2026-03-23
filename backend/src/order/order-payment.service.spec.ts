@@ -2,10 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { OrderPaymentService } from './order-payment.service';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  OrderItemStatus,
-  CustomerPayStatus,
-} from './enums/order-status.enum';
+import { OrderItemStatus, CustomerPayStatus } from './enums/order-status.enum';
 
 describe('OrderPaymentService', () => {
   let service: OrderPaymentService;
