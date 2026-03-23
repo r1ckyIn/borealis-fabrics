@@ -46,15 +46,13 @@ result: pass
 
 ### 9. Expired Quote Edit Behavior
 expected: On QuoteDetailPage for an expired quote, the Edit button is enabled (not disabled). Clicking navigates to edit page. Convert button is not shown. This allows extending validUntil to reactivate expired quotes.
-result: issue
-reported: "Editing a quote shows '数量必须大于0' and '单价必须大于0' validation errors even though both fields have valid values (641.00 and 25.00). Also input field sizes for quantity and unitPrice are inconsistent."
-severity: major
+result: pass (after fix — 3 sub-issues resolved: Decimal string validation, InputNumber width, edit PATCH payload)
 
 ## Summary
 
 total: 9
-passed: 8
-issues: 1
+passed: 9
+issues: 0
 pending: 0
 skipped: 0
 
