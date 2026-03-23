@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-23T07:24:39.095Z"
+last_updated: "2026-03-23T07:35:32.861Z"
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 12
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | 3 |
 | Name | Backend Service Decomposition |
 | Status | In Progress |
-| Current Plan | 1 of 4 |
+| Current Plan | 3 of 4 |
 | Branch | feature/gsd-03-backend-service-decomposition |
 
 ## Progress
@@ -36,7 +36,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 |-------|--------|-------|
 | 1 — Frontend Bug Fixes | ● Complete | 4/4 |
 | 2 — Core Feature Implementation | ● Complete | 3/3 |
-| 3 — Backend Service Decomposition | ◐ In Progress | 1/4 |
+| 3 — Backend Service Decomposition | ◐ In Progress | 3/4 |
 | 4 — Frontend Component Decomposition | ○ Not Started | — |
 | 5 — Multi-Category Schema + Product CRUD | ○ Not Started | — |
 | 6 — Import Strategy Refactor | ○ Not Started | — |
@@ -82,6 +82,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Migration script uses DRY_RUN + per-image error recovery | Safe one-time data migration pattern |
 | 2026-03-23 | createMockAuthRequest returns AuthenticatedRequest via internal cast | Centralizes type cast in builder, eliminates any from test call sites |
 | 2026-03-23 | ESLint no-explicit-any warn on *.spec.ts | Prevents future any regression in test files |
+| 2026-03-23 | Strategy auto-detected from Excel column headers, not user-specified | Simplifies orchestrator, both import methods become thin wrappers |
+| 2026-03-23 | Direct DI injection for strategies (concrete class, not token-based) | Simpler for 2-strategy setup, sufficient until more strategies added |
 
 ## Session Log
 
@@ -96,7 +98,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Phase 2 Plan 02 | Completed 02-02-PLAN.md | `.planning/phases/02-core-feature-implementation/02-02-SUMMARY.md` |
 | 2026-03-23 | Phase 2 Plan 03 | Complete | `.planning/phases/02-core-feature-implementation/` |
 | 2026-03-23 | Phase 3 Plan 01 | Completed 03-01-PLAN.md | `.planning/phases/03-backend-service-decomposition/03-01-SUMMARY.md` |
+| 2026-03-23 | Phase 3 Plan 03 | Completed 03-03-PLAN.md | `.planning/phases/03-backend-service-decomposition/03-03-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-23 (Phase 3 Plan 01 complete — typed mock builders and as-any elimination)*
+*Last updated: 2026-03-23 (Phase 3 Plan 03 complete — ImportService strategy pattern refactor)*
