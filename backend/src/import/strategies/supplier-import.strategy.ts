@@ -9,6 +9,10 @@ import type {
   RowValidationResult,
 } from './import-strategy.interface';
 import { getCellValue, parseNumber, isValidEmail } from '../utils/excel.utils';
+import {
+  SupplierStatus,
+  SettleType,
+} from '../../supplier/dto/create-supplier.dto';
 
 /**
  * Supplier template column definitions
@@ -70,15 +74,8 @@ const SUPPLIER_INSTRUCTIONS: InstructionRow[] = [
   },
 ];
 
-/**
- * Valid supplier status values
- */
-const VALID_SUPPLIER_STATUS = ['active', 'suspended', 'eliminated'];
-
-/**
- * Valid supplier settle types
- */
-const VALID_SETTLE_TYPES = ['prepay', 'credit'];
+const VALID_SUPPLIER_STATUS: string[] = Object.values(SupplierStatus);
+const VALID_SETTLE_TYPES: string[] = Object.values(SettleType);
 
 @Injectable()
 export class SupplierImportStrategy implements ImportStrategy {
@@ -244,16 +241,12 @@ export class SupplierImportStrategy implements ImportStrategy {
   }
 
   /**
-   * Bulk-create supplier entities using a transaction
+   * Bulk-create supplier entities using a single INSERT statement
    */
   async createBatch(entities: Record<string, unknown>[]): Promise<number> {
-    await this.prisma.$transaction(
-      entities.map((supplier) =>
-        this.prisma.supplier.create({
-          data: supplier as Prisma.SupplierCreateInput,
-        }),
-      ),
-    );
-    return entities.length;
+    const result = await this.prisma.supplier.createMany({
+      data: entities as Prisma.SupplierCreateManyInput[],
+    });
+    return result.count;
   }
 }

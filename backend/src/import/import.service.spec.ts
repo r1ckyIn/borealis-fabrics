@@ -12,22 +12,19 @@ describe('ImportService', () => {
 
   const fabricMock = {
     create: jest.fn(),
+    createMany: jest.fn(),
     findMany: jest.fn(),
   };
 
   const supplierMock = {
     create: jest.fn(),
+    createMany: jest.fn(),
     findMany: jest.fn(),
   };
 
   const mockPrismaService = {
     fabric: fabricMock,
     supplier: supplierMock,
-    $transaction: jest
-      .fn()
-      .mockImplementation((operations: Promise<unknown>[]) =>
-        Promise.all(operations),
-      ),
   };
 
   beforeEach(async () => {
@@ -200,14 +197,14 @@ describe('ImportService', () => {
       ]);
 
       fabricMock.findMany.mockResolvedValue([]);
-      fabricMock.create.mockResolvedValue({ id: 1 });
+      fabricMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importFabrics(file);
 
       expect(result.successCount).toBe(1);
       expect(result.failureCount).toBe(0);
       expect(result.failures).toHaveLength(0);
-      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+      expect(fabricMock.createMany).toHaveBeenCalled();
     });
 
     it('should skip fabric with existing fabricCode', async () => {
@@ -260,7 +257,7 @@ describe('ImportService', () => {
       ]);
 
       fabricMock.findMany.mockResolvedValue([]);
-      fabricMock.create.mockResolvedValue({ id: 1 });
+      fabricMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importFabrics(file);
 
@@ -327,7 +324,7 @@ describe('ImportService', () => {
       ]);
 
       fabricMock.findMany.mockResolvedValue([]);
-      fabricMock.create.mockResolvedValue({ id: 1 });
+      fabricMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importFabrics(file);
 
@@ -382,7 +379,7 @@ describe('ImportService', () => {
       ]);
 
       supplierMock.findMany.mockResolvedValue([]);
-      supplierMock.create.mockResolvedValue({ id: 1 });
+      supplierMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importSuppliers(file);
 
@@ -481,7 +478,7 @@ describe('ImportService', () => {
       ]);
 
       supplierMock.findMany.mockResolvedValue([]);
-      supplierMock.create.mockResolvedValue({ id: 1 });
+      supplierMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importSuppliers(file);
 
@@ -526,7 +523,7 @@ describe('ImportService', () => {
       ]);
 
       supplierMock.findMany.mockResolvedValue([]);
-      supplierMock.create.mockResolvedValue({ id: 1 });
+      supplierMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importSuppliers(file);
 
@@ -541,7 +538,7 @@ describe('ImportService', () => {
       ]);
 
       supplierMock.findMany.mockResolvedValue([]);
-      supplierMock.create.mockResolvedValue({ id: 1 });
+      supplierMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importSuppliers(file);
 
@@ -557,7 +554,7 @@ describe('ImportService', () => {
       ]);
 
       supplierMock.findMany.mockResolvedValue([]);
-      supplierMock.create.mockResolvedValue({ id: 1 });
+      supplierMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importSuppliers(file);
 
@@ -591,7 +588,7 @@ describe('ImportService', () => {
       } as Express.Multer.File;
 
       fabricMock.findMany.mockResolvedValue([]);
-      fabricMock.create.mockResolvedValue({ id: 1 });
+      fabricMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importFabrics(file);
 
@@ -621,7 +618,7 @@ describe('ImportService', () => {
       } as Express.Multer.File;
 
       supplierMock.findMany.mockResolvedValue([]);
-      supplierMock.create.mockResolvedValue({ id: 1 });
+      supplierMock.createMany.mockResolvedValue({ count: 1 });
 
       const result = await service.importSuppliers(file);
 

@@ -203,16 +203,12 @@ export class FabricImportStrategy implements ImportStrategy {
   }
 
   /**
-   * Bulk-create fabric entities using a transaction
+   * Bulk-create fabric entities using a single INSERT statement
    */
   async createBatch(entities: Record<string, unknown>[]): Promise<number> {
-    await this.prisma.$transaction(
-      entities.map((fabric) =>
-        this.prisma.fabric.create({
-          data: fabric as Prisma.FabricCreateInput,
-        }),
-      ),
-    );
-    return entities.length;
+    const result = await this.prisma.fabric.createMany({
+      data: entities as Prisma.FabricCreateManyInput[],
+    });
+    return result.count;
   }
 }

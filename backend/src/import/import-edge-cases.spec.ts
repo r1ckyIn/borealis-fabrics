@@ -61,22 +61,19 @@ describe('Import Edge Cases', () => {
 
   const fabricMock = {
     create: jest.fn(),
+    createMany: jest.fn(),
     findMany: jest.fn(),
   };
 
   const supplierMock = {
     create: jest.fn(),
+    createMany: jest.fn(),
     findMany: jest.fn(),
   };
 
   const mockPrismaService = {
     fabric: fabricMock,
     supplier: supplierMock,
-    $transaction: jest
-      .fn()
-      .mockImplementation((operations: Promise<unknown>[]) =>
-        Promise.all(operations),
-      ),
   };
 
   beforeEach(async () => {
@@ -98,9 +95,9 @@ describe('Import Edge Cases', () => {
 
     // Default: no existing records
     fabricMock.findMany.mockResolvedValue([]);
-    fabricMock.create.mockResolvedValue({ id: 1 });
+    fabricMock.createMany.mockResolvedValue({ count: 1 });
     supplierMock.findMany.mockResolvedValue([]);
-    supplierMock.create.mockResolvedValue({ id: 1 });
+    supplierMock.createMany.mockResolvedValue({ count: 1 });
   });
 
   // ============================================================

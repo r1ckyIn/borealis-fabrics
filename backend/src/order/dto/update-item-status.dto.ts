@@ -2,10 +2,7 @@ import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { OrderItemStatus } from '../enums/order-status.enum';
-
-// Trim transform helper
-const trimTransform = ({ value }: { value: unknown }): string | undefined =>
-  typeof value === 'string' ? value.trim() : undefined;
+import { trimTransform } from './dto.utils';
 
 /**
  * DTO for updating an order item's status.

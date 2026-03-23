@@ -526,7 +526,14 @@ export class OrderItemService {
       return sum + Number(item.quantity) * purchasePrice;
     }, 0);
 
-    // Upsert supplier payment
+    // If no payable amount, clean up the record (if unpaid) instead of creating a $0 entry
+    if (payable === 0) {
+      await tx.supplierPayment.deleteMany({
+        where: { orderId, supplierId, paid: 0 },
+      });
+      return;
+    }
+
     await tx.supplierPayment.upsert({
       where: {
         orderId_supplierId: { orderId, supplierId },
@@ -542,18 +549,6 @@ export class OrderItemService {
         payable,
       },
     });
-
-    // Clean up supplier payment if no items for this supplier
-    if (payable === 0) {
-      const payment = await tx.supplierPayment.findUnique({
-        where: { orderId_supplierId: { orderId, supplierId } },
-      });
-      if (payment && Number(payment.paid) === 0) {
-        await tx.supplierPayment.delete({
-          where: { id: payment.id },
-        });
-      }
-    }
   }
 
   /**
@@ -563,28 +558,21 @@ export class OrderItemService {
     tx: Prisma.TransactionClient,
     orderId: number,
   ): Promise<void> {
-    // Calculate total amount
-    const amountResult = await tx.orderItem.aggregate({
-      where: { orderId },
-      _sum: { subtotal: true },
-    });
-
-    // Get all item statuses for aggregate calculation
     const items = await tx.orderItem.findMany({
       where: { orderId },
-      select: { status: true },
+      select: { subtotal: true, status: true },
     });
 
+    const totalAmount = items.reduce(
+      (sum, item) => sum + Number(item.subtotal),
+      0,
+    );
     const statuses = items.map((item) => item.status as OrderItemStatus);
     const aggregateStatus = calculateAggregateStatus(statuses);
 
-    // Update order
     await tx.order.update({
       where: { id: orderId },
-      data: {
-        totalAmount: amountResult._sum.subtotal ?? 0,
-        status: aggregateStatus,
-      },
+      data: { totalAmount, status: aggregateStatus },
     });
   }
 
