@@ -66,9 +66,9 @@ async function searchFabrics(keyword: string) {
   return result.items;
 }
 
-/** Disable past dates but allow today. */
+/** Disable today and past dates (backend requires future date). */
 function disabledDate(current: Dayjs): boolean {
-  return current.isBefore(dayjs(), 'day');
+  return !current.isAfter(dayjs(), 'day');
 }
 
 export function QuoteForm({
@@ -192,8 +192,7 @@ export function QuoteForm({
               min={0.01}
               max={100000}
               precision={2}
-              addonBefore="¥"
-              addonAfter="/米"
+              addonAfter="¥/米"
             />
           </Form.Item>
         </Col>
