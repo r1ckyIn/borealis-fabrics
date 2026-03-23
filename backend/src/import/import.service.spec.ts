@@ -3,6 +3,8 @@ import { BadRequestException } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { ImportService } from './import.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { FabricImportStrategy } from './strategies/fabric-import.strategy';
+import { SupplierImportStrategy } from './strategies/supplier-import.strategy';
 import { loadTestWorkbook } from '../../test/helpers/mock-builders';
 
 describe('ImportService', () => {
@@ -32,6 +34,8 @@ describe('ImportService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ImportService,
+        FabricImportStrategy,
+        SupplierImportStrategy,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -542,7 +546,7 @@ describe('ImportService', () => {
       const result = await service.importSuppliers(file);
 
       expect(result.successCount).toBe(1);
-      // The defaults are applied in the service
+      // The defaults are applied in the strategy
     });
 
     it('should handle multiple suppliers with partial success', async () => {
@@ -559,6 +563,99 @@ describe('ImportService', () => {
 
       expect(result.successCount).toBe(2);
       expect(result.failureCount).toBe(1);
+    });
+  });
+
+  // ============================================================
+  // Strategy Detection Tests
+  // ============================================================
+  describe('detectStrategy (via importData)', () => {
+    it('should detect fabric strategy from fabric headers', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data');
+      worksheet.columns = [
+        { header: 'fabricCode*', key: 'fabricCode', width: 20 },
+        { header: 'name*', key: 'name', width: 25 },
+      ];
+      worksheet.addRow({ fabricCode: 'FB-001', name: 'Test' });
+
+      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+      const file = {
+        buffer,
+        fieldname: 'file',
+        originalname: 'test.xlsx',
+        encoding: '7bit',
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: buffer.length,
+      } as Express.Multer.File;
+
+      fabricMock.findMany.mockResolvedValue([]);
+      fabricMock.create.mockResolvedValue({ id: 1 });
+
+      const result = await service.importFabrics(file);
+
+      // Fabric strategy was detected — it uses fabric.findMany for existing keys
+      expect(fabricMock.findMany).toHaveBeenCalled();
+      expect(result.successCount).toBe(1);
+    });
+
+    it('should detect supplier strategy from supplier headers', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data');
+      worksheet.columns = [
+        { header: 'companyName*', key: 'companyName', width: 30 },
+        { header: 'contactName', key: 'contactName', width: 20 },
+      ];
+      worksheet.addRow({ companyName: 'Test Co' });
+
+      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+      const file = {
+        buffer,
+        fieldname: 'file',
+        originalname: 'test.xlsx',
+        encoding: '7bit',
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: buffer.length,
+      } as Express.Multer.File;
+
+      supplierMock.findMany.mockResolvedValue([]);
+      supplierMock.create.mockResolvedValue({ id: 1 });
+
+      const result = await service.importSuppliers(file);
+
+      // Supplier strategy was detected — it uses supplier.findMany for existing keys
+      expect(supplierMock.findMany).toHaveBeenCalled();
+      expect(result.successCount).toBe(1);
+    });
+
+    it('should throw BadRequestException for unrecognized headers', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data');
+      worksheet.columns = [
+        { header: 'unknownField', key: 'unknownField', width: 20 },
+        { header: 'anotherField', key: 'anotherField', width: 25 },
+      ];
+      worksheet.addRow({ unknownField: 'val', anotherField: 'val2' });
+
+      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+      const file = {
+        buffer,
+        fieldname: 'file',
+        originalname: 'test.xlsx',
+        encoding: '7bit',
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: buffer.length,
+      } as Express.Multer.File;
+
+      await expect(service.importFabrics(file)).rejects.toThrow(
+        BadRequestException,
+      );
+      await expect(service.importFabrics(file)).rejects.toThrow(
+        'Unable to detect import type from column headers',
+      );
     });
   });
 });
