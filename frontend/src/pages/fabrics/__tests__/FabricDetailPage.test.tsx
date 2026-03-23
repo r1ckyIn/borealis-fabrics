@@ -23,6 +23,7 @@ const mockUseRemoveFabricSupplier = vi.fn();
 const mockUseCreateFabricPricing = vi.fn();
 const mockUseUpdateFabricPricing = vi.fn();
 const mockUseDeleteFabricPricing = vi.fn();
+const mockUseDeleteFabric = vi.fn();
 
 vi.mock('@/hooks/queries/useFabrics', () => ({
   useFabric: (...args: unknown[]) => mockUseFabric(...args),
@@ -36,6 +37,7 @@ vi.mock('@/hooks/queries/useFabrics', () => ({
   useCreateFabricPricing: () => mockUseCreateFabricPricing(),
   useUpdateFabricPricing: () => mockUseUpdateFabricPricing(),
   useDeleteFabricPricing: () => mockUseDeleteFabricPricing(),
+  useDeleteFabric: () => mockUseDeleteFabric(),
 }));
 
 // Mock API calls
@@ -210,6 +212,7 @@ describe('FabricDetailPage', () => {
     mockUseCreateFabricPricing.mockReturnValue(createMockMutation());
     mockUseUpdateFabricPricing.mockReturnValue(createMockMutation());
     mockUseDeleteFabricPricing.mockReturnValue(createMockMutation());
+    mockUseDeleteFabric.mockReturnValue(createMockMutation());
   });
 
   describe('Rendering', () => {
@@ -226,7 +229,7 @@ describe('FabricDetailPage', () => {
       renderWithProviders(<FabricDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('编辑面料')).toBeInTheDocument();
+        expect(screen.getByText('编辑')).toBeInTheDocument();
       });
     });
 
@@ -330,10 +333,10 @@ describe('FabricDetailPage', () => {
       renderWithProviders(<FabricDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('编辑面料')).toBeInTheDocument();
+        expect(screen.getByText('编辑')).toBeInTheDocument();
       });
 
-      const editButton = screen.getByText('编辑面料').closest('button');
+      const editButton = screen.getByText('编辑').closest('button');
       await user.click(editButton!);
 
       expect(mockNavigate).toHaveBeenCalledWith('/fabrics/1/edit');

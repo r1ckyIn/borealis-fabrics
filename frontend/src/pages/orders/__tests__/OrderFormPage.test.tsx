@@ -126,7 +126,7 @@ describe('OrderFormPage', () => {
 
       const mockMutateAsync = vi.fn().mockRejectedValue({
         code: 400,
-        message: 'customerId should not be empty',
+        message: 'Bad Request',
         data: null,
       });
 
