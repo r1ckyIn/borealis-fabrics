@@ -148,6 +148,7 @@ export class QuoteController {
   }
 
   @Post(':id/convert-to-order')
+  @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Convert a quote to an order',
     description:

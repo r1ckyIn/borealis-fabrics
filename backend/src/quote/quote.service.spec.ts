@@ -13,6 +13,7 @@ import { CodeGeneratorService, CodePrefix } from '../common/services';
 import { RedisService } from '../common/services/redis.service';
 import { QuoteStatus } from './dto';
 import { OrderItemStatus } from '../order/enums/order-status.enum';
+import { Order } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 describe('QuoteService', () => {
@@ -571,7 +572,7 @@ describe('QuoteService', () => {
     it('should delegate to batchConvertToOrder with single ID', async () => {
       const spy = jest
         .spyOn(service, 'batchConvertToOrder')
-        .mockResolvedValue({ id: 1 } as any);
+        .mockResolvedValue({ id: 1 } as unknown as Order);
 
       await service.convertToOrder(5);
 

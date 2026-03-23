@@ -262,7 +262,7 @@ describe('Quote Conversion Integration', () => {
   });
 
   describe('Expired Quote', () => {
-    it('does not show convert button; edit is disabled', async () => {
+    it('does not show convert button; edit is enabled (backend allows editing expired)', async () => {
       const quote = createMockQuote({
         id: 2,
         status: QuoteStatus.EXPIRED,
@@ -281,8 +281,8 @@ describe('Quote Conversion Integration', () => {
       // Convert button should not be rendered
       expect(screen.queryByRole('button', { name: /转换为订单/ })).not.toBeInTheDocument();
 
-      // Edit button should be disabled
-      expect(screen.getByRole('button', { name: /编辑/ })).toBeDisabled();
+      // Edit button should be enabled for expired quotes (can extend validUntil)
+      expect(screen.getByRole('button', { name: /编辑/ })).not.toBeDisabled();
     });
   });
 

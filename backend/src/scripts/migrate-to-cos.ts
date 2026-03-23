@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 /**
  * One-time migration script: FabricImage.url localhost URLs -> key-only format.
  *
@@ -66,7 +67,6 @@ function createCosClient() {
 
 /** Upload a buffer to COS. */
 async function uploadToCos(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   cos: any,
   bucket: string,
   region: string,
@@ -83,7 +83,7 @@ async function uploadToCos(
         Body: buffer,
         ContentType: mimeType,
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       (err: any) => {
         if (err) reject(err instanceof Error ? err : new Error(err.message));
         else resolve();
@@ -116,7 +116,7 @@ async function migrateFabricImagesToCos(): Promise<void> {
   }
 
   // Create COS client if needed
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   let cosClient: { cos: any; bucket: string; region: string } | undefined;
   if (STORAGE_MODE === 'cos' && !DRY_RUN) {
     cosClient = createCosClient();

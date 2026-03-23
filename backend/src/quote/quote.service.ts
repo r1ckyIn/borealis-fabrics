@@ -438,15 +438,19 @@ export class QuoteService {
         const customerId = quotes[0].customerId;
 
         // Look up cheapest suppliers for each fabric
+        // Note: Prisma distinct+orderBy is non-deterministic on MySQL,
+        // so we fetch all and pick cheapest in application code.
         const fabricIds = [...new Set(quotes.map((q) => q.fabricId))];
-        const fabricSuppliers = await tx.fabricSupplier.findMany({
+        const allFabricSuppliers = await tx.fabricSupplier.findMany({
           where: { fabricId: { in: fabricIds } },
           orderBy: { purchasePrice: 'asc' },
-          distinct: ['fabricId'],
         });
-        const supplierMap = new Map<number, number>(
-          fabricSuppliers.map((fs) => [fs.fabricId, fs.supplierId]),
-        );
+        const supplierMap = new Map<number, number>();
+        for (const fs of allFabricSuppliers) {
+          if (!supplierMap.has(fs.fabricId)) {
+            supplierMap.set(fs.fabricId, fs.supplierId);
+          }
+        }
 
         // Generate order code
         const orderCode = await this.codeGeneratorService.generateCode(

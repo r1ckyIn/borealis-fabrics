@@ -38,7 +38,7 @@ export function updateQuote(
   return patch<Quote>(`/quotes/${id}`, data);
 }
 
-/** Delete a quote (soft delete). */
+/** Delete a quote (hard delete). */
 export function deleteQuote(id: number): Promise<void> {
   return del<void>(`/quotes/${id}`);
 }

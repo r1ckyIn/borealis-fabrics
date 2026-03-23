@@ -24,6 +24,12 @@ export class CosStorageProvider implements StorageProvider {
       );
     }
 
+    if (!cosConfig?.bucket || !cosConfig?.region) {
+      throw new Error(
+        'COS configuration missing: COS_BUCKET and COS_REGION are required',
+      );
+    }
+
     this.cos = new COS({
       SecretId: cosConfig.secretId,
       SecretKey: cosConfig.secretKey,
@@ -81,7 +87,7 @@ export class CosStorageProvider implements StorageProvider {
   }
 
   async delete(key: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve) => {
       this.cos.deleteObject(
         {
           Bucket: this.bucket,
@@ -90,10 +96,12 @@ export class CosStorageProvider implements StorageProvider {
         },
         (err) => {
           if (err) {
-            this.logger.error(
+            // COS deleteObject may fail if object doesn't exist;
+            // tolerate missing objects to match local storage behavior.
+            this.logger.warn(
               `COS delete failed for key ${key}: ${err.message}`,
             );
-            reject(err instanceof Error ? err : new Error(err.message));
+            resolve();
           } else {
             resolve();
           }
