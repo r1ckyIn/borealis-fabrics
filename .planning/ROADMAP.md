@@ -77,6 +77,14 @@ Plans:
 
 **Requirements:** QUAL-01, QUAL-02, QUAL-06, TEST-04, TEST-05
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Mock builders + test any elimination + ESLint config (QUAL-06)
+- [ ] 03-02-PLAN.md — OrderService decomposition into 3 focused services (QUAL-01)
+- [ ] 03-03-PLAN.md — ImportService strategy pattern refactor (QUAL-02)
+- [ ] 03-04-PLAN.md — Path traversal + malformed Excel edge case tests (TEST-04, TEST-05)
+
 **Success Criteria:**
 1. OrderService decomposed into OrderService + OrderItemService + OrderPaymentService
 2. ImportService uses FabricImportStrategy and SupplierImportStrategy via DI
