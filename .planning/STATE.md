@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: unknown
-last_updated: "2026-03-22T12:26:57.457Z"
+status: in-progress
+last_updated: "2026-03-23T01:22:26Z"
 progress:
   total_phases: 10
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 7
+  completed_plans: 5
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,24 +18,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 1 — Frontend Bug Fixes (COMPLETE)
+**Current focus:** Phase 02 — core-feature-implementation
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 1 |
-| Name | Frontend Bug Fixes |
-| Status | Complete |
-| Current Plan | 4 of 4 (all done) |
-| Branch | feature/gsd-01-frontend-bug-fixes |
+| Phase | 2 |
+| Name | Core Feature Implementation |
+| Status | In Progress |
+| Current Plan | 1 of 3 (plan 01 complete) |
+| Branch | feature/gsd-02-core-feature-implementation |
 
 ## Progress
 
 | Phase | Status | Plans |
 |-------|--------|-------|
 | 1 — Frontend Bug Fixes | ● Complete | 4/4 |
-| 2 — Core Feature Implementation | ○ Not Started | — |
+| 2 — Core Feature Implementation | ◐ In Progress | 1/3 |
 | 3 — Backend Service Decomposition | ○ Not Started | — |
 | 4 — Frontend Component Decomposition | ○ Not Started | — |
 | 5 — Multi-Category Schema + Product CRUD | ○ Not Started | — |
@@ -70,6 +70,10 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-22 | Controller prefix: @Controller('entity') + setGlobalPrefix | Double-prefix bug found during user verification |
 | 2026-03-22 | List pages view-only: no edit/delete buttons | Simplify UX, operations via detail page |
 | 2026-03-22 | Pre-existing quote.service.spec.ts date failure is out of scope | Hardcoded date now in the past, not caused by plan 04 |
+| 2026-03-23 | Redis SET NX EX via call() not set() | Avoid ioredis TypeScript overload issue #1811 |
+| 2026-03-23 | Order items from quotes use PENDING status (not INQUIRY) | Conversion implies customer intent beyond inquiry |
+| 2026-03-23 | Sorted lock acquisition to prevent deadlocks | Standard distributed locking pattern |
+| 2026-03-23 | Supplier auto-fill from FabricSupplier cheapest price | Nullable when no supplier relationship exists |
 
 ## Session Log
 
@@ -80,7 +84,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-19 | Phase 1 Plan 02 | Completed 01-02-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-02-SUMMARY.md` |
 | 2026-03-19 | Phase 1 Plan 03 | Completed 01-03-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-03-SUMMARY.md` |
 | 2026-03-22 | Phase 1 Plan 04 | Completed 01-04-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-04-SUMMARY.md` |
+| 2026-03-23 | Phase 2 Plan 01 | Completed 02-01-PLAN.md | `.planning/phases/02-core-feature-implementation/02-01-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-22 (Phase 1 complete - all 4 plans executed)*
+*Last updated: 2026-03-23 (Phase 2 Plan 01 complete)*
