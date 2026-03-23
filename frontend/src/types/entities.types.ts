@@ -90,6 +90,7 @@ export interface Fabric extends SoftDeletableEntity {
   description?: string | null;
   tags?: string[] | null;
   notes?: string | null;
+  images?: FabricImage[];
 }
 
 export interface FabricSupplier extends BaseEntity {

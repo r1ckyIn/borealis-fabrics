@@ -1,5 +1,6 @@
 /**
- * Unit tests for CustomerDetailPage component.
+ * Unit tests for CustomerDetailPage orchestrator component.
+ * Mocks useCustomerDetail hook and all 4 sub-components.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -9,33 +10,28 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import CustomerDetailPage from '../CustomerDetailPage';
-import type { Customer, CustomerPricing, Order, PaginatedResult } from '@/types';
-import { CreditType, OrderItemStatus, CustomerPayStatus } from '@/types';
+import type { Customer } from '@/types';
+import type { UseCustomerDetailReturn } from '@/hooks/useCustomerDetail';
+import { CreditType } from '@/types';
 
-// Mock hooks
-const mockUseCustomer = vi.fn();
-const mockUseCustomerPricing = vi.fn();
-const mockUseCustomerOrders = vi.fn();
-const mockUseCreateCustomerPricing = vi.fn();
-const mockUseUpdateCustomerPricing = vi.fn();
-const mockUseDeleteCustomerPricing = vi.fn();
-const mockUseDeleteCustomer = vi.fn();
-
-vi.mock('@/hooks/queries/useCustomers', () => ({
-  useCustomer: (...args: unknown[]) => mockUseCustomer(...args),
-  useCustomerPricing: (...args: unknown[]) => mockUseCustomerPricing(...args),
-  useCustomerOrders: (...args: unknown[]) => mockUseCustomerOrders(...args),
-  useCreateCustomerPricing: () => mockUseCreateCustomerPricing(),
-  useUpdateCustomerPricing: () => mockUseUpdateCustomerPricing(),
-  useDeleteCustomerPricing: () => mockUseDeleteCustomerPricing(),
-  useDeleteCustomer: () => mockUseDeleteCustomer(),
+// Mock useCustomerDetail hook
+const mockUseCustomerDetail = vi.fn();
+vi.mock('@/hooks/useCustomerDetail', () => ({
+  useCustomerDetail: (...args: unknown[]) => mockUseCustomerDetail(...args),
 }));
 
-// Mock fabric API
-vi.mock('@/api', () => ({
-  fabricApi: {
-    getFabrics: vi.fn().mockResolvedValue({ items: [] }),
-  },
+// Mock sub-components to avoid deep rendering
+vi.mock('../components/CustomerBasicInfo', () => ({
+  CustomerBasicInfo: () => <div data-testid="customer-basic-info">Basic Info</div>,
+}));
+vi.mock('../components/CustomerAddressTab', () => ({
+  CustomerAddressTab: () => <div data-testid="customer-address-tab">Addresses</div>,
+}));
+vi.mock('../components/CustomerPricingTab', () => ({
+  CustomerPricingTab: () => <div data-testid="customer-pricing-tab">Pricing</div>,
+}));
+vi.mock('../components/CustomerOrdersTab', () => ({
+  CustomerOrdersTab: () => <div data-testid="customer-orders-tab">Orders</div>,
 }));
 
 // Mock navigate
@@ -79,15 +75,6 @@ const mockCustomer: Customer = {
       label: '公司',
       isDefault: true,
     },
-    {
-      province: '上海市',
-      city: '上海市',
-      district: '徐汇区',
-      detailAddress: '漕溪北路100号',
-      contactName: '赵六',
-      contactPhone: '13600136000',
-      isDefault: false,
-    },
   ],
   creditType: CreditType.CREDIT,
   creditDays: 45,
@@ -97,47 +84,73 @@ const mockCustomer: Customer = {
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
 
-const mockPricing: CustomerPricing[] = [
-  {
-    id: 1,
-    customerId: 1,
-    fabricId: 10,
-    specialPrice: 28,
-    fabric: {
-      id: 10,
-      fabricCode: 'FB-2401-0001',
-      name: '高档涤纶面料',
-      isActive: true,
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z',
-    },
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  },
-];
+/** Create a default mock return value for useCustomerDetail. */
+function createDefaultHookReturn(overrides?: Partial<UseCustomerDetailReturn>) {
+  const mockSetActiveTab = vi.fn();
+  const mockSetDeleteModalOpen = vi.fn();
+  const mockHandleDelete = vi.fn();
+  const mockGoToList = vi.fn();
+  const mockGoToEdit = vi.fn();
+  const mockGoToOrderDetail = vi.fn();
+  const mockGoToFabricDetail = vi.fn();
 
-const mockOrders: PaginatedResult<Order> = {
-  items: [
-    {
-      id: 1,
-      orderCode: 'ORD-2401-0001',
-      customerId: 1,
-      status: OrderItemStatus.PENDING,
-      totalAmount: 5000,
-      customerPaid: 0,
-      customerPayStatus: CustomerPayStatus.UNPAID,
-      createdAt: '2024-01-15T00:00:00.000Z',
-      updatedAt: '2024-01-15T00:00:00.000Z',
+  return {
+    data: {
+      customer: mockCustomer,
+      isLoading: false,
+      fetchError: null,
     },
-  ],
-  pagination: { total: 1, page: 1, pageSize: 20, totalPages: 1 },
-};
-
-// Helper to create default mock mutation return value
-const createMockMutation = () => ({
-  mutateAsync: vi.fn().mockResolvedValue(undefined),
-  isPending: false,
-});
+    tabs: {
+      activeTab: 'info',
+      setActiveTab: mockSetActiveTab,
+    },
+    deleteCustomer: {
+      modalOpen: false,
+      setModalOpen: mockSetDeleteModalOpen,
+      handle: mockHandleDelete,
+      isDeleting: false,
+    },
+    pricing: {
+      data: [],
+      isLoading: false,
+      modal: {
+        open: false,
+        editing: null,
+        form: {},
+        isSubmitting: false,
+        onOpenCreate: vi.fn(),
+        onOpenEdit: vi.fn(),
+        onClose: vi.fn(),
+        onSubmit: vi.fn(),
+        searchFabrics: vi.fn(),
+      },
+      deletePricing: {
+        open: false,
+        target: null,
+        isDeleting: false,
+        onOpen: vi.fn(),
+        onClose: vi.fn(),
+        onConfirm: vi.fn(),
+      },
+    },
+    orders: {
+      data: undefined,
+      isLoading: false,
+    },
+    navigation: {
+      goToList: mockGoToList,
+      goToEdit: mockGoToEdit,
+      goToOrderDetail: mockGoToOrderDetail,
+      goToFabricDetail: mockGoToFabricDetail,
+    },
+    breadcrumbs: [
+      { label: '首页', path: '/' },
+      { label: '客户管理', path: '/customers' },
+      { label: '上海服饰有限公司' },
+    ],
+    ...overrides,
+  };
+}
 
 // Helper to render with providers
 function renderWithProviders(
@@ -165,29 +178,7 @@ function renderWithProviders(
 describe('CustomerDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // Default mock implementations
-    mockUseCustomer.mockReturnValue({
-      data: mockCustomer,
-      isLoading: false,
-      error: null,
-    });
-
-    mockUseCustomerPricing.mockReturnValue({
-      data: mockPricing,
-      isLoading: false,
-    });
-
-    mockUseCustomerOrders.mockReturnValue({
-      data: mockOrders,
-      isLoading: false,
-    });
-
-    // Mock all mutations
-    mockUseCreateCustomerPricing.mockReturnValue(createMockMutation());
-    mockUseUpdateCustomerPricing.mockReturnValue(createMockMutation());
-    mockUseDeleteCustomerPricing.mockReturnValue(createMockMutation());
-    mockUseDeleteCustomer.mockReturnValue(createMockMutation());
+    mockUseCustomerDetail.mockReturnValue(createDefaultHookReturn());
   });
 
   describe('Rendering', () => {
@@ -199,12 +190,13 @@ describe('CustomerDetailPage', () => {
       });
     });
 
-    it('should render edit button', async () => {
+    it('should render edit and delete buttons', async () => {
       renderWithProviders(<CustomerDetailPage />);
 
       await waitFor(() => {
         expect(screen.getAllByText('编辑').length).toBeGreaterThan(0);
       });
+      expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
     });
 
     it('should render all four tabs', async () => {
@@ -218,54 +210,22 @@ describe('CustomerDetailPage', () => {
       expect(screen.getByText('订单历史')).toBeInTheDocument();
     });
 
-    it('should show basic info tab by default', async () => {
+    it('should render basic info sub-component by default', async () => {
       renderWithProviders(<CustomerDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('公司名称')).toBeInTheDocument();
+        expect(screen.getByTestId('customer-basic-info')).toBeInTheDocument();
       });
-      expect(screen.getByText('联系人')).toBeInTheDocument();
-      expect(screen.getByText('电话')).toBeInTheDocument();
-    });
-  });
-
-  describe('Basic Info Display', () => {
-    it('should display customer field labels', async () => {
-      renderWithProviders(<CustomerDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('公司名称')).toBeInTheDocument();
-      });
-      expect(screen.getByText('联系人')).toBeInTheDocument();
-      expect(screen.getByText('电话')).toBeInTheDocument();
-      expect(screen.getByText('微信')).toBeInTheDocument();
-      expect(screen.getByText('邮箱')).toBeInTheDocument();
-      expect(screen.getByText('结算方式')).toBeInTheDocument();
-    });
-
-    it('should display customer values correctly', async () => {
-      renderWithProviders(<CustomerDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText('上海服饰有限公司').length).toBeGreaterThan(0);
-      });
-      expect(screen.getAllByText('王五').length).toBeGreaterThan(0);
-      expect(screen.getByText('13700137000')).toBeInTheDocument();
-      expect(screen.getByText('wang_wu')).toBeInTheDocument();
-      expect(screen.getByText('wangwu@example.com')).toBeInTheDocument();
-      expect(screen.getByText('账期')).toBeInTheDocument();
-      expect(screen.getByText('45 天')).toBeInTheDocument();
-      expect(screen.getByText('重要客户')).toBeInTheDocument();
     });
   });
 
   describe('Loading State', () => {
     it('should show loading spinner while fetching customer', async () => {
-      mockUseCustomer.mockReturnValue({
-        data: undefined,
-        isLoading: true,
-        error: null,
-      });
+      mockUseCustomerDetail.mockReturnValue(
+        createDefaultHookReturn({
+          data: { customer: undefined, isLoading: true, fetchError: null },
+        })
+      );
 
       renderWithProviders(<CustomerDetailPage />);
 
@@ -277,11 +237,11 @@ describe('CustomerDetailPage', () => {
 
   describe('Error Handling', () => {
     it('should show error result when fetch fails', async () => {
-      mockUseCustomer.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: new Error('Network error'),
-      });
+      mockUseCustomerDetail.mockReturnValue(
+        createDefaultHookReturn({
+          data: { customer: undefined, isLoading: false, fetchError: new Error('Network error') },
+        })
+      );
 
       renderWithProviders(<CustomerDetailPage />);
 
@@ -292,14 +252,20 @@ describe('CustomerDetailPage', () => {
     });
 
     it('should show back to list button on error', async () => {
+      const mockGoToList = vi.fn();
+      mockUseCustomerDetail.mockReturnValue(
+        createDefaultHookReturn({
+          data: { customer: undefined, isLoading: false, fetchError: new Error('Network error') },
+          navigation: {
+            goToList: mockGoToList,
+            goToEdit: vi.fn(),
+            goToOrderDetail: vi.fn(),
+            goToFabricDetail: vi.fn(),
+          },
+        })
+      );
+
       const user = userEvent.setup();
-
-      mockUseCustomer.mockReturnValue({
-        data: undefined,
-        isLoading: false,
-        error: new Error('Network error'),
-      });
-
       renderWithProviders(<CustomerDetailPage />);
 
       await waitFor(() => {
@@ -309,17 +275,17 @@ describe('CustomerDetailPage', () => {
       const backButton = screen.getByText('返回列表').closest('button');
       await user.click(backButton!);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/customers');
+      expect(mockGoToList).toHaveBeenCalled();
     });
   });
 
   describe('404 Handling', () => {
     it('should show 404 result when customer not found', async () => {
-      mockUseCustomer.mockReturnValue({
-        data: null,
-        isLoading: false,
-        error: null,
-      });
+      mockUseCustomerDetail.mockReturnValue(
+        createDefaultHookReturn({
+          data: { customer: undefined, isLoading: false, fetchError: null },
+        })
+      );
 
       renderWithProviders(<CustomerDetailPage />);
 
@@ -331,7 +297,19 @@ describe('CustomerDetailPage', () => {
   });
 
   describe('Navigation', () => {
-    it('should navigate to edit page when clicking edit button', async () => {
+    it('should call goToEdit when clicking edit button', async () => {
+      const mockGoToEdit = vi.fn();
+      mockUseCustomerDetail.mockReturnValue(
+        createDefaultHookReturn({
+          navigation: {
+            goToList: vi.fn(),
+            goToEdit: mockGoToEdit,
+            goToOrderDetail: vi.fn(),
+            goToFabricDetail: vi.fn(),
+          },
+        })
+      );
+
       const user = userEvent.setup();
       renderWithProviders(<CustomerDetailPage />);
 
@@ -339,182 +317,56 @@ describe('CustomerDetailPage', () => {
         expect(screen.getAllByText('编辑').length).toBeGreaterThan(0);
       });
 
-      // The first primary-type edit button is the page header edit button
       const editButton = screen.getAllByText('编辑')[0].closest('button');
       await user.click(editButton!);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/customers/1/edit');
+      expect(mockGoToEdit).toHaveBeenCalled();
     });
   });
 
-  describe('Tab Switching', () => {
-    it('should switch to addresses tab', async () => {
+  describe('Delete Customer', () => {
+    it('should open delete modal when clicking delete button', async () => {
+      const mockSetDeleteModalOpen = vi.fn();
+      mockUseCustomerDetail.mockReturnValue(
+        createDefaultHookReturn({
+          deleteCustomer: {
+            modalOpen: false,
+            setModalOpen: mockSetDeleteModalOpen,
+            handle: vi.fn(),
+            isDeleting: false,
+          },
+        })
+      );
+
       const user = userEvent.setup();
       renderWithProviders(<CustomerDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('收货地址')).toBeInTheDocument();
+        expect(screen.getAllByText('删除').length).toBeGreaterThan(0);
       });
 
-      const addressesTab = screen.getByText('收货地址');
-      await user.click(addressesTab);
+      const deleteButton = screen.getAllByText('删除')[0].closest('button');
+      await user.click(deleteButton!);
 
-      await waitFor(() => {
-        expect(screen.getByText(/王五 13700137000/)).toBeInTheDocument();
-      });
-    });
-
-    it('should show address with label and default tag', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('收货地址')).toBeInTheDocument();
-      });
-
-      const addressesTab = screen.getByText('收货地址');
-      await user.click(addressesTab);
-
-      await waitFor(() => {
-        expect(screen.getByText('公司')).toBeInTheDocument();
-      });
-      expect(screen.getByText('默认')).toBeInTheDocument();
-    });
-
-    it('should switch to pricing tab', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('特殊定价')).toBeInTheDocument();
-      });
-
-      const pricingTab = screen.getByText('特殊定价');
-      await user.click(pricingTab);
-
-      await waitFor(() => {
-        expect(screen.getByText('添加定价')).toBeInTheDocument();
-      });
-    });
-
-    it('should show pricing data in table', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('特殊定价')).toBeInTheDocument();
-      });
-
-      const pricingTab = screen.getByText('特殊定价');
-      await user.click(pricingTab);
-
-      await waitFor(() => {
-        expect(screen.getByText('FB-2401-0001')).toBeInTheDocument();
-      });
-      expect(screen.getByText('高档涤纶面料')).toBeInTheDocument();
-    });
-
-    it('should switch to orders tab', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('订单历史')).toBeInTheDocument();
-      });
-
-      const ordersTab = screen.getByText('订单历史');
-      await user.click(ordersTab);
-
-      await waitFor(() => {
-        expect(screen.getByText('ORD-2401-0001')).toBeInTheDocument();
-      });
+      expect(mockSetDeleteModalOpen).toHaveBeenCalledWith(true);
     });
   });
 
-  describe('Addresses Tab', () => {
-    it('should show multiple addresses', async () => {
-      const user = userEvent.setup();
+  describe('Sub-component rendering', () => {
+    it('should render active tab sub-component (basic info by default)', async () => {
       renderWithProviders(<CustomerDetailPage />);
 
+      // Only the active tab content is rendered in the DOM
       await waitFor(() => {
-        expect(screen.getByText('收货地址')).toBeInTheDocument();
-      });
-
-      const addressesTab = screen.getByText('收货地址');
-      await user.click(addressesTab);
-
-      await waitFor(() => {
-        expect(screen.getByText(/王五 13700137000/)).toBeInTheDocument();
-      });
-      expect(screen.getByText(/赵六 13600136000/)).toBeInTheDocument();
-    });
-
-    it('should show empty state when no addresses', async () => {
-      mockUseCustomer.mockReturnValue({
-        data: { ...mockCustomer, addresses: null },
-        isLoading: false,
-        error: null,
-      });
-
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('收货地址')).toBeInTheDocument();
-      });
-
-      const addressesTab = screen.getByText('收货地址');
-      await user.click(addressesTab);
-
-      await waitFor(() => {
-        expect(screen.getByText('暂无收货地址')).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Pricing Tab', () => {
-    it('should open add pricing modal', async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<CustomerDetailPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('特殊定价')).toBeInTheDocument();
-      });
-
-      const pricingTab = screen.getByText('特殊定价');
-      await user.click(pricingTab);
-
-      await waitFor(() => {
-        expect(screen.getByText('添加定价')).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByText('添加定价').closest('button');
-      await user.click(addButton!);
-
-      await waitFor(() => {
-        expect(screen.getByText('添加特殊定价')).toBeInTheDocument();
+        expect(screen.getByTestId('customer-basic-info')).toBeInTheDocument();
       });
     });
 
-    it('should have clickable fabric code link', async () => {
-      const user = userEvent.setup();
+    it('should pass customerId to useCustomerDetail hook', () => {
       renderWithProviders(<CustomerDetailPage />);
 
-      await waitFor(() => {
-        expect(screen.getByText('特殊定价')).toBeInTheDocument();
-      });
-
-      const pricingTab = screen.getByText('特殊定价');
-      await user.click(pricingTab);
-
-      await waitFor(() => {
-        expect(screen.getByText('FB-2401-0001')).toBeInTheDocument();
-      });
-
-      const fabricLink = screen.getByText('FB-2401-0001');
-      await user.click(fabricLink);
-
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics/10');
-    }, 15000);
+      // Verify the hook was called with the customerId from URL params
+      expect(mockUseCustomerDetail).toHaveBeenCalledWith(1);
+    });
   });
 });

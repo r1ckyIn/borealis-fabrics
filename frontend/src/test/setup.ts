@@ -15,9 +15,8 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
-// Mock ResizeObserver for Ant Design components
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(globalThis as any).ResizeObserver = class ResizeObserver {
+// Mock ResizeObserver for Ant Design components (jsdom lacks native support)
+globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
