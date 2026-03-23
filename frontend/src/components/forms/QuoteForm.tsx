@@ -108,13 +108,15 @@ export function QuoteForm({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialValues]);
 
-  /** Convert internal form values to CreateQuoteData and submit. */
+  /** Convert internal form values to submit data, omitting read-only fields in edit mode. */
   async function handleFinish(values: QuoteFormValues): Promise<void> {
-    const submitData: CreateQuoteData = {
-      ...values,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { customerId, fabricId, ...editableFields } = values;
+    const submitData = {
+      ...(isEditMode ? editableFields : values),
       validUntil: values.validUntil.format('YYYY-MM-DD'),
     };
-    await onSubmit(submitData);
+    await onSubmit(submitData as CreateQuoteData);
   }
 
   const isEditMode = mode === 'edit';
@@ -192,7 +194,7 @@ export function QuoteForm({
               min={0.01}
               max={100000}
               precision={2}
-              addonAfter="¥/米"
+              addonAfter={<span style={{ whiteSpace: 'nowrap' }}>元/米</span>}
             />
           </Form.Item>
         </Col>
