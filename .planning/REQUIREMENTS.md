@@ -28,11 +28,11 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 
 - [x] **QUAL-01**: OrderService decomposed into OrderService + OrderItemService + OrderPaymentService
 - [x] **QUAL-02**: ImportService refactored with Strategy pattern (FabricImportStrategy, SupplierImportStrategy)
-- [ ] **QUAL-03**: FabricDetailPage (769L) refactored: custom hooks extracted, sub-components split
+- [x] **QUAL-03**: FabricDetailPage (769L) refactored: custom hooks extracted, sub-components split
 - [ ] **QUAL-04**: CustomerDetailPage (658L) refactored: custom hooks extracted, sub-components split
 - [x] **QUAL-05**: OrderItemsSection (652L) refactored: custom hooks extracted, sub-components split
 - [x] **QUAL-06**: Backend test `any` types eliminated with typed mock builders (97 instances)
-- [ ] **QUAL-07**: Frontend test `any` types eliminated (13 instances)
+- [x] **QUAL-07**: Frontend test `any` types eliminated (13 instances)
 - [x] **QUAL-08**: No sub-component has more than 5 props after refactoring
 - [x] **QUAL-09**: All refactored page components have zero `useState` calls (state in hooks)
 
@@ -43,7 +43,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **TEST-03**: COS upload/download integration tests
 - [x] **TEST-04**: Path traversal edge case tests (URL-encoded, unicode normalization, double-encoding)
 - [x] **TEST-05**: Import service tests with malformed Excel (merged cells, blank rows, encoding)
-- [ ] **TEST-06**: Frontend error handling tests for unexpected API response formats
+- [x] **TEST-06**: Frontend error handling tests for unexpected API response formats
 - [x] **TEST-07**: All existing tests continue passing after refactoring (608 backend + 753 frontend)
 
 ### Multi-Category (MCAT)
@@ -121,11 +121,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | FEAT-05 | Phase 2 | Complete |
 | QUAL-01 | Phase 3 | Complete |
 | QUAL-02 | Phase 3 | Complete |
-| QUAL-03 | Phase 4 | Pending |
+| QUAL-03 | Phase 4 | Complete |
 | QUAL-04 | Phase 4 | Pending |
 | QUAL-05 | Phase 4 | Complete |
 | QUAL-06 | Phase 3 | Complete |
-| QUAL-07 | Phase 4 | Pending |
+| QUAL-07 | Phase 4 | Complete |
 | QUAL-08 | Phase 4 | Complete |
 | QUAL-09 | Phase 4 | Complete |
 | TEST-01 | Phase 2 | Complete |
@@ -133,7 +133,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 3 | Complete |
 | TEST-05 | Phase 3 | Complete |
-| TEST-06 | Phase 4 | Pending |
+| TEST-06 | Phase 4 | Complete |
 | TEST-07 | Phase 4 | Complete |
 | MCAT-01 | Phase 5 | Pending |
 | MCAT-02 | Phase 5 | Pending |

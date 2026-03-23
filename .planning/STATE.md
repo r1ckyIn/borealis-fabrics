@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: in-progress
-last_updated: "2026-03-23T10:41:00Z"
+last_updated: "2026-03-23T10:55:18Z"
 progress:
   total_phases: 10
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 16
-  completed_plans: 14
+  completed_plans: 15
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,7 +18,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 04 — frontend-component-decomposition (Plan 03 complete, Plan 04 next)
+**Current focus:** Phase 04 — frontend-component-decomposition (Complete, all 4 plans done)
 
 ## Current Phase
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 |-------|-------|
 | Phase | 4 |
 | Name | Frontend Component Decomposition |
-| Status | In Progress |
+| Status | Complete |
 | Current Plan | 4 of 4 |
 | Branch | feature/gsd-04-frontend-component-decomposition |
 
@@ -37,7 +37,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 1 — Frontend Bug Fixes | ● Complete | 4/4 |
 | 2 — Core Feature Implementation | ● Complete | 3/3 |
 | 3 — Backend Service Decomposition | ● Complete | 4/4 |
-| 4 — Frontend Component Decomposition | ◐ In Progress | 3/4 |
+| 4 — Frontend Component Decomposition | ● Complete | 4/4 |
 | 5 — Multi-Category Schema + Product CRUD | ○ Not Started | — |
 | 6 — Import Strategy Refactor | ○ Not Started | — |
 | 7 — Order/Quote Multi-Category Extension | ○ Not Started | — |
@@ -49,7 +49,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 | Milestone | Phases | Status |
 |-----------|--------|--------|
-| M1: Code Remediation | 1-4 | ◐ In Progress (3/4 phases) |
+| M1: Code Remediation | 1-4 | ● Complete (4/4 phases) |
 | M2: Feature Expansion + Real Data Testing | 5-10 | ○ Not Started |
 
 ## Key Decisions Log
@@ -88,6 +88,10 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Controller delegates to sub-services, public API unchanged | Zero-impact decomposition, E2E compatibility preserved |
 | 2026-03-23 | Hook named useOrderItemsSection (not useOrderItems) | Avoids collision with existing TanStack Query data-fetching hook |
 | 2026-03-23 | StatusActionControl grouped interface for status/cancel/restore | Clean prop passing pattern for complex modal state |
+| 2026-03-23 | Declaration merging for ResizeObserver polyfill (not globalThis as any) | Type-safe jsdom polyfill pattern |
+| 2026-03-23 | PaginatedResult<never> for empty collections (not <any>) | never[] assignable to any T[] |
+| 2026-03-23 | ModalControl includes searchFn + contextual data | searchSuppliers in SupplierModalControl, searchCustomers + defaultPrice in PricingModalControl keeps sub-component props at max 5 |
+| 2026-03-23 | useFabricDetail takes navigate as parameter (not useNavigate internally) | Keeps hook testable without router context |
 
 ## Session Log
 
@@ -106,7 +110,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Phase 3 Plan 03 | Completed 03-03-PLAN.md | `.planning/phases/03-backend-service-decomposition/03-03-SUMMARY.md` |
 | 2026-03-23 | Phase 3 Plan 04 | Completed 03-04-PLAN.md | `.planning/phases/03-backend-service-decomposition/03-04-SUMMARY.md` |
 | 2026-03-23 | Phase 4 Plan 03 | Completed 04-03-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-03-SUMMARY.md` |
+| 2026-03-23 | Phase 4 Plan 04 | Completed 04-04-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-04-SUMMARY.md` |
+| 2026-03-23 | Phase 4 Plan 01 | Completed 04-01-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-01-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-23 (Phase 4 Plan 03 complete — OrderItemsSection decomposed to 78-line orchestrator)*
+*Last updated: 2026-03-23 (Phase 4 Plan 01 complete — FabricDetailPage decomposed to 169-line orchestrator + useFabricDetail hook + 4 sub-components)*
