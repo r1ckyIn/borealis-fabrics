@@ -1,9 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import {
-  UpdateCustomerPaymentDto,
-  UpdateSupplierPaymentDto,
-} from './dto';
+import { UpdateCustomerPaymentDto, UpdateSupplierPaymentDto } from './dto';
 import { CustomerPayStatus } from './enums/order-status.enum';
 import {
   ORDER_INCLUDE_PAYMENT,

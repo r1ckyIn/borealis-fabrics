@@ -191,11 +191,7 @@ export class OrderItemService {
       ) {
         // Recalculate for current supplier if quantity or price changed
         if (updatedItem.supplierId !== null) {
-          await this.upsertSupplierPayment(
-            tx,
-            orderId,
-            updatedItem.supplierId,
-          );
+          await this.upsertSupplierPayment(tx, orderId, updatedItem.supplierId);
         }
       }
 
@@ -378,9 +374,7 @@ export class OrderItemService {
 
       if (!canRestoreItem(currentStatus, prevStatus)) {
         if (currentStatus !== OrderItemStatus.CANCELLED) {
-          throw new BadRequestException(
-            'Only cancelled items can be restored',
-          );
+          throw new BadRequestException('Only cancelled items can be restored');
         }
         throw new BadRequestException(
           'Cannot restore - no previous status recorded',
@@ -528,9 +522,7 @@ export class OrderItemService {
     });
 
     const payable = items.reduce((sum, item) => {
-      const purchasePrice = item.purchasePrice
-        ? Number(item.purchasePrice)
-        : 0;
+      const purchasePrice = item.purchasePrice ? Number(item.purchasePrice) : 0;
       return sum + Number(item.quantity) * purchasePrice;
     }, 0);
 

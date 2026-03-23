@@ -378,10 +378,6 @@ export class OrderController {
     @Param('supplierId', ParseIntPipe) supplierId: number,
     @Body() dto: UpdateSupplierPaymentDto,
   ) {
-    return this.orderPaymentService.updateSupplierPayment(
-      id,
-      supplierId,
-      dto,
-    );
+    return this.orderPaymentService.updateSupplierPayment(id, supplierId, dto);
   }
 }
