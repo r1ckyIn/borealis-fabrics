@@ -103,9 +103,10 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 **Test Materials:** `/Users/qinyuan/Desktop/铂润测试资料/` contains ~30 real business documents covering all document types and product categories.
 
 **Current State:**
-- Phase 5 (testing & security) complete
-- Phase 6 (deployment) blocked by COS integration and code quality issues
-- Frontend has broken buttons and frontend-backend inconsistencies
+- GSD M1 Phase 1 (frontend bug fixes) complete
+- GSD M1 Phase 2 (core features) complete
+- GSD M1 Phase 3 (backend service decomposition) complete — OrderService split into 3, ImportService uses Strategy pattern, 657 backend tests passing
+- Next: Phase 4 (frontend component decomposition)
 - Pure local development, not deployed
 
 ## Constraints
@@ -129,4 +130,4 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 | U2Living = 铂润 in system | Same entity, no need for parent-subsidiary data model | ✓ Good |
 
 ---
-*Last updated: 2026-03-17 after initialization*
+*Last updated: 2026-03-23 after Phase 3 completion*
