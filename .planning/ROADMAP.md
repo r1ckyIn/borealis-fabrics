@@ -102,12 +102,20 @@ Plans:
 
 **Requirements:** QUAL-03, QUAL-04, QUAL-05, QUAL-07, QUAL-08, QUAL-09, TEST-06, TEST-07
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — FabricDetailPage decomposition (useFabricDetail hook + 4 sub-components)
+- [ ] 04-02-PLAN.md — CustomerDetailPage decomposition (useCustomerDetail hook + 4 sub-components)
+- [ ] 04-03-PLAN.md — OrderItemsSection decomposition (useOrderItems hook + 3 sub-components)
+- [ ] 04-04-PLAN.md — Frontend test any elimination + error handling tests
+
 **Success Criteria:**
 1. FabricDetailPage, CustomerDetailPage, OrderItemsSection decomposed with max 5 props per sub-component
 2. Refactored page components have zero useState calls (all state in custom hooks)
-3. Frontend test any types eliminated (13 instances)
+3. Frontend test any types eliminated (2 remaining instances)
 4. Frontend error handling tests exist for unexpected API response formats
-5. All 608 backend + 753+ frontend tests continue passing
+5. All 608 backend + 808+ frontend tests continue passing
 
 **Dependencies:** Phase 3 (needs backend decomposed first)
 
