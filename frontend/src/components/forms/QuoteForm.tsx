@@ -99,8 +99,8 @@ export function QuoteForm({
       form.setFieldsValue({
         customerId: initialValues.customerId,
         fabricId: initialValues.fabricId,
-        quantity: initialValues.quantity,
-        unitPrice: initialValues.unitPrice,
+        quantity: Number(initialValues.quantity),
+        unitPrice: Number(initialValues.unitPrice),
         validUntil: dayjs(initialValues.validUntil),
         notes: initialValues.notes ?? undefined,
       });
@@ -192,7 +192,7 @@ export function QuoteForm({
               min={0.01}
               max={100000}
               precision={2}
-              prefix="¥"
+              addonBefore="¥"
               addonAfter="/米"
             />
           </Form.Item>

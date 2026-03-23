@@ -162,6 +162,34 @@ describe('QuoteFormPage', () => {
         expect(screen.getAllByText(/编辑报价/).length).toBeGreaterThan(0);
       });
     });
+
+    it('should handle Prisma Decimal string values without validation errors', async () => {
+      // Prisma Decimal fields serialize as strings in JSON responses
+      const quoteWithStringDecimals: Quote = {
+        ...mockQuote,
+        quantity: '641.00' as unknown as number,
+        unitPrice: '25.00' as unknown as number,
+        totalPrice: '16025.00' as unknown as number,
+      };
+
+      mockUseQuote.mockReturnValue({
+        data: quoteWithStringDecimals,
+        isLoading: false,
+        error: null,
+      });
+
+      renderWithProviders(<QuoteFormPage />, {
+        initialEntries: ['/quotes/1/edit'],
+      });
+
+      await waitFor(() => {
+        expect(screen.getAllByText(/编辑报价/).length).toBeGreaterThan(0);
+      });
+
+      // Validation errors should NOT appear
+      expect(screen.queryByText('数量必须大于0')).not.toBeInTheDocument();
+      expect(screen.queryByText('单价必须大于0')).not.toBeInTheDocument();
+    });
   });
 
   describe('Loading State', () => {
