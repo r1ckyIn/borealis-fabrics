@@ -45,6 +45,7 @@ export interface OrderItemTableProps {
   navigate: NavigateFunction;
   onEdit: (item: OrderItem) => void;
   onDelete: (itemId: number) => void;
+  isDeleting: boolean;
   onStatusAction: (item: OrderItem, targetStatus: OrderItemStatus) => void;
   onCancel: (item: OrderItem) => void;
   onRestore: (item: OrderItem) => void;
@@ -56,6 +57,7 @@ export function OrderItemTable({
   navigate,
   onEdit,
   onDelete,
+  isDeleting,
   onStatusAction,
   onCancel,
   onRestore,
@@ -206,11 +208,13 @@ export function OrderItemTable({
                   onConfirm={() => onDelete(record.id)}
                   okText="确定"
                   cancelText="取消"
+                  okButtonProps={{ loading: isDeleting }}
                 >
                   <Button
                     type="text"
                     size="small"
                     danger
+                    disabled={isDeleting}
                     icon={<DeleteOutlined />}
                   >
                     删除

@@ -11,6 +11,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import CustomerDetailPage from '../CustomerDetailPage';
 import type { Customer } from '@/types';
+import type { UseCustomerDetailReturn } from '@/hooks/useCustomerDetail';
 import { CreditType } from '@/types';
 
 // Mock useCustomerDetail hook
@@ -84,7 +85,7 @@ const mockCustomer: Customer = {
 };
 
 /** Create a default mock return value for useCustomerDetail. */
-function createDefaultHookReturn(overrides?: Record<string, unknown>) {
+function createDefaultHookReturn(overrides?: Partial<UseCustomerDetailReturn>) {
   const mockSetActiveTab = vi.fn();
   const mockSetDeleteModalOpen = vi.fn();
   const mockHandleDelete = vi.fn();
@@ -282,7 +283,7 @@ describe('CustomerDetailPage', () => {
     it('should show 404 result when customer not found', async () => {
       mockUseCustomerDetail.mockReturnValue(
         createDefaultHookReturn({
-          data: { customer: null, isLoading: false, fetchError: null },
+          data: { customer: undefined, isLoading: false, fetchError: null },
         })
       );
 

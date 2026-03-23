@@ -50,6 +50,9 @@ export interface DeletePricingControl {
   onConfirm: () => Promise<void>;
 }
 
+/** Return type of useCustomerDetail hook. */
+export type UseCustomerDetailReturn = ReturnType<typeof useCustomerDetail>;
+
 /**
  * Hook managing all CustomerDetailPage state and handlers.
  * @param customerId - The customer entity ID (from URL params)

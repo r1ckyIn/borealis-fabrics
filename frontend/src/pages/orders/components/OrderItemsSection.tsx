@@ -46,6 +46,7 @@ export function OrderItemsSection({
         navigate={navigate}
         onEdit={itemForm.onEdit}
         onDelete={deleteItem.handle}
+        isDeleting={deleteItem.isDeleting}
         onStatusAction={statusActions.onStatusChange}
         onCancel={statusActions.onCancel}
         onRestore={statusActions.onRestore}

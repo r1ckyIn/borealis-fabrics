@@ -431,7 +431,7 @@ export function useFabricDetail(
       onDelete: deletePricing,
     },
     images: {
-      items: (fabric as { images?: FabricImage[] } | undefined)?.images,
+      items: fabric?.images,
       onUpload: handleUploadImage,
       onDelete: handleDeleteImage,
       isUploading: uploadImageMutation.isPending,
