@@ -26,7 +26,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 
 ### Code Quality (QUAL)
 
-- [ ] **QUAL-01**: OrderService decomposed into OrderService + OrderItemService + OrderPaymentService
+- [x] **QUAL-01**: OrderService decomposed into OrderService + OrderItemService + OrderPaymentService
 - [x] **QUAL-02**: ImportService refactored with Strategy pattern (FabricImportStrategy, SupplierImportStrategy)
 - [ ] **QUAL-03**: FabricDetailPage (769L) refactored: custom hooks extracted, sub-components split
 - [ ] **QUAL-04**: CustomerDetailPage (658L) refactored: custom hooks extracted, sub-components split
@@ -119,7 +119,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | FEAT-03 | Phase 2 | Complete |
 | FEAT-04 | Phase 2 | Pending |
 | FEAT-05 | Phase 2 | Complete |
-| QUAL-01 | Phase 3 | Pending |
+| QUAL-01 | Phase 3 | Complete |
 | QUAL-02 | Phase 3 | Complete |
 | QUAL-03 | Phase 4 | Pending |
 | QUAL-04 | Phase 4 | Pending |
