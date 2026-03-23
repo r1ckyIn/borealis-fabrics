@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: phase-complete
-last_updated: "2026-03-23T09:30:00Z"
+status: in-progress
+last_updated: "2026-03-23T10:41:00Z"
 progress:
   total_phases: 10
   completed_phases: 3
-  total_plans: 12
-  completed_plans: 12
+  total_plans: 16
+  completed_plans: 14
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 03 complete — next: Phase 04 frontend-component-decomposition
+**Current focus:** Phase 04 — frontend-component-decomposition (Plan 03 complete, Plan 04 next)
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 3 |
-| Name | Backend Service Decomposition |
-| Status | Complete |
+| Phase | 4 |
+| Name | Frontend Component Decomposition |
+| Status | In Progress |
 | Current Plan | 4 of 4 |
-| Branch | feature/gsd-03-backend-service-decomposition |
+| Branch | feature/gsd-04-frontend-component-decomposition |
 
 ## Progress
 
@@ -37,7 +37,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 1 — Frontend Bug Fixes | ● Complete | 4/4 |
 | 2 — Core Feature Implementation | ● Complete | 3/3 |
 | 3 — Backend Service Decomposition | ● Complete | 4/4 |
-| 4 — Frontend Component Decomposition | ○ Not Started | — |
+| 4 — Frontend Component Decomposition | ◐ In Progress | 3/4 |
 | 5 — Multi-Category Schema + Product CRUD | ○ Not Started | — |
 | 6 — Import Strategy Refactor | ○ Not Started | — |
 | 7 — Order/Quote Multi-Category Extension | ○ Not Started | — |
@@ -86,6 +86,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Direct DI injection for strategies (concrete class, not token-based) | Simpler for 2-strategy setup, sufficient until more strategies added |
 | 2026-03-23 | Sub-services module-internal (not exported from OrderModule) | Only controller needs them; QuoteModule still imports OrderService |
 | 2026-03-23 | Controller delegates to sub-services, public API unchanged | Zero-impact decomposition, E2E compatibility preserved |
+| 2026-03-23 | Hook named useOrderItemsSection (not useOrderItems) | Avoids collision with existing TanStack Query data-fetching hook |
+| 2026-03-23 | StatusActionControl grouped interface for status/cancel/restore | Clean prop passing pattern for complex modal state |
 
 ## Session Log
 
@@ -103,7 +105,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Phase 3 Plan 02 | Completed 03-02-PLAN.md | `.planning/phases/03-backend-service-decomposition/03-02-SUMMARY.md` |
 | 2026-03-23 | Phase 3 Plan 03 | Completed 03-03-PLAN.md | `.planning/phases/03-backend-service-decomposition/03-03-SUMMARY.md` |
 | 2026-03-23 | Phase 3 Plan 04 | Completed 03-04-PLAN.md | `.planning/phases/03-backend-service-decomposition/03-04-SUMMARY.md` |
+| 2026-03-23 | Phase 4 Plan 03 | Completed 04-03-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-03-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-23 (Phase 3 complete — 39 edge-case tests for path traversal and malformed Excel imports)*
+*Last updated: 2026-03-23 (Phase 4 Plan 03 complete — OrderItemsSection decomposed to 78-line orchestrator)*
