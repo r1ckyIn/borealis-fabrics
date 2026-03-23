@@ -20,7 +20,8 @@ export class LocalStorageProvider implements StorageProvider {
     }
   }
 
-  async upload(key: string, buffer: Buffer, _mimeType: string): Promise<void> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async upload(key: string, buffer: Buffer, mimeType: string): Promise<void> {
     const filePath = path.resolve(this.uploadDir, key);
 
     // Validate path stays within upload directory
@@ -32,7 +33,8 @@ export class LocalStorageProvider implements StorageProvider {
     await fs.promises.writeFile(filePath, buffer);
   }
 
-  async getUrl(key: string, _expiresInSeconds?: number): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/require-await
+  async getUrl(key: string, expiresInSeconds?: number): Promise<string> {
     return this.baseUrl + '/uploads/' + key;
   }
 

@@ -47,7 +47,7 @@ export class CosStorageProvider implements StorageProvider {
             this.logger.error(
               `COS upload failed for key ${key}: ${err.message}`,
             );
-            reject(err);
+            reject(err instanceof Error ? err : new Error(err.message));
           } else {
             resolve();
           }
@@ -71,7 +71,7 @@ export class CosStorageProvider implements StorageProvider {
             this.logger.error(
               `COS getUrl failed for key ${key}: ${err.message}`,
             );
-            reject(err);
+            reject(err instanceof Error ? err : new Error(err.message));
           } else {
             resolve(data.Url);
           }
@@ -93,7 +93,7 @@ export class CosStorageProvider implements StorageProvider {
             this.logger.error(
               `COS delete failed for key ${key}: ${err.message}`,
             );
-            reject(err);
+            reject(err instanceof Error ? err : new Error(err.message));
           } else {
             resolve();
           }

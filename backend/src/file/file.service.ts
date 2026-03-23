@@ -1,18 +1,19 @@
 import {
+  Inject,
   Injectable,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { File } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import * as fs from 'fs';
 import * as path from 'path';
 import {
   ALLOWED_EXTENSIONS,
   MAX_FILENAME_LENGTH,
 } from '../common/constants/file.constants';
+import { STORAGE_PROVIDER } from './storage';
+import type { StorageProvider } from './storage';
 
 /**
  * Sanitize filename to prevent security issues.
@@ -72,43 +73,6 @@ function validateExtension(filename: string): void {
   }
 }
 
-/**
- * Validate that the file path is within the upload directory.
- * Prevents path traversal attacks.
- */
-function validateFilePath(uploadDir: string, key: string): string {
-  // Check for obvious path traversal patterns
-  if (key.includes('..') || key.includes('/') || key.includes('\\')) {
-    throw new BadRequestException(
-      'Invalid file path: contains traversal characters',
-    );
-  }
-
-  // Decode URL-encoded characters and check again
-  const decodedKey = decodeURIComponent(key);
-  if (
-    decodedKey.includes('..') ||
-    decodedKey.includes('/') ||
-    decodedKey.includes('\\')
-  ) {
-    throw new BadRequestException(
-      'Invalid file path: contains encoded traversal characters',
-    );
-  }
-
-  // Resolve the full path and verify it's within uploadDir
-  const resolvedUploadDir = path.resolve(uploadDir);
-  const resolvedFilePath = path.resolve(uploadDir, key);
-
-  if (!resolvedFilePath.startsWith(resolvedUploadDir + path.sep)) {
-    throw new BadRequestException(
-      'Invalid file path: outside upload directory',
-    );
-  }
-
-  return resolvedFilePath;
-}
-
 export interface UploadedFile {
   originalname: string;
   mimetype: string;
@@ -127,30 +91,16 @@ export interface FileUploadResult {
 
 @Injectable()
 export class FileService {
-  private readonly uploadDir: string;
-  private readonly baseUrl: string;
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
-  ) {
-    // MVP: Use local file storage
-    // TODO: Replace with COS SDK in production
-    this.uploadDir =
-      this.configService.get<string>('UPLOAD_DIR') || './uploads';
-    this.baseUrl =
-      this.configService.get<string>('BASE_URL') || 'http://localhost:3000';
-
-    // Ensure upload directory exists
-    if (!fs.existsSync(this.uploadDir)) {
-      fs.mkdirSync(this.uploadDir, { recursive: true });
-    }
-  }
+    @Inject(STORAGE_PROVIDER)
+    private readonly storageProvider: StorageProvider,
+  ) {}
 
   /**
    * Upload a file to storage and create a database record.
-   * MVP: Uses local file system storage.
-   * Production: Will use Tencent COS.
+   * Uses StorageProvider for abstracted storage (local or COS).
+   * Database stores key-only; URLs are generated at read-time.
    */
   async upload(file: UploadedFile): Promise<FileUploadResult> {
     // Sanitize the original filename
@@ -163,34 +113,43 @@ export class FileService {
     const ext = path.extname(sanitizedOriginalName).toLowerCase();
     const key = `${randomUUID()}${ext}`;
 
-    // Validate the file path is within upload directory
-    const filePath = validateFilePath(this.uploadDir, key);
+    // Upload via storage provider
+    await this.storageProvider.upload(key, file.buffer, file.mimetype);
 
-    // Save file to local storage (MVP)
-    await fs.promises.writeFile(filePath, file.buffer);
-
-    // Generate URL
-    const url = `${this.baseUrl}/uploads/${key}`;
-
-    // Create database record with sanitized original name
+    // Store key-only in database (not full URL) per FEAT-05
     const record = await this.prisma.file.create({
       data: {
         key,
-        url,
+        url: key,
         originalName: sanitizedOriginalName,
         mimeType: file.mimetype,
         size: file.size,
       },
     });
 
+    // Generate URL at read-time
+    const url = await this.storageProvider.getUrl(key);
+
     return {
       id: record.id,
       key: record.key,
-      url: record.url,
+      url,
       originalName: record.originalName,
       mimeType: record.mimeType,
       size: record.size,
     };
+  }
+
+  /**
+   * Generate a URL for a file key.
+   * Returns presigned URL (COS) or localhost URL (local).
+   * Handles legacy full URLs gracefully (returns as-is if starts with 'http').
+   */
+  async getFileUrl(key: string): Promise<string> {
+    if (key.startsWith('http://') || key.startsWith('https://')) {
+      return key;
+    }
+    return this.storageProvider.getUrl(key);
   }
 
   /**
@@ -227,10 +186,9 @@ export class FileService {
 
   /**
    * Remove a file by ID.
-   * Deletes both the database record and the actual file.
+   * Deletes both the database record and the file from storage.
    */
   async remove(id: number): Promise<void> {
-    // Check if file exists
     const file = await this.prisma.file.findUnique({
       where: { id },
     });
@@ -239,13 +197,8 @@ export class FileService {
       throw new NotFoundException(`File with ID ${id} not found`);
     }
 
-    // Validate file path to prevent path traversal attacks
-    const filePath = validateFilePath(this.uploadDir, file.key);
-
-    // Delete from storage (MVP: local file system)
-    if (fs.existsSync(filePath)) {
-      await fs.promises.unlink(filePath);
-    }
+    // Delete from storage provider
+    await this.storageProvider.delete(file.key);
 
     // Delete database record
     await this.prisma.file.delete({ where: { id } });
@@ -253,7 +206,7 @@ export class FileService {
 
   /**
    * Remove a file by key.
-   * Deletes both the database record and the actual file.
+   * Deletes both the database record and the file from storage.
    */
   async removeByKey(key: string): Promise<void> {
     const file = await this.findByKey(key);

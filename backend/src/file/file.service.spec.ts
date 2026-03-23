@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/unbound-method */
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
@@ -99,9 +100,7 @@ describe('FileService', () => {
       expect(fileMock.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           // url field should equal key (key-only), not a full URL
-          url: expect.stringMatching(
-            /^[0-9a-f-]+\.jpg$/,
-          ),
+          url: expect.stringMatching(/^[0-9a-f-]+\.jpg$/),
         }),
       });
 
@@ -130,9 +129,7 @@ describe('FileService', () => {
       const result = await service.upload(mockUploadedFile);
 
       expect(mockStorageProvider.getUrl).toHaveBeenCalled();
-      expect(result.url).toBe(
-        'http://localhost:3000/uploads/test-key.jpg',
-      );
+      expect(result.url).toBe('http://localhost:3000/uploads/test-key.jpg');
     });
 
     it('should generate unique key with correct extension', async () => {
@@ -169,9 +166,7 @@ describe('FileService', () => {
       const result = await service.getFileUrl('test.jpg');
 
       expect(mockStorageProvider.getUrl).toHaveBeenCalledWith('test.jpg');
-      expect(result).toBe(
-        'http://localhost:3000/uploads/test-key.jpg',
-      );
+      expect(result).toBe('http://localhost:3000/uploads/test-key.jpg');
     });
 
     it('should return legacy full URL as-is without calling provider', async () => {
@@ -255,9 +250,7 @@ describe('FileService', () => {
 
       await service.remove(1);
 
-      expect(mockStorageProvider.delete).toHaveBeenCalledWith(
-        mockFile.key,
-      );
+      expect(mockStorageProvider.delete).toHaveBeenCalledWith(mockFile.key);
       expect(fileMock.delete).toHaveBeenCalledWith({ where: { id: 1 } });
     });
 
@@ -284,9 +277,7 @@ describe('FileService', () => {
       expect(fileMock.findUnique).toHaveBeenCalledWith({
         where: { key: 'abc123-uuid.jpg' },
       });
-      expect(mockStorageProvider.delete).toHaveBeenCalledWith(
-        mockFile.key,
-      );
+      expect(mockStorageProvider.delete).toHaveBeenCalledWith(mockFile.key);
     });
   });
 
