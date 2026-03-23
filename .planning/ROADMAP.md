@@ -11,7 +11,7 @@
 |---|-------|-----------|------|--------------|
 | 1 | Frontend Bug Fixes | M1 | 4/4 Complete | BUGF-01~06 |
 | 2 | Core Feature Implementation | M1 | Quote-to-order + COS file storage end-to-end | FEAT-01~05, TEST-01~03 |
-| 3 | Backend Service Decomposition | M1 | Services decomposed + any types eliminated | QUAL-01~02, QUAL-06, TEST-04~05 |
+| 3 | Backend Service Decomposition | M1 | 4/4 Complete | QUAL-01~02, QUAL-06, TEST-04~05 |
 | 4 | Frontend Component Decomposition | M1 | Components decomposed + all tests pass | QUAL-03~09, TEST-06~07 |
 | 5 | Multi-Category Schema + Product CRUD | M2 | Product data model + CRUD for all categories | MCAT-01~04, MCAT-09 |
 | 6 | Import Strategy Refactor | M2 | Extensible import + new category templates | MCAT-05~06, DATA-08~09 |
@@ -77,13 +77,13 @@ Plans:
 
 **Requirements:** QUAL-01, QUAL-02, QUAL-06, TEST-04, TEST-05
 
-**Plans:** 4 plans
+**Plans:** 4/4 plans executed (COMPLETE)
 
 Plans:
-- [ ] 03-01-PLAN.md — Mock builders + test any elimination + ESLint config (QUAL-06)
-- [ ] 03-02-PLAN.md — OrderService decomposition into 3 focused services (QUAL-01)
-- [ ] 03-03-PLAN.md — ImportService strategy pattern refactor (QUAL-02)
-- [ ] 03-04-PLAN.md — Path traversal + malformed Excel edge case tests (TEST-04, TEST-05)
+- [x] 03-01-PLAN.md — Mock builders + test any elimination + ESLint config (QUAL-06)
+- [x] 03-02-PLAN.md — OrderService decomposition into 3 focused services (QUAL-01)
+- [x] 03-03-PLAN.md — ImportService strategy pattern refactor (QUAL-02)
+- [x] 03-04-PLAN.md — Path traversal + malformed Excel edge case tests (TEST-04, TEST-05)
 
 **Success Criteria:**
 1. OrderService decomposed into OrderService + OrderItemService + OrderPaymentService
