@@ -95,7 +95,7 @@ export function FabricSupplierTab({
         ),
       },
     ],
-    [modal.onEdit, onRemove]
+    [modal, onRemove]
   );
 
   return (

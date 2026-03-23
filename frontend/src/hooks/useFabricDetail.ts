@@ -26,7 +26,7 @@ import {
 import { getSuppliers } from '@/api/supplier.api';
 import { getCustomers } from '@/api/customer.api';
 import { getErrorMessage, getDeleteErrorMessage } from '@/utils/errorMessages';
-import type { ApiError } from '@/types/api.types';
+import type { ApiError } from '@/types';
 import type {
   Fabric,
   FabricSupplier,

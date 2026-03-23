@@ -38,24 +38,14 @@ export interface StatusModalState {
   targetStatus: OrderItemStatus | null;
 }
 
-export interface CancelModalState {
-  open: boolean;
-  item: OrderItem | null;
-}
-
-export interface RestoreModalState {
-  open: boolean;
-  item: OrderItem | null;
-}
-
-export interface EditModalState {
+export interface ItemModalState {
   open: boolean;
   item: OrderItem | null;
 }
 
 export interface ItemFormControl {
   addOpen: boolean;
-  editModal: EditModalState;
+  editModal: ItemModalState;
   addForm: FormInstance;
   editForm: FormInstance;
   onAdd: () => void;
@@ -70,8 +60,8 @@ export interface ItemFormControl {
 
 export interface StatusActionControl {
   statusModal: StatusModalState;
-  cancelModal: CancelModalState;
-  restoreModal: RestoreModalState;
+  cancelModal: ItemModalState;
+  restoreModal: ItemModalState;
   statusForm: FormInstance;
   cancelForm: FormInstance;
   onStatusChange: (item: OrderItem, targetStatus: OrderItemStatus) => void;
@@ -106,7 +96,7 @@ export interface UseOrderItemsSectionReturn {
 export function useOrderItemsSection(orderId: number): UseOrderItemsSectionReturn {
   // ---- Modal states ----
   const [addItemOpen, setAddItemOpen] = useState(false);
-  const [editItemModal, setEditItemModal] = useState<EditModalState>({
+  const [editItemModal, setEditItemModal] = useState<ItemModalState>({
     open: false,
     item: null,
   });
@@ -115,11 +105,11 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
     item: null,
     targetStatus: null,
   });
-  const [cancelModal, setCancelModal] = useState<CancelModalState>({
+  const [cancelModal, setCancelModal] = useState<ItemModalState>({
     open: false,
     item: null,
   });
-  const [restoreModal, setRestoreModal] = useState<RestoreModalState>({
+  const [restoreModal, setRestoreModal] = useState<ItemModalState>({
     open: false,
     item: null,
   });
@@ -292,6 +282,16 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
     }
   }, [orderId, restoreModal, restoreItemMutation]);
 
+  // ---- Close handlers ----
+  const closeAddItem = useCallback(() => setAddItemOpen(false), []);
+  const closeEditItem = useCallback(() => setEditItemModal({ open: false, item: null }), []);
+  const closeStatusModal = useCallback(
+    () => setStatusModal({ open: false, item: null, targetStatus: null }),
+    []
+  );
+  const closeCancelModal = useCallback(() => setCancelModal({ open: false, item: null }), []);
+  const closeRestoreModal = useCallback(() => setRestoreModal({ open: false, item: null }), []);
+
   return {
     itemForm: {
       addOpen: addItemOpen,
@@ -300,8 +300,8 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
       editForm: editItemForm,
       onAdd: openAddItem,
       onEdit: openEditItem,
-      onCloseAdd: () => setAddItemOpen(false),
-      onCloseEdit: () => setEditItemModal({ open: false, item: null }),
+      onCloseAdd: closeAddItem,
+      onCloseEdit: closeEditItem,
       onSubmitAdd: handleAddItem,
       onSubmitEdit: handleEditItem,
       isAdding: addItemMutation.isPending,
@@ -316,9 +316,9 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
       onStatusChange: openStatusModal,
       onCancel: openCancelModal,
       onRestore: openRestoreModal,
-      onCloseStatus: () => setStatusModal({ open: false, item: null, targetStatus: null }),
-      onCloseCancel: () => setCancelModal({ open: false, item: null }),
-      onCloseRestore: () => setRestoreModal({ open: false, item: null }),
+      onCloseStatus: closeStatusModal,
+      onCloseCancel: closeCancelModal,
+      onCloseRestore: closeRestoreModal,
       onConfirmStatus: handleStatusChange,
       onConfirmCancel: handleCancel,
       onConfirmRestore: handleRestore,

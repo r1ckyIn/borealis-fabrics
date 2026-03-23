@@ -18,8 +18,7 @@ import {
 } from '@/hooks/queries/useCustomers';
 import { fabricApi } from '@/api';
 import { getDeleteErrorMessage } from '@/utils/errorMessages';
-import type { ApiError } from '@/types';
-import type { CustomerPricing, Fabric } from '@/types';
+import type { ApiError, CustomerPricing, Fabric } from '@/types';
 
 /** Pricing form values type. */
 export interface PricingFormValues {

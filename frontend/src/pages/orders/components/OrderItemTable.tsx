@@ -3,7 +3,7 @@
  * pricing, status, delivery date, and row-level actions.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   Table,
   Button,
@@ -226,11 +226,11 @@ export function OrderItemTable({
         },
       },
     ],
-    [navigate, onEdit, onDelete, onStatusAction, onCancel, onRestore]
+    [navigate, onEdit, onDelete, isDeleting, onStatusAction, onCancel, onRestore]
   );
 
   // Summary row showing total amount
-  const itemsSummary = () => {
+  const itemsSummary = useCallback(() => {
     if (!items || items.length === 0) return null;
     const total = items.reduce((sum, item) => sum + item.subtotal, 0);
     return (
@@ -246,7 +246,7 @@ export function OrderItemTable({
         <Table.Summary.Cell index={6} colSpan={3} />
       </Table.Summary.Row>
     );
-  };
+  }, [items]);
 
   return (
     <Table<OrderItem>

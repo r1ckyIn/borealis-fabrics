@@ -98,7 +98,7 @@ export function FabricPricingTab({
         ),
       },
     ],
-    [defaultPrice, modal.onEdit, onDelete]
+    [defaultPrice, modal, onDelete]
   );
 
   return (
@@ -145,7 +145,7 @@ export function FabricPricingTab({
               { type: 'number', min: 0, message: '单价必须大于0' },
             ]}
             extra={
-              defaultPrice !== null && defaultPrice !== undefined
+              defaultPrice != null
                 ? `默认单价: ${formatCurrency(defaultPrice)}/米`
                 : undefined
             }
