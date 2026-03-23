@@ -6,9 +6,9 @@ status: unknown
 last_updated: "2026-03-23T01:24:53.254Z"
 progress:
   total_phases: 10
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,7 +18,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 02 — core-feature-implementation
+**Current focus:** Phase 02 — core-feature-implementation (COMPLETE)
 
 ## Current Phase
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 |-------|-------|
 | Phase | 2 |
 | Name | Core Feature Implementation |
-| Status | In Progress |
-| Current Plan | 2 of 3 (plans 01-02 complete) |
+| Status | Complete |
+| Current Plan | 3 of 3 (all done) |
 | Branch | feature/gsd-02-core-feature-implementation |
 
 ## Progress
@@ -35,7 +35,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | Status | Plans |
 |-------|--------|-------|
 | 1 — Frontend Bug Fixes | ● Complete | 4/4 |
-| 2 — Core Feature Implementation | ◐ In Progress | 2/3 |
+| 2 — Core Feature Implementation | ● Complete | 3/3 |
 | 3 — Backend Service Decomposition | ○ Not Started | — |
 | 4 — Frontend Component Decomposition | ○ Not Started | — |
 | 5 — Multi-Category Schema + Product CRUD | ○ Not Started | — |
@@ -49,7 +49,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 | Milestone | Phases | Status |
 |-----------|--------|--------|
-| M1: Code Remediation | 1-4 | ◐ In Progress (1/4 phases) |
+| M1: Code Remediation | 1-4 | ◐ In Progress (2/4 phases) |
 | M2: Feature Expansion + Real Data Testing | 5-10 | ○ Not Started |
 
 ## Key Decisions Log
@@ -77,6 +77,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | StorageProvider 3-method interface (upload/getUrl/delete) | Minimal contract for dual-mode storage |
 | 2026-03-23 | Key-only DB storage, URL at read-time | Enables storage mode switching without data migration |
 | 2026-03-23 | STORAGE_MODE defaults to 'local' | Dev-friendly, no COS credentials needed in dev |
+| 2026-03-23 | FabricImage.url stores key-only, resolved at read-time | Consistent with File table pattern from Plan 02 |
+| 2026-03-23 | findOne includes images with resolved URLs | Frontend FabricDetailPage expects images on fabric object |
+| 2026-03-23 | Migration script uses DRY_RUN + per-image error recovery | Safe one-time data migration pattern |
 
 ## Session Log
 
@@ -89,7 +92,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-22 | Phase 1 Plan 04 | Completed 01-04-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-04-SUMMARY.md` |
 | 2026-03-23 | Phase 2 Plan 01 | Completed 02-01-PLAN.md | `.planning/phases/02-core-feature-implementation/02-01-SUMMARY.md` |
 | 2026-03-23 | Phase 2 Plan 02 | Completed 02-02-PLAN.md | `.planning/phases/02-core-feature-implementation/02-02-SUMMARY.md` |
+| 2026-03-23 | Phase 2 Plan 03 | Complete | `.planning/phases/02-core-feature-implementation/` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-23 (Phase 2 Plan 02 complete — storage abstraction)*
+*Last updated: 2026-03-23 (Phase 2 complete — all 3 plans executed)*
