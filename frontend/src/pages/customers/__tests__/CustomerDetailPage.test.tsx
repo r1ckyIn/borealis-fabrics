@@ -203,7 +203,7 @@ describe('CustomerDetailPage', () => {
       renderWithProviders(<CustomerDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('编辑')).toBeInTheDocument();
+        expect(screen.getAllByText('编辑').length).toBeGreaterThan(0);
       });
     });
 
@@ -336,10 +336,11 @@ describe('CustomerDetailPage', () => {
       renderWithProviders(<CustomerDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('编辑')).toBeInTheDocument();
+        expect(screen.getAllByText('编辑').length).toBeGreaterThan(0);
       });
 
-      const editButton = screen.getByText('编辑').closest('button');
+      // The first primary-type edit button is the page header edit button
+      const editButton = screen.getAllByText('编辑')[0].closest('button');
       await user.click(editButton!);
 
       expect(mockNavigate).toHaveBeenCalledWith('/customers/1/edit');

@@ -209,14 +209,14 @@ describe('QuoteDetailPage', () => {
     });
   });
 
-  describe('Convert to Order 501 Handling', () => {
-    it('should show warning on 501 Not Implemented', async () => {
+  describe('Convert to Order Error Handling', () => {
+    it('should show warning on 409 Conflict', async () => {
       const { message: antdMessage } = await import('antd');
       const user = userEvent.setup();
 
       const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 501,
-        message: 'NOT_IMPLEMENTED',
+        code: 409,
+        message: 'CONFLICT',
         data: null,
       });
       mockUseConvertQuoteToOrder.mockReturnValue({
@@ -243,9 +243,48 @@ describe('QuoteDetailPage', () => {
       expect(confirmButton).toBeInTheDocument();
       await user.click(confirmButton!);
 
-      // Verify warning (not error) message
+      // Verify warning message for concurrent conversion
       await waitFor(() => {
-        expect(antdMessage.warning).toHaveBeenCalledWith('该功能暂未实现');
+        expect(antdMessage.warning).toHaveBeenCalledWith('该报价正在被其他请求转换，请稍后重试');
+      });
+    });
+
+    it('should show warning on 503 Service Unavailable', async () => {
+      const { message: antdMessage } = await import('antd');
+      const user = userEvent.setup();
+
+      const mockMutateAsync = vi.fn().mockRejectedValue({
+        code: 503,
+        message: 'SERVICE_UNAVAILABLE',
+        data: null,
+      });
+      mockUseConvertQuoteToOrder.mockReturnValue({
+        mutateAsync: mockMutateAsync,
+        isPending: false,
+      });
+
+      renderWithProviders(<QuoteDetailPage />);
+
+      // Click convert button
+      await waitFor(() => {
+        expect(screen.getByText('转换为订单')).toBeInTheDocument();
+      });
+      const convertBtn = screen.getByText('转换为订单').closest('button');
+      await user.click(convertBtn!);
+
+      // Wait for modal to open
+      await waitFor(() => {
+        expect(screen.getAllByText('确认转换').length).toBeGreaterThanOrEqual(2);
+      });
+
+      // Click confirm button in modal footer
+      const confirmButton = document.querySelector('.ant-modal-footer .ant-btn-primary');
+      expect(confirmButton).toBeInTheDocument();
+      await user.click(confirmButton!);
+
+      // Verify warning message for service unavailability
+      await waitFor(() => {
+        expect(antdMessage.warning).toHaveBeenCalledWith('系统暂时不可用，请稍后重试');
       });
     });
   });

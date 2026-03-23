@@ -53,6 +53,13 @@ Plans:
 
 **Requirements:** FEAT-01, FEAT-02, FEAT-03, FEAT-04, FEAT-05, TEST-01, TEST-02, TEST-03
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Quote-to-order conversion backend (Redis lock + Prisma transaction + batch convert)
+- [ ] 02-02-PLAN.md — COS storage abstraction layer (StorageProvider interface + dual-mode + FileService refactor)
+- [ ] 02-03-PLAN.md — Frontend conversion flow + FabricService URL resolution + migration script
+
 **Success Criteria:**
 1. User converts a quote to an order with all items transferred correctly
 2. User attempts duplicate conversion and gets clear rejection (409)

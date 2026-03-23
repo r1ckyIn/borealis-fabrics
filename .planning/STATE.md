@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-22T12:26:57.457Z"
+last_updated: "2026-03-23T01:24:53.254Z"
 progress:
   total_phases: 10
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,24 +18,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 1 — Frontend Bug Fixes (COMPLETE)
+**Current focus:** Phase 02 — core-feature-implementation (COMPLETE)
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 1 |
-| Name | Frontend Bug Fixes |
+| Phase | 2 |
+| Name | Core Feature Implementation |
 | Status | Complete |
-| Current Plan | 4 of 4 (all done) |
-| Branch | feature/gsd-01-frontend-bug-fixes |
+| Current Plan | 3 of 3 (all done) |
+| Branch | feature/gsd-02-core-feature-implementation |
 
 ## Progress
 
 | Phase | Status | Plans |
 |-------|--------|-------|
 | 1 — Frontend Bug Fixes | ● Complete | 4/4 |
-| 2 — Core Feature Implementation | ○ Not Started | — |
+| 2 — Core Feature Implementation | ● Complete | 3/3 |
 | 3 — Backend Service Decomposition | ○ Not Started | — |
 | 4 — Frontend Component Decomposition | ○ Not Started | — |
 | 5 — Multi-Category Schema + Product CRUD | ○ Not Started | — |
@@ -49,7 +49,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 
 | Milestone | Phases | Status |
 |-----------|--------|--------|
-| M1: Code Remediation | 1-4 | ◐ In Progress (1/4 phases) |
+| M1: Code Remediation | 1-4 | ◐ In Progress (2/4 phases) |
 | M2: Feature Expansion + Real Data Testing | 5-10 | ○ Not Started |
 
 ## Key Decisions Log
@@ -70,6 +70,16 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-22 | Controller prefix: @Controller('entity') + setGlobalPrefix | Double-prefix bug found during user verification |
 | 2026-03-22 | List pages view-only: no edit/delete buttons | Simplify UX, operations via detail page |
 | 2026-03-22 | Pre-existing quote.service.spec.ts date failure is out of scope | Hardcoded date now in the past, not caused by plan 04 |
+| 2026-03-23 | Redis SET NX EX via call() not set() | Avoid ioredis TypeScript overload issue #1811 |
+| 2026-03-23 | Order items from quotes use PENDING status (not INQUIRY) | Conversion implies customer intent beyond inquiry |
+| 2026-03-23 | Sorted lock acquisition to prevent deadlocks | Standard distributed locking pattern |
+| 2026-03-23 | Supplier auto-fill from FabricSupplier cheapest price | Nullable when no supplier relationship exists |
+| 2026-03-23 | StorageProvider 3-method interface (upload/getUrl/delete) | Minimal contract for dual-mode storage |
+| 2026-03-23 | Key-only DB storage, URL at read-time | Enables storage mode switching without data migration |
+| 2026-03-23 | STORAGE_MODE defaults to 'local' | Dev-friendly, no COS credentials needed in dev |
+| 2026-03-23 | FabricImage.url stores key-only, resolved at read-time | Consistent with File table pattern from Plan 02 |
+| 2026-03-23 | findOne includes images with resolved URLs | Frontend FabricDetailPage expects images on fabric object |
+| 2026-03-23 | Migration script uses DRY_RUN + per-image error recovery | Safe one-time data migration pattern |
 
 ## Session Log
 
@@ -80,7 +90,10 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-19 | Phase 1 Plan 02 | Completed 01-02-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-02-SUMMARY.md` |
 | 2026-03-19 | Phase 1 Plan 03 | Completed 01-03-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-03-SUMMARY.md` |
 | 2026-03-22 | Phase 1 Plan 04 | Completed 01-04-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-04-SUMMARY.md` |
+| 2026-03-23 | Phase 2 Plan 01 | Completed 02-01-PLAN.md | `.planning/phases/02-core-feature-implementation/02-01-SUMMARY.md` |
+| 2026-03-23 | Phase 2 Plan 02 | Completed 02-02-PLAN.md | `.planning/phases/02-core-feature-implementation/02-02-SUMMARY.md` |
+| 2026-03-23 | Phase 2 Plan 03 | Complete | `.planning/phases/02-core-feature-implementation/` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-22 (Phase 1 complete - all 4 plans executed)*
+*Last updated: 2026-03-23 (Phase 2 complete — all 3 plans executed)*

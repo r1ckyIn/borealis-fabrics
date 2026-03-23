@@ -184,6 +184,42 @@ export class RedisService implements OnModuleDestroy {
   }
 
   /**
+   * Acquire a distributed lock using Redis SET NX EX.
+   * Returns true if lock was acquired, false otherwise.
+   * Uses call() instead of set() to avoid ioredis TypeScript overload issue.
+   */
+  async acquireLock(key: string, ttlSeconds: number = 30): Promise<boolean> {
+    if (!this.isAvailable()) {
+      return false;
+    }
+
+    try {
+      const result = await this.client!.call(
+        'set',
+        `lock:${key}`,
+        '1',
+        'NX',
+        'EX',
+        String(ttlSeconds),
+      );
+      return result === 'OK';
+    } catch (error) {
+      this.logger.error(
+        `Redis LOCK failed for key ${key}: ${(error as Error).message}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Release a distributed lock.
+   * Delegates to del() with the lock key prefix.
+   */
+  async releaseLock(key: string): Promise<boolean> {
+    return this.del(`lock:${key}`);
+  }
+
+  /**
    * Ping Redis to check connection health.
    * Returns 'PONG' if successful, throws if unavailable.
    */

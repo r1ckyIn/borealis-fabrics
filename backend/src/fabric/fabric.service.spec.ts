@@ -129,6 +129,11 @@ describe('FabricService', () => {
   const mockFileService = {
     upload: jest.fn(),
     removeByKey: jest.fn(),
+    getFileUrl: jest
+      .fn()
+      .mockImplementation((key: string) =>
+        Promise.resolve(`http://localhost/uploads/${key}`),
+      ),
   };
 
   beforeEach(async () => {
@@ -206,14 +211,16 @@ describe('FabricService', () => {
   // ========================================
   describe('findOne', () => {
     it('should return a fabric by ID', async () => {
-      fabricMock.findFirst.mockResolvedValue(mockFabric);
+      const fabricWithImages = { ...mockFabric, images: [] };
+      fabricMock.findFirst.mockResolvedValue(fabricWithImages);
 
       const result = await service.findOne(1);
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
         where: { id: 1, isActive: true },
+        include: { images: { orderBy: { sortOrder: 'asc' } } },
       });
-      expect(result).toEqual(mockFabric);
+      expect(result).toEqual(fabricWithImages);
     });
 
     it('should throw NotFoundException if fabric not found', async () => {
@@ -231,6 +238,7 @@ describe('FabricService', () => {
       await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
         where: { id: 1, isActive: true },
+        include: { images: { orderBy: { sortOrder: 'asc' } } },
       });
     });
   });
@@ -550,7 +558,7 @@ describe('FabricService', () => {
     const mockFabricImage = {
       id: 1,
       fabricId: 1,
-      url: 'http://localhost:3000/uploads/uuid-123.jpg',
+      url: 'uuid-123.jpg',
       sortOrder: 0,
       createdAt: new Date(),
     };
@@ -570,11 +578,11 @@ describe('FabricService', () => {
       expect(fabricImageMock.create).toHaveBeenCalledWith({
         data: {
           fabricId: 1,
-          url: mockFileUploadResult.url,
+          url: mockFileUploadResult.key,
           sortOrder: 0,
         },
       });
-      expect(result).toEqual(mockFabricImage);
+      expect(result.url).toBe('http://localhost/uploads/uuid-123.jpg');
     });
 
     it('should use custom sortOrder when provided', async () => {
@@ -591,7 +599,7 @@ describe('FabricService', () => {
       expect(fabricImageMock.create).toHaveBeenCalledWith({
         data: {
           fabricId: 1,
-          url: mockFileUploadResult.url,
+          url: mockFileUploadResult.key,
           sortOrder: 5,
         },
       });

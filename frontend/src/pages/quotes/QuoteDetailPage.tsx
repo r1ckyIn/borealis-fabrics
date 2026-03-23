@@ -104,8 +104,10 @@ export default function QuoteDetailPage(): React.ReactElement {
     } catch (error: unknown) {
       console.error('Convert error:', error);
       const apiError = error as ApiError;
-      if (apiError.code === 501) {
-        message.warning(getErrorMessage(apiError));
+      if (apiError.code === 409) {
+        message.warning('该报价正在被其他请求转换，请稍后重试');
+      } else if (apiError.code === 503) {
+        message.warning('系统暂时不可用，请稍后重试');
       } else {
         message.error(getErrorMessage(apiError));
       }
@@ -167,7 +169,9 @@ export default function QuoteDetailPage(): React.ReactElement {
   }
 
   const isActive = quote.status === QuoteStatus.ACTIVE;
+  const isExpired = quote.status === QuoteStatus.EXPIRED;
   const isConverted = quote.status === QuoteStatus.CONVERTED;
+  const canEdit = isActive || isExpired;
 
   return (
     <PageContainer
@@ -175,10 +179,10 @@ export default function QuoteDetailPage(): React.ReactElement {
       breadcrumbs={breadcrumbs}
       extra={
         <Space>
-          <Tooltip title={!isActive ? '仅活跃状态的报价可编辑' : undefined}>
+          <Tooltip title={!canEdit ? '已转换的报价无法编辑' : undefined}>
             <Button
               icon={<EditOutlined />}
-              disabled={!isActive}
+              disabled={!canEdit}
               onClick={() => navigate(`/quotes/${quoteId}/edit`)}
             >
               编辑
