@@ -24,6 +24,7 @@ import {
   CreateQuoteDto,
   UpdateQuoteDto,
   QueryQuoteDto,
+  ConvertQuotesToOrderDto,
   QuoteStatus,
 } from './dto';
 
@@ -68,6 +69,33 @@ export class QuoteController {
   @ApiResponse({ status: 200, description: 'Paginated quote list' })
   findAll(@Query() query: QueryQuoteDto) {
     return this.quoteService.findAll(query);
+  }
+
+  @Post('batch-convert')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Batch convert quotes to a single order',
+    description:
+      'Convert multiple quotes for the same customer into a single order. ' +
+      'All quotes must be active and non-expired.',
+  })
+  @ApiBody({ type: ConvertQuotesToOrderDto })
+  @ApiResponse({ status: 201, description: 'Order created from quotes' })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error or quotes invalid',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'One or more quotes not found',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Quote is being converted by another request',
+  })
+  @ApiResponse({ status: 503, description: 'Redis unavailable' })
+  batchConvertToOrder(@Body() dto: ConvertQuotesToOrderDto) {
+    return this.quoteService.batchConvertToOrder(dto);
   }
 
   @Get(':id')
@@ -137,9 +165,10 @@ export class QuoteController {
   })
   @ApiResponse({ status: 404, description: 'Quote not found' })
   @ApiResponse({
-    status: 501,
-    description: 'Not implemented - awaiting OrderModule',
+    status: 409,
+    description: 'Quote is being converted by another request',
   })
+  @ApiResponse({ status: 503, description: 'Redis unavailable' })
   convertToOrder(@Param('id', ParseIntPipe) id: number) {
     return this.quoteService.convertToOrder(id);
   }

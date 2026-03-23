@@ -424,9 +424,7 @@ export class QuoteService {
         const expiredQuotes = quotes.filter((q) => q.validUntil < now);
         if (expiredQuotes.length > 0) {
           const expiredIds = expiredQuotes.map((q) => q.id).join(', ');
-          throw new BadRequestException(
-            `Quotes have expired: ${expiredIds}`,
-          );
+          throw new BadRequestException(`Quotes have expired: ${expiredIds}`);
         }
 
         // Validate all quotes belong to the same customer
@@ -451,8 +449,9 @@ export class QuoteService {
         );
 
         // Generate order code
-        const orderCode =
-          await this.codeGeneratorService.generateCode(CodePrefix.ORDER);
+        const orderCode = await this.codeGeneratorService.generateCode(
+          CodePrefix.ORDER,
+        );
 
         // Calculate total amount
         const totalAmount = quotes.reduce(
