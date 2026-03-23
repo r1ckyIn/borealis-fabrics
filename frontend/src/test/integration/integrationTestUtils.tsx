@@ -100,8 +100,7 @@ export function clearAuthState(): void {
 /**
  * Empty paginated API response for mocking list endpoints.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const EMPTY_PAGINATED: PaginatedResult<any> = {
+export const EMPTY_PAGINATED: PaginatedResult<never> = {
   items: [],
   pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 },
 };

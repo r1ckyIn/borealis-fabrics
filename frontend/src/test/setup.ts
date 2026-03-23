@@ -15,9 +15,16 @@ Object.defineProperty(window, 'matchMedia', {
   }),
 });
 
+// Extend globalThis type for jsdom environment (missing ResizeObserver)
+declare global {
+  // eslint-disable-next-line no-var
+  var ResizeObserver: {
+    new (callback: ResizeObserverCallback): ResizeObserver;
+  };
+}
+
 // Mock ResizeObserver for Ant Design components
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-(globalThis as any).ResizeObserver = class ResizeObserver {
+globalThis.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
   disconnect() {}
