@@ -4,7 +4,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { FileService, UploadedFile } from './file.service';
+import { FileService, UploadedFile, sanitizeFilename } from './file.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { STORAGE_PROVIDER, StorageProvider } from './storage';
 import { File } from '@prisma/client';
@@ -342,6 +342,125 @@ describe('FileService', () => {
       await expect(service.upload(maliciousFile)).rejects.toThrow(
         'Invalid file extension',
       );
+    });
+  });
+
+  // ========================================
+  // PATH TRAVERSAL EDGE CASE Tests (TEST-04)
+  // ========================================
+  describe('sanitizeFilename - path traversal edge cases', () => {
+    // Basic path traversal
+    it('should remove ../ sequences', () => {
+      const result = sanitizeFilename('../../../etc/passwd');
+      expect(result).not.toContain('..');
+      expect(result).not.toContain('/');
+    });
+
+    it('should remove ..\\ sequences (Windows-style)', () => {
+      const result = sanitizeFilename('..\\..\\secret.txt');
+      expect(result).not.toContain('..');
+      expect(result).not.toContain('\\');
+    });
+
+    it('should handle nested traversal (....//)', () => {
+      const result = sanitizeFilename('....//secret.txt');
+      expect(result).not.toContain('..');
+      expect(result).not.toContain('/');
+    });
+
+    // Null byte injection
+    it('should strip raw null bytes from filename', () => {
+      const nullByte = String.fromCharCode(0);
+      const result = sanitizeFilename(`file${nullByte}.txt`);
+      expect(result).not.toContain(nullByte);
+      expect(result).toBe('file.txt');
+    });
+
+    it('should handle literal %00 string (safe as-is)', () => {
+      // Literal "%00" string is not an actual null byte — safe
+      const result = sanitizeFilename('file%00.txt');
+      expect(result).toBeDefined();
+      expect(result.length).toBeGreaterThan(0);
+    });
+
+    // URL-encoded path traversal
+    it('should handle URL-decoded ../ (%2e%2e%2f after decode)', () => {
+      // Multer typically provides decoded originalname,
+      // so test with the decoded result
+      const decoded = decodeURIComponent('%2e%2e%2fetc/passwd');
+      const result = sanitizeFilename(decoded);
+      expect(result).not.toContain('..');
+      expect(result).not.toContain('/');
+    });
+
+    it('should handle partially encoded ..%2f after decode', () => {
+      const decoded = decodeURIComponent('..%2fsecret.txt');
+      const result = sanitizeFilename(decoded);
+      expect(result).not.toContain('..');
+      expect(result).not.toContain('/');
+    });
+
+    it('should handle double-encoded sequences (%252e%252e%252f)', () => {
+      // First decode: %252e → %2e, %252f → %2f
+      const firstDecode = decodeURIComponent('%252e%252e%252f');
+      // Second decode: %2e%2e%2f → ../
+      const secondDecode = decodeURIComponent(firstDecode);
+      const result = sanitizeFilename(secondDecode);
+      expect(result).not.toContain('..');
+      expect(result).not.toContain('/');
+    });
+
+    // Unicode normalization
+    it('should handle Unicode escape dots and slashes (\\u002e\\u002f)', () => {
+      // \u002e = regular dot, \u002f = regular slash (JS Unicode escape)
+      const result = sanitizeFilename('\u002e\u002e\u002fpasswd');
+      expect(result).not.toContain('/');
+    });
+
+    it('should handle fullwidth characters (\\uff0e\\uff0f)', () => {
+      // Fullwidth period: \uff0e, Fullwidth solidus: \uff0f
+      // These are NOT actual . and / so they pass through — expected behavior
+      const result = sanitizeFilename('\uff0e\uff0e\uff0fpasswd');
+      expect(result).toBeDefined();
+      // Fullwidth chars are not path separators, so they are safe
+    });
+
+    // Edge cases
+    it('should handle empty filename', () => {
+      const result = sanitizeFilename('');
+      expect(result).toBeDefined();
+    });
+
+    it('should handle filename with only dots', () => {
+      const result = sanitizeFilename('...');
+      // After removing .., we get '.', which is valid but benign
+      expect(result).not.toContain('..');
+    });
+
+    it('should preserve valid filename after sanitization', () => {
+      const result = sanitizeFilename('valid-file-name.jpg');
+      expect(result).toBe('valid-file-name.jpg');
+    });
+
+    it('should preserve Chinese characters in filename', () => {
+      const result = sanitizeFilename('面料图片.jpg');
+      expect(result).toBe('面料图片.jpg');
+    });
+
+    it('should handle multiple null bytes in sequence', () => {
+      const nullByte = String.fromCharCode(0);
+      const input = `mal${nullByte}icious${nullByte}file.jpg`;
+      const result = sanitizeFilename(input);
+      expect(result).not.toContain(nullByte);
+      expect(result).toBe('maliciousfile.jpg');
+    });
+
+    it('should handle deeply nested path traversal', () => {
+      const result = sanitizeFilename(
+        '../../../../../../../../../../etc/shadow',
+      );
+      expect(result).not.toContain('..');
+      expect(result).not.toContain('/');
     });
   });
 });
