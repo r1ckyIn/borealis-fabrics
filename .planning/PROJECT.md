@@ -41,11 +41,11 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - [ ] Fix frontend-backend API inconsistencies
 - [ ] Implement quote-to-order conversion (currently `NotImplementedException`)
 - [ ] Migrate file service from local storage to Tencent COS SDK
-- [ ] Refactor oversized components (FabricDetailPage 769L, CustomerDetailPage 658L, OrderItemsSection 652L)
+- [x] Refactor oversized components (FabricDetailPage 815→169L, CustomerDetailPage 703→190L, OrderItemsSection 654→78L) — Validated in Phase 4
 - [ ] Refactor oversized services (OrderService 1121L)
-- [ ] Eliminate `any` types in test files (97 backend, 13 frontend)
+- [x] Eliminate `any` types in test files (97 backend, 13 frontend → 0 frontend) — Validated in Phase 3+4
 - [ ] Add missing test coverage (quote-to-order flow, COS upload, path traversal edge cases, malformed Excel)
-- [ ] Fix frontend error handling for unexpected API response formats
+- [x] Fix frontend error handling for unexpected API response formats — Validated in Phase 4 (27 error handling tests)
 - [ ] Code quality: naming consistency, deduplication, pattern compliance
 
 **M2: Feature Expansion + Real Data Testing**
@@ -106,7 +106,8 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - GSD M1 Phase 1 (frontend bug fixes) complete
 - GSD M1 Phase 2 (core features) complete
 - GSD M1 Phase 3 (backend service decomposition) complete — OrderService split into 3, ImportService uses Strategy pattern, 657 backend tests passing
-- Next: Phase 4 (frontend component decomposition)
+- GSD M1 Phase 4 (frontend component decomposition) complete — 3 oversized pages decomposed, 897 frontend tests, zero test any types
+- M1 (Code Remediation) complete — next is M2 Phase 5
 - Pure local development, not deployed
 
 ## Constraints
@@ -130,4 +131,4 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 | U2Living = 铂润 in system | Same entity, no need for parent-subsidiary data model | ✓ Good |
 
 ---
-*Last updated: 2026-03-23 after Phase 3 completion*
+*Last updated: 2026-03-23 after Phase 4 completion (M1 complete)*
