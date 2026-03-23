@@ -18,8 +18,9 @@ import type { StorageProvider } from './storage';
 /**
  * Sanitize filename to prevent security issues.
  * Removes path traversal characters, null bytes, and special characters.
+ * Exported for direct unit testing.
  */
-function sanitizeFilename(filename: string): string {
+export function sanitizeFilename(filename: string): string {
   // Remove null bytes (use split/join to avoid eslint no-control-regex)
   const nullByte = String.fromCharCode(0);
   let sanitized = filename.split(nullByte).join('');

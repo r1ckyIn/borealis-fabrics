@@ -10,7 +10,13 @@ import {
 import { FabricService } from './fabric.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileService, UploadedFile } from '../file/file.service';
-import { CreateFabricDto, QueryFabricDto, FabricSortField } from './dto';
+import {
+  CreateFabricDto,
+  QueryFabricDto,
+  FabricSortField,
+  FabricSupplierSortField,
+  FabricPricingSortField,
+} from './dto';
 import { Fabric } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 
@@ -1007,7 +1013,7 @@ describe('FabricService', () => {
       fabricSupplierMock.count.mockResolvedValue(0);
 
       await service.findSuppliers(1, {
-        sortBy: 'purchasePrice' as any,
+        sortBy: FabricSupplierSortField.purchasePrice,
         sortOrder: 'asc',
       });
 
@@ -1024,7 +1030,7 @@ describe('FabricService', () => {
       fabricSupplierMock.count.mockResolvedValue(0);
 
       await service.findSuppliers(1, {
-        sortBy: 'supplierName' as any,
+        sortBy: FabricSupplierSortField.supplierName,
         sortOrder: 'asc',
       });
 
@@ -1588,7 +1594,7 @@ describe('FabricService', () => {
       customerPricingMock.count.mockResolvedValue(0);
 
       await service.findPricing(1, {
-        sortBy: 'specialPrice' as any,
+        sortBy: FabricPricingSortField.specialPrice,
         sortOrder: 'asc',
       });
 
@@ -1605,7 +1611,7 @@ describe('FabricService', () => {
       customerPricingMock.count.mockResolvedValue(0);
 
       await service.findPricing(1, {
-        sortBy: 'customerName' as any,
+        sortBy: FabricPricingSortField.customerName,
         sortOrder: 'asc',
       });
 

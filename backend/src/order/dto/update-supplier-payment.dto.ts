@@ -12,10 +12,7 @@ import {
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { CustomerPayStatus, PaymentMethod } from '../enums/order-status.enum';
-
-// Trim transform helper
-const trimTransform = ({ value }: { value: unknown }): string | undefined =>
-  typeof value === 'string' ? value.trim() : undefined;
+import { trimTransform } from './dto.utils';
 
 /**
  * DTO for updating supplier payment information.
