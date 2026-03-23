@@ -25,3 +25,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Hide overflow dates from adjacent months in DatePicker */
+.hide-overflow-dates .ant-picker-cell:not(.ant-picker-cell-in-view) {
+  visibility: hidden;
+}

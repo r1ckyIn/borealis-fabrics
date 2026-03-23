@@ -218,6 +218,7 @@ export function QuoteForm({
               style={{ width: '100%' }}
               placeholder="请选择有效期"
               disabledDate={disabledDate}
+              popupClassName="hide-overflow-dates"
             />
           </Form.Item>
         </Col>
