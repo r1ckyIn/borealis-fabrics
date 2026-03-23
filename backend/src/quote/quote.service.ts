@@ -2,19 +2,23 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  NotImplementedException,
   BadRequestException,
   ConflictException,
-  NotImplementedException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CodeGeneratorService, CodePrefix } from '../common/services';
+import { RedisService } from '../common/services/redis.service';
 import {
   CreateQuoteDto,
   UpdateQuoteDto,
   QueryQuoteDto,
+  ConvertQuotesToOrderDto,
   QuoteStatus,
 } from './dto';
-import { Quote, Prisma } from '@prisma/client';
+import { OrderItemStatus } from '../order/enums/order-status.enum';
+import { Quote, Order, Prisma } from '@prisma/client';
 import {
   buildPaginationArgs,
   buildPaginatedResult,
@@ -96,6 +100,7 @@ export class QuoteService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly codeGeneratorService: CodeGeneratorService,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
