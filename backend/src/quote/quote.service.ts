@@ -2,7 +2,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  NotImplementedException,
   BadRequestException,
   ConflictException,
   ServiceUnavailableException,
@@ -347,37 +346,167 @@ export class QuoteService {
   }
 
   /**
-   * Convert a quote to an order.
-   * Only active quotes that haven't expired can be converted.
-   * @returns The created order (placeholder for now)
+   * Convert a single quote to an order.
+   * Delegates to batchConvertToOrder for consistent logic.
    */
-  async convertToOrder(id: number): Promise<never> {
-    const quote = await this.prisma.quote.findUnique({ where: { id } });
+  async convertToOrder(id: number): Promise<Order> {
+    return this.batchConvertToOrder({ quoteIds: [id] });
+  }
 
-    if (!quote) {
-      throw new NotFoundException(`Quote with ID ${id} not found`);
-    }
-
-    // Check status constraint (quote.status is string from DB)
-    if ((quote.status as QuoteStatus) !== QuoteStatus.ACTIVE) {
-      throw new BadRequestException(
-        `Only active quotes can be converted. Current status: ${quote.status}`,
+  /**
+   * Batch convert multiple quotes into a single order.
+   * All quotes must belong to the same customer, be active, and not expired.
+   * Uses Redis distributed lock for concurrent protection.
+   * Creates order with items in a Prisma transaction.
+   */
+  async batchConvertToOrder(dto: ConvertQuotesToOrderDto): Promise<Order> {
+    // Check Redis availability — required for concurrent protection
+    if (!this.redisService.isAvailable()) {
+      throw new ServiceUnavailableException(
+        'Redis is required for conversion — concurrent protection unavailable',
       );
     }
 
-    // Check if quote has expired
-    if (quote.validUntil < new Date()) {
-      throw new BadRequestException(
-        'Quote has expired and cannot be converted',
+    // Sort quote IDs to prevent deadlocks when acquiring locks
+    const sortedIds = [...dto.quoteIds].sort((a, b) => a - b);
+
+    // Acquire locks for all quote IDs
+    const acquiredLocks: number[] = [];
+    for (const id of sortedIds) {
+      const locked = await this.redisService.acquireLock(
+        `quote:convert:${id}`,
+        30,
       );
+      if (!locked) {
+        // Release already-acquired locks before throwing
+        for (const acquiredId of acquiredLocks) {
+          await this.redisService.releaseLock(`quote:convert:${acquiredId}`);
+        }
+        throw new ConflictException(
+          `Quote ${id} is being converted by another request`,
+        );
+      }
+      acquiredLocks.push(id);
     }
 
-    // TODO: Implement when OrderModule is ready
-    // 1. Create order with order items from quote
-    // 2. Update quote status to CONVERTED
-    // 3. Add timeline entry "Converted from quote QT-xxx"
-    throw new NotImplementedException(
-      'Quote to order conversion will be implemented when OrderModule is ready',
-    );
+    try {
+      return await this.prisma.$transaction(async (tx) => {
+        // Fetch all quotes with fabric info
+        const quotes = await tx.quote.findMany({
+          where: { id: { in: sortedIds } },
+          include: { fabric: { select: { id: true } } },
+        });
+
+        // Validate all quotes found
+        if (quotes.length !== sortedIds.length) {
+          const foundIds = new Set(quotes.map((q) => q.id));
+          const missingIds = sortedIds.filter((id) => !foundIds.has(id));
+          throw new NotFoundException(
+            `Quotes not found: ${missingIds.join(', ')}`,
+          );
+        }
+
+        // Validate all quotes are active
+        const nonActiveQuotes = quotes.filter(
+          (q) => (q.status as QuoteStatus) !== QuoteStatus.ACTIVE,
+        );
+        if (nonActiveQuotes.length > 0) {
+          const details = nonActiveQuotes
+            .map((q) => `Quote ${q.id} (status: ${q.status})`)
+            .join(', ');
+          throw new BadRequestException(
+            `All quotes must be active. Invalid: ${details}`,
+          );
+        }
+
+        // Validate none are expired
+        const now = new Date();
+        const expiredQuotes = quotes.filter((q) => q.validUntil < now);
+        if (expiredQuotes.length > 0) {
+          const expiredIds = expiredQuotes.map((q) => q.id).join(', ');
+          throw new BadRequestException(
+            `Quotes have expired: ${expiredIds}`,
+          );
+        }
+
+        // Validate all quotes belong to the same customer
+        const customerIds = new Set(quotes.map((q) => q.customerId));
+        if (customerIds.size > 1) {
+          throw new BadRequestException(
+            'All quotes must belong to the same customer',
+          );
+        }
+
+        const customerId = quotes[0].customerId;
+
+        // Look up cheapest suppliers for each fabric
+        const fabricIds = [...new Set(quotes.map((q) => q.fabricId))];
+        const fabricSuppliers = await tx.fabricSupplier.findMany({
+          where: { fabricId: { in: fabricIds } },
+          orderBy: { purchasePrice: 'asc' },
+          distinct: ['fabricId'],
+        });
+        const supplierMap = new Map<number, number>(
+          fabricSuppliers.map((fs) => [fs.fabricId, fs.supplierId]),
+        );
+
+        // Generate order code
+        const orderCode =
+          await this.codeGeneratorService.generateCode(CodePrefix.ORDER);
+
+        // Calculate total amount
+        const totalAmount = quotes.reduce(
+          (sum, q) => sum + Number(q.quantity) * Number(q.unitPrice),
+          0,
+        );
+
+        // Create order with items
+        const order = await tx.order.create({
+          data: {
+            orderCode,
+            customerId,
+            status: OrderItemStatus.PENDING,
+            totalAmount,
+            customerPaid: 0,
+            customerPayStatus: 'unpaid',
+            items: {
+              create: quotes.map((q) => ({
+                fabricId: q.fabricId,
+                supplierId: supplierMap.get(q.fabricId) ?? null,
+                quoteId: q.id,
+                quantity: q.quantity,
+                salePrice: q.unitPrice,
+                subtotal: Number(q.quantity) * Number(q.unitPrice),
+                status: OrderItemStatus.PENDING,
+              })),
+            },
+          },
+          include: { items: true, customer: true },
+        });
+
+        // Create timeline entries for each item
+        await tx.orderTimeline.createMany({
+          data: order.items.map((item) => ({
+            orderItemId: item.id,
+            fromStatus: null,
+            toStatus: OrderItemStatus.PENDING,
+            remark: 'Converted from quote',
+          })),
+        });
+
+        // Update all quotes to CONVERTED status
+        await tx.quote.updateMany({
+          where: { id: { in: sortedIds } },
+          data: { status: QuoteStatus.CONVERTED },
+        });
+
+        return order;
+      });
+    } finally {
+      // Always release all locks
+      for (const id of sortedIds) {
+        await this.redisService.releaseLock(`quote:convert:${id}`);
+      }
+    }
   }
 }
