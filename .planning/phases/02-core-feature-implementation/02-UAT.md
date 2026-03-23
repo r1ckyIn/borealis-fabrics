@@ -1,5 +1,5 @@
 ---
-status: diagnosed
+status: resolved
 phase: 02-core-feature-implementation
 source: 02-01-SUMMARY.md, 02-02-SUMMARY.md
 started: 2026-03-23T03:00:00Z
@@ -61,7 +61,7 @@ skipped: 0
 ## Gaps
 
 - truth: "Quote edit form should load with valid values and no validation errors"
-  status: failed
+  status: resolved
   reason: "User reported: Editing a quote shows '数量必须大于0' and '单价必须大于0' validation errors even though both fields have valid values (641.00 and 25.00). Also input field sizes for quantity and unitPrice are inconsistent."
   severity: major
   test: 9
