@@ -20,9 +20,9 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 
 - [x] **FEAT-01**: Quote-to-order conversion works end-to-end with transaction safety
 - [x] **FEAT-02**: Quote-to-order prevents duplicate conversion (concurrent request protection)
-- [ ] **FEAT-03**: File upload uses Tencent COS SDK instead of local storage
+- [x] **FEAT-03**: File upload uses Tencent COS SDK instead of local storage
 - [ ] **FEAT-04**: Existing file URL records migrated from localhost to COS
-- [ ] **FEAT-05**: File URLs use key-only storage with read-time URL generation
+- [x] **FEAT-05**: File URLs use key-only storage with read-time URL generation
 
 ### Code Quality (QUAL)
 
@@ -40,7 +40,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 
 - [x] **TEST-01**: Quote-to-order conversion has unit + integration tests including failure paths
 - [x] **TEST-02**: Quote-to-order concurrent conversion test (returns 409 on duplicate)
-- [ ] **TEST-03**: COS upload/download integration tests
+- [x] **TEST-03**: COS upload/download integration tests
 - [ ] **TEST-04**: Path traversal edge case tests (URL-encoded, unicode normalization, double-encoding)
 - [ ] **TEST-05**: Import service tests with malformed Excel (merged cells, blank rows, encoding)
 - [ ] **TEST-06**: Frontend error handling tests for unexpected API response formats
@@ -116,9 +116,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | BUGF-06 | Phase 1 | In Progress (error utility done, integration in Plans 02-04) |
 | FEAT-01 | Phase 2 | Complete |
 | FEAT-02 | Phase 2 | Complete |
-| FEAT-03 | Phase 2 | Pending |
+| FEAT-03 | Phase 2 | Complete |
 | FEAT-04 | Phase 2 | Pending |
-| FEAT-05 | Phase 2 | Pending |
+| FEAT-05 | Phase 2 | Complete |
 | QUAL-01 | Phase 3 | Pending |
 | QUAL-02 | Phase 3 | Pending |
 | QUAL-03 | Phase 4 | Pending |
@@ -130,7 +130,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | QUAL-09 | Phase 4 | Pending |
 | TEST-01 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Complete |
-| TEST-03 | Phase 2 | Pending |
+| TEST-03 | Phase 2 | Complete |
 | TEST-04 | Phase 3 | Pending |
 | TEST-05 | Phase 3 | Pending |
 | TEST-06 | Phase 4 | Pending |

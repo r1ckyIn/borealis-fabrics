@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-last_updated: "2026-03-23T01:22:26Z"
+status: unknown
+last_updated: "2026-03-23T01:24:53.254Z"
 progress:
   total_phases: 10
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | 2 |
 | Name | Core Feature Implementation |
 | Status | In Progress |
-| Current Plan | 1 of 3 (plan 01 complete) |
+| Current Plan | 2 of 3 (plans 01-02 complete) |
 | Branch | feature/gsd-02-core-feature-implementation |
 
 ## Progress
@@ -35,7 +35,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | Status | Plans |
 |-------|--------|-------|
 | 1 — Frontend Bug Fixes | ● Complete | 4/4 |
-| 2 — Core Feature Implementation | ◐ In Progress | 1/3 |
+| 2 — Core Feature Implementation | ◐ In Progress | 2/3 |
 | 3 — Backend Service Decomposition | ○ Not Started | — |
 | 4 — Frontend Component Decomposition | ○ Not Started | — |
 | 5 — Multi-Category Schema + Product CRUD | ○ Not Started | — |
@@ -74,6 +74,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Order items from quotes use PENDING status (not INQUIRY) | Conversion implies customer intent beyond inquiry |
 | 2026-03-23 | Sorted lock acquisition to prevent deadlocks | Standard distributed locking pattern |
 | 2026-03-23 | Supplier auto-fill from FabricSupplier cheapest price | Nullable when no supplier relationship exists |
+| 2026-03-23 | StorageProvider 3-method interface (upload/getUrl/delete) | Minimal contract for dual-mode storage |
+| 2026-03-23 | Key-only DB storage, URL at read-time | Enables storage mode switching without data migration |
+| 2026-03-23 | STORAGE_MODE defaults to 'local' | Dev-friendly, no COS credentials needed in dev |
 
 ## Session Log
 
@@ -85,7 +88,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-19 | Phase 1 Plan 03 | Completed 01-03-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-03-SUMMARY.md` |
 | 2026-03-22 | Phase 1 Plan 04 | Completed 01-04-PLAN.md | `.planning/phases/01-frontend-bug-fixes/01-04-SUMMARY.md` |
 | 2026-03-23 | Phase 2 Plan 01 | Completed 02-01-PLAN.md | `.planning/phases/02-core-feature-implementation/02-01-SUMMARY.md` |
+| 2026-03-23 | Phase 2 Plan 02 | Completed 02-02-PLAN.md | `.planning/phases/02-core-feature-implementation/02-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-23 (Phase 2 Plan 01 complete)*
+*Last updated: 2026-03-23 (Phase 2 Plan 02 complete — storage abstraction)*
