@@ -41,8 +41,8 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **TEST-01**: Quote-to-order conversion has unit + integration tests including failure paths
 - [x] **TEST-02**: Quote-to-order concurrent conversion test (returns 409 on duplicate)
 - [x] **TEST-03**: COS upload/download integration tests
-- [ ] **TEST-04**: Path traversal edge case tests (URL-encoded, unicode normalization, double-encoding)
-- [ ] **TEST-05**: Import service tests with malformed Excel (merged cells, blank rows, encoding)
+- [x] **TEST-04**: Path traversal edge case tests (URL-encoded, unicode normalization, double-encoding)
+- [x] **TEST-05**: Import service tests with malformed Excel (merged cells, blank rows, encoding)
 - [ ] **TEST-06**: Frontend error handling tests for unexpected API response formats
 - [ ] **TEST-07**: All existing tests continue passing after refactoring (608 backend + 753 frontend)
 
@@ -131,8 +131,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | TEST-01 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Complete |
 | TEST-03 | Phase 2 | Complete |
-| TEST-04 | Phase 3 | Pending |
-| TEST-05 | Phase 3 | Pending |
+| TEST-04 | Phase 3 | Complete |
+| TEST-05 | Phase 3 | Complete |
 | TEST-06 | Phase 4 | Pending |
 | TEST-07 | Phase 4 | Pending |
 | MCAT-01 | Phase 5 | Pending |
