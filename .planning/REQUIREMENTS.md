@@ -29,7 +29,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **QUAL-01**: OrderService decomposed into OrderService + OrderItemService + OrderPaymentService
 - [x] **QUAL-02**: ImportService refactored with Strategy pattern (FabricImportStrategy, SupplierImportStrategy)
 - [x] **QUAL-03**: FabricDetailPage (769L) refactored: custom hooks extracted, sub-components split
-- [ ] **QUAL-04**: CustomerDetailPage (658L) refactored: custom hooks extracted, sub-components split
+- [x] **QUAL-04**: CustomerDetailPage (658L) refactored: custom hooks extracted, sub-components split
 - [x] **QUAL-05**: OrderItemsSection (652L) refactored: custom hooks extracted, sub-components split
 - [x] **QUAL-06**: Backend test `any` types eliminated with typed mock builders (97 instances)
 - [x] **QUAL-07**: Frontend test `any` types eliminated (13 instances)
@@ -122,7 +122,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | QUAL-01 | Phase 3 | Complete |
 | QUAL-02 | Phase 3 | Complete |
 | QUAL-03 | Phase 4 | Complete |
-| QUAL-04 | Phase 4 | Pending |
+| QUAL-04 | Phase 4 | Complete |
 | QUAL-05 | Phase 4 | Complete |
 | QUAL-06 | Phase 3 | Complete |
 | QUAL-07 | Phase 4 | Complete |

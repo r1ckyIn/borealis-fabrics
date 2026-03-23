@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: in-progress
-last_updated: "2026-03-23T10:55:18Z"
+status: unknown
+last_updated: "2026-03-23T11:02:06.286Z"
 progress:
   total_phases: 10
-  completed_phases: 4
+  completed_phases: 3
   total_plans: 16
   completed_plans: 15
 ---
@@ -92,6 +92,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | PaginatedResult<never> for empty collections (not <any>) | never[] assignable to any T[] |
 | 2026-03-23 | ModalControl includes searchFn + contextual data | searchSuppliers in SupplierModalControl, searchCustomers + defaultPrice in PricingModalControl keeps sub-component props at max 5 |
 | 2026-03-23 | useFabricDetail takes navigate as parameter (not useNavigate internally) | Keeps hook testable without router context |
+| 2026-03-23 | PricingModalControl typed interface for pricing modal state | Avoids 10+ individual props, groups form + handlers + searchFabrics |
+| 2026-03-23 | CustomerBasicInfo single prop (customer) | Edit/delete buttons in page header, not in info tab |
+| 2026-03-23 | Address tab read-only display (not AddressManager wrap) | Addresses are inline JSON on Customer entity, not separate CRUD |
 
 ## Session Log
 
@@ -112,7 +115,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Phase 4 Plan 03 | Completed 04-03-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-03-SUMMARY.md` |
 | 2026-03-23 | Phase 4 Plan 04 | Completed 04-04-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-04-SUMMARY.md` |
 | 2026-03-23 | Phase 4 Plan 01 | Completed 04-01-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-01-SUMMARY.md` |
+| 2026-03-23 | Phase 4 Plan 02 | Completed 04-02-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-23 (Phase 4 Plan 01 complete — FabricDetailPage decomposed to 169-line orchestrator + useFabricDetail hook + 4 sub-components)*
+*Last updated: 2026-03-23 (Phase 4 Plan 02 complete — CustomerDetailPage decomposed to 190-line orchestrator + useCustomerDetail hook + 4 sub-components, 50 tests)*
