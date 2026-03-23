@@ -31,7 +31,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [ ] **QUAL-03**: FabricDetailPage (769L) refactored: custom hooks extracted, sub-components split
 - [ ] **QUAL-04**: CustomerDetailPage (658L) refactored: custom hooks extracted, sub-components split
 - [ ] **QUAL-05**: OrderItemsSection (652L) refactored: custom hooks extracted, sub-components split
-- [ ] **QUAL-06**: Backend test `any` types eliminated with typed mock builders (97 instances)
+- [x] **QUAL-06**: Backend test `any` types eliminated with typed mock builders (97 instances)
 - [ ] **QUAL-07**: Frontend test `any` types eliminated (13 instances)
 - [ ] **QUAL-08**: No sub-component has more than 5 props after refactoring
 - [ ] **QUAL-09**: All refactored page components have zero `useState` calls (state in hooks)
@@ -124,7 +124,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | QUAL-03 | Phase 4 | Pending |
 | QUAL-04 | Phase 4 | Pending |
 | QUAL-05 | Phase 4 | Pending |
-| QUAL-06 | Phase 3 | Pending |
+| QUAL-06 | Phase 3 | Complete |
 | QUAL-07 | Phase 4 | Pending |
 | QUAL-08 | Phase 4 | Pending |
 | QUAL-09 | Phase 4 | Pending |
