@@ -5,10 +5,7 @@ import * as ExcelJS from 'exceljs';
  * Handles null, undefined, primitives, Date, rich text, hyperlinks,
  * error cells, and formula results.
  */
-export function getCellValue(
-  row: ExcelJS.Row,
-  colNumber: number,
-): string {
+export function getCellValue(row: ExcelJS.Row, colNumber: number): string {
   const cell = row.getCell(colNumber);
   if (!cell || cell.value === null || cell.value === undefined) {
     return '';
