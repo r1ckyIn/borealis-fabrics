@@ -48,6 +48,11 @@ export function convertQuoteToOrder(id: number): Promise<Order> {
   return post<Order>(`/quotes/${id}/convert-to-order`);
 }
 
+/** Batch convert multiple quotes to a single order. */
+export function batchConvertQuotes(quoteIds: number[]): Promise<Order> {
+  return post<Order>('/quotes/batch-convert', { quoteIds });
+}
+
 export const quoteApi = {
   getQuotes,
   getQuote,
@@ -55,4 +60,5 @@ export const quoteApi = {
   updateQuote,
   deleteQuote,
   convertQuoteToOrder,
+  batchConvertQuotes,
 };

@@ -119,18 +119,21 @@ export class FabricService {
 
   /**
    * Find a fabric by ID.
+   * Includes images with resolved URLs.
    * Throws NotFoundException if fabric not found or soft-deleted.
    */
-  async findOne(id: number): Promise<Fabric> {
+  async findOne(id: number): Promise<Fabric & { images: FabricImage[] }> {
     const fabric = await this.prisma.fabric.findFirst({
       where: { id, isActive: true },
+      include: { images: { orderBy: { sortOrder: 'asc' } } },
     });
 
     if (!fabric) {
       throw new NotFoundException(`Fabric with ID ${id} not found`);
     }
 
-    return fabric;
+    // Resolve image URLs from key-only to full URLs
+    return this.resolveImageUrls(fabric);
   }
 
   /**
@@ -303,10 +306,28 @@ export class FabricService {
   }
 
   /**
+   * Resolve image URLs from key-only storage to full URLs.
+   * Delegates to FileService.getFileUrl which handles legacy full URLs gracefully.
+   */
+  private async resolveImageUrls<
+    T extends { images?: { url: string; [key: string]: unknown }[] },
+  >(fabric: T): Promise<T> {
+    if (!fabric.images || fabric.images.length === 0) return fabric;
+    const resolvedImages = await Promise.all(
+      fabric.images.map(async (img) => ({
+        ...img,
+        url: await this.fileService.getFileUrl(img.url),
+      })),
+    );
+    return { ...fabric, images: resolvedImages } as T;
+  }
+
+  /**
    * Upload an image for a fabric.
    * Validates fabric exists and is active, file type is an allowed image type,
    * and file size does not exceed 10MB.
-   * Creates FabricImage record after successful file upload.
+   * Creates FabricImage record with key-only URL after successful file upload.
+   * Returns resolved URL for client display.
    */
   async uploadImage(
     fabricId: number,
@@ -337,14 +358,20 @@ export class FabricService {
     // Upload file via FileService
     const uploadResult = await this.fileService.upload(file);
 
-    // Create FabricImage record
-    return this.prisma.fabricImage.create({
+    // Create FabricImage record with key-only URL (not full URL)
+    const fabricImage = await this.prisma.fabricImage.create({
       data: {
         fabricId,
-        url: uploadResult.url,
+        url: uploadResult.key,
         sortOrder,
       },
     });
+
+    // Return with resolved URL for client display
+    return {
+      ...fabricImage,
+      url: await this.fileService.getFileUrl(fabricImage.url),
+    };
   }
 
   /**
@@ -386,19 +413,24 @@ export class FabricService {
 
     // Try to delete the associated file (outside transaction)
     // File deletion failure should not affect the FabricImage deletion
-    // URL format: http://localhost:3000/uploads/{key}
-    const urlParts = deletedImage.url.split('/uploads/');
-    if (urlParts.length === 2) {
-      const key = urlParts[1];
-      try {
-        await this.fileService.removeByKey(key);
-      } catch {
-        // File may not exist in File table (e.g., external URL or orphan record)
-        // Log warning but don't fail the operation since FabricImage is deleted
+    // URL may be key-only (new format) or legacy full URL
+    let fileKey = deletedImage.url;
+    if (fileKey.startsWith('http')) {
+      // Legacy full URL format: http://localhost:3000/uploads/{key}
+      const urlParts = fileKey.split('/uploads/');
+      if (urlParts.length === 2) {
+        fileKey = urlParts[1];
+      } else {
+        // External URL, skip file deletion
+        return;
       }
     }
-    // If URL doesn't contain /uploads/, it's likely an external URL
-    // Skip file deletion in this case
+    try {
+      await this.fileService.removeByKey(fileKey);
+    } catch {
+      // File may not exist in File table (e.g., orphan record)
+      // Log warning but don't fail the operation since FabricImage is deleted
+    }
   }
 
   /**

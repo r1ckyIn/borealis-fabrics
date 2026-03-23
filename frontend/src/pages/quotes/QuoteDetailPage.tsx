@@ -104,8 +104,8 @@ export default function QuoteDetailPage(): React.ReactElement {
     } catch (error: unknown) {
       console.error('Convert error:', error);
       const apiError = error as ApiError;
-      if (apiError.code === 501) {
-        message.warning(getErrorMessage(apiError));
+      if (apiError.code === 409) {
+        message.warning('该报价正在被其他请求转换，请稍后重试');
       } else {
         message.error(getErrorMessage(apiError));
       }
