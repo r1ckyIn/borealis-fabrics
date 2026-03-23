@@ -228,14 +228,10 @@ describe('Error Handling', () => {
     });
 
     it('normalizes network error with no response object', () => {
-      // Simulate network error: no response at all
-      const errorResponse = undefined;
-      const errorMessage = 'Network Error';
-
+      // Simulate network error: no response at all — interceptor falls through to defaults
       const apiError: ApiError = {
-        code: errorResponse?.data?.code ?? errorResponse?.status ?? 500,
-        message:
-          errorResponse?.data?.message ?? errorMessage ?? 'Unknown error',
+        code: 500,
+        message: 'Network Error',
         data: null,
       };
 
@@ -267,14 +263,10 @@ describe('Error Handling', () => {
     });
 
     it('normalizes timeout error', () => {
-      // Simulate timeout: error.response may be undefined
-      const errorResponse = undefined;
-      const errorMessage = 'timeout of 10000ms exceeded';
-
+      // Simulate timeout: no response, interceptor produces default ApiError
       const apiError: ApiError = {
-        code: errorResponse?.data?.code ?? errorResponse?.status ?? 500,
-        message:
-          errorResponse?.data?.message ?? errorMessage ?? 'Unknown error',
+        code: 500,
+        message: 'timeout of 10000ms exceeded',
         data: null,
       };
 

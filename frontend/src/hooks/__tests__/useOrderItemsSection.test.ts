@@ -37,7 +37,7 @@ vi.mock('antd', async () => {
   return {
     ...actual,
     Form: {
-      ...(actual as Record<string, unknown>).Form,
+      ...((actual as Record<string, unknown>).Form as Record<string, unknown>),
       useForm: () => [
         {
           resetFields: mockResetFields,
@@ -220,14 +220,14 @@ describe('useOrderItemsSection', () => {
       act(() => {
         result.current.statusActions.onStatusChange(
           mockOrderItem,
-          OrderItemStatus.IN_PRODUCTION
+          OrderItemStatus.PRODUCTION
         );
       });
 
       expect(result.current.statusActions.statusModal.open).toBe(true);
       expect(result.current.statusActions.statusModal.item).toEqual(mockOrderItem);
       expect(result.current.statusActions.statusModal.targetStatus).toBe(
-        OrderItemStatus.IN_PRODUCTION
+        OrderItemStatus.PRODUCTION
       );
       expect(mockResetFields).toHaveBeenCalled();
     });
@@ -239,7 +239,7 @@ describe('useOrderItemsSection', () => {
       act(() => {
         result.current.statusActions.onStatusChange(
           mockOrderItem,
-          OrderItemStatus.IN_PRODUCTION
+          OrderItemStatus.PRODUCTION
         );
       });
 
