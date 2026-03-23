@@ -20,6 +20,8 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { OrderService } from './order.service';
+import { OrderItemService } from './order-item.service';
+import { OrderPaymentService } from './order-payment.service';
 import {
   CreateOrderDto,
   UpdateOrderDto,
@@ -38,7 +40,11 @@ import { OrderItemStatus, CustomerPayStatus } from './enums/order-status.enum';
 @ApiTags('orders')
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly orderItemService: OrderItemService,
+    private readonly orderPaymentService: OrderPaymentService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -166,7 +172,7 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'Order items list' })
   @ApiResponse({ status: 404, description: 'Order not found' })
   getOrderItems(@Param('id', ParseIntPipe) id: number) {
-    return this.orderService.getOrderItems(id);
+    return this.orderItemService.getOrderItems(id);
   }
 
   @Post(':id/items')
@@ -186,7 +192,7 @@ export class OrderController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: AddOrderItemDto,
   ) {
-    return this.orderService.addOrderItem(id, dto);
+    return this.orderItemService.addOrderItem(id, dto);
   }
 
   @Patch(':id/items/:itemId')
@@ -209,7 +215,7 @@ export class OrderController {
     @Param('itemId', ParseIntPipe) itemId: number,
     @Body() dto: UpdateOrderItemDto,
   ) {
-    return this.orderService.updateOrderItem(id, itemId, dto);
+    return this.orderItemService.updateOrderItem(id, itemId, dto);
   }
 
   @Delete(':id/items/:itemId')
@@ -228,7 +234,7 @@ export class OrderController {
     @Param('id', ParseIntPipe) id: number,
     @Param('itemId', ParseIntPipe) itemId: number,
   ) {
-    return this.orderService.removeOrderItem(id, itemId);
+    return this.orderItemService.removeOrderItem(id, itemId);
   }
 
   @Patch(':id/items/:itemId/status')
@@ -248,7 +254,7 @@ export class OrderController {
     @Param('itemId', ParseIntPipe) itemId: number,
     @Body() dto: UpdateItemStatusDto,
   ) {
-    return this.orderService.updateItemStatus(id, itemId, dto);
+    return this.orderItemService.updateItemStatus(id, itemId, dto);
   }
 
   @Post(':id/items/:itemId/cancel')
@@ -268,7 +274,7 @@ export class OrderController {
     @Param('itemId', ParseIntPipe) itemId: number,
     @Body() dto: CancelItemDto,
   ) {
-    return this.orderService.cancelOrderItem(id, itemId, dto);
+    return this.orderItemService.cancelOrderItem(id, itemId, dto);
   }
 
   @Post(':id/items/:itemId/restore')
@@ -290,7 +296,7 @@ export class OrderController {
     @Param('itemId', ParseIntPipe) itemId: number,
     @Body() dto: RestoreItemDto,
   ) {
-    return this.orderService.restoreOrderItem(id, itemId, dto);
+    return this.orderItemService.restoreOrderItem(id, itemId, dto);
   }
 
   // ============================================================
@@ -306,7 +312,7 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'Order timeline' })
   @ApiResponse({ status: 404, description: 'Order not found' })
   getOrderTimeline(@Param('id', ParseIntPipe) id: number) {
-    return this.orderService.getOrderTimeline(id);
+    return this.orderItemService.getOrderTimeline(id);
   }
 
   @Get(':id/items/:itemId/timeline')
@@ -322,7 +328,7 @@ export class OrderController {
     @Param('id', ParseIntPipe) id: number,
     @Param('itemId', ParseIntPipe) itemId: number,
   ) {
-    return this.orderService.getItemTimeline(id, itemId);
+    return this.orderItemService.getItemTimeline(id, itemId);
   }
 
   // ============================================================
@@ -342,7 +348,7 @@ export class OrderController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCustomerPaymentDto,
   ) {
-    return this.orderService.updateCustomerPayment(id, dto);
+    return this.orderPaymentService.updateCustomerPayment(id, dto);
   }
 
   @Get(':id/supplier-payments')
@@ -354,7 +360,7 @@ export class OrderController {
   @ApiResponse({ status: 200, description: 'Supplier payments list' })
   @ApiResponse({ status: 404, description: 'Order not found' })
   getSupplierPayments(@Param('id', ParseIntPipe) id: number) {
-    return this.orderService.getSupplierPayments(id);
+    return this.orderPaymentService.getSupplierPayments(id);
   }
 
   @Patch(':id/supplier-payments/:supplierId')
@@ -372,6 +378,10 @@ export class OrderController {
     @Param('supplierId', ParseIntPipe) supplierId: number,
     @Body() dto: UpdateSupplierPaymentDto,
   ) {
-    return this.orderService.updateSupplierPayment(id, supplierId, dto);
+    return this.orderPaymentService.updateSupplierPayment(
+      id,
+      supplierId,
+      dto,
+    );
   }
 }
