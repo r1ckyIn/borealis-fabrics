@@ -47,7 +47,7 @@ describe('QuoteService', () => {
     quantity: 100.0,
     unitPrice: 25.5,
     totalPrice: 2550.0,
-    validUntil: new Date('2026-02-28'),
+    validUntil: new Date('2030-12-31'),
     status: QuoteStatus.ACTIVE,
     notes: 'Test notes',
     createdAt: new Date(),
@@ -96,7 +96,7 @@ describe('QuoteService', () => {
       fabricId: 1,
       quantity: 100.0,
       unitPrice: 25.5,
-      validUntil: '2026-02-28T23:59:59.000Z',
+      validUntil: '2030-12-31T23:59:59.000Z',
       notes: 'Test notes',
     };
 

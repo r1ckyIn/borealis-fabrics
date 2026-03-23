@@ -19,6 +19,7 @@ const mockUseCustomerOrders = vi.fn();
 const mockUseCreateCustomerPricing = vi.fn();
 const mockUseUpdateCustomerPricing = vi.fn();
 const mockUseDeleteCustomerPricing = vi.fn();
+const mockUseDeleteCustomer = vi.fn();
 
 vi.mock('@/hooks/queries/useCustomers', () => ({
   useCustomer: (...args: unknown[]) => mockUseCustomer(...args),
@@ -27,6 +28,7 @@ vi.mock('@/hooks/queries/useCustomers', () => ({
   useCreateCustomerPricing: () => mockUseCreateCustomerPricing(),
   useUpdateCustomerPricing: () => mockUseUpdateCustomerPricing(),
   useDeleteCustomerPricing: () => mockUseDeleteCustomerPricing(),
+  useDeleteCustomer: () => mockUseDeleteCustomer(),
 }));
 
 // Mock fabric API
@@ -185,6 +187,7 @@ describe('CustomerDetailPage', () => {
     mockUseCreateCustomerPricing.mockReturnValue(createMockMutation());
     mockUseUpdateCustomerPricing.mockReturnValue(createMockMutation());
     mockUseDeleteCustomerPricing.mockReturnValue(createMockMutation());
+    mockUseDeleteCustomer.mockReturnValue(createMockMutation());
   });
 
   describe('Rendering', () => {
@@ -200,7 +203,7 @@ describe('CustomerDetailPage', () => {
       renderWithProviders(<CustomerDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('编辑客户')).toBeInTheDocument();
+        expect(screen.getByText('编辑')).toBeInTheDocument();
       });
     });
 
@@ -333,10 +336,10 @@ describe('CustomerDetailPage', () => {
       renderWithProviders(<CustomerDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('编辑客户')).toBeInTheDocument();
+        expect(screen.getByText('编辑')).toBeInTheDocument();
       });
 
-      const editButton = screen.getByText('编辑客户').closest('button');
+      const editButton = screen.getByText('编辑').closest('button');
       await user.click(editButton!);
 
       expect(mockNavigate).toHaveBeenCalledWith('/customers/1/edit');

@@ -15,10 +15,12 @@ import { SupplierStatus, SettleType } from '@/types';
 // Mock hooks
 const mockUseSupplier = vi.fn();
 const mockUseSupplierFabrics = vi.fn();
+const mockUseDeleteSupplier = vi.fn();
 
 vi.mock('@/hooks/queries/useSuppliers', () => ({
   useSupplier: (...args: unknown[]) => mockUseSupplier(...args),
   useSupplierFabrics: (...args: unknown[]) => mockUseSupplierFabrics(...args),
+  useDeleteSupplier: () => mockUseDeleteSupplier(),
 }));
 
 // Mock navigate
@@ -124,6 +126,11 @@ describe('SupplierDetailPage', () => {
       data: mockFabrics,
       isLoading: false,
     });
+
+    mockUseDeleteSupplier.mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue(undefined),
+      isPending: false,
+    });
   });
 
   describe('Rendering', () => {
@@ -139,7 +146,7 @@ describe('SupplierDetailPage', () => {
       renderWithProviders(<SupplierDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('编辑供应商')).toBeInTheDocument();
+        expect(screen.getByText('编辑')).toBeInTheDocument();
       });
     });
 
@@ -274,10 +281,10 @@ describe('SupplierDetailPage', () => {
       renderWithProviders(<SupplierDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('编辑供应商')).toBeInTheDocument();
+        expect(screen.getByText('编辑')).toBeInTheDocument();
       });
 
-      const editButton = screen.getByText('编辑供应商').closest('button');
+      const editButton = screen.getByText('编辑').closest('button');
       await user.click(editButton!);
 
       expect(mockNavigate).toHaveBeenCalledWith('/suppliers/1/edit');
