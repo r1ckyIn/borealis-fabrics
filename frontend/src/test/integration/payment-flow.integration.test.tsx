@@ -42,19 +42,40 @@ vi.mock('@/api/order.api', () => mockModule(
    'getOrderItems', 'addOrderItem', 'updateOrderItem', 'deleteOrderItem',
    'updateOrderItemStatus', 'cancelOrderItem', 'restoreOrderItem',
    'getOrderTimeline', 'getOrderItemTimeline',
-   'updateCustomerPayment', 'getSupplierPayments', 'updateSupplierPayment'],
+   'updateCustomerPayment', 'getSupplierPayments', 'updateSupplierPayment',
+   'getPaymentVouchers'],
   'orderApi',
 ));
+
+vi.mock('@/api/file.api', () => ({
+  uploadFile: vi.fn(),
+}));
 
 type OrderApiModule = typeof import('@/api/order.api');
 const { orderApi } =
   vi.mocked(await vi.importMock<OrderApiModule>('@/api/order.api'));
+
+type FileApiModule = typeof import('@/api/file.api');
+const { uploadFile } =
+  vi.mocked(await vi.importMock<FileApiModule>('@/api/file.api'));
 
 describe('Payment Flow Integration', () => {
   beforeEach(() => {
     clearAuthState();
     resetIdCounter();
     vi.clearAllMocks();
+    // Payment vouchers endpoint returns empty array by default
+    orderApi.getPaymentVouchers.mockResolvedValue([]);
+    // File upload mock returns a valid file entity
+    uploadFile.mockResolvedValue({
+      id: 1,
+      key: 'test-key',
+      url: 'https://example.com/receipt.jpg',
+      originalName: 'receipt.jpg',
+      mimeType: 'image/jpeg',
+      size: 1024,
+      createdAt: '2026-03-24T00:00:00Z',
+    });
   });
 
   describe('CustomerPaymentTab', () => {
@@ -117,6 +138,21 @@ describe('Payment Flow Integration', () => {
       await user.clear(paidInput);
       await user.type(paidInput, '5000');
 
+      // Upload a voucher file (mandatory before submit)
+      const fileInput = document.querySelector(
+        '.ant-upload input[type="file"]'
+      ) as HTMLInputElement;
+      const file = new File(['data'], 'receipt.jpg', { type: 'image/jpeg' });
+      await user.upload(fileInput, file);
+
+      // Wait for OK button to become enabled after upload
+      await waitFor(() => {
+        const btn = document.querySelector(
+          '.ant-modal-footer .ant-btn-primary'
+        ) as HTMLButtonElement;
+        expect(btn.disabled).toBe(false);
+      });
+
       // Submit by clicking the modal OK button
       const modalFooter = document.querySelector('.ant-modal-footer');
       const okButton = modalFooter!.querySelector('.ant-btn-primary') as HTMLButtonElement;
@@ -128,6 +164,7 @@ describe('Payment Flow Integration', () => {
           1,
           expect.objectContaining({
             customerPaid: 5000,
+            voucherFileIds: [1],
           }),
         );
       });
@@ -242,6 +279,21 @@ describe('Payment Flow Integration', () => {
       await user.clear(paidInput);
       await user.type(paidInput, '4000');
 
+      // Upload a voucher file (mandatory before submit)
+      const fileInput = document.querySelector(
+        '.ant-upload input[type="file"]'
+      ) as HTMLInputElement;
+      const file = new File(['data'], 'invoice.pdf', { type: 'application/pdf' });
+      await user.upload(fileInput, file);
+
+      // Wait for OK button to become enabled after upload
+      await waitFor(() => {
+        const btn = document.querySelector(
+          '.ant-modal-footer .ant-btn-primary'
+        ) as HTMLButtonElement;
+        expect(btn.disabled).toBe(false);
+      });
+
       // Submit
       const modalFooter = document.querySelector('.ant-modal-footer');
       const okButton = modalFooter!.querySelector('.ant-btn-primary') as HTMLButtonElement;
@@ -254,6 +306,7 @@ describe('Payment Flow Integration', () => {
           5,
           expect.objectContaining({
             paid: 4000,
+            voucherFileIds: [1],
           }),
         );
       });
