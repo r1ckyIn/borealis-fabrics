@@ -4,17 +4,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import {
-  Modal,
-  Form,
-  InputNumber,
-  Select,
-  DatePicker,
-  Space,
-  Spin,
-  Empty,
-  message,
-} from 'antd';
+import { Modal, Form, InputNumber, Select, DatePicker, Space, Spin, Empty, message } from 'antd';
 import dayjs from 'dayjs';
 
 import { PaymentStatusCard } from '@/components/business/PaymentStatusCard';
@@ -28,7 +18,6 @@ import {
 import { getErrorMessage } from '@/utils/errorMessages';
 import {
   CustomerPayStatus,
-  CUSTOMER_PAY_STATUS_LABELS,
   PaymentMethod,
   PAYMENT_METHOD_LABELS,
 } from '@/types';
@@ -43,24 +32,37 @@ import type {
 
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
 
-const PAY_STATUS_OPTIONS = Object.values(CustomerPayStatus).map((value) => ({
-  label: CUSTOMER_PAY_STATUS_LABELS[value],
-  value,
-}));
-
 const PAY_METHOD_OPTIONS = Object.values(PaymentMethod).map((value) => ({
   label: PAYMENT_METHOD_LABELS[value],
   value,
 }));
 
+/**
+ * Auto-calculate payment status from paid/total ratio.
+ */
+function calcPayStatus(paid: number, total: number): CustomerPayStatus {
+  if (paid <= 0) return CustomerPayStatus.UNPAID;
+  if (paid >= total) return CustomerPayStatus.PAID;
+  return CustomerPayStatus.PARTIAL;
+}
+
 // Payment form fields shared between customer and supplier modals
-function PaymentFormFields() {
+function PaymentFormFields({
+  totalAmount,
+  currentPaid,
+}: {
+  totalAmount: number;
+  currentPaid: number;
+}) {
+  const remaining = Math.max(0, totalAmount - currentPaid);
+
   return (
     <>
       <Form.Item
         name="paid"
         label="已付金额"
         rules={[{ required: true, message: '请输入已付金额' }]}
+        help={`当前未付: ¥${remaining.toFixed(2)} (应付: ¥${totalAmount.toFixed(2)})`}
       >
         <InputNumber
           placeholder="请输入已付金额"
@@ -69,13 +71,6 @@ function PaymentFormFields() {
           precision={2}
           prefix="¥"
         />
-      </Form.Item>
-      <Form.Item
-        name="payStatus"
-        label="付款状态"
-        rules={[{ required: true, message: '请选择付款状态' }]}
-      >
-        <Select options={PAY_STATUS_OPTIONS} placeholder="请选择付款状态" />
       </Form.Item>
       <Form.Item name="payMethod" label="付款方式">
         <Select
@@ -120,7 +115,6 @@ export function CustomerPaymentTab({
   const openModal = useCallback(() => {
     form.setFieldsValue({
       paid: order.customerPaid,
-      payStatus: order.customerPayStatus,
       payMethod: order.customerPayMethod ?? undefined,
       paidAt: order.customerPaidAt ? dayjs(order.customerPaidAt) : undefined,
     });
@@ -131,9 +125,10 @@ export function CustomerPaymentTab({
   const handleSubmit = useCallback(async (): Promise<void> => {
     try {
       const values = await form.validateFields();
+      const paid = values.paid as number;
       const data: UpdateCustomerPaymentData = {
-        customerPaid: values.paid,
-        customerPayStatus: values.payStatus,
+        customerPaid: paid,
+        customerPayStatus: calcPayStatus(paid, order.totalAmount),
         customerPayMethod: values.payMethod,
         customerPaidAt: values.paidAt?.toISOString(),
         voucherFileIds,
@@ -145,7 +140,7 @@ export function CustomerPaymentTab({
       console.error('Update customer payment failed:', error);
       message.error(getErrorMessage(error as ApiError));
     }
-  }, [orderId, form, mutation, voucherFileIds]);
+  }, [orderId, order.totalAmount, form, mutation, voucherFileIds]);
 
   return (
     <>
@@ -177,7 +172,10 @@ export function CustomerPaymentTab({
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <PaymentFormFields />
+          <PaymentFormFields
+            totalAmount={order.totalAmount}
+            currentPaid={order.customerPaid}
+          />
           <Form.Item
             label="付款凭证"
             required
@@ -229,7 +227,6 @@ export function SupplierPaymentsTab({
     (payment: SupplierPayment) => {
       form.setFieldsValue({
         paid: payment.paid,
-        payStatus: payment.payStatus,
         payMethod: payment.payMethod ?? undefined,
         paidAt: payment.paidAt ? dayjs(payment.paidAt) : undefined,
       });
@@ -243,9 +240,10 @@ export function SupplierPaymentsTab({
     if (!modalState.payment) return;
     try {
       const values = await form.validateFields();
+      const paid = values.paid as number;
       const data: UpdateSupplierPaymentData = {
-        paid: values.paid,
-        payStatus: values.payStatus,
+        paid,
+        payStatus: calcPayStatus(paid, modalState.payment.payable),
         payMethod: values.payMethod,
         paidAt: values.paidAt?.toISOString(),
         voucherFileIds,
@@ -317,7 +315,10 @@ export function SupplierPaymentsTab({
         destroyOnClose
       >
         <Form form={form} layout="vertical">
-          <PaymentFormFields />
+          <PaymentFormFields
+            totalAmount={modalState.payment?.payable ?? 0}
+            currentPaid={modalState.payment?.paid ?? 0}
+          />
           <Form.Item
             label="付款凭证"
             required
