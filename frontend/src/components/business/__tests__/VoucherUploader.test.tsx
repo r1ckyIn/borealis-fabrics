@@ -2,7 +2,7 @@
  * Unit tests for VoucherUploader component.
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { VoucherUploader } from '../VoucherUploader';
 
@@ -15,11 +15,11 @@ vi.mock('@/api/file.api', () => ({
 // Mock antd message
 const mockMessageError = vi.fn();
 vi.mock('antd', async () => {
-  const actual = await vi.importActual('antd');
+  const actual = await vi.importActual<Record<string, unknown>>('antd');
   return {
     ...actual,
     message: {
-      ...(actual as Record<string, unknown>).message,
+      ...(actual.message as Record<string, unknown>),
       error: (...args: unknown[]) => mockMessageError(...args),
     },
   };
@@ -133,10 +133,6 @@ describe('VoucherUploader', () => {
   describe('Disabled State', () => {
     it('is disabled when disabled prop is true', () => {
       render(<VoucherUploader disabled />);
-      const dragger = screen.getByTestId('voucher-uploader');
-      // Ant Design adds ant-upload-disabled class to the wrapper
-      const uploadWrapper = dragger.closest('.ant-upload-wrapper');
-      const uploadBtn = dragger.querySelector('.ant-upload-btn');
       // When disabled, the input should be disabled
       const input = document.querySelector('input[type="file"]');
       expect(input).toHaveAttribute('disabled');
