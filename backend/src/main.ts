@@ -1,13 +1,17 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from 'nestjs-pino';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import * as path from 'path';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
   const configService = app.get(ConfigService);
 
   // Pino logger
@@ -56,6 +60,10 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+
+  // Serve uploaded files (local storage)
+  const uploadDir = configService.get<string>('UPLOAD_DIR') || './uploads';
+  app.useStaticAssets(path.resolve(uploadDir), { prefix: '/uploads/' });
 
   // API prefix
   app.setGlobalPrefix('api/v1', {

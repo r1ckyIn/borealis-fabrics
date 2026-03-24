@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { OrderPaymentService } from './order-payment.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { FileService } from '../file/file.service';
 import {
   OrderItemStatus,
   CustomerPayStatus,
@@ -10,6 +11,7 @@ import {
 
 describe('OrderPaymentService', () => {
   let service: OrderPaymentService;
+  let mockFileService: { getFileUrl: jest.Mock };
   let mockPrismaService: {
     order: {
       findUnique: jest.Mock;
@@ -62,10 +64,17 @@ describe('OrderPaymentService', () => {
       ),
     };
 
+    mockFileService = {
+      getFileUrl: jest.fn((key: string) =>
+        Promise.resolve(`http://localhost:3000/uploads/${key}`),
+      ),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrderPaymentService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: FileService, useValue: mockFileService },
       ],
     }).compile();
 
@@ -443,7 +452,7 @@ describe('OrderPaymentService', () => {
   });
 
   describe('getPaymentVouchers', () => {
-    it('should return vouchers with file details for an order', async () => {
+    it('should return vouchers with resolved file URLs', async () => {
       const mockVouchers = [
         {
           id: 1,
@@ -457,8 +466,8 @@ describe('OrderPaymentService', () => {
               remark: null,
               file: {
                 id: 10,
-                key: 'uploads/voucher1.pdf',
-                url: 'http://example.com/voucher1.pdf',
+                key: 'uuid-voucher1.pdf',
+                url: 'uuid-voucher1.pdf',
                 originalName: 'voucher1.pdf',
               },
             },
@@ -470,7 +479,12 @@ describe('OrderPaymentService', () => {
 
       const result = await service.getPaymentVouchers(1);
 
-      expect(result).toEqual(mockVouchers);
+      expect(mockFileService.getFileUrl).toHaveBeenCalledWith(
+        'uuid-voucher1.pdf',
+      );
+      expect(result[0].vouchers[0].file.url).toBe(
+        'http://localhost:3000/uploads/uuid-voucher1.pdf',
+      );
       expect(mockPrismaService.paymentRecord.findMany).toHaveBeenCalledWith({
         where: { orderId: 1 },
         include: {
@@ -481,6 +495,41 @@ describe('OrderPaymentService', () => {
         },
         orderBy: { createdAt: 'desc' },
       });
+    });
+
+    it('should handle legacy full URLs gracefully', async () => {
+      const mockVouchers = [
+        {
+          id: 1,
+          orderId: 1,
+          type: 'customer',
+          amount: 1000,
+          vouchers: [
+            {
+              id: 1,
+              fileId: 10,
+              remark: null,
+              file: {
+                id: 10,
+                key: 'old.pdf',
+                url: 'http://localhost:3000/uploads/old.pdf',
+                originalName: 'old.pdf',
+              },
+            },
+          ],
+        },
+      ];
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+      mockPrismaService.paymentRecord.findMany.mockResolvedValue(mockVouchers);
+      mockFileService.getFileUrl.mockResolvedValue(
+        'http://localhost:3000/uploads/old.pdf',
+      );
+
+      const result = await service.getPaymentVouchers(1);
+
+      expect(result[0].vouchers[0].file.url).toBe(
+        'http://localhost:3000/uploads/old.pdf',
+      );
     });
 
     it('should throw NotFoundException when order not found', async () => {

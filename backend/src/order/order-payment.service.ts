@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { FileService } from '../file/file.service';
 import { UpdateCustomerPaymentDto, UpdateSupplierPaymentDto } from './dto';
 import { CustomerPayStatus } from './enums/order-status.enum';
 import {
@@ -11,13 +12,16 @@ import {
   validateOrderExists,
   validateSupplierExists,
 } from './order.validators';
-import { Order, SupplierPayment, PaymentRecord, Prisma } from '@prisma/client';
+import { Order, SupplierPayment, Prisma } from '@prisma/client';
 
 @Injectable()
 export class OrderPaymentService {
   private readonly logger = new Logger(OrderPaymentService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly fileService: FileService,
+  ) {}
 
   /**
    * Update customer payment information (3.2.15).
@@ -144,15 +148,29 @@ export class OrderPaymentService {
   /**
    * Get payment vouchers for an order.
    * Returns all payment records with their attached voucher files.
+   * Resolves file keys to full URLs via FileService.
    */
-  async getPaymentVouchers(orderId: number): Promise<PaymentRecord[]> {
+  async getPaymentVouchers(orderId: number) {
     await validateOrderExists(this.prisma, orderId);
 
-    return this.prisma.paymentRecord.findMany({
+    const records = await this.prisma.paymentRecord.findMany({
       where: { orderId },
       include: PAYMENT_RECORD_INCLUDE_VOUCHERS,
       orderBy: { createdAt: 'desc' },
     });
+
+    // Resolve file keys to full URLs (DB stores key-only)
+    for (const record of records) {
+      for (const voucher of record.vouchers) {
+        if (voucher.file) {
+          voucher.file.url = await this.fileService.getFileUrl(
+            voucher.file.url,
+          );
+        }
+      }
+    }
+
+    return records;
   }
 
   // ============================================================

@@ -5,9 +5,10 @@ import { OrderItemService } from './order-item.service';
 import { OrderPaymentService } from './order-payment.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CommonModule } from '../common/common.module';
+import { FileModule } from '../file/file.module';
 
 @Module({
-  imports: [PrismaModule, CommonModule],
+  imports: [PrismaModule, CommonModule, FileModule],
   controllers: [OrderController],
   providers: [OrderService, OrderItemService, OrderPaymentService],
   exports: [OrderService],
