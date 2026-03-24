@@ -10,6 +10,12 @@ export enum CodePrefix {
   FABRIC = 'BF',
   ORDER = 'ORD',
   QUOTE = 'QT',
+  // Product code prefixes
+  IRON_FRAME = 'TJ',
+  MOTOR = 'DJ',
+  MATTRESS = 'CD',
+  ACCESSORY = 'PJ',
+  BUNDLE = 'BD',
 }
 
 /**
@@ -163,6 +169,33 @@ export class CodeGeneratorService {
         maxCode = result?.quoteCode ?? null;
         break;
       }
+      case CodePrefix.IRON_FRAME:
+      case CodePrefix.MOTOR:
+      case CodePrefix.MATTRESS:
+      case CodePrefix.ACCESSORY: {
+        const result = await tx.product.findFirst({
+          where: {
+            productCode: { startsWith: `${prefix}-${yearMonth}-` },
+          },
+          orderBy: { productCode: 'desc' },
+          select: { productCode: true },
+        });
+        maxCode = result?.productCode ?? null;
+        break;
+      }
+      case CodePrefix.BUNDLE: {
+        const result = await tx.productBundle.findFirst({
+          where: {
+            bundleCode: { startsWith: `${prefix}-${yearMonth}-` },
+          },
+          orderBy: { bundleCode: 'desc' },
+          select: { bundleCode: true },
+        });
+        maxCode = result?.bundleCode ?? null;
+        break;
+      }
+      default:
+        throw new Error(`Unknown code prefix: ${String(prefix)}`);
     }
 
     if (!maxCode) {

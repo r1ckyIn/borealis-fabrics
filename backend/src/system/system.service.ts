@@ -10,12 +10,16 @@ import {
   QuoteStatus,
   SupplierStatus,
   SettleType,
+  ProductCategory,
+  ProductSubCategory,
   ORDER_ITEM_STATUS_LABELS,
   CUSTOMER_PAY_STATUS_LABELS,
   PAYMENT_METHOD_LABELS,
   QUOTE_STATUS_LABELS,
   SUPPLIER_STATUS_LABELS,
   SETTLE_TYPE_LABELS,
+  PRODUCT_CATEGORY_LABELS,
+  PRODUCT_SUB_CATEGORY_LABELS,
 } from './enums';
 
 @Injectable()
@@ -49,6 +53,14 @@ export class SystemService {
         SUPPLIER_STATUS_LABELS,
       ),
       settleType: this.buildEnumDefinition(SettleType, SETTLE_TYPE_LABELS),
+      productCategory: this.buildEnumDefinition(
+        ProductCategory,
+        PRODUCT_CATEGORY_LABELS,
+      ),
+      productSubCategory: this.buildEnumDefinition(
+        ProductSubCategory,
+        PRODUCT_SUB_CATEGORY_LABELS,
+      ),
     };
   }
 
