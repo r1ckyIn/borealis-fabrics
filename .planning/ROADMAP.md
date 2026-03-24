@@ -154,6 +154,12 @@ Plans:
 
 **Requirements:** MCAT-01, MCAT-02, MCAT-03, MCAT-04, MCAT-09
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Prisma schema (Product/ProductSupplier/ProductBundle/ProductBundleItem) + CustomerPricing extension + CodeGeneratorService extension + system enums
+- [ ] 05-02-PLAN.md — ProductModule CRUD (service + controller + DTOs + tests + AppModule registration)
+
 **Success Criteria:**
 1. Products table with category enum + specs JSON column, migrated without affecting existing fabrics
 2. Iron frame CRUD works with model numbers, specifications, pricing
@@ -275,4 +281,4 @@ Unmapped: 0
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-24 (Phase 04.1 planned — 3 plans, 2 waves)*
+*Last updated: 2026-03-24 (Phase 05 planned — 2 plans, 2 waves)*
