@@ -96,6 +96,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | CustomerBasicInfo single prop (customer) | Edit/delete buttons in page header, not in info tab |
 | 2026-03-23 | Address tab read-only display (not AddressManager wrap) | Addresses are inline JSON on Customer entity, not separate CRUD |
 
+## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 04.1 inserted after Phase 04: 付款凭证强制上传 — 所有付款状态变更必须上传凭证文件（图片/PDF），支持多文件、拖拽上传、预览/下载/重新上传 (URGENT)
+
 ## Session Log
 
 | Date | Session | Stopped At | Resume |

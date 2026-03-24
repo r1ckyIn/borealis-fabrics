@@ -121,6 +121,16 @@ Plans:
 
 ---
 
+### Phase 04.1: 付款凭证强制上传 — 所有付款状态变更必须上传凭证文件（图片/PDF），支持多文件、拖拽上传、预览/下载/重新上传 (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 4
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 04.1 to break down)
+
 ### Phase 5: Multi-Category Schema + Product CRUD
 
 **Goal:** Product abstraction schema with CRUD for iron frames, motors, and hardware.
