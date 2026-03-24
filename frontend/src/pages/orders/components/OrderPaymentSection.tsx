@@ -40,9 +40,11 @@ const PAY_METHOD_OPTIONS = Object.values(PaymentMethod).map((value) => ({
 /**
  * Auto-calculate payment status from paid/total ratio.
  */
-function calcPayStatus(paid: number, total: number): CustomerPayStatus {
-  if (paid <= 0) return CustomerPayStatus.UNPAID;
-  if (paid >= total) return CustomerPayStatus.PAID;
+function calcPayStatus(paid: number | string, total: number | string): CustomerPayStatus {
+  const p = Number(paid) || 0;
+  const t = Number(total) || 0;
+  if (p <= 0) return CustomerPayStatus.UNPAID;
+  if (t > 0 && p >= t) return CustomerPayStatus.PAID;
   return CustomerPayStatus.PARTIAL;
 }
 
@@ -51,10 +53,12 @@ function PaymentFormFields({
   totalAmount,
   currentPaid,
 }: {
-  totalAmount: number;
-  currentPaid: number;
+  totalAmount: number | string;
+  currentPaid: number | string;
 }) {
-  const remaining = Math.max(0, totalAmount - currentPaid);
+  const total = Number(totalAmount) || 0;
+  const paid = Number(currentPaid) || 0;
+  const remaining = Math.max(0, total - paid);
 
   return (
     <>
@@ -62,7 +66,7 @@ function PaymentFormFields({
         name="paid"
         label="已付金额"
         rules={[{ required: true, message: '请输入已付金额' }]}
-        help={`当前未付: ¥${remaining.toFixed(2)} (应付: ¥${totalAmount.toFixed(2)})`}
+        help={`当前未付: ¥${remaining.toFixed(2)} (应付: ¥${total.toFixed(2)})`}
       >
         <InputNumber
           placeholder="请输入已付金额"
