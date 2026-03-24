@@ -119,10 +119,11 @@ model Supplier {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  fabricSuppliers  FabricSupplier[]
-  orderItems       OrderItem[]
-  supplierPayments SupplierPayment[]
-  paymentRecords   PaymentRecord[]
+  fabricSuppliers   FabricSupplier[]
+  productSuppliers  ProductSupplier[]
+  orderItems        OrderItem[]
+  supplierPayments  SupplierPayment[]
+  paymentRecords    PaymentRecord[]
 
   @@index([status])
   @@map("suppliers")
@@ -182,18 +183,110 @@ model Customer {
 model CustomerPricing {
   id           Int      @id @default(autoincrement())
   customerId   Int      @map("customer_id")
-  fabricId     Int      @map("fabric_id")
+  fabricId     Int?     @map("fabric_id")
+  productId    Int?     @map("product_id")
   specialPrice Decimal  @map("special_price") @db.Decimal(10, 2)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  fabric   Fabric   @relation(fields: [fabricId], references: [id], onDelete: Cascade)
+  fabric   Fabric?  @relation(fields: [fabricId], references: [id], onDelete: Cascade)
+  product  Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([customerId, fabricId])
+  @@unique([customerId, productId])
   @@index([customerId])
   @@index([fabricId])
+  @@index([productId])
   @@map("customer_pricing")
+}
+
+// ============================================================
+// Product
+// ============================================================
+model Product {
+  id            Int      @id @default(autoincrement())
+  productCode   String   @unique @map("product_code")
+  name          String
+  category      String   // "IRON_FRAME_MOTOR" (extensible for future "HARDWARE")
+  subCategory   String   @map("sub_category") // "IRON_FRAME" | "MOTOR" | "MATTRESS" | "ACCESSORY"
+  modelNumber   String?  @map("model_number")
+  specification String?
+  defaultPrice  Decimal? @map("default_price") @db.Decimal(10, 2)
+  specs         Json?    @db.Json
+  notes         String?  @db.Text
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  productSuppliers  ProductSupplier[]
+  bundleItems       ProductBundleItem[]
+  customerPricings  CustomerPricing[]
+
+  @@index([productCode])
+  @@index([name])
+  @@index([category])
+  @@index([subCategory])
+  @@map("products")
+}
+
+// ============================================================
+// Product-Supplier Association
+// ============================================================
+model ProductSupplier {
+  id            Int      @id @default(autoincrement())
+  productId     Int      @map("product_id")
+  supplierId    Int      @map("supplier_id")
+  purchasePrice Decimal  @map("purchase_price") @db.Decimal(10, 2)
+  minOrderQty   Decimal? @map("min_order_qty") @db.Decimal(10, 2)
+  leadTimeDays  Int?     @map("lead_time_days")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, supplierId])
+  @@index([productId])
+  @@index([supplierId])
+  @@map("product_suppliers")
+}
+
+// ============================================================
+// Product Bundle
+// ============================================================
+model ProductBundle {
+  id          Int      @id @default(autoincrement())
+  bundleCode  String   @unique @map("bundle_code")
+  name        String
+  description String?  @db.Text
+  totalPrice  Decimal? @map("total_price") @db.Decimal(12, 2)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  items ProductBundleItem[]
+
+  @@index([bundleCode])
+  @@map("product_bundles")
+}
+
+// ============================================================
+// Product Bundle Item
+// ============================================================
+model ProductBundleItem {
+  id        Int @id @default(autoincrement())
+  bundleId  Int @map("bundle_id")
+  productId Int @map("product_id")
+  quantity  Int @default(1)
+
+  bundle  ProductBundle @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product Product       @relation(fields: [productId], references: [id])
+
+  @@unique([bundleId, productId])
+  @@index([bundleId])
+  @@index([productId])
+  @@map("product_bundle_items")
 }
 
 // ============================================================
