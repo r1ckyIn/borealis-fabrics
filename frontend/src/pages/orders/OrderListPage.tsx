@@ -167,9 +167,12 @@ export default function OrderListPage(): React.ReactElement {
         dataIndex: 'customerPayStatus',
         key: 'customerPayStatus',
         width: 100,
-        render: (status: CustomerPayStatus) => (
-          <StatusTag type="customerPay" value={status} />
-        ),
+        render: (_status: CustomerPayStatus, record: Order) => {
+          const paid = Number(record.customerPaid) || 0;
+          const total = Number(record.totalAmount) || 0;
+          const derived = paid <= 0 ? 'unpaid' : total > 0 && paid >= total ? 'paid' : 'partial';
+          return <StatusTag type="customerPay" value={derived} />;
+        },
       },
       {
         title: '创建时间',

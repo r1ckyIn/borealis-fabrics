@@ -50,7 +50,17 @@ export function OrderInfoSection({
           <AmountDisplay value={order.totalAmount} />
         </Descriptions.Item>
         <Descriptions.Item label="付款状态">
-          <StatusTag type="customerPay" value={order.customerPayStatus} />
+          <StatusTag
+            type="customerPay"
+            value={
+              Number(order.customerPaid) <= 0
+                ? 'unpaid'
+                : Number(order.totalAmount) > 0 &&
+                    Number(order.customerPaid) >= Number(order.totalAmount)
+                  ? 'paid'
+                  : 'partial'
+            }
+          />
         </Descriptions.Item>
         <Descriptions.Item label="创建时间">
           {formatDate(order.createdAt)}
