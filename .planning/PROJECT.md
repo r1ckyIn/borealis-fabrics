@@ -30,6 +30,7 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - ✓ Backend: NestJS 11 + Prisma + MySQL + Redis — existing
 - ✓ Unit tests: 608 backend + 753 frontend — existing
 - ✓ E2E tests: 434 backend — existing
+- ✓ Mandatory payment voucher upload with append-only audit trail — Validated in Phase 4.1
 
 ### Active
 
