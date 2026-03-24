@@ -92,6 +92,8 @@ model File {
   size         Int
   createdAt    DateTime @default(now()) @map("created_at")
 
+  paymentVouchers PaymentVoucher[]
+
   @@index([key])
   @@index([createdAt])
   @@map("files")
@@ -379,8 +381,28 @@ model PaymentRecord {
   supplier Supplier? @relation(fields: [supplierId], references: [id])
   operator User?     @relation("PaymentOperator", fields: [operatorId], references: [id])
 
+  vouchers PaymentVoucher[]
+
   @@index([orderId])
   @@index([supplierId])
   @@index([type])
   @@map("payment_records")
+}
+
+// ============================================================
+// Payment Voucher (links uploaded files to payment records)
+// ============================================================
+model PaymentVoucher {
+  id              Int      @id @default(autoincrement())
+  paymentRecordId Int      @map("payment_record_id")
+  fileId          Int      @map("file_id")
+  remark          String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  paymentRecord PaymentRecord @relation(fields: [paymentRecordId], references: [id], onDelete: Cascade)
+  file          File          @relation(fields: [fileId], references: [id])
+
+  @@index([paymentRecordId])
+  @@index([fileId])
+  @@map("payment_vouchers")
 }

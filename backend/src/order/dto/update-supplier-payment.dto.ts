@@ -5,12 +5,14 @@ import {
   IsString,
   IsDateString,
   IsInt,
+  IsArray,
+  ArrayNotEmpty,
   Min,
   Max,
   MaxLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { CustomerPayStatus, PaymentMethod } from '../enums/order-status.enum';
 import { trimTransform } from './dto.utils';
 
@@ -79,4 +81,23 @@ export class UpdateSupplierPaymentDto {
   @IsString()
   @MaxLength(500)
   notes?: string;
+
+  @ApiProperty({
+    description: 'File IDs of uploaded voucher documents',
+    type: [Number],
+  })
+  @IsArray()
+  @ArrayNotEmpty({ message: 'At least one voucher file is required' })
+  @IsInt({ each: true })
+  voucherFileIds!: number[];
+
+  @ApiPropertyOptional({
+    description: 'Optional remarks for each voucher file',
+    type: [String],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(200, { each: true })
+  voucherRemarks?: string[];
 }
