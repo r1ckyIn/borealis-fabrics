@@ -122,11 +122,14 @@ describe('OrderPaymentService', () => {
       });
 
       expect(mockPrismaService.paymentRecord.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+        data: {
           orderId: 1,
           type: 'customer',
           amount: 2000,
-        }),
+          payMethod: 'bank',
+          remark: undefined,
+          operatorId: undefined,
+        },
       });
     });
 
@@ -344,12 +347,15 @@ describe('OrderPaymentService', () => {
       });
 
       expect(mockPrismaService.paymentRecord.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
+        data: {
           orderId: 1,
           type: 'supplier',
           supplierId: 2,
           amount: 3000,
-        }),
+          payMethod: undefined,
+          remark: undefined,
+          operatorId: undefined,
+        },
       });
     });
 
@@ -463,11 +469,12 @@ describe('OrderPaymentService', () => {
       expect(result).toEqual(mockVouchers);
       expect(mockPrismaService.paymentRecord.findMany).toHaveBeenCalledWith({
         where: { orderId: 1 },
-        include: expect.objectContaining({
-          vouchers: expect.objectContaining({
+        include: {
+          vouchers: {
             include: { file: true },
-          }),
-        }),
+            orderBy: { createdAt: 'asc' },
+          },
+        },
         orderBy: { createdAt: 'desc' },
       });
     });

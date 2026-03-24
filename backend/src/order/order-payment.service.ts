@@ -5,12 +5,13 @@ import { CustomerPayStatus } from './enums/order-status.enum';
 import {
   ORDER_INCLUDE_PAYMENT,
   SUPPLIER_PAYMENT_INCLUDE,
+  PAYMENT_RECORD_INCLUDE_VOUCHERS,
 } from './order.includes';
 import {
   validateOrderExists,
   validateSupplierExists,
 } from './order.validators';
-import { Order, SupplierPayment, Prisma } from '@prisma/client';
+import { Order, SupplierPayment, PaymentRecord, Prisma } from '@prisma/client';
 
 @Injectable()
 export class OrderPaymentService {
@@ -20,6 +21,7 @@ export class OrderPaymentService {
 
   /**
    * Update customer payment information (3.2.15).
+   * Creates a PaymentRecord + PaymentVouchers atomically with the order update.
    */
   async updateCustomerPayment(
     orderId: number,
@@ -27,14 +29,38 @@ export class OrderPaymentService {
   ): Promise<Order> {
     this.logger.debug(`UpdateCustomerPayment called for orderId: ${orderId}`);
 
-    await validateOrderExists(this.prisma, orderId);
+    return this.prisma.$transaction(async (tx) => {
+      await validateOrderExists(tx, orderId);
 
-    const updateData = this.buildCustomerPaymentUpdateData(dto);
+      // Create payment record for audit trail
+      const paymentRecord = await tx.paymentRecord.create({
+        data: {
+          orderId,
+          type: 'customer',
+          amount: dto.customerPaid ?? 0,
+          payMethod: dto.customerPayMethod,
+          remark: dto.notes,
+          operatorId: undefined,
+        },
+      });
 
-    return this.prisma.order.update({
-      where: { id: orderId },
-      data: updateData,
-      include: ORDER_INCLUDE_PAYMENT,
+      // Create voucher entries linking files to payment record
+      const voucherData = dto.voucherFileIds.map(
+        (fileId: number, index: number) => ({
+          paymentRecordId: paymentRecord.id,
+          fileId,
+          remark: dto.voucherRemarks?.[index] ?? null,
+        }),
+      );
+      await tx.paymentVoucher.createMany({ data: voucherData });
+
+      // Update order payment fields
+      const updateData = this.buildCustomerPaymentUpdateData(dto);
+      return tx.order.update({
+        where: { id: orderId },
+        data: updateData,
+        include: ORDER_INCLUDE_PAYMENT,
+      });
     });
   }
 
@@ -54,7 +80,7 @@ export class OrderPaymentService {
 
   /**
    * Update supplier payment information (3.2.17).
-   * Uses transaction with upsert for atomic operation to prevent TOCTOU race conditions.
+   * Creates a PaymentRecord + PaymentVouchers atomically with the upsert.
    */
   async updateSupplierPayment(
     orderId: number,
@@ -71,7 +97,8 @@ export class OrderPaymentService {
 
       const updateData = this.buildSupplierPaymentUpdateData(dto);
 
-      return tx.supplierPayment.upsert({
+      // Upsert supplier payment (existing logic)
+      const supplierPayment = await tx.supplierPayment.upsert({
         where: { orderId_supplierId: { orderId, supplierId } },
         create: {
           orderId,
@@ -86,6 +113,45 @@ export class OrderPaymentService {
         update: updateData,
         include: SUPPLIER_PAYMENT_INCLUDE,
       });
+
+      // Create payment record for audit trail
+      const paymentRecord = await tx.paymentRecord.create({
+        data: {
+          orderId,
+          type: 'supplier',
+          supplierId,
+          amount: dto.paid ?? 0,
+          payMethod: dto.payMethod,
+          remark: dto.notes,
+          operatorId: undefined,
+        },
+      });
+
+      // Create voucher entries linking files to payment record
+      const voucherData = dto.voucherFileIds.map(
+        (fileId: number, index: number) => ({
+          paymentRecordId: paymentRecord.id,
+          fileId,
+          remark: dto.voucherRemarks?.[index] ?? null,
+        }),
+      );
+      await tx.paymentVoucher.createMany({ data: voucherData });
+
+      return supplierPayment;
+    });
+  }
+
+  /**
+   * Get payment vouchers for an order.
+   * Returns all payment records with their attached voucher files.
+   */
+  async getPaymentVouchers(orderId: number): Promise<PaymentRecord[]> {
+    await validateOrderExists(this.prisma, orderId);
+
+    return this.prisma.paymentRecord.findMany({
+      where: { orderId },
+      include: PAYMENT_RECORD_INCLUDE_VOUCHERS,
+      orderBy: { createdAt: 'desc' },
     });
   }
 

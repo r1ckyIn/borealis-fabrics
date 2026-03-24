@@ -363,6 +363,19 @@ export class OrderController {
     return this.orderPaymentService.getSupplierPayments(id);
   }
 
+  @Get(':id/payment-vouchers')
+  @ApiOperation({
+    summary: 'Get payment vouchers for an order',
+    description:
+      'Returns all payment records with their voucher files for the order.',
+  })
+  @ApiParam({ name: 'id', description: 'Order ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Payment vouchers returned' })
+  @ApiResponse({ status: 404, description: 'Order not found' })
+  getPaymentVouchers(@Param('id', ParseIntPipe) id: number) {
+    return this.orderPaymentService.getPaymentVouchers(id);
+  }
+
   @Patch(':id/supplier-payments/:supplierId')
   @ApiOperation({
     summary: 'Update supplier payment (3.2.17)',
