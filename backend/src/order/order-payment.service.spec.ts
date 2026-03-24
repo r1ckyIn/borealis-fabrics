@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { OrderPaymentService } from './order-payment.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { OrderItemStatus, CustomerPayStatus } from './enums/order-status.enum';
+import {
+  OrderItemStatus,
+  CustomerPayStatus,
+  PaymentMethod,
+} from './enums/order-status.enum';
 
 describe('OrderPaymentService', () => {
   let service: OrderPaymentService;
@@ -117,7 +121,7 @@ describe('OrderPaymentService', () => {
 
       await service.updateCustomerPayment(1, {
         customerPaid: 2000,
-        customerPayMethod: 'bank' as CustomerPayStatus,
+        customerPayMethod: PaymentMethod.BANK,
         voucherFileIds: [10, 20],
       });
 
