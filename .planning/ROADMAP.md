@@ -128,7 +128,7 @@ Plans:
 
 **Requirements:** PVOU-01, PVOU-02, PVOU-03, PVOU-04, PVOU-05, PVOU-06, PVOU-07, PVOU-08
 
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 04.1-01-PLAN.md — Backend schema (PaymentVoucher) + file constants + DTOs + service + tests

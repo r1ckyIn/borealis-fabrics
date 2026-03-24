@@ -48,8 +48,8 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 
 ### Payment Voucher (PVOU) — Phase 04.1
 
-- [ ] **PVOU-01**: All payment status changes require at least one voucher file (backend returns 400 if missing)
-- [ ] **PVOU-02**: PaymentRecord created for every payment operation with voucher association in a single transaction
+- [x] **PVOU-01**: All payment status changes require at least one voucher file (backend returns 400 if missing)
+- [x] **PVOU-02**: PaymentRecord created for every payment operation with voucher association in a single transaction
 - [x] **PVOU-03**: Supported file types: JPG/PNG/WEBP images, PDF, Word (.doc/.docx), Excel (.xls/.xlsx)
 - [x] **PVOU-04**: VoucherUploader component with drag-and-drop (Ant Design Upload.Dragger), file validation, immediate upload
 - [x] **PVOU-05**: VoucherList component with file-type-aware actions (preview modal for images, new tab for PDF, download for Office)
@@ -146,8 +146,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | TEST-05 | Phase 3 | Complete |
 | TEST-06 | Phase 4 | Complete |
 | TEST-07 | Phase 4 | Complete |
-| PVOU-01 | Phase 04.1 | Pending |
-| PVOU-02 | Phase 04.1 | Pending |
+| PVOU-01 | Phase 04.1 | Complete |
+| PVOU-02 | Phase 04.1 | Complete |
 | PVOU-03 | Phase 04.1 | Complete |
 | PVOU-04 | Phase 04.1 | Complete |
 | PVOU-05 | Phase 04.1 | Complete |

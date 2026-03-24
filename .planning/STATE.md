@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T03:46:50Z"
+last_updated: "2026-03-24T03:48:51.024Z"
 progress:
   total_phases: 11
   completed_phases: 3
   total_plans: 19
-  completed_plans: 15
+  completed_plans: 17
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -97,6 +97,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Address tab read-only display (not AddressManager wrap) | Addresses are inline JSON on Customer entity, not separate CRUD |
 | 2026-03-24 | voucherFileIds optional in frontend form types | Backward compatible with existing OrderPaymentSection until Plan 03 wires it |
 | 2026-03-24 | Ant Design Image: open/onOpenChange (not visible/onVisibleChange) | Use current API, avoid deprecation warnings |
+| 2026-03-24 | PaymentVoucher atomic audit trail in $transaction | PaymentRecord + PaymentVouchers created atomically for all payment ops |
+| 2026-03-24 | FileController shared constants from file.constants.ts | Deduplicated local MIME types to use centralized constants |
 
 ## Accumulated Context
 
@@ -124,8 +126,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Phase 4 Plan 04 | Completed 04-04-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-04-SUMMARY.md` |
 | 2026-03-23 | Phase 4 Plan 01 | Completed 04-01-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-01-SUMMARY.md` |
 | 2026-03-23 | Phase 4 Plan 02 | Completed 04-02-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-02-SUMMARY.md` |
+| 2026-03-24 | Phase 04.1 Plan 01 | Completed 04.1-01-PLAN.md | `.planning/phases/04.1-pdf/04.1-01-SUMMARY.md` |
 | 2026-03-24 | Phase 04.1 Plan 02 | Completed 04.1-02-PLAN.md | `.planning/phases/04.1-pdf/04.1-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-24 (Phase 04.1 Plan 02 complete — VoucherUploader + VoucherList components with 23 tests, type-aware file actions)*
+*Last updated: 2026-03-24 (Phase 04.1 Plan 01 complete — PaymentVoucher schema + transactional audit trail + mandatory voucher DTOs, 27 new tests)*
