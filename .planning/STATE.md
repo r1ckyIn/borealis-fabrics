@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T04:17:47.858Z"
+last_updated: "2026-03-24T09:19:27Z"
 progress:
   total_phases: 11
   completed_phases: 4
-  total_plans: 19
+  total_plans: 21
   completed_plans: 18
 ---
 
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 04.1 — pdf
+**Current focus:** Phase 05 — multi-category-schema-product-crud
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 04.1 |
-| Name | Payment Voucher Upload |
-| Status | Complete |
-| Current Plan | 3 of 3 |
-| Branch | feature/gsd-04.1-payment-voucher-upload |
+| Phase | 05 |
+| Name | Multi-Category Schema + Product CRUD |
+| Status | In Progress |
+| Current Plan | 1 of 2 |
+| Branch | feature/gsd-05-multi-category-schema |
 
 ## Progress
 
@@ -38,7 +38,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2 — Core Feature Implementation | ● Complete | 3/3 |
 | 3 — Backend Service Decomposition | ● Complete | 4/4 |
 | 4 — Frontend Component Decomposition | ● Complete | 4/4 |
-| 5 — Multi-Category Schema + Product CRUD | ○ Not Started | — |
+| 5 — Multi-Category Schema + Product CRUD | ◐ In Progress | 1/2 |
 | 6 — Import Strategy Refactor | ○ Not Started | — |
 | 7 — Order/Quote Multi-Category Extension | ○ Not Started | — |
 | 8 — Frontend Multi-Category Pages | ○ Not Started | — |
@@ -101,6 +101,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | FileController shared constants from file.constants.ts | Deduplicated local MIME types to use centralized constants |
 | 2026-03-24 | VoucherUploader state via external useState (not Form.Item name) | Enables save button disable logic outside Ant Design form validation |
 | 2026-03-24 | PaymentVoucher type exported from barrel index | Consumer convenience for type imports |
+| 2026-03-24 | String columns for category/subCategory (not Prisma enum) | Consistent with project convention, avoids DDL per enum change |
+| 2026-03-24 | Non-null assertion on fabricId in FabricPricingItem | Fabric pricing always has fabricId; nullable change only affects product pricing rows |
 
 ## Accumulated Context
 
@@ -131,7 +133,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | Phase 04.1 Plan 01 | Completed 04.1-01-PLAN.md | `.planning/phases/04.1-pdf/04.1-01-SUMMARY.md` |
 | 2026-03-24 | Phase 04.1 Plan 02 | Completed 04.1-02-PLAN.md | `.planning/phases/04.1-pdf/04.1-02-SUMMARY.md` |
 | 2026-03-24 | Phase 04.1 Plan 03 | Completed 04.1-03-PLAN.md | `.planning/phases/04.1-pdf/04.1-03-SUMMARY.md` |
+| 2026-03-24 | Phase 05 Plan 01 | Completed 05-01-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-01-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-24 (Phase 04.1 Plan 03 complete — VoucherUploader + VoucherList integration in OrderPaymentSection, mandatory voucher enforcement, 12 integration tests)*
+*Last updated: 2026-03-24 (Phase 05 Plan 01 complete — Product/ProductSupplier/ProductBundle/ProductBundleItem schema + migration, CodeGeneratorService extended with TJ/DJ/CD/PJ/BD, system enums registered)*

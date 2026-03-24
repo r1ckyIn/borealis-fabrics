@@ -59,7 +59,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 
 ### Multi-Category (MCAT)
 
-- [ ] **MCAT-01**: Product abstraction schema designed and migrated (products table + category enum)
+- [x] **MCAT-01**: Product abstraction schema designed and migrated (products table + category enum)
 - [ ] **MCAT-02**: Iron frame CRUD with model numbers, specifications, and pricing
 - [ ] **MCAT-03**: Motor CRUD with channel configurations and pricing
 - [ ] **MCAT-04**: Hardware/accessories CRUD with specifications and pricing
@@ -67,7 +67,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [ ] **MCAT-06**: ProductImportStrategy integrated into ImportService
 - [ ] **MCAT-07**: OrderItem extended with productId FK (nullable, exactly-one guard with fabricId)
 - [ ] **MCAT-08**: Quote extended to support non-fabric products
-- [ ] **MCAT-09**: Product code generation (category-specific prefixes via CodeGeneratorService)
+- [x] **MCAT-09**: Product code generation (category-specific prefixes via CodeGeneratorService)
 - [ ] **MCAT-10**: Frontend product list page with category filter
 - [ ] **MCAT-11**: Frontend product detail/edit pages for each category
 - [ ] **MCAT-12**: Frontend order form supports selecting products from any category
@@ -154,7 +154,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | PVOU-06 | Phase 04.1 | Complete |
 | PVOU-07 | Phase 04.1 | Complete |
 | PVOU-08 | Phase 04.1 | Complete |
-| MCAT-01 | Phase 5 | Pending |
+| MCAT-01 | Phase 5 | Complete |
 | MCAT-02 | Phase 5 | Pending |
 | MCAT-03 | Phase 5 | Pending |
 | MCAT-04 | Phase 5 | Pending |
@@ -162,7 +162,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | MCAT-06 | Phase 6 | Pending |
 | MCAT-07 | Phase 7 | Pending |
 | MCAT-08 | Phase 7 | Pending |
-| MCAT-09 | Phase 5 | Pending |
+| MCAT-09 | Phase 5 | Complete |
 | MCAT-10 | Phase 8 | Pending |
 | MCAT-11 | Phase 8 | Pending |
 | MCAT-12 | Phase 8 | Pending |
