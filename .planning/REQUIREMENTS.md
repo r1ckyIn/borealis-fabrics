@@ -50,10 +50,10 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 
 - [ ] **PVOU-01**: All payment status changes require at least one voucher file (backend returns 400 if missing)
 - [ ] **PVOU-02**: PaymentRecord created for every payment operation with voucher association in a single transaction
-- [ ] **PVOU-03**: Supported file types: JPG/PNG/WEBP images, PDF, Word (.doc/.docx), Excel (.xls/.xlsx)
-- [ ] **PVOU-04**: VoucherUploader component with drag-and-drop (Ant Design Upload.Dragger), file validation, immediate upload
-- [ ] **PVOU-05**: VoucherList component with file-type-aware actions (preview modal for images, new tab for PDF, download for Office)
-- [ ] **PVOU-06**: Append-only voucher policy — uploaded vouchers cannot be deleted or replaced
+- [x] **PVOU-03**: Supported file types: JPG/PNG/WEBP images, PDF, Word (.doc/.docx), Excel (.xls/.xlsx)
+- [x] **PVOU-04**: VoucherUploader component with drag-and-drop (Ant Design Upload.Dragger), file validation, immediate upload
+- [x] **PVOU-05**: VoucherList component with file-type-aware actions (preview modal for images, new tab for PDF, download for Office)
+- [x] **PVOU-06**: Append-only voucher policy — uploaded vouchers cannot be deleted or replaced
 - [ ] **PVOU-07**: Double enforcement — frontend disables save button when no vouchers + backend returns 400
 - [ ] **PVOU-08**: Customer and supplier vouchers displayed separately in their respective payment tabs
 
@@ -148,10 +148,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | TEST-07 | Phase 4 | Complete |
 | PVOU-01 | Phase 04.1 | Pending |
 | PVOU-02 | Phase 04.1 | Pending |
-| PVOU-03 | Phase 04.1 | Pending |
-| PVOU-04 | Phase 04.1 | Pending |
-| PVOU-05 | Phase 04.1 | Pending |
-| PVOU-06 | Phase 04.1 | Pending |
+| PVOU-03 | Phase 04.1 | Complete |
+| PVOU-04 | Phase 04.1 | Complete |
+| PVOU-05 | Phase 04.1 | Complete |
+| PVOU-06 | Phase 04.1 | Complete |
 | PVOU-07 | Phase 04.1 | Pending |
 | PVOU-08 | Phase 04.1 | Pending |
 | MCAT-01 | Phase 5 | Pending |
