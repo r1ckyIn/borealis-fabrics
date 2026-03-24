@@ -45,18 +45,22 @@ export function PaymentStatusCard({
   type,
   totalAmount,
   paidAmount,
-  payStatus,
   payMethod,
   paidAt,
   supplierName,
   loading = false,
   onEdit,
 }: PaymentStatusCardProps) {
-  const unpaidAmount = totalAmount - paidAmount;
+  const total = Number(totalAmount) || 0;
+  const paid = Number(paidAmount) || 0;
+  const unpaidAmount = total - paid;
   const progressPercent =
-    totalAmount > 0 ? Math.round((paidAmount / totalAmount) * 100) : 0;
+    total > 0 ? Math.round((paid / total) * 100) : 0;
 
-  const statusColor = getPayStatusColor(payStatus);
+  // Derive status from amounts, not DB value
+  const derivedStatus: string =
+    paid <= 0 ? 'unpaid' : total > 0 && paid >= total ? 'paid' : 'partial';
+  const statusColor = getPayStatusColor(derivedStatus);
   let progressStrokeColor = '#ff4d4f';
   if (progressPercent >= 100) {
     progressStrokeColor = '#52c41a';
@@ -70,7 +74,7 @@ export function PaymentStatusCard({
       : `供应商付款${supplierName ? ` - ${supplierName}` : ''}`;
 
   const statusLabel =
-    CUSTOMER_PAY_STATUS_LABELS[payStatus as CustomerPayStatus] ?? payStatus;
+    CUSTOMER_PAY_STATUS_LABELS[derivedStatus as CustomerPayStatus] ?? derivedStatus;
 
   const methodLabel = payMethod
     ? (PAYMENT_METHOD_LABELS[payMethod as PaymentMethod] ?? payMethod)
@@ -105,14 +109,14 @@ export function PaymentStatusCard({
         <Col span={8}>
           <Statistic
             title="应付"
-            value={formatCurrency(totalAmount)}
+            value={formatCurrency(total)}
             valueStyle={{ fontSize: 14 }}
           />
         </Col>
         <Col span={8}>
           <Statistic
             title="已付"
-            value={formatCurrency(paidAmount)}
+            value={formatCurrency(paid)}
             valueStyle={{ fontSize: 14, color: '#52c41a' }}
           />
         </Col>
