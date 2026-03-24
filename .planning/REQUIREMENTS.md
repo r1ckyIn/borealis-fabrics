@@ -54,8 +54,8 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **PVOU-04**: VoucherUploader component with drag-and-drop (Ant Design Upload.Dragger), file validation, immediate upload
 - [x] **PVOU-05**: VoucherList component with file-type-aware actions (preview modal for images, new tab for PDF, download for Office)
 - [x] **PVOU-06**: Append-only voucher policy — uploaded vouchers cannot be deleted or replaced
-- [ ] **PVOU-07**: Double enforcement — frontend disables save button when no vouchers + backend returns 400
-- [ ] **PVOU-08**: Customer and supplier vouchers displayed separately in their respective payment tabs
+- [x] **PVOU-07**: Double enforcement — frontend disables save button when no vouchers + backend returns 400
+- [x] **PVOU-08**: Customer and supplier vouchers displayed separately in their respective payment tabs
 
 ### Multi-Category (MCAT)
 
@@ -152,8 +152,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | PVOU-04 | Phase 04.1 | Complete |
 | PVOU-05 | Phase 04.1 | Complete |
 | PVOU-06 | Phase 04.1 | Complete |
-| PVOU-07 | Phase 04.1 | Pending |
-| PVOU-08 | Phase 04.1 | Pending |
+| PVOU-07 | Phase 04.1 | Complete |
+| PVOU-08 | Phase 04.1 | Complete |
 | MCAT-01 | Phase 5 | Pending |
 | MCAT-02 | Phase 5 | Pending |
 | MCAT-03 | Phase 5 | Pending |
