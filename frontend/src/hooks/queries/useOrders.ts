@@ -36,6 +36,8 @@ export const orderKeys = {
     [...orderKeys.detail(orderId), 'items', itemId, 'timeline'] as const,
   supplierPayments: (orderId: number) =>
     [...orderKeys.detail(orderId), 'supplier-payments'] as const,
+  paymentVouchers: (orderId: number) =>
+    [...orderKeys.detail(orderId), 'payment-vouchers'] as const,
 };
 
 // =============================================================================
@@ -130,6 +132,22 @@ export function useSupplierPayments(
   return useQuery({
     queryKey: orderKeys.supplierPayments(orderId!),
     queryFn: () => orderApi.getSupplierPayments(orderId!),
+    enabled: enabled && orderId !== undefined,
+  });
+}
+
+/**
+ * Fetch payment vouchers for an order.
+ * @param orderId - Order ID
+ * @param enabled - Whether to enable the query
+ */
+export function usePaymentVouchers(
+  orderId: number | undefined,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: orderKeys.paymentVouchers(orderId!),
+    queryFn: () => orderApi.getPaymentVouchers(orderId!),
     enabled: enabled && orderId !== undefined,
   });
 }
@@ -360,6 +378,7 @@ export function useUpdateCustomerPayment() {
     onSuccess: (_data, { orderId }) => {
       queryClient.invalidateQueries({ queryKey: orderKeys.detail(orderId) });
       queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: orderKeys.paymentVouchers(orderId) });
     },
   });
 }
@@ -383,6 +402,7 @@ export function useUpdateSupplierPayment() {
       queryClient.invalidateQueries({
         queryKey: orderKeys.supplierPayments(orderId),
       });
+      queryClient.invalidateQueries({ queryKey: orderKeys.paymentVouchers(orderId) });
     },
   });
 }

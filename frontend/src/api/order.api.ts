@@ -8,6 +8,7 @@ import type {
   OrderItem,
   OrderTimelineEntry,
   SupplierPayment,
+  PaymentRecord,
   QueryOrderParams,
   CreateOrderData,
   UpdateOrderData,
@@ -162,6 +163,13 @@ export function updateSupplierPayment(
   );
 }
 
+/** Get payment vouchers (records with attached files) for an order. */
+export function getPaymentVouchers(
+  orderId: number
+): Promise<PaymentRecord[]> {
+  return get<PaymentRecord[]>(`/orders/${orderId}/payment-vouchers`);
+}
+
 export const orderApi = {
   getOrders,
   getOrder,
@@ -180,4 +188,5 @@ export const orderApi = {
   updateCustomerPayment,
   getSupplierPayments,
   updateSupplierPayment,
+  getPaymentVouchers,
 };

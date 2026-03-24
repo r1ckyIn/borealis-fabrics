@@ -21,23 +21,11 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { FileService, UploadedFile as IUploadedFile } from './file.service';
-
-// Allowed MIME types for upload
-const ALLOWED_MIME_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'application/pdf',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-];
-
-// Maximum file size (10MB)
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-// Maximum filename length
-const MAX_FILENAME_LENGTH = 255;
+import {
+  ALLOWED_MIME_TYPES,
+  MAX_FILE_SIZE,
+  MAX_FILENAME_LENGTH,
+} from '../common/constants/file.constants';
 
 /**
  * Validate filename for security issues.

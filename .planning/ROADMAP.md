@@ -13,6 +13,7 @@
 | 2 | Core Feature Implementation | M1 | Quote-to-order + COS file storage end-to-end | FEAT-01~05, TEST-01~03 |
 | 3 | Backend Service Decomposition | M1 | 4/4 Complete | QUAL-01~02, QUAL-06, TEST-04~05 |
 | 4 | Frontend Component Decomposition | M1 | 4/4 Complete | QUAL-03~09, TEST-06~07 |
+| 4.1 | Payment Voucher Upload | M1+ | Mandatory voucher upload for all payment operations | PVOU-01~08 |
 | 5 | Multi-Category Schema + Product CRUD | M2 | Product data model + CRUD for all categories | MCAT-01~04, MCAT-09 |
 | 6 | Import Strategy Refactor | M2 | Extensible import + new category templates | MCAT-05~06, DATA-08~09 |
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
@@ -121,15 +122,31 @@ Plans:
 
 ---
 
-### Phase 04.1: 付款凭证强制上传 — 所有付款状态变更必须上传凭证文件（图片/PDF），支持多文件、拖拽上传、预览/下载/重新上传 (INSERTED)
+### Phase 04.1: Mandatory Payment Voucher Upload (INSERTED - URGENT)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
-**Depends on:** Phase 4
-**Plans:** 0 plans
+**Goal:** Every payment status change (customer and supplier) requires mandatory voucher file upload with audit trail, supporting images/PDF/Office documents, drag-and-drop upload, and file-type-aware preview/download.
+
+**Requirements:** PVOU-01, PVOU-02, PVOU-03, PVOU-04, PVOU-05, PVOU-06, PVOU-07, PVOU-08
+
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 04.1 to break down)
+- [ ] 04.1-01-PLAN.md — Backend schema (PaymentVoucher) + file constants + DTOs + service + tests
+- [ ] 04.1-02-PLAN.md — Frontend types + VoucherUploader + VoucherList components + unit tests
+- [ ] 04.1-03-PLAN.md — Frontend integration (OrderPaymentSection wiring + API + hooks + visual checkpoint)
+
+**Success Criteria:**
+1. PaymentVoucher table exists with migration, linking PaymentRecord to File
+2. All payment status updates require non-empty voucherFileIds (backend 400 + frontend disabled button)
+3. PaymentRecord created for every payment operation with voucher association in a single transaction
+4. VoucherUploader supports images, PDF, Word, Excel via Upload.Dragger with file validation
+5. VoucherList displays historical vouchers with type-aware actions (preview/open/download)
+6. Vouchers are append-only (no delete or replace)
+7. Customer and supplier vouchers displayed separately in their respective tabs
+
+**Dependencies:** Phase 4 (needs component decomposition complete)
+
+---
 
 ### Phase 5: Multi-Category Schema + Product CRUD
 
@@ -232,6 +249,7 @@ Phase 1 (standalone — M1 start)
   └→ Phase 2 (needs working UI)
       └→ Phase 3 (needs core features stable)
           └→ Phase 4 (needs backend decomposed) — M1 complete
+              ├→ Phase 04.1 (urgent: payment voucher upload)
               └→ Phase 5 (M2 start — schema + CRUD)
                   ├→ Phase 6 (import strategy — can parallel with 7)
                   │   └→ Phase 9 (OCR needs import templates)
@@ -244,15 +262,17 @@ Phase 1 (standalone — M1 start)
 
 | Category | Count | Mapped |
 |----------|-------|--------|
-| Bug Fix (BUGF) | 6 | 6 ✓ |
-| Core Feature (FEAT) | 5 | 5 ✓ |
-| Code Quality (QUAL) | 9 | 9 ✓ |
-| Test Coverage (TEST) | 7 | 7 ✓ |
-| Multi-Category (MCAT) | 12 | 12 ✓ |
-| OCR & Data (DATA) | 9 | 9 ✓ |
-| **Total** | **48** | **48 ✓** |
+| Bug Fix (BUGF) | 6 | 6 |
+| Core Feature (FEAT) | 5 | 5 |
+| Code Quality (QUAL) | 9 | 9 |
+| Test Coverage (TEST) | 7 | 7 |
+| Payment Voucher (PVOU) | 8 | 8 |
+| Multi-Category (MCAT) | 12 | 12 |
+| OCR & Data (DATA) | 9 | 9 |
+| **Total** | **56** | **56** |
 
-Unmapped: 0 ✓
+Unmapped: 0
 
 ---
 *Roadmap created: 2026-03-17*
+*Last updated: 2026-03-24 (Phase 04.1 planned — 3 plans, 2 waves)*

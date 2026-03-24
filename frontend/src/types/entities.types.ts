@@ -205,6 +205,16 @@ export interface SupplierPayment extends BaseEntity {
   supplier?: Supplier;
 }
 
+export interface PaymentVoucher {
+  id: number;
+  paymentRecordId: number;
+  fileId: number;
+  remark?: string | null;
+  createdAt: string;
+  file?: FileEntity;
+  paymentRecord?: PaymentRecord;
+}
+
 export interface PaymentRecord {
   id: number;
   orderId: number;
@@ -218,6 +228,7 @@ export interface PaymentRecord {
   order?: Order;
   supplier?: Supplier;
   operator?: User;
+  vouchers?: PaymentVoucher[];
 }
 
 export interface OrderTimelineEntry {

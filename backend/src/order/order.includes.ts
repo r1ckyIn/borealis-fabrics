@@ -161,3 +161,16 @@ export const TIMELINE_INCLUDE_ITEM = {
 export const SUPPLIER_PAYMENT_INCLUDE = {
   supplier: { select: SUPPLIER_SELECT },
 } as const satisfies Prisma.SupplierPaymentInclude;
+
+/**
+ * Payment record include with voucher files.
+ * Used for querying payment history with attached documents.
+ */
+export const PAYMENT_RECORD_INCLUDE_VOUCHERS = {
+  vouchers: {
+    include: {
+      file: true,
+    },
+    orderBy: { createdAt: 'asc' as const },
+  },
+} as const satisfies Prisma.PaymentRecordInclude;

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-23T11:17:26.220Z"
+last_updated: "2026-03-24T04:17:47.858Z"
 progress:
-  total_phases: 10
-  completed_phases: 3
-  total_plans: 16
-  completed_plans: 15
+  total_phases: 11
+  completed_phases: 4
+  total_plans: 19
+  completed_plans: 18
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 04 — frontend-component-decomposition (Complete, all 4 plans done)
+**Current focus:** Phase 04.1 — pdf
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 4 |
-| Name | Frontend Component Decomposition |
+| Phase | 04.1 |
+| Name | Payment Voucher Upload |
 | Status | Complete |
-| Current Plan | 4 of 4 |
-| Branch | feature/gsd-04-frontend-component-decomposition |
+| Current Plan | 3 of 3 |
+| Branch | feature/gsd-04.1-payment-voucher-upload |
 
 ## Progress
 
@@ -95,6 +95,12 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | PricingModalControl typed interface for pricing modal state | Avoids 10+ individual props, groups form + handlers + searchFabrics |
 | 2026-03-23 | CustomerBasicInfo single prop (customer) | Edit/delete buttons in page header, not in info tab |
 | 2026-03-23 | Address tab read-only display (not AddressManager wrap) | Addresses are inline JSON on Customer entity, not separate CRUD |
+| 2026-03-24 | voucherFileIds optional in frontend form types | Backward compatible with existing OrderPaymentSection until Plan 03 wires it |
+| 2026-03-24 | Ant Design Image: open/onOpenChange (not visible/onVisibleChange) | Use current API, avoid deprecation warnings |
+| 2026-03-24 | PaymentVoucher atomic audit trail in $transaction | PaymentRecord + PaymentVouchers created atomically for all payment ops |
+| 2026-03-24 | FileController shared constants from file.constants.ts | Deduplicated local MIME types to use centralized constants |
+| 2026-03-24 | VoucherUploader state via external useState (not Form.Item name) | Enables save button disable logic outside Ant Design form validation |
+| 2026-03-24 | PaymentVoucher type exported from barrel index | Consumer convenience for type imports |
 
 ## Accumulated Context
 
@@ -122,7 +128,10 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-23 | Phase 4 Plan 04 | Completed 04-04-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-04-SUMMARY.md` |
 | 2026-03-23 | Phase 4 Plan 01 | Completed 04-01-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-01-SUMMARY.md` |
 | 2026-03-23 | Phase 4 Plan 02 | Completed 04-02-PLAN.md | `.planning/phases/04-frontend-component-decomposition/04-02-SUMMARY.md` |
+| 2026-03-24 | Phase 04.1 Plan 01 | Completed 04.1-01-PLAN.md | `.planning/phases/04.1-pdf/04.1-01-SUMMARY.md` |
+| 2026-03-24 | Phase 04.1 Plan 02 | Completed 04.1-02-PLAN.md | `.planning/phases/04.1-pdf/04.1-02-SUMMARY.md` |
+| 2026-03-24 | Phase 04.1 Plan 03 | Completed 04.1-03-PLAN.md | `.planning/phases/04.1-pdf/04.1-03-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-23 (Phase 4 Plan 02 complete — CustomerDetailPage decomposed to 190-line orchestrator + useCustomerDetail hook + 4 sub-components, 50 tests)*
+*Last updated: 2026-03-24 (Phase 04.1 Plan 03 complete — VoucherUploader + VoucherList integration in OrderPaymentSection, mandatory voucher enforcement, 12 integration tests)*

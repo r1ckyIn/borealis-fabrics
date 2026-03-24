@@ -46,6 +46,17 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **TEST-06**: Frontend error handling tests for unexpected API response formats
 - [x] **TEST-07**: All existing tests continue passing after refactoring (608 backend + 753 frontend)
 
+### Payment Voucher (PVOU) — Phase 04.1
+
+- [x] **PVOU-01**: All payment status changes require at least one voucher file (backend returns 400 if missing)
+- [x] **PVOU-02**: PaymentRecord created for every payment operation with voucher association in a single transaction
+- [x] **PVOU-03**: Supported file types: JPG/PNG/WEBP images, PDF, Word (.doc/.docx), Excel (.xls/.xlsx)
+- [x] **PVOU-04**: VoucherUploader component with drag-and-drop (Ant Design Upload.Dragger), file validation, immediate upload
+- [x] **PVOU-05**: VoucherList component with file-type-aware actions (preview modal for images, new tab for PDF, download for Office)
+- [x] **PVOU-06**: Append-only voucher policy — uploaded vouchers cannot be deleted or replaced
+- [x] **PVOU-07**: Double enforcement — frontend disables save button when no vouchers + backend returns 400
+- [x] **PVOU-08**: Customer and supplier vouchers displayed separately in their respective payment tabs
+
 ### Multi-Category (MCAT)
 
 - [ ] **MCAT-01**: Product abstraction schema designed and migrated (products table + category enum)
@@ -112,8 +123,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | BUGF-02 | Phase 1 | Complete |
 | BUGF-03 | Phase 1 | Complete |
 | BUGF-04 | Phase 1 | Complete |
-| BUGF-05 | Phase 1 | In Progress (audit done, fixes in Plans 02-04) |
-| BUGF-06 | Phase 1 | In Progress (error utility done, integration in Plans 02-04) |
+| BUGF-05 | Phase 1 | Complete |
+| BUGF-06 | Phase 1 | Complete |
 | FEAT-01 | Phase 2 | Complete |
 | FEAT-02 | Phase 2 | Complete |
 | FEAT-03 | Phase 2 | Complete |
@@ -135,6 +146,14 @@ Deferred to future release. Tracked but not in current roadmap.
 | TEST-05 | Phase 3 | Complete |
 | TEST-06 | Phase 4 | Complete |
 | TEST-07 | Phase 4 | Complete |
+| PVOU-01 | Phase 04.1 | Complete |
+| PVOU-02 | Phase 04.1 | Complete |
+| PVOU-03 | Phase 04.1 | Complete |
+| PVOU-04 | Phase 04.1 | Complete |
+| PVOU-05 | Phase 04.1 | Complete |
+| PVOU-06 | Phase 04.1 | Complete |
+| PVOU-07 | Phase 04.1 | Complete |
+| PVOU-08 | Phase 04.1 | Complete |
 | MCAT-01 | Phase 5 | Pending |
 | MCAT-02 | Phase 5 | Pending |
 | MCAT-03 | Phase 5 | Pending |
@@ -158,10 +177,10 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-09 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 48 total
-- Mapped to phases: 48
-- Unmapped: 0 ✓
+- v1 requirements: 56 total
+- Mapped to phases: 56
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-17 after roadmap creation*
+*Last updated: 2026-03-24 (added PVOU-01~08 for Phase 04.1)*

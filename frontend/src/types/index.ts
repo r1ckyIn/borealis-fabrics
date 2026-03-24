@@ -58,6 +58,7 @@ export type {
   OrderItem,
   Logistics,
   SupplierPayment,
+  PaymentVoucher,
   PaymentRecord,
   OrderTimelineEntry,
 } from './entities.types';

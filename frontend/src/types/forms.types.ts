@@ -205,6 +205,8 @@ export interface UpdateCustomerPaymentData {
   customerCreditDays?: number;
   customerPaidAt?: string;
   notes?: string;
+  voucherFileIds?: number[];
+  voucherRemarks?: string[];
 }
 
 export interface UpdateSupplierPaymentData {
@@ -213,6 +215,8 @@ export interface UpdateSupplierPaymentData {
   payMethod?: string;
   creditDays?: number;
   paidAt?: string;
+  voucherFileIds?: number[];
+  voucherRemarks?: string[];
 }
 
 export interface CreatePaymentRecordData {
