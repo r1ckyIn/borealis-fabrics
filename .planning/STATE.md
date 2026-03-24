@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T09:19:27Z"
+last_updated: "2026-03-24T09:34:17Z"
 progress:
   total_phases: 11
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 21
-  completed_plans: 18
+  completed_plans: 19
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 |-------|-------|
 | Phase | 05 |
 | Name | Multi-Category Schema + Product CRUD |
-| Status | In Progress |
-| Current Plan | 1 of 2 |
+| Status | Complete |
+| Current Plan | 2 of 2 |
 | Branch | feature/gsd-05-multi-category-schema |
 
 ## Progress
@@ -38,7 +38,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2 — Core Feature Implementation | ● Complete | 3/3 |
 | 3 — Backend Service Decomposition | ● Complete | 4/4 |
 | 4 — Frontend Component Decomposition | ● Complete | 4/4 |
-| 5 — Multi-Category Schema + Product CRUD | ◐ In Progress | 1/2 |
+| 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
 | 6 — Import Strategy Refactor | ○ Not Started | — |
 | 7 — Order/Quote Multi-Category Extension | ○ Not Started | — |
 | 8 — Frontend Multi-Category Pages | ○ Not Started | — |
@@ -103,6 +103,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | PaymentVoucher type exported from barrel index | Consumer convenience for type imports |
 | 2026-03-24 | String columns for category/subCategory (not Prisma enum) | Consistent with project convention, avoids DDL per enum change |
 | 2026-03-24 | Non-null assertion on fabricId in FabricPricingItem | Fabric pricing always has fabricId; nullable change only affects product pricing rows |
+| 2026-03-24 | ProductModule uses global CommonModule (no explicit import) | CommonModule is @Global, CodeGeneratorService available via DI without module import |
+| 2026-03-24 | Bundle routes before :id routes in ProductController | Prevents NestJS parsing "bundles" as numeric ID parameter |
 
 ## Accumulated Context
 
@@ -134,7 +136,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | Phase 04.1 Plan 02 | Completed 04.1-02-PLAN.md | `.planning/phases/04.1-pdf/04.1-02-SUMMARY.md` |
 | 2026-03-24 | Phase 04.1 Plan 03 | Completed 04.1-03-PLAN.md | `.planning/phases/04.1-pdf/04.1-03-SUMMARY.md` |
 | 2026-03-24 | Phase 05 Plan 01 | Completed 05-01-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-01-SUMMARY.md` |
+| 2026-03-24 | Phase 05 Plan 02 | Completed 05-02-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-24 (Phase 05 Plan 01 complete — Product/ProductSupplier/ProductBundle/ProductBundleItem schema + migration, CodeGeneratorService extended with TJ/DJ/CD/PJ/BD, system enums registered)*
+*Last updated: 2026-03-24 (Phase 05 Plan 02 complete — ProductModule with 18 REST endpoints, 13 DTOs, full CRUD for products/suppliers/pricing/bundles, 737 backend tests passing)*

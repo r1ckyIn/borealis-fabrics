@@ -14,7 +14,7 @@
 | 3 | Backend Service Decomposition | M1 | 4/4 Complete | QUAL-01~02, QUAL-06, TEST-04~05 |
 | 4 | Frontend Component Decomposition | M1 | 4/4 Complete | QUAL-03~09, TEST-06~07 |
 | 4.1 | Payment Voucher Upload | M1+ | Mandatory voucher upload for all payment operations | PVOU-01~08 |
-| 5 | Multi-Category Schema + Product CRUD | M2 | Product data model + CRUD for all categories | MCAT-01~04, MCAT-09 |
+| 5 | Multi-Category Schema + Product CRUD | M2 | 2/2 Complete | MCAT-01~04, MCAT-09 |
 | 6 | Import Strategy Refactor | M2 | Extensible import + new category templates | MCAT-05~06, DATA-08~09 |
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
@@ -154,11 +154,11 @@ Plans:
 
 **Requirements:** MCAT-01, MCAT-02, MCAT-03, MCAT-04, MCAT-09
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans executed (COMPLETE)
 
 Plans:
-- [ ] 05-01-PLAN.md — Prisma schema (Product/ProductSupplier/ProductBundle/ProductBundleItem) + CustomerPricing extension + CodeGeneratorService extension + system enums
-- [ ] 05-02-PLAN.md — ProductModule CRUD (service + controller + DTOs + tests + AppModule registration)
+- [x] 05-01-PLAN.md — Prisma schema (Product/ProductSupplier/ProductBundle/ProductBundleItem) + CustomerPricing extension + CodeGeneratorService extension + system enums
+- [x] 05-02-PLAN.md — ProductModule CRUD (service + controller + DTOs + tests + AppModule registration)
 
 **Success Criteria:**
 1. Products table with category enum + specs JSON column, migrated without affecting existing fabrics
