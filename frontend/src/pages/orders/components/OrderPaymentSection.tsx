@@ -1,6 +1,6 @@
 /**
  * Order payment management: customer payment tab and supplier payments tab.
- * Includes edit modals for both payment types.
+ * Includes edit modals with mandatory voucher upload for both payment types.
  */
 
 import { useState, useCallback } from 'react';
@@ -18,9 +18,12 @@ import {
 import dayjs from 'dayjs';
 
 import { PaymentStatusCard } from '@/components/business/PaymentStatusCard';
+import { VoucherUploader } from '@/components/business/VoucherUploader';
+import { VoucherList } from '@/components/business/VoucherList';
 import {
   useUpdateCustomerPayment,
   useUpdateSupplierPayment,
+  usePaymentVouchers,
 } from '@/hooks/queries/useOrders';
 import { getErrorMessage } from '@/utils/errorMessages';
 import {
@@ -32,6 +35,7 @@ import {
 import type {
   Order,
   SupplierPayment,
+  PaymentRecord,
   UpdateCustomerPaymentData,
   UpdateSupplierPaymentData,
   ApiError,
@@ -105,8 +109,13 @@ export function CustomerPaymentTab({
   order,
 }: CustomerPaymentTabProps): React.ReactElement {
   const [modalOpen, setModalOpen] = useState(false);
+  const [voucherFileIds, setVoucherFileIds] = useState<number[]>([]);
   const [form] = Form.useForm();
   const mutation = useUpdateCustomerPayment();
+  const { data: paymentRecords = [] } = usePaymentVouchers(orderId);
+  const customerRecords = paymentRecords.filter(
+    (r: PaymentRecord) => r.type === 'customer'
+  );
 
   const openModal = useCallback(() => {
     form.setFieldsValue({
@@ -115,6 +124,7 @@ export function CustomerPaymentTab({
       payMethod: order.customerPayMethod ?? undefined,
       paidAt: order.customerPaidAt ? dayjs(order.customerPaidAt) : undefined,
     });
+    setVoucherFileIds([]);
     setModalOpen(true);
   }, [order, form]);
 
@@ -126,6 +136,7 @@ export function CustomerPaymentTab({
         customerPayStatus: values.payStatus,
         customerPayMethod: values.payMethod,
         customerPaidAt: values.paidAt?.toISOString(),
+        voucherFileIds,
       };
       await mutation.mutateAsync({ orderId, data });
       message.success('客户付款信息已更新');
@@ -134,7 +145,7 @@ export function CustomerPaymentTab({
       console.error('Update customer payment failed:', error);
       message.error(getErrorMessage(error as ApiError));
     }
-  }, [orderId, form, mutation]);
+  }, [orderId, form, mutation, voucherFileIds]);
 
   return (
     <>
@@ -148,17 +159,42 @@ export function CustomerPaymentTab({
         onEdit={openModal}
       />
 
+      {customerRecords.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <VoucherList paymentRecords={customerRecords} />
+        </div>
+      )}
+
       <Modal
         open={modalOpen}
         title="编辑客户付款信息"
         onOk={handleSubmit}
         onCancel={() => setModalOpen(false)}
         confirmLoading={mutation.isPending}
-        okButtonProps={{ disabled: mutation.isPending }}
+        okButtonProps={{
+          disabled: mutation.isPending || voucherFileIds.length === 0,
+        }}
         destroyOnClose
       >
         <Form form={form} layout="vertical">
           <PaymentFormFields />
+          <Form.Item
+            label="付款凭证"
+            required
+            help={
+              voucherFileIds.length === 0
+                ? '请上传至少一张付款凭证'
+                : undefined
+            }
+            validateStatus={
+              voucherFileIds.length === 0 ? 'error' : undefined
+            }
+          >
+            <VoucherUploader
+              value={voucherFileIds}
+              onChange={setVoucherFileIds}
+            />
+          </Form.Item>
         </Form>
       </Modal>
     </>
@@ -184,8 +220,10 @@ export function SupplierPaymentsTab({
     open: boolean;
     payment: SupplierPayment | null;
   }>({ open: false, payment: null });
+  const [voucherFileIds, setVoucherFileIds] = useState<number[]>([]);
   const [form] = Form.useForm();
   const mutation = useUpdateSupplierPayment();
+  const { data: paymentRecords = [] } = usePaymentVouchers(orderId);
 
   const openModal = useCallback(
     (payment: SupplierPayment) => {
@@ -195,6 +233,7 @@ export function SupplierPaymentsTab({
         payMethod: payment.payMethod ?? undefined,
         paidAt: payment.paidAt ? dayjs(payment.paidAt) : undefined,
       });
+      setVoucherFileIds([]);
       setModalState({ open: true, payment });
     },
     [form]
@@ -209,6 +248,7 @@ export function SupplierPaymentsTab({
         payStatus: values.payStatus,
         payMethod: values.payMethod,
         paidAt: values.paidAt?.toISOString(),
+        voucherFileIds,
       };
       await mutation.mutateAsync({
         orderId,
@@ -221,7 +261,7 @@ export function SupplierPaymentsTab({
       console.error('Update supplier payment failed:', error);
       message.error(getErrorMessage(error as ApiError));
     }
-  }, [orderId, modalState, form, mutation]);
+  }, [orderId, modalState, form, mutation, voucherFileIds]);
 
   if (isLoading) {
     return (
@@ -238,19 +278,31 @@ export function SupplierPaymentsTab({
   return (
     <>
       <Space direction="vertical" style={{ width: '100%' }} size="middle">
-        {supplierPayments.map((payment) => (
-          <PaymentStatusCard
-            key={payment.supplierId}
-            type="supplier"
-            totalAmount={payment.payable}
-            paidAmount={payment.paid}
-            payStatus={payment.payStatus}
-            payMethod={payment.payMethod}
-            paidAt={payment.paidAt}
-            supplierName={payment.supplier?.companyName}
-            onEdit={() => openModal(payment)}
-          />
-        ))}
+        {supplierPayments.map((payment) => {
+          const supplierRecords = paymentRecords.filter(
+            (r: PaymentRecord) =>
+              r.type === 'supplier' && r.supplierId === payment.supplierId
+          );
+          return (
+            <div key={payment.supplierId}>
+              <PaymentStatusCard
+                type="supplier"
+                totalAmount={payment.payable}
+                paidAmount={payment.paid}
+                payStatus={payment.payStatus}
+                payMethod={payment.payMethod}
+                paidAt={payment.paidAt}
+                supplierName={payment.supplier?.companyName}
+                onEdit={() => openModal(payment)}
+              />
+              {supplierRecords.length > 0 && (
+                <div style={{ marginTop: 8, marginBottom: 16 }}>
+                  <VoucherList paymentRecords={supplierRecords} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </Space>
 
       <Modal
@@ -259,11 +311,30 @@ export function SupplierPaymentsTab({
         onOk={handleSubmit}
         onCancel={() => setModalState({ open: false, payment: null })}
         confirmLoading={mutation.isPending}
-        okButtonProps={{ disabled: mutation.isPending }}
+        okButtonProps={{
+          disabled: mutation.isPending || voucherFileIds.length === 0,
+        }}
         destroyOnClose
       >
         <Form form={form} layout="vertical">
           <PaymentFormFields />
+          <Form.Item
+            label="付款凭证"
+            required
+            help={
+              voucherFileIds.length === 0
+                ? '请上传至少一张付款凭证'
+                : undefined
+            }
+            validateStatus={
+              voucherFileIds.length === 0 ? 'error' : undefined
+            }
+          >
+            <VoucherUploader
+              value={voucherFileIds}
+              onChange={setVoucherFileIds}
+            />
+          </Form.Item>
         </Form>
       </Modal>
     </>
