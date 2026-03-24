@@ -76,3 +76,37 @@ export const SETTLE_TYPE_LABELS = {
   prepay: '预付',
   credit: '账期',
 } as const satisfies Record<string, string>;
+
+/**
+ * Product category enum.
+ */
+export enum ProductCategory {
+  IRON_FRAME_MOTOR = 'IRON_FRAME_MOTOR',
+}
+
+/**
+ * Product sub-category enum.
+ */
+export enum ProductSubCategory {
+  IRON_FRAME = 'IRON_FRAME',
+  MOTOR = 'MOTOR',
+  MATTRESS = 'MATTRESS',
+  ACCESSORY = 'ACCESSORY',
+}
+
+/**
+ * Product category Chinese labels.
+ */
+export const PRODUCT_CATEGORY_LABELS = {
+  IRON_FRAME_MOTOR: '铁架电机',
+} as const satisfies Record<string, string>;
+
+/**
+ * Product sub-category Chinese labels.
+ */
+export const PRODUCT_SUB_CATEGORY_LABELS = {
+  IRON_FRAME: '铁架',
+  MOTOR: '电机',
+  MATTRESS: '床垫',
+  ACCESSORY: '配件',
+} as const satisfies Record<string, string>;

@@ -13,6 +13,8 @@ describe('CodeGeneratorService', () => {
     fabric: { findFirst: jest.Mock };
     order: { findFirst: jest.Mock };
     quote: { findFirst: jest.Mock };
+    product: { findFirst: jest.Mock };
+    productBundle: { findFirst: jest.Mock };
     $transaction: jest.Mock;
   };
 
@@ -34,6 +36,8 @@ describe('CodeGeneratorService', () => {
       fabric: { findFirst: jest.fn() },
       order: { findFirst: jest.fn() },
       quote: { findFirst: jest.fn() },
+      product: { findFirst: jest.fn() },
+      productBundle: { findFirst: jest.fn() },
       $transaction: jest.fn(),
     };
 
@@ -155,6 +159,85 @@ describe('CodeGeneratorService', () => {
 
       // padStart(4, '0') won't truncate, just won't pad
       expect(code).toBe(`QT-${yearMonth}-12345`);
+    });
+
+    it('should generate iron frame code (TJ prefix) using Redis', async () => {
+      mockRedisService.incr.mockResolvedValue(1);
+
+      const code = await service.generateCode(CodePrefix.IRON_FRAME);
+
+      expect(code).toBe(`TJ-${yearMonth}-0001`);
+      expect(mockRedisService.incr).toHaveBeenCalledWith(
+        `code:TJ:${yearMonth}`,
+      );
+    });
+
+    it('should generate motor code (DJ prefix) using Redis', async () => {
+      mockRedisService.incr.mockResolvedValue(3);
+
+      const code = await service.generateCode(CodePrefix.MOTOR);
+
+      expect(code).toBe(`DJ-${yearMonth}-0003`);
+      expect(mockRedisService.incr).toHaveBeenCalledWith(
+        `code:DJ:${yearMonth}`,
+      );
+    });
+
+    it('should generate mattress code (CD prefix) using Redis', async () => {
+      mockRedisService.incr.mockResolvedValue(7);
+
+      const code = await service.generateCode(CodePrefix.MATTRESS);
+
+      expect(code).toBe(`CD-${yearMonth}-0007`);
+      expect(mockRedisService.incr).toHaveBeenCalledWith(
+        `code:CD:${yearMonth}`,
+      );
+    });
+
+    it('should generate accessory code (PJ prefix) using Redis', async () => {
+      mockRedisService.incr.mockResolvedValue(15);
+
+      const code = await service.generateCode(CodePrefix.ACCESSORY);
+
+      expect(code).toBe(`PJ-${yearMonth}-0015`);
+      expect(mockRedisService.incr).toHaveBeenCalledWith(
+        `code:PJ:${yearMonth}`,
+      );
+    });
+
+    it('should generate bundle code (BD prefix) using Redis', async () => {
+      mockRedisService.incr.mockResolvedValue(2);
+
+      const code = await service.generateCode(CodePrefix.BUNDLE);
+
+      expect(code).toBe(`BD-${yearMonth}-0002`);
+      expect(mockRedisService.incr).toHaveBeenCalledWith(
+        `code:BD:${yearMonth}`,
+      );
+    });
+
+    it('should fallback to DB for product prefixes when Redis returns null', async () => {
+      mockRedisService.incr.mockResolvedValue(null);
+      mockPrismaService.product.findFirst.mockResolvedValue({
+        productCode: `TJ-${yearMonth}-0010`,
+      });
+
+      const code = await service.generateCode(CodePrefix.IRON_FRAME);
+
+      expect(code).toBe(`TJ-${yearMonth}-0011`);
+      expect(mockPrismaService.product.findFirst).toHaveBeenCalled();
+    });
+
+    it('should fallback to DB for bundle prefix when Redis returns null', async () => {
+      mockRedisService.incr.mockResolvedValue(null);
+      mockPrismaService.productBundle.findFirst.mockResolvedValue({
+        bundleCode: `BD-${yearMonth}-0005`,
+      });
+
+      const code = await service.generateCode(CodePrefix.BUNDLE);
+
+      expect(code).toBe(`BD-${yearMonth}-0006`);
+      expect(mockPrismaService.productBundle.findFirst).toHaveBeenCalled();
     });
   });
 

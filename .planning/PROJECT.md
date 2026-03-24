@@ -31,6 +31,10 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - ✓ Unit tests: 608 backend + 753 frontend — existing
 - ✓ E2E tests: 434 backend — existing
 - ✓ Mandatory payment voucher upload with append-only audit trail — Validated in Phase 4.1
+- ✓ Multi-category product schema (Product, ProductSupplier, ProductBundle, ProductBundleItem) — Validated in Phase 5
+- ✓ Product CRUD endpoints with auto code generation (TJ/DJ/CD/PJ/BD prefixes) — Validated in Phase 5
+- ✓ Product-supplier associations, customer-specific pricing, product bundles — Validated in Phase 5
+- ✓ System enums for ProductCategory and ProductSubCategory with Chinese labels — Validated in Phase 5
 
 ### Active
 
@@ -51,15 +55,15 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 
 **M2: Feature Expansion + Real Data Testing**
 
-- [ ] Add product category system (fabric, iron frame, motor, hardware)
-- [ ] Iron frame/motor module with model numbers, specifications, and pricing
-- [ ] Hardware/accessories module
+- [x] Add product category system (fabric, iron frame, motor, hardware) — Validated in Phase 5
+- [x] Iron frame/motor module with model numbers, specifications, and pricing — Validated in Phase 5
+- [x] Hardware/accessories module — Validated in Phase 5
 - [ ] Expand import templates for new product categories
 - [ ] Create `/contract-ocr` Claude Code skill (PDF → Excel extraction)
 - [ ] Real data testing: manual entry with actual company documents
 - [ ] Real data testing: Excel import with real price lists and purchase orders
 - [ ] Real data testing: system stability verification after bulk data import
-- [ ] Update numbering system for multi-category support (pending category-specific codes from company)
+- [x] Update numbering system for multi-category support (TJ/DJ/CD/PJ/BD prefixes) — Validated in Phase 5
 
 ### Out of Scope
 
@@ -109,6 +113,7 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - GSD M1 Phase 3 (backend service decomposition) complete — OrderService split into 3, ImportService uses Strategy pattern, 657 backend tests passing
 - GSD M1 Phase 4 (frontend component decomposition) complete — 3 oversized pages decomposed, 897 frontend tests, zero test any types
 - M1 (Code Remediation) complete — next is M2 Phase 5
+- GSD M2 Phase 5 (multi-category schema + product CRUD) complete — 4 new tables, ProductModule with 18 endpoints, 737 backend tests
 - Pure local development, not deployed
 
 ## Constraints
@@ -132,4 +137,4 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 | U2Living = 铂润 in system | Same entity, no need for parent-subsidiary data model | ✓ Good |
 
 ---
-*Last updated: 2026-03-23 after Phase 4 completion (M1 complete)*
+*Last updated: 2026-03-24 after Phase 5 completion (M2 Phase 5 complete — multi-category schema + product CRUD)*

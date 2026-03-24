@@ -697,10 +697,11 @@ export class FabricService {
     ]);
 
     // Transform results - convert Decimal to number
+    // fabricId is always present for fabric-based pricing records
     const items: FabricPricingItem[] = pricingRecords.map((cp) => ({
       id: cp.id,
       customerId: cp.customerId,
-      fabricId: cp.fabricId,
+      fabricId: cp.fabricId!,
       specialPrice: toNumberRequired(cp.specialPrice),
       createdAt: cp.createdAt,
       updatedAt: cp.updatedAt,

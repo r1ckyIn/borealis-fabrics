@@ -56,4 +56,16 @@ export class EnumsResponseDto {
     type: EnumDefinitionDto,
   })
   settleType!: EnumDefinitionDto;
+
+  @ApiProperty({
+    description: 'Product category enum',
+    type: EnumDefinitionDto,
+  })
+  productCategory!: EnumDefinitionDto;
+
+  @ApiProperty({
+    description: 'Product sub-category enum',
+    type: EnumDefinitionDto,
+  })
+  productSubCategory!: EnumDefinitionDto;
 }
