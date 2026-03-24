@@ -29,7 +29,9 @@ import {
   Product,
   ProductSupplier,
   ProductBundle,
+  ProductBundleItem,
   CustomerPricing,
+  Supplier,
   Prisma,
 } from '@prisma/client';
 import {
@@ -166,10 +168,11 @@ export class ProductService {
    * Includes product suppliers (with supplier details) and bundle items.
    * @throws NotFoundException if product not found or soft-deleted
    */
-  async findOne(
-    id: number,
-  ): Promise<
-    Product & { productSuppliers: unknown[]; bundleItems: unknown[] }
+  async findOne(id: number): Promise<
+    Product & {
+      productSuppliers: (ProductSupplier & { supplier: Supplier })[];
+      bundleItems: ProductBundleItem[];
+    }
   > {
     const product = await this.prisma.product.findFirst({
       where: { id, isActive: true },

@@ -35,7 +35,7 @@ export class CodeGeneratorService {
 
   /**
    * Generate a unique code for the given type.
-   * @param prefix - The code prefix (BF, ORD, QT)
+   * @param prefix - The code prefix (see CodePrefix enum)
    * @returns The generated code string
    */
   async generateCode(prefix: CodePrefix): Promise<string> {
