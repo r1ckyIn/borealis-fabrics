@@ -177,6 +177,12 @@ Plans:
 
 **Requirements:** MCAT-05, MCAT-06, DATA-08, DATA-09
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — ProductImportStrategy class + ImportStrategy interface extension (getRowKey) + unit tests
+- [ ] 06-02-PLAN.md — Wire strategy into ImportModule/Service/Controller + dry-run support for all types + service tests
+
 **Success Criteria:**
 1. Excel import templates exist for each new product category (iron frame, motor, hardware)
 2. ProductImportStrategy processes new-category Excel files correctly
@@ -281,4 +287,4 @@ Unmapped: 0
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-24 (Phase 05 planned — 2 plans, 2 waves)*
+*Last updated: 2026-03-25 (Phase 06 planned — 2 plans, 2 waves)*
