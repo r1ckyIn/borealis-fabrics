@@ -1,6 +1,7 @@
 /**
- * Order items table with columns for fabric, supplier, quantity,
- * pricing, status, delivery date, and row-level actions.
+ * Order items table with columns for product (fabric or category product),
+ * supplier, quantity with dynamic unit, pricing, status, delivery date,
+ * and row-level actions.
  */
 
 import { useMemo, useCallback } from 'react';
@@ -10,6 +11,7 @@ import {
   Space,
   Dropdown,
   Popconfirm,
+  Tag,
   Typography,
 } from 'antd';
 import {
@@ -34,6 +36,11 @@ import {
   canCancelItem,
   canRestoreItem,
 } from '@/utils';
+import {
+  CATEGORY_TAG_COLORS,
+  CATEGORY_TAG_LABELS,
+  SUB_CATEGORY_ROUTE_MAP,
+} from '@/utils/product-constants';
 import { OrderItemStatus } from '@/types';
 import type { OrderItem } from '@/types';
 
@@ -65,21 +72,49 @@ export function OrderItemTable({
   const columns: ColumnsType<OrderItem> = useMemo(
     () => [
       {
-        title: '面料',
-        key: 'fabric',
-        width: 180,
-        render: (_, record) =>
-          record.fabric ? (
-            <Button
-              type="link"
-              style={{ padding: 0 }}
-              onClick={() => navigate(`/products/fabrics/${record.fabricId}`)}
-            >
-              {record.fabric.fabricCode} - {record.fabric.name}
-            </Button>
-          ) : (
-            '-'
-          ),
+        title: '产品',
+        key: 'product',
+        width: 220,
+        render: (_, record) => {
+          if (record.fabric) {
+            return (
+              <Space size={4}>
+                <Button
+                  type="link"
+                  style={{ padding: 0 }}
+                  onClick={() => navigate(`/products/fabrics/${record.fabricId}`)}
+                >
+                  {record.fabric.fabricCode} - {record.fabric.name}
+                </Button>
+                <Tag color={CATEGORY_TAG_COLORS['fabric']}>
+                  {CATEGORY_TAG_LABELS['fabric']}
+                </Tag>
+              </Space>
+            );
+          }
+          if (record.product) {
+            const routeSegment = SUB_CATEGORY_ROUTE_MAP[record.product.subCategory];
+            return (
+              <Space size={4}>
+                <Button
+                  type="link"
+                  style={{ padding: 0 }}
+                  onClick={() =>
+                    navigate(
+                      `/products/${routeSegment}/${record.productId}`
+                    )
+                  }
+                >
+                  {record.product.productCode} - {record.product.name}
+                </Button>
+                <Tag color={CATEGORY_TAG_COLORS[record.product.subCategory]}>
+                  {CATEGORY_TAG_LABELS[record.product.subCategory]}
+                </Tag>
+              </Space>
+            );
+          }
+          return '-';
+        },
       },
       {
         title: '供应商',
@@ -89,27 +124,29 @@ export function OrderItemTable({
       },
       {
         title: '数量',
-        dataIndex: 'quantity',
         key: 'quantity',
         width: 100,
         align: 'right',
-        render: (qty: number) => formatQuantity(qty),
+        render: (_, record) =>
+          `${formatQuantity(record.quantity)} ${record.unit || '米'}`,
       },
       {
         title: '销售单价',
-        dataIndex: 'salePrice',
         key: 'salePrice',
         width: 110,
         align: 'right',
-        render: (price: number) => <AmountDisplay value={price} suffix="/米" />,
+        render: (_, record) => (
+          <AmountDisplay value={record.salePrice} suffix={`/${record.unit || '米'}`} />
+        ),
       },
       {
         title: '采购单价',
-        dataIndex: 'purchasePrice',
         key: 'purchasePrice',
         width: 110,
         align: 'right',
-        render: (price: number | null) => <AmountDisplay value={price} suffix="/米" />,
+        render: (_, record) => (
+          <AmountDisplay value={record.purchasePrice} suffix={`/${record.unit || '米'}`} />
+        ),
       },
       {
         title: '小计',
