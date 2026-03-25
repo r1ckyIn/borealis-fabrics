@@ -12,8 +12,10 @@ describe('ImportController', () => {
   const mockImportService = {
     generateFabricTemplate: jest.fn(),
     generateSupplierTemplate: jest.fn(),
+    generateProductTemplate: jest.fn(),
     importFabrics: jest.fn(),
     importSuppliers: jest.fn(),
+    importProducts: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -87,6 +89,31 @@ describe('ImportController', () => {
     });
   });
 
+  describe('downloadProductTemplate', () => {
+    it('should return Excel buffer with correct headers', async () => {
+      const mockBuffer = Buffer.from('test excel content');
+      mockImportService.generateProductTemplate.mockResolvedValue(mockBuffer);
+
+      const mockResponse = {
+        setHeader: jest.fn(),
+        send: jest.fn(),
+      } as unknown as Response;
+
+      await controller.downloadProductTemplate(mockResponse);
+
+      expect(service.generateProductTemplate).toHaveBeenCalled();
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      );
+      expect(mockResponse.setHeader).toHaveBeenCalledWith(
+        'Content-Disposition',
+        'attachment; filename=product_import_template.xlsx',
+      );
+      expect(mockResponse.send).toHaveBeenCalledWith(mockBuffer);
+    });
+  });
+
   describe('importFabrics', () => {
     it('should call service and return import result', async () => {
       const mockFile = {
@@ -114,10 +141,33 @@ describe('ImportController', () => {
 
       mockImportService.importFabrics.mockResolvedValue(mockResult);
 
-      const result = await controller.importFabrics(mockFile);
+      const result = await controller.importFabrics(mockFile, false);
 
-      expect(service.importFabrics).toHaveBeenCalledWith(mockFile);
+      expect(service.importFabrics).toHaveBeenCalledWith(mockFile, false);
       expect(result).toEqual(mockResult);
+    });
+
+    it('should pass dryRun parameter to service', async () => {
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        fieldname: 'file',
+        originalname: 'test.xlsx',
+        encoding: '7bit',
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: 100,
+      } as Express.Multer.File;
+
+      mockImportService.importFabrics.mockResolvedValue({
+        successCount: 1,
+        skippedCount: 0,
+        failureCount: 0,
+        failures: [],
+      });
+
+      await controller.importFabrics(mockFile, true);
+
+      expect(service.importFabrics).toHaveBeenCalledWith(mockFile, true);
     });
   });
 
@@ -153,10 +203,67 @@ describe('ImportController', () => {
 
       mockImportService.importSuppliers.mockResolvedValue(mockResult);
 
-      const result = await controller.importSuppliers(mockFile);
+      const result = await controller.importSuppliers(mockFile, false);
 
-      expect(service.importSuppliers).toHaveBeenCalledWith(mockFile);
+      expect(service.importSuppliers).toHaveBeenCalledWith(mockFile, false);
       expect(result).toEqual(mockResult);
+    });
+  });
+
+  describe('importProducts', () => {
+    it('should call service and return import result', async () => {
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        fieldname: 'file',
+        originalname: 'test.xlsx',
+        encoding: '7bit',
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: 100,
+      } as Express.Multer.File;
+
+      const mockResult: ImportResultDto = {
+        successCount: 2,
+        skippedCount: 0,
+        failureCount: 1,
+        failures: [
+          {
+            rowNumber: 3,
+            identifier: 'TEST-001::Product A',
+            reason: 'Duplicate product',
+          },
+        ],
+      };
+
+      mockImportService.importProducts.mockResolvedValue(mockResult);
+
+      const result = await controller.importProducts(mockFile, false);
+
+      expect(service.importProducts).toHaveBeenCalledWith(mockFile, false);
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should pass dryRun parameter to service', async () => {
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        fieldname: 'file',
+        originalname: 'test.xlsx',
+        encoding: '7bit',
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: 100,
+      } as Express.Multer.File;
+
+      mockImportService.importProducts.mockResolvedValue({
+        successCount: 1,
+        skippedCount: 0,
+        failureCount: 0,
+        failures: [],
+      });
+
+      await controller.importProducts(mockFile, true);
+
+      expect(service.importProducts).toHaveBeenCalledWith(mockFile, true);
     });
   });
 });

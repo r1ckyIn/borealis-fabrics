@@ -5,7 +5,106 @@ import { ImportService } from './import.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FabricImportStrategy } from './strategies/fabric-import.strategy';
 import { SupplierImportStrategy } from './strategies/supplier-import.strategy';
+import { ProductImportStrategy } from './strategies/product-import.strategy';
+import { CodeGeneratorService } from '../common/services/code-generator.service';
 import { loadTestWorkbook } from '../../test/helpers/mock-builders';
+
+// ============================================================
+// Shared Excel file helpers (used across multiple describe blocks)
+// ============================================================
+const createFabricExcelFile = async (
+  rows: Array<Record<string, unknown>>,
+): Promise<Express.Multer.File> => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Fabrics');
+
+  worksheet.columns = [
+    { header: 'fabricCode*', key: 'fabricCode', width: 20 },
+    { header: 'name*', key: 'name', width: 25 },
+    { header: 'material', key: 'material', width: 30 },
+    { header: 'composition', key: 'composition', width: 25 },
+    { header: 'color', key: 'color', width: 15 },
+    { header: 'weight', key: 'weight', width: 12 },
+    { header: 'width', key: 'width', width: 12 },
+    { header: 'defaultPrice', key: 'defaultPrice', width: 15 },
+    { header: 'description', key: 'description', width: 40 },
+  ];
+
+  rows.forEach((row) => worksheet.addRow(row));
+
+  const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+  return {
+    buffer,
+    fieldname: 'file',
+    originalname: 'test.xlsx',
+    encoding: '7bit',
+    mimetype:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    size: buffer.length,
+  } as Express.Multer.File;
+};
+
+const createSupplierExcelFile = async (
+  rows: Array<Record<string, unknown>>,
+): Promise<Express.Multer.File> => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Suppliers');
+
+  worksheet.columns = [
+    { header: 'companyName*', key: 'companyName', width: 30 },
+    { header: 'contactName', key: 'contactName', width: 20 },
+    { header: 'phone', key: 'phone', width: 20 },
+    { header: 'email', key: 'email', width: 25 },
+    { header: 'address', key: 'address', width: 40 },
+    { header: 'status', key: 'status', width: 15 },
+    { header: 'settleType', key: 'settleType', width: 15 },
+    { header: 'creditDays', key: 'creditDays', width: 12 },
+  ];
+
+  rows.forEach((row) => worksheet.addRow(row));
+
+  const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+  return {
+    buffer,
+    fieldname: 'file',
+    originalname: 'test.xlsx',
+    encoding: '7bit',
+    mimetype:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    size: buffer.length,
+  } as Express.Multer.File;
+};
+
+const createProductExcelFile = async (
+  rows: Array<Record<string, unknown>>,
+): Promise<Express.Multer.File> => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Products');
+
+  worksheet.columns = [
+    { header: 'subCategory*', key: 'subCategory', width: 18 },
+    { header: 'modelNumber*', key: 'modelNumber', width: 22 },
+    { header: 'name*', key: 'name', width: 25 },
+    { header: 'specification', key: 'specification', width: 30 },
+    { header: 'defaultPrice', key: 'defaultPrice', width: 15 },
+    { header: 'supplierName*', key: 'supplierName', width: 30 },
+    { header: 'purchasePrice*', key: 'purchasePrice', width: 18 },
+    { header: 'notes', key: 'notes', width: 35 },
+  ];
+
+  rows.forEach((row) => worksheet.addRow(row));
+
+  const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+  return {
+    buffer,
+    fieldname: 'file',
+    originalname: 'test.xlsx',
+    encoding: '7bit',
+    mimetype:
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    size: buffer.length,
+  } as Express.Multer.File;
+};
 
 describe('ImportService', () => {
   let service: ImportService;
@@ -23,9 +122,30 @@ describe('ImportService', () => {
     findMany: jest.fn(),
   };
 
+  const productMock = {
+    findMany: jest.fn(),
+    create: jest.fn(),
+  };
+
+  const productSupplierMock = {
+    create: jest.fn(),
+  };
+
   const mockPrismaService = {
     fabric: fabricMock,
     supplier: supplierMock,
+    product: productMock,
+    productSupplier: productSupplierMock,
+    $transaction: jest.fn(),
+  };
+  // Set up $transaction to execute the callback with mockPrismaService
+  mockPrismaService.$transaction.mockImplementation(
+    (fn: (tx: Record<string, unknown>) => Promise<unknown>) =>
+      fn(mockPrismaService as unknown as Record<string, unknown>),
+  );
+
+  const mockCodeGeneratorService = {
+    generateCode: jest.fn().mockResolvedValue('TJ-2603-0001'),
   };
 
   beforeEach(async () => {
@@ -34,9 +154,14 @@ describe('ImportService', () => {
         ImportService,
         FabricImportStrategy,
         SupplierImportStrategy,
+        ProductImportStrategy,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: CodeGeneratorService,
+          useValue: mockCodeGeneratorService,
         },
       ],
     }).compile();
@@ -152,43 +277,66 @@ describe('ImportService', () => {
   });
 
   // ============================================================
+  // Generate Product Template Tests
+  // ============================================================
+  describe('generateProductTemplate', () => {
+    it('should return a valid Excel buffer', async () => {
+      const buffer = await service.generateProductTemplate();
+
+      expect(buffer).toBeInstanceOf(Buffer);
+      expect(buffer.length).toBeGreaterThan(0);
+    });
+
+    it('should have correct sheet structure (Products + Instructions)', async () => {
+      const buffer = await service.generateProductTemplate();
+      const workbook = await loadTestWorkbook(buffer);
+
+      expect(workbook.worksheets.length).toBe(2);
+      expect(workbook.worksheets[0].name).toBe('Products');
+      expect(workbook.worksheets[1].name).toBe('Instructions');
+    });
+
+    it('should have correct column headers', async () => {
+      const buffer = await service.generateProductTemplate();
+      const workbook = await loadTestWorkbook(buffer);
+
+      const worksheet = workbook.getWorksheet('Products');
+      const headerRow = worksheet!.getRow(1);
+
+      expect(headerRow.getCell(1).value).toBe('subCategory*');
+      expect(headerRow.getCell(2).value).toBe('modelNumber*');
+      expect(headerRow.getCell(3).value).toBe('name*');
+      expect(headerRow.getCell(4).value).toBe('specification');
+      expect(headerRow.getCell(5).value).toBe('defaultPrice');
+      expect(headerRow.getCell(6).value).toBe('supplierName*');
+      expect(headerRow.getCell(7).value).toBe('purchasePrice*');
+      expect(headerRow.getCell(8).value).toBe('notes');
+    });
+
+    it('should have example data row with IRON_FRAME and A4318HK-0--5', async () => {
+      const buffer = await service.generateProductTemplate();
+      const workbook = await loadTestWorkbook(buffer);
+
+      const worksheet = workbook.getWorksheet('Products');
+      const dataRow = worksheet!.getRow(2);
+
+      expect(dataRow.getCell(1).value).toBe('IRON_FRAME');
+      expect(dataRow.getCell(2).value).toBe('A4318HK-0--5');
+      expect(dataRow.getCell(3).value).toBe('Single seat frame');
+      expect(dataRow.getCell(4).value).toBe('180x80cm');
+      expect(dataRow.getCell(5).value).toBe(1200);
+      expect(dataRow.getCell(6).value).toBe('Example Supplier Co.');
+      expect(dataRow.getCell(7).value).toBe(800);
+      expect(dataRow.getCell(8).value).toBe('Standard model');
+    });
+  });
+
+  // ============================================================
   // Import Fabrics Tests
   // ============================================================
   describe('importFabrics', () => {
-    const createMockExcelFile = async (
-      rows: Array<Record<string, unknown>>,
-    ): Promise<Express.Multer.File> => {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Fabrics');
-
-      worksheet.columns = [
-        { header: 'fabricCode*', key: 'fabricCode', width: 20 },
-        { header: 'name*', key: 'name', width: 25 },
-        { header: 'material', key: 'material', width: 30 },
-        { header: 'composition', key: 'composition', width: 25 },
-        { header: 'color', key: 'color', width: 15 },
-        { header: 'weight', key: 'weight', width: 12 },
-        { header: 'width', key: 'width', width: 12 },
-        { header: 'defaultPrice', key: 'defaultPrice', width: 15 },
-        { header: 'description', key: 'description', width: 40 },
-      ];
-
-      rows.forEach((row) => worksheet.addRow(row));
-
-      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
-      return {
-        buffer,
-        fieldname: 'file',
-        originalname: 'test.xlsx',
-        encoding: '7bit',
-        mimetype:
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        size: buffer.length,
-      } as Express.Multer.File;
-    };
-
     it('should successfully import new fabrics', async () => {
-      const file = await createMockExcelFile([
+      const file = await createFabricExcelFile([
         {
           fabricCode: 'FB-TEST-001',
           name: 'Test Fabric',
@@ -209,7 +357,7 @@ describe('ImportService', () => {
     });
 
     it('should skip fabric with existing fabricCode', async () => {
-      const file = await createMockExcelFile([
+      const file = await createFabricExcelFile([
         { fabricCode: 'FB-EXISTING', name: 'Existing Fabric' },
       ]);
 
@@ -224,7 +372,7 @@ describe('ImportService', () => {
     });
 
     it('should fail when fabricCode is missing', async () => {
-      const file = await createMockExcelFile([
+      const file = await createFabricExcelFile([
         { fabricCode: '', name: 'Missing Code Fabric' },
       ]);
 
@@ -238,7 +386,7 @@ describe('ImportService', () => {
     });
 
     it('should fail when name is missing', async () => {
-      const file = await createMockExcelFile([
+      const file = await createFabricExcelFile([
         { fabricCode: 'FB-001', name: '' },
       ]);
 
@@ -252,7 +400,7 @@ describe('ImportService', () => {
     });
 
     it('should fail on duplicate fabricCode in same file', async () => {
-      const file = await createMockExcelFile([
+      const file = await createFabricExcelFile([
         { fabricCode: 'FB-DUP', name: 'First' },
         { fabricCode: 'FB-DUP', name: 'Second' },
       ]);
@@ -268,7 +416,7 @@ describe('ImportService', () => {
     });
 
     it('should fail on invalid material JSON', async () => {
-      const file = await createMockExcelFile([
+      const file = await createFabricExcelFile([
         { fabricCode: 'FB-001', name: 'Test', material: 'invalid json' },
       ]);
 
@@ -318,7 +466,7 @@ describe('ImportService', () => {
     });
 
     it('should handle multiple fabrics with partial success', async () => {
-      const file = await createMockExcelFile([
+      const file = await createFabricExcelFile([
         { fabricCode: 'FB-001', name: 'Valid 1' },
         { fabricCode: '', name: 'Invalid' },
         { fabricCode: 'FB-002', name: 'Valid 2' },
@@ -338,39 +486,8 @@ describe('ImportService', () => {
   // Import Suppliers Tests
   // ============================================================
   describe('importSuppliers', () => {
-    const createMockExcelFile = async (
-      rows: Array<Record<string, unknown>>,
-    ): Promise<Express.Multer.File> => {
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Suppliers');
-
-      worksheet.columns = [
-        { header: 'companyName*', key: 'companyName', width: 30 },
-        { header: 'contactName', key: 'contactName', width: 20 },
-        { header: 'phone', key: 'phone', width: 20 },
-        { header: 'email', key: 'email', width: 25 },
-        { header: 'address', key: 'address', width: 40 },
-        { header: 'status', key: 'status', width: 15 },
-        { header: 'settleType', key: 'settleType', width: 15 },
-        { header: 'creditDays', key: 'creditDays', width: 12 },
-      ];
-
-      rows.forEach((row) => worksheet.addRow(row));
-
-      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
-      return {
-        buffer,
-        fieldname: 'file',
-        originalname: 'test.xlsx',
-        encoding: '7bit',
-        mimetype:
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        size: buffer.length,
-      } as Express.Multer.File;
-    };
-
     it('should successfully import new suppliers', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         {
           companyName: 'Test Supplier',
           contactName: 'John',
@@ -389,7 +506,7 @@ describe('ImportService', () => {
     });
 
     it('should skip supplier with existing companyName', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Existing Supplier' },
       ]);
 
@@ -406,7 +523,7 @@ describe('ImportService', () => {
     });
 
     it('should fail when companyName is missing', async () => {
-      const file = await createMockExcelFile([{ companyName: '' }]);
+      const file = await createSupplierExcelFile([{ companyName: '' }]);
 
       supplierMock.findMany.mockResolvedValue([]);
 
@@ -418,7 +535,7 @@ describe('ImportService', () => {
     });
 
     it('should fail on invalid status enum', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Test', status: 'invalid_status' },
       ]);
 
@@ -432,7 +549,7 @@ describe('ImportService', () => {
     });
 
     it('should fail on invalid settleType enum', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Test', settleType: 'invalid_type' },
       ]);
 
@@ -446,7 +563,7 @@ describe('ImportService', () => {
     });
 
     it('should fail when creditDays missing for credit settleType', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Test', settleType: 'credit' },
       ]);
 
@@ -460,7 +577,7 @@ describe('ImportService', () => {
     });
 
     it('should fail when creditDays exceeds 365 for credit settleType', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Test', settleType: 'credit', creditDays: 400 },
       ]);
 
@@ -474,7 +591,7 @@ describe('ImportService', () => {
     });
 
     it('should accept creditDays 0 for credit settleType', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Test', settleType: 'credit', creditDays: 0 },
       ]);
 
@@ -488,7 +605,7 @@ describe('ImportService', () => {
     });
 
     it('should fail when creditDays is provided for prepay settleType', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Test', settleType: 'prepay', creditDays: 30 },
       ]);
 
@@ -504,7 +621,7 @@ describe('ImportService', () => {
     });
 
     it('should fail on invalid email format', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Test', email: 'invalid-email' },
       ]);
 
@@ -518,7 +635,7 @@ describe('ImportService', () => {
     });
 
     it('should fail on duplicate companyName in same file', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Duplicate Co' },
         { companyName: 'Duplicate Co' },
       ]);
@@ -534,7 +651,7 @@ describe('ImportService', () => {
     });
 
     it('should use default values for status and settleType', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Test Supplier' },
       ]);
 
@@ -548,7 +665,7 @@ describe('ImportService', () => {
     });
 
     it('should handle multiple suppliers with partial success', async () => {
-      const file = await createMockExcelFile([
+      const file = await createSupplierExcelFile([
         { companyName: 'Valid 1' },
         { companyName: '' },
         { companyName: 'Valid 2' },
@@ -561,6 +678,284 @@ describe('ImportService', () => {
 
       expect(result.successCount).toBe(2);
       expect(result.failureCount).toBe(1);
+    });
+  });
+
+  // ============================================================
+  // Import Products Tests
+  // ============================================================
+  describe('importProducts', () => {
+    it('should successfully import new products', async () => {
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: 'TEST-001',
+          name: 'Test Product',
+          specification: '180x80cm',
+          defaultPrice: 1200,
+          supplierName: 'Test Supplier',
+          purchasePrice: 800,
+          notes: 'Test note',
+        },
+      ]);
+
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Test Supplier', isActive: true },
+      ]);
+      productMock.create.mockResolvedValue({
+        id: 1,
+        productCode: 'TJ-2603-0001',
+      });
+      productSupplierMock.create.mockResolvedValue({ id: 1 });
+
+      const result = await service.importProducts(file);
+
+      expect(result.successCount).toBe(1);
+      expect(result.failureCount).toBe(0);
+      expect(result.failures).toHaveLength(0);
+      expect(mockPrismaService.$transaction).toHaveBeenCalled();
+    });
+
+    it('should report per-row failure with row number and reason', async () => {
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: '',
+          name: 'Missing Model',
+          supplierName: 'Test Supplier',
+          purchasePrice: 800,
+        },
+      ]);
+
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Test Supplier', isActive: true },
+      ]);
+
+      const result = await service.importProducts(file);
+
+      expect(result.successCount).toBe(0);
+      expect(result.failureCount).toBe(1);
+      expect(result.failures[0].rowNumber).toBe(2);
+      expect(result.failures[0].reason).toContain('modelNumber');
+    });
+
+    it('should detect product strategy from product headers', async () => {
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: 'DETECT-001',
+          name: 'Strategy Detection Test',
+          supplierName: 'Test Supplier',
+          purchasePrice: 500,
+        },
+      ]);
+
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Test Supplier', isActive: true },
+      ]);
+      productMock.create.mockResolvedValue({
+        id: 1,
+        productCode: 'TJ-2603-0001',
+      });
+      productSupplierMock.create.mockResolvedValue({ id: 1 });
+
+      await service.importProducts(file);
+
+      // Product strategy was detected: product.findMany called for existing keys
+      expect(productMock.findMany).toHaveBeenCalled();
+    });
+
+    it('should fail when supplier not found in system', async () => {
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: 'TEST-001',
+          name: 'Test Product',
+          supplierName: 'Non-existent Supplier',
+          purchasePrice: 800,
+        },
+      ]);
+
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Other Supplier', isActive: true },
+      ]);
+
+      const result = await service.importProducts(file);
+
+      expect(result.successCount).toBe(0);
+      expect(result.failureCount).toBe(1);
+      expect(result.failures[0].reason).toContain('not found');
+    });
+
+    it('should fail on invalid subCategory enum', async () => {
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'INVALID_TYPE',
+          modelNumber: 'TEST-001',
+          name: 'Test Product',
+          supplierName: 'Test Supplier',
+          purchasePrice: 800,
+        },
+      ]);
+
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Test Supplier', isActive: true },
+      ]);
+
+      const result = await service.importProducts(file);
+
+      expect(result.successCount).toBe(0);
+      expect(result.failureCount).toBe(1);
+      expect(result.failures[0].reason).toContain('Invalid subCategory');
+    });
+
+    it('should fail on duplicate modelNumber+name in same file', async () => {
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: 'DUP-001',
+          name: 'Same Name',
+          supplierName: 'Test Supplier',
+          purchasePrice: 800,
+        },
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: 'DUP-001',
+          name: 'Same Name',
+          supplierName: 'Test Supplier',
+          purchasePrice: 900,
+        },
+      ]);
+
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Test Supplier', isActive: true },
+      ]);
+      productMock.create.mockResolvedValue({
+        id: 1,
+        productCode: 'TJ-2603-0001',
+      });
+      productSupplierMock.create.mockResolvedValue({ id: 1 });
+
+      const result = await service.importProducts(file);
+
+      expect(result.successCount).toBe(1);
+      expect(result.failureCount).toBe(1);
+      expect(result.failures[0].reason).toContain('Duplicate');
+    });
+  });
+
+  // ============================================================
+  // Dry-run Mode Tests (DATA-09 — all import types)
+  // ============================================================
+  describe('dry-run mode', () => {
+    it('should not call createBatch when dryRun is true for fabrics', async () => {
+      const file = await createFabricExcelFile([
+        { fabricCode: 'FB-001', name: 'Test Fabric' },
+      ]);
+      fabricMock.findMany.mockResolvedValue([]);
+
+      const result = await service.importFabrics(file, true);
+
+      expect(result.successCount).toBe(1);
+      expect(fabricMock.createMany).not.toHaveBeenCalled();
+    });
+
+    it('should not call createBatch when dryRun is true for suppliers', async () => {
+      const file = await createSupplierExcelFile([
+        { companyName: 'Test Supplier Co' },
+      ]);
+      supplierMock.findMany.mockResolvedValue([]);
+
+      const result = await service.importSuppliers(file, true);
+
+      expect(result.successCount).toBe(1);
+      expect(supplierMock.createMany).not.toHaveBeenCalled();
+    });
+
+    it('should not call createBatch when dryRun is true for products', async () => {
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: 'DRY-001',
+          name: 'Dry Run Product',
+          supplierName: 'Test Supplier',
+          purchasePrice: 100,
+        },
+      ]);
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Test Supplier', isActive: true },
+      ]);
+
+      const result = await service.importProducts(file, true);
+
+      expect(result.successCount).toBe(1);
+      expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should still report validation failures in dry-run mode', async () => {
+      const file = await createFabricExcelFile([
+        { fabricCode: '', name: 'Test Fabric' },
+      ]);
+      fabricMock.findMany.mockResolvedValue([]);
+
+      const result = await service.importFabrics(file, true);
+
+      expect(result.successCount).toBe(0);
+      expect(result.failureCount).toBe(1);
+      expect(result.failures[0].reason).toContain('fabricCode');
+    });
+
+    it('should return same result structure in dry-run mode', async () => {
+      const file = await createFabricExcelFile([
+        { fabricCode: 'FB-001', name: 'Valid' },
+        { fabricCode: '', name: 'Invalid' },
+      ]);
+      fabricMock.findMany.mockResolvedValue([]);
+
+      const result = await service.importFabrics(file, true);
+
+      expect(result).toHaveProperty('successCount');
+      expect(result).toHaveProperty('failureCount');
+      expect(result).toHaveProperty('skippedCount');
+      expect(result).toHaveProperty('failures');
+      expect(result.successCount).toBe(1);
+      expect(result.failureCount).toBe(1);
+    });
+
+    it('should report correct counts for products in dry-run mode', async () => {
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: 'DRY-001',
+          name: 'Valid Product',
+          supplierName: 'Test Supplier',
+          purchasePrice: 100,
+        },
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: '',
+          name: 'Invalid Product',
+          supplierName: 'Test Supplier',
+          purchasePrice: 100,
+        },
+      ]);
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Test Supplier', isActive: true },
+      ]);
+
+      const result = await service.importProducts(file, true);
+
+      expect(result.successCount).toBe(1);
+      expect(result.failureCount).toBe(1);
+      expect(mockPrismaService.$transaction).not.toHaveBeenCalled();
     });
   });
 
@@ -625,6 +1020,35 @@ describe('ImportService', () => {
 
       // Supplier strategy was detected — it uses supplier.findMany for existing keys
       expect(supplierMock.findMany).toHaveBeenCalled();
+      expect(result.successCount).toBe(1);
+    });
+
+    it('should detect product strategy from product headers', async () => {
+      // Use full 8-column layout — strategy reads columns by fixed index
+      const file = await createProductExcelFile([
+        {
+          subCategory: 'IRON_FRAME',
+          modelNumber: 'DETECT-001',
+          name: 'Test Product',
+          supplierName: 'Detect Supplier',
+          purchasePrice: 100,
+        },
+      ]);
+
+      productMock.findMany.mockResolvedValue([]);
+      supplierMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Detect Supplier', isActive: true },
+      ]);
+      productMock.create.mockResolvedValue({
+        id: 1,
+        productCode: 'TJ-2603-0001',
+      });
+      productSupplierMock.create.mockResolvedValue({ id: 1 });
+
+      const result = await service.importProducts(file);
+
+      // Product strategy was detected: product.findMany called for existing keys
+      expect(productMock.findMany).toHaveBeenCalled();
       expect(result.successCount).toBe(1);
     });
 

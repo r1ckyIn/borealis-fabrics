@@ -5,6 +5,8 @@ import { ImportService } from './import.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FabricImportStrategy } from './strategies/fabric-import.strategy';
 import { SupplierImportStrategy } from './strategies/supplier-import.strategy';
+import { ProductImportStrategy } from './strategies/product-import.strategy';
+import { CodeGeneratorService } from '../common/services/code-generator.service';
 
 /**
  * Standard fabric headers matching the expected template
@@ -71,9 +73,30 @@ describe('Import Edge Cases', () => {
     findMany: jest.fn(),
   };
 
+  const productMock = {
+    findMany: jest.fn(),
+    create: jest.fn(),
+  };
+
+  const productSupplierMock = {
+    create: jest.fn(),
+  };
+
   const mockPrismaService = {
     fabric: fabricMock,
     supplier: supplierMock,
+    product: productMock,
+    productSupplier: productSupplierMock,
+    $transaction: jest.fn(),
+  };
+  // Set up $transaction to execute the callback with mockPrismaService
+  mockPrismaService.$transaction.mockImplementation(
+    (fn: (tx: Record<string, unknown>) => Promise<unknown>) =>
+      fn(mockPrismaService as unknown as Record<string, unknown>),
+  );
+
+  const mockCodeGeneratorService = {
+    generateCode: jest.fn().mockResolvedValue('TJ-2603-0001'),
   };
 
   beforeEach(async () => {
@@ -82,9 +105,14 @@ describe('Import Edge Cases', () => {
         ImportService,
         FabricImportStrategy,
         SupplierImportStrategy,
+        ProductImportStrategy,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: CodeGeneratorService,
+          useValue: mockCodeGeneratorService,
         },
       ],
     }).compile();
