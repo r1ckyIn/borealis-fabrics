@@ -85,17 +85,16 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const location = useLocation();
 
   // Manage open keys for SubMenu expansion.
-  // User-toggled state is tracked separately; product SubMenu auto-expands on product pages.
-  const [userOpenKeys, setUserOpenKeys] = useState<string[]>([]);
+  // User-toggled state is tracked; product SubMenu auto-expands on initial navigation.
+  const [openKeys, setOpenKeys] = useState<string[]>(() =>
+    location.pathname.startsWith('/products') ? ['/products'] : []
+  );
 
-  // Computed open keys: user-toggled keys merged with auto-expansion for current route
+  // Computed open keys: respect collapsed state (no open submenus when collapsed)
   const menuOpenKeys = useMemo(() => {
-    const keys = [...userOpenKeys];
-    if (location.pathname.startsWith('/products') && !keys.includes('/products')) {
-      keys.push('/products');
-    }
-    return keys;
-  }, [userOpenKeys, location.pathname]);
+    if (collapsed) return [];
+    return openKeys;
+  }, [collapsed, openKeys]);
 
   // Determine selected key based on current path
   const selectedKey = useMemo(() => {
@@ -155,7 +154,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
         mode="inline"
         selectedKeys={[selectedKey]}
         openKeys={menuOpenKeys}
-        onOpenChange={setUserOpenKeys}
+        onOpenChange={setOpenKeys}
         items={menuItems}
         onClick={handleMenuClick}
         style={{ flex: 1, borderRight: 0 }}

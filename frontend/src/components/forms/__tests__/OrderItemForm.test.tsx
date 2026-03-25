@@ -168,7 +168,7 @@ describe('OrderItemForm', () => {
     it('renders quantity field with dynamic unit addon', () => {
       render(<TestWrapper />);
 
-      // Initially shows default unit "米" when no unit is set
+      // Initially shows default unit (meters) when no unit is set
       const quantityLabel = screen.getByText('数量');
       expect(quantityLabel).toBeInTheDocument();
     });

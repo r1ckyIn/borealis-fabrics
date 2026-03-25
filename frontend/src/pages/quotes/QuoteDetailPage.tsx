@@ -1,7 +1,7 @@
 /**
  * Quote detail page showing quote header info and QuoteItem table.
  * Supports checkbox selection for partial quote-to-order conversion.
- * Already-converted items show "已转换" tag and disabled checkboxes.
+ * Already-converted items show a "converted" tag and disabled checkboxes.
  */
 
 import { useState, useCallback, useMemo } from 'react';

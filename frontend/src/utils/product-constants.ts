@@ -32,7 +32,7 @@ export const UNIT_LABEL_FABRIC = '米';
 
 /**
  * Determine the unit of measurement for an order/quote item.
- * Fabric items use meters (米), products use their sub-category default.
+ * Fabric items use meters, products use their sub-category default.
  */
 export function getItemUnit(
   fabricId?: number | null,

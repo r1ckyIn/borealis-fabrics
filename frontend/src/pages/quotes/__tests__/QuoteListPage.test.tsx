@@ -225,7 +225,7 @@ describe('QuoteListPage', () => {
       renderWithProviders(<QuoteListPage />);
 
       await waitFor(() => {
-        // The "明细数" column header should be present (may appear multiple times in Ant Table)
+        // The "Item Count" column header should be present (may appear multiple times in Ant Table)
         expect(screen.getAllByText('明细数').length).toBeGreaterThan(0);
       });
 
@@ -240,7 +240,7 @@ describe('QuoteListPage', () => {
       renderWithProviders(<QuoteListPage />);
 
       await waitFor(() => {
-        // PARTIALLY_CONVERTED maps to '部分转换' via StatusTag
+        // PARTIALLY_CONVERTED maps to its Chinese label via StatusTag
         expect(screen.getByText('部分转换')).toBeInTheDocument();
       });
     });

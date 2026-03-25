@@ -77,7 +77,7 @@ describe('Sidebar', () => {
       </MemoryRouter>
     );
 
-    // The sub-item "面料" should be selected
+    // The Fabric sub-item should be selected
     const fabricsMenuItem = screen.getByText('面料').closest('li');
     expect(fabricsMenuItem).toHaveClass('ant-menu-item-selected');
   });
@@ -89,7 +89,7 @@ describe('Sidebar', () => {
       </MemoryRouter>
     );
 
-    // Should still highlight "面料" for nested routes
+    // Should still highlight Fabric sub-item for nested routes
     const fabricsMenuItem = screen.getByText('面料').closest('li');
     expect(fabricsMenuItem).toHaveClass('ant-menu-item-selected');
   });

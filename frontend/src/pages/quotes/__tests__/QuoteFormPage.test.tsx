@@ -170,7 +170,7 @@ describe('QuoteFormPage', () => {
         expect(screen.getAllByText('新建报价').length).toBeGreaterThan(0);
       });
 
-      // Multi-item form should have "添加明细" button
+      // Multi-item form should have an "Add Item" button
       expect(screen.getByText('添加明细')).toBeInTheDocument();
     });
 
