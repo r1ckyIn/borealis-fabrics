@@ -4,7 +4,6 @@ import { ImportResultDto, ImportFailureDto } from './dto';
 import type { ImportStrategy } from './strategies/import-strategy.interface';
 import { FabricImportStrategy } from './strategies/fabric-import.strategy';
 import { SupplierImportStrategy } from './strategies/supplier-import.strategy';
-import { getCellValue } from './utils/excel.utils';
 
 @Injectable()
 export class ImportService {
@@ -112,7 +111,7 @@ export class ImportService {
       }
 
       // Add key to batch for within-file duplicate detection
-      const key = getCellValue(row, 1);
+      const key = strategy.getRowKey(row);
       batchKeys.add(key);
 
       entitiesToCreate.push(strategy.transformRow(row));

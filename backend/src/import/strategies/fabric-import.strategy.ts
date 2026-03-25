@@ -89,6 +89,13 @@ export class FabricImportStrategy implements ImportStrategy {
   }
 
   /**
+   * Extract row key for batch deduplication (fabricCode in column 1)
+   */
+  getRowKey(row: ExcelJS.Row): string {
+    return getCellValue(row, 1);
+  }
+
+  /**
    * Match when headers contain both fabricCode* and name* columns
    */
   matchesHeaders(headers: string[]): boolean {

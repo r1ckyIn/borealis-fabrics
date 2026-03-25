@@ -9,6 +9,7 @@ import { loadTestWorkbook } from '../../test/helpers/mock-builders';
 
 describe('ImportService', () => {
   let service: ImportService;
+  let module: TestingModule;
 
   const fabricMock = {
     create: jest.fn(),
@@ -28,7 +29,7 @@ describe('ImportService', () => {
   };
 
   beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
+    module = await Test.createTestingModule({
       providers: [
         ImportService,
         FabricImportStrategy,
@@ -653,6 +654,39 @@ describe('ImportService', () => {
       await expect(service.importFabrics(file)).rejects.toThrow(
         'Unable to detect import type from column headers',
       );
+    });
+  });
+
+  // ============================================================
+  // Strategy getRowKey Tests
+  // ============================================================
+  describe('getRowKey', () => {
+    it('FabricImportStrategy.getRowKey returns fabricCode (column 1)', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Test');
+      worksheet.columns = [
+        { header: 'fabricCode*', key: 'fabricCode', width: 20 },
+        { header: 'name*', key: 'name', width: 25 },
+      ];
+      worksheet.addRow({ fabricCode: 'FB-KEY-001', name: 'Test Fabric' });
+
+      const row = worksheet.getRow(2);
+      const fabricStrategy = module.get<FabricImportStrategy>(FabricImportStrategy);
+      expect(fabricStrategy.getRowKey(row)).toBe('FB-KEY-001');
+    });
+
+    it('SupplierImportStrategy.getRowKey returns companyName (column 1)', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Test');
+      worksheet.columns = [
+        { header: 'companyName*', key: 'companyName', width: 30 },
+        { header: 'contactName', key: 'contactName', width: 20 },
+      ];
+      worksheet.addRow({ companyName: 'Test Supplier Co', contactName: 'John' });
+
+      const row = worksheet.getRow(2);
+      const supplierStrategy = module.get<SupplierImportStrategy>(SupplierImportStrategy);
+      expect(supplierStrategy.getRowKey(row)).toBe('Test Supplier Co');
     });
   });
 });
