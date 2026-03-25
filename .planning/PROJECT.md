@@ -114,6 +114,7 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - GSD M1 Phase 4 (frontend component decomposition) complete — 3 oversized pages decomposed, 897 frontend tests, zero test any types
 - M1 (Code Remediation) complete — next is M2 Phase 5
 - GSD M2 Phase 5 (multi-category schema + product CRUD) complete — 4 new tables, ProductModule with 18 endpoints, 737 backend tests
+- GSD M2 Phase 6 (import strategy refactor) complete — ProductImportStrategy, dry-run for all imports, 784 backend tests
 - Pure local development, not deployed
 
 ## Constraints
@@ -137,4 +138,4 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 | U2Living = 铂润 in system | Same entity, no need for parent-subsidiary data model | ✓ Good |
 
 ---
-*Last updated: 2026-03-24 after Phase 5 completion (M2 Phase 5 complete — multi-category schema + product CRUD)*
+*Last updated: 2026-03-25 after Phase 6 completion (M2 Phase 6 complete — import strategy refactor with product import + dry-run)*

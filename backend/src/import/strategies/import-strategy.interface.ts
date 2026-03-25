@@ -47,6 +47,13 @@ export interface ImportStrategy {
   getExistingKeys(): Promise<Set<string>>;
 
   /**
+   * Extract the batch deduplication key from a row.
+   * Simple strategies return a single column value (e.g. fabricCode);
+   * composite strategies return a combined key (e.g. modelNumber::name).
+   */
+  getRowKey(row: ExcelJS.Row): string;
+
+  /**
    * Validate a single row.
    * @param row - The Excel row
    * @param rowNumber - 1-based row number (including header)

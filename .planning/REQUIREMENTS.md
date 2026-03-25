@@ -63,8 +63,8 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **MCAT-02**: Iron frame CRUD with model numbers, specifications, and pricing
 - [x] **MCAT-03**: Motor CRUD with channel configurations and pricing
 - [x] **MCAT-04**: Hardware/accessories CRUD with specifications and pricing
-- [ ] **MCAT-05**: Product import templates for each new category
-- [ ] **MCAT-06**: ProductImportStrategy integrated into ImportService
+- [x] **MCAT-05**: Product import templates for each new category
+- [x] **MCAT-06**: ProductImportStrategy integrated into ImportService
 - [ ] **MCAT-07**: OrderItem extended with productId FK (nullable, exactly-one guard with fabricId)
 - [ ] **MCAT-08**: Quote extended to support non-fabric products
 - [x] **MCAT-09**: Product code generation (category-specific prefixes via CodeGeneratorService)
@@ -81,8 +81,8 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [ ] **DATA-05**: Excel import test: import real iron frame/motor price list (铁架电机价格2025.xlsx)
 - [ ] **DATA-06**: Excel import test: import real purchase order (海宁优途-采购单)
 - [ ] **DATA-07**: System stability: all pages load correctly after bulk data import
-- [ ] **DATA-08**: Import result shows per-row failure details (row number + reason)
-- [ ] **DATA-09**: Import dry-run mode validates without writing to DB
+- [x] **DATA-08**: Import result shows per-row failure details (row number + reason)
+- [x] **DATA-09**: Import dry-run mode validates without writing to DB
 
 ## v2 Requirements
 
@@ -158,8 +158,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | MCAT-02 | Phase 5 | Complete |
 | MCAT-03 | Phase 5 | Complete |
 | MCAT-04 | Phase 5 | Complete |
-| MCAT-05 | Phase 6 | Pending |
-| MCAT-06 | Phase 6 | Pending |
+| MCAT-05 | Phase 6 | Complete |
+| MCAT-06 | Phase 6 | Complete |
 | MCAT-07 | Phase 7 | Pending |
 | MCAT-08 | Phase 7 | Pending |
 | MCAT-09 | Phase 5 | Complete |
@@ -173,8 +173,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-05 | Phase 10 | Pending |
 | DATA-06 | Phase 10 | Pending |
 | DATA-07 | Phase 10 | Pending |
-| DATA-08 | Phase 6 | Pending |
-| DATA-09 | Phase 6 | Pending |
+| DATA-08 | Phase 6 | Complete |
+| DATA-09 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 56 total

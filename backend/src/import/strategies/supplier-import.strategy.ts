@@ -90,6 +90,13 @@ export class SupplierImportStrategy implements ImportStrategy {
   }
 
   /**
+   * Extract row key for batch deduplication (companyName in column 1)
+   */
+  getRowKey(row: ExcelJS.Row): string {
+    return getCellValue(row, 1);
+  }
+
+  /**
    * Match when headers contain companyName* column
    */
   matchesHeaders(headers: string[]): boolean {

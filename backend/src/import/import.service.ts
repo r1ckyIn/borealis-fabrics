@@ -4,13 +4,14 @@ import { ImportResultDto, ImportFailureDto } from './dto';
 import type { ImportStrategy } from './strategies/import-strategy.interface';
 import { FabricImportStrategy } from './strategies/fabric-import.strategy';
 import { SupplierImportStrategy } from './strategies/supplier-import.strategy';
-import { getCellValue } from './utils/excel.utils';
+import { ProductImportStrategy } from './strategies/product-import.strategy';
 
 @Injectable()
 export class ImportService {
   constructor(
     private readonly fabricStrategy: FabricImportStrategy,
     private readonly supplierStrategy: SupplierImportStrategy,
+    private readonly productStrategy: ProductImportStrategy,
   ) {}
 
   /**
@@ -47,27 +48,62 @@ export class ImportService {
   }
 
   /**
+   * Generate product import template Excel file
+   */
+  async generateProductTemplate(): Promise<Buffer> {
+    return this.generateTemplate(this.productStrategy, 'Products', {
+      subCategory: 'IRON_FRAME',
+      modelNumber: 'A4318HK-0--5',
+      name: 'Single seat frame',
+      specification: '180x80cm',
+      defaultPrice: 1200,
+      supplierName: 'Example Supplier Co.',
+      purchasePrice: 800,
+      notes: 'Standard model',
+    });
+  }
+
+  /**
    * Import fabrics from Excel file.
    * Delegates to the generic importData which auto-detects strategy from headers.
    */
-  async importFabrics(file: Express.Multer.File): Promise<ImportResultDto> {
-    return this.importData(file);
+  async importFabrics(
+    file: Express.Multer.File,
+    dryRun = false,
+  ): Promise<ImportResultDto> {
+    return this.importData(file, dryRun);
   }
 
   /**
    * Import suppliers from Excel file.
    * Delegates to the generic importData which auto-detects strategy from headers.
    */
-  async importSuppliers(file: Express.Multer.File): Promise<ImportResultDto> {
-    return this.importData(file);
+  async importSuppliers(
+    file: Express.Multer.File,
+    dryRun = false,
+  ): Promise<ImportResultDto> {
+    return this.importData(file, dryRun);
+  }
+
+  /**
+   * Import products from Excel file.
+   * Delegates to the generic importData which auto-detects strategy from headers.
+   */
+  async importProducts(
+    file: Express.Multer.File,
+    dryRun = false,
+  ): Promise<ImportResultDto> {
+    return this.importData(file, dryRun);
   }
 
   /**
    * Generic import: load workbook, detect strategy from headers,
    * validate/transform/create via strategy methods.
+   * When dryRun=true, full validation runs but createBatch is skipped.
    */
   private async importData(
     file: Express.Multer.File,
+    dryRun = false,
   ): Promise<ImportResultDto> {
     const workbook = new ExcelJS.Workbook();
 
@@ -112,13 +148,13 @@ export class ImportService {
       }
 
       // Add key to batch for within-file duplicate detection
-      const key = getCellValue(row, 1);
+      const key = strategy.getRowKey(row);
       batchKeys.add(key);
 
       entitiesToCreate.push(strategy.transformRow(row));
     });
 
-    if (entitiesToCreate.length > 0) {
+    if (entitiesToCreate.length > 0 && !dryRun) {
       await strategy.createBatch(entitiesToCreate);
     }
 
@@ -152,6 +188,9 @@ export class ImportService {
     }
     if (this.supplierStrategy.matchesHeaders(headers)) {
       return this.supplierStrategy;
+    }
+    if (this.productStrategy.matchesHeaders(headers)) {
+      return this.productStrategy;
     }
 
     throw new BadRequestException(
