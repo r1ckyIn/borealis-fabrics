@@ -39,13 +39,19 @@ export enum QuoteStatus {
  * Exactly one of fabricId or productId must be provided (XOR constraint).
  */
 export class CreateQuoteItemDto {
-  @ApiPropertyOptional({ description: 'Fabric ID (for fabric items)', example: 1 })
+  @ApiPropertyOptional({
+    description: 'Fabric ID (for fabric items)',
+    example: 1,
+  })
   @ValidateIf((o: CreateQuoteItemDto) => !o.productId)
   @IsInt()
   @Min(1)
   fabricId?: number;
 
-  @ApiPropertyOptional({ description: 'Product ID (for non-fabric items)', example: 1 })
+  @ApiPropertyOptional({
+    description: 'Product ID (for non-fabric items)',
+    example: 1,
+  })
   @IsXorWith('fabricId', {
     message: 'Exactly one of fabricId or productId must be provided',
   })

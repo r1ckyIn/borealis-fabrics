@@ -11,7 +11,9 @@ import { CodeGeneratorService, CodePrefix } from '../common/services';
 import { RedisService } from '../common/services/redis.service';
 import {
   CreateQuoteDto,
+  CreateQuoteItemDto,
   UpdateQuoteDto,
+  UpdateQuoteItemDto,
   QueryQuoteDto,
   ConvertQuotesToOrderDto,
   QuoteStatus,
@@ -23,11 +25,22 @@ import {
   buildPaginatedResult,
   PaginatedResult,
 } from '../common/utils/pagination';
+import { FABRIC_UNIT, getUnitForProduct } from '../common/utils/product-units';
 
 // Maximum retries for handling quote code conflicts
 const MAX_CODE_GENERATION_RETRIES = 3;
 
-// Reusable include configurations for quote queries
+// Reusable include configuration for QuoteItem relations
+const QUOTE_ITEM_INCLUDE = {
+  fabric: {
+    select: { id: true, fabricCode: true, name: true, defaultPrice: true },
+  },
+  product: {
+    select: { id: true, productCode: true, name: true, subCategory: true },
+  },
+} as const;
+
+// Include configuration for quote list view
 const QUOTE_LIST_INCLUDE = {
   customer: {
     select: {
@@ -37,16 +50,13 @@ const QUOTE_LIST_INCLUDE = {
       phone: true,
     },
   },
-  fabric: {
-    select: {
-      id: true,
-      fabricCode: true,
-      name: true,
-      defaultPrice: true,
-    },
+  items: {
+    include: QUOTE_ITEM_INCLUDE,
+    orderBy: { createdAt: 'asc' as const },
   },
 } as const;
 
+// Include configuration for quote detail view
 const QUOTE_DETAIL_INCLUDE = {
   customer: {
     select: {
@@ -58,15 +68,9 @@ const QUOTE_DETAIL_INCLUDE = {
       wechat: true,
     },
   },
-  fabric: {
-    select: {
-      id: true,
-      fabricCode: true,
-      name: true,
-      material: true,
-      color: true,
-      defaultPrice: true,
-    },
+  items: {
+    include: QUOTE_ITEM_INCLUDE,
+    orderBy: { createdAt: 'asc' as const },
   },
 } as const;
 
@@ -103,12 +107,13 @@ export class QuoteService {
   ) {}
 
   /**
-   * Create a new quote.
-   * Validates customer and fabric existence, generates quote code.
+   * Create a new quote with one or more items.
+   * Validates customer and all fabric/product IDs existence.
+   * Calculates totalPrice as sum of item subtotals.
    * Implements retry logic for handling quote code conflicts (P2002).
    */
   async create(createDto: CreateQuoteDto): Promise<Quote> {
-    // Validate customer and fabric outside transaction for better error messages
+    // Validate customer
     const customer = await this.prisma.customer.findFirst({
       where: { id: createDto.customerId, isActive: true },
     });
@@ -118,51 +123,110 @@ export class QuoteService {
       );
     }
 
-    const fabric = await this.prisma.fabric.findFirst({
-      where: { id: createDto.fabricId, isActive: true },
-    });
-    if (!fabric) {
-      throw new NotFoundException(
-        `Fabric with ID ${createDto.fabricId} not found`,
-      );
-    }
-
     // Validate validUntil is in the future
     const validUntilDate = new Date(createDto.validUntil);
     if (validUntilDate <= new Date()) {
       throw new BadRequestException('validUntil must be a future date');
     }
 
-    // Calculate total price
-    const totalPrice = createDto.quantity * createDto.unitPrice;
+    // Collect and validate all fabric/product IDs
+    const fabricIds = [
+      ...new Set(
+        createDto.items.filter((i) => i.fabricId).map((i) => i.fabricId!),
+      ),
+    ];
+    const productIds = [
+      ...new Set(
+        createDto.items.filter((i) => i.productId).map((i) => i.productId!),
+      ),
+    ];
+
+    const [fabrics, products] = await Promise.all([
+      fabricIds.length > 0
+        ? this.prisma.fabric.findMany({
+            where: { id: { in: fabricIds }, isActive: true },
+            select: { id: true },
+          })
+        : Promise.resolve([]),
+      productIds.length > 0
+        ? this.prisma.product.findMany({
+            where: { id: { in: productIds }, isActive: true },
+            select: { id: true, subCategory: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    // Validate all fabric IDs found
+    if (fabrics.length !== fabricIds.length) {
+      const foundIds = new Set(fabrics.map((f) => f.id));
+      const missing = fabricIds.filter((id) => !foundIds.has(id));
+      throw new NotFoundException(`Fabrics not found: ${missing.join(', ')}`);
+    }
+
+    // Validate all product IDs found
+    if (products.length !== productIds.length) {
+      const foundIds = new Set(products.map((p) => p.id));
+      const missing = productIds.filter((id) => !foundIds.has(id));
+      throw new NotFoundException(`Products not found: ${missing.join(', ')}`);
+    }
+
+    // Build product subCategory map for unit derivation
+    const productSubCategoryMap = new Map<number, string>();
+    for (const p of products) {
+      productSubCategoryMap.set(p.id, p.subCategory);
+    }
+
+    // Build item data with calculated subtotals and derived units
+    const itemsData = createDto.items.map((item) => {
+      const subtotal = item.quantity * item.unitPrice;
+      let unit = item.unit ?? FABRIC_UNIT;
+
+      if (item.productId) {
+        const subCategory = productSubCategoryMap.get(item.productId);
+        if (subCategory && !item.unit) {
+          unit = getUnitForProduct(subCategory);
+        }
+      }
+
+      return {
+        fabricId: item.fabricId ?? null,
+        productId: item.productId ?? null,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        subtotal,
+        unit,
+        notes: item.notes ?? null,
+      };
+    });
+
+    // Calculate total price as sum of all subtotals
+    const totalPrice = itemsData.reduce((sum, item) => sum + item.subtotal, 0);
 
     // Retry loop for handling quote code conflicts
     for (let attempt = 1; attempt <= MAX_CODE_GENERATION_RETRIES; attempt++) {
       try {
         return await this.prisma.$transaction(async (tx) => {
-          // Generate quote code
           const quoteCode = await this.codeGeneratorService.generateCode(
             CodePrefix.QUOTE,
           );
 
-          // Create quote
           return tx.quote.create({
             data: {
               quoteCode,
               customerId: createDto.customerId,
-              fabricId: createDto.fabricId,
-              quantity: createDto.quantity,
-              unitPrice: createDto.unitPrice,
               totalPrice,
               validUntil: validUntilDate,
               status: QuoteStatus.ACTIVE,
-              notes: createDto.notes,
+              notes: createDto.notes ?? null,
+              items: {
+                create: itemsData,
+              },
             },
+            include: QUOTE_DETAIL_INCLUDE,
           });
         });
       } catch (error) {
         const prismaError = error as { code?: string };
-        // P2002 is Prisma's unique constraint violation error code
         if (
           prismaError.code === 'P2002' &&
           attempt < MAX_CODE_GENERATION_RETRIES
@@ -182,24 +246,22 @@ export class QuoteService {
 
   /**
    * Find all quotes with optional filtering and pagination.
+   * Includes nested items with fabric/product relations.
    */
   async findAll(query: QueryQuoteDto): Promise<PaginatedResult<Quote>> {
-    // Build where clause with date range filters
     const where: Prisma.QuoteWhereInput = {
+      ...(query.keyword && { quoteCode: { contains: query.keyword } }),
       ...(query.customerId && { customerId: query.customerId }),
-      ...(query.fabricId && { fabricId: query.fabricId }),
       ...(query.status && { status: query.status }),
       validUntil: buildDateRangeFilter(query.validFrom, query.validTo),
       createdAt: buildDateRangeFilter(query.createdFrom, query.createdTo),
     };
 
-    // Build pagination and sort - DTO provides defaults, so nullish coalescing is only a safeguard
     const paginationArgs = buildPaginationArgs(query);
     const orderBy = {
       [query.sortBy ?? 'createdAt']: query.sortOrder ?? 'desc',
     };
 
-    // Execute queries in parallel
     const [items, total] = await Promise.all([
       this.prisma.quote.findMany({
         where,
@@ -214,7 +276,7 @@ export class QuoteService {
   }
 
   /**
-   * Find a quote by ID.
+   * Find a quote by ID with full detail including items.
    */
   async findOne(id: number): Promise<Quote> {
     const quote = await this.prisma.quote.findUnique({
@@ -230,13 +292,11 @@ export class QuoteService {
   }
 
   /**
-   * Update a quote.
-   * Only active or expired quotes can be updated.
+   * Update quote header fields (validUntil, notes).
+   * Only active, expired, or partially_converted quotes can be updated.
    * Extending validity on expired quote resets status to active.
-   * Uses atomic conditional update to prevent race conditions.
    */
   async update(id: number, updateDto: UpdateQuoteDto): Promise<Quote> {
-    // Validate validUntil is in the future if provided
     const newValidUntil = updateDto.validUntil
       ? new Date(updateDto.validUntil)
       : undefined;
@@ -246,40 +306,33 @@ export class QuoteService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      // Fetch quote to calculate new totalPrice and check status reset requirement
       const quote = await tx.quote.findUnique({ where: { id } });
 
       if (!quote) {
         throw new NotFoundException(`Quote with ID ${id} not found`);
       }
 
-      // Calculate new values with fallback to existing
-      const quantity = updateDto.quantity ?? Number(quote.quantity);
-      const unitPrice = updateDto.unitPrice ?? Number(quote.unitPrice);
-
-      // Determine if status should reset to active (extending validity on expired quote)
+      // Determine if status should reset to active
       const shouldResetStatus =
         newValidUntil && (quote.status as QuoteStatus) === QuoteStatus.EXPIRED;
 
-      // Build update data - only include fields that are being updated
       const data: Prisma.QuoteUpdateManyMutationInput = {
-        ...(updateDto.quantity !== undefined && {
-          quantity: updateDto.quantity,
-        }),
-        ...(updateDto.unitPrice !== undefined && {
-          unitPrice: updateDto.unitPrice,
-        }),
         ...(newValidUntil && { validUntil: newValidUntil }),
         ...(updateDto.notes !== undefined && { notes: updateDto.notes }),
         ...(shouldResetStatus && { status: QuoteStatus.ACTIVE }),
-        totalPrice: quantity * unitPrice,
       };
 
-      // Atomic conditional update to prevent race conditions
+      // Atomic conditional update
       const updateResult = await tx.quote.updateMany({
         where: {
           id,
-          status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+          status: {
+            in: [
+              QuoteStatus.ACTIVE,
+              QuoteStatus.EXPIRED,
+              QuoteStatus.PARTIALLY_CONVERTED,
+            ],
+          },
         },
         data,
       });
@@ -288,8 +341,10 @@ export class QuoteService {
         throw new ConflictException('Cannot update a converted quote');
       }
 
-      // Fetch and return the updated quote
-      const updatedQuote = await tx.quote.findUnique({ where: { id } });
+      const updatedQuote = await tx.quote.findUnique({
+        where: { id },
+        include: QUOTE_DETAIL_INCLUDE,
+      });
       if (!updatedQuote) {
         throw new NotFoundException(`Quote with ID ${id} not found`);
       }
@@ -299,29 +354,226 @@ export class QuoteService {
   }
 
   /**
+   * Add a new item to an existing quote.
+   * Validates quote status and fabric/product existence.
+   * Recalculates quote totalPrice.
+   */
+  async addItem(quoteId: number, itemDto: CreateQuoteItemDto): Promise<Quote> {
+    return this.prisma.$transaction(async (tx) => {
+      // Validate quote exists and is in an editable status
+      const quote = await tx.quote.findUnique({
+        where: { id: quoteId },
+        include: { items: true },
+      });
+
+      if (!quote) {
+        throw new NotFoundException(`Quote with ID ${quoteId} not found`);
+      }
+
+      const status = quote.status as QuoteStatus;
+      if (
+        status !== QuoteStatus.ACTIVE &&
+        status !== QuoteStatus.PARTIALLY_CONVERTED
+      ) {
+        throw new ConflictException(
+          'Can only add items to active or partially converted quotes',
+        );
+      }
+
+      // Validate fabric/product existence
+      await this.validateItemReferences(
+        itemDto.fabricId ? [itemDto.fabricId] : [],
+        itemDto.productId ? [itemDto.productId] : [],
+      );
+
+      // Derive unit
+      let unit = itemDto.unit ?? FABRIC_UNIT;
+      if (itemDto.productId && !itemDto.unit) {
+        const product = await this.prisma.product.findUnique({
+          where: { id: itemDto.productId },
+          select: { subCategory: true },
+        });
+        if (product) {
+          unit = getUnitForProduct(product.subCategory);
+        }
+      }
+
+      const subtotal = itemDto.quantity * itemDto.unitPrice;
+
+      // Create the item
+      await tx.quoteItem.create({
+        data: {
+          quoteId,
+          fabricId: itemDto.fabricId ?? null,
+          productId: itemDto.productId ?? null,
+          quantity: itemDto.quantity,
+          unitPrice: itemDto.unitPrice,
+          subtotal,
+          unit,
+          notes: itemDto.notes ?? null,
+        },
+      });
+
+      // Recalculate total
+      await this.recalculateQuoteTotal(tx, quoteId);
+
+      // Return updated quote
+      return tx.quote.findUnique({
+        where: { id: quoteId },
+        include: QUOTE_DETAIL_INCLUDE,
+      }) as Promise<Quote>;
+    });
+  }
+
+  /**
+   * Update an existing quote item.
+   * Validates item belongs to quote and is not converted.
+   * Recalculates subtotal and quote totalPrice.
+   */
+  async updateItem(
+    quoteId: number,
+    itemId: number,
+    updateDto: UpdateQuoteItemDto,
+  ): Promise<Quote> {
+    return this.prisma.$transaction(async (tx) => {
+      const quote = await tx.quote.findUnique({ where: { id: quoteId } });
+      if (!quote) {
+        throw new NotFoundException(`Quote with ID ${quoteId} not found`);
+      }
+
+      const item = await tx.quoteItem.findUnique({ where: { id: itemId } });
+      if (!item || item.quoteId !== quoteId) {
+        throw new NotFoundException(
+          `QuoteItem with ID ${itemId} not found in Quote ${quoteId}`,
+        );
+      }
+
+      if (item.isConverted) {
+        throw new ConflictException('Cannot update a converted quote item');
+      }
+
+      // Build update data
+      const quantity =
+        updateDto.quantity !== undefined
+          ? updateDto.quantity
+          : Number(item.quantity);
+      const unitPrice =
+        updateDto.unitPrice !== undefined
+          ? updateDto.unitPrice
+          : Number(item.unitPrice);
+      const subtotal = quantity * unitPrice;
+
+      const data: Record<string, unknown> = {
+        ...(updateDto.quantity !== undefined && {
+          quantity: updateDto.quantity,
+        }),
+        ...(updateDto.unitPrice !== undefined && {
+          unitPrice: updateDto.unitPrice,
+        }),
+        ...(updateDto.notes !== undefined && { notes: updateDto.notes }),
+        subtotal,
+      };
+
+      await tx.quoteItem.update({
+        where: { id: itemId },
+        data,
+      });
+
+      // Recalculate total
+      await this.recalculateQuoteTotal(tx, quoteId);
+
+      return tx.quote.findUnique({
+        where: { id: quoteId },
+        include: QUOTE_DETAIL_INCLUDE,
+      }) as Promise<Quote>;
+    });
+  }
+
+  /**
+   * Remove an item from a quote.
+   * If no items remain, deletes the quote itself.
+   * Otherwise recalculates quote totalPrice.
+   */
+  async removeItem(quoteId: number, itemId: number): Promise<Quote | void> {
+    return this.prisma.$transaction(async (tx) => {
+      const quote = await tx.quote.findUnique({
+        where: { id: quoteId },
+        include: { items: true },
+      });
+
+      if (!quote) {
+        throw new NotFoundException(`Quote with ID ${quoteId} not found`);
+      }
+
+      const status = quote.status as QuoteStatus;
+      if (
+        status !== QuoteStatus.ACTIVE &&
+        status !== QuoteStatus.PARTIALLY_CONVERTED
+      ) {
+        throw new ConflictException(
+          'Can only remove items from active or partially converted quotes',
+        );
+      }
+
+      const item = await tx.quoteItem.findUnique({ where: { id: itemId } });
+      if (!item || item.quoteId !== quoteId) {
+        throw new NotFoundException(
+          `QuoteItem with ID ${itemId} not found in Quote ${quoteId}`,
+        );
+      }
+
+      if (item.isConverted) {
+        throw new ConflictException('Cannot remove a converted quote item');
+      }
+
+      // Delete the item
+      await tx.quoteItem.delete({ where: { id: itemId } });
+
+      // Check remaining items
+      const remainingItems = quote.items.filter((i) => i.id !== itemId);
+
+      if (remainingItems.length === 0) {
+        // No items left, delete the quote
+        await tx.quote.delete({ where: { id: quoteId } });
+        return;
+      }
+
+      // Recalculate total
+      await this.recalculateQuoteTotal(tx, quoteId);
+
+      return tx.quote.findUnique({
+        where: { id: quoteId },
+        include: QUOTE_DETAIL_INCLUDE,
+      }) as Promise<Quote>;
+    });
+  }
+
+  /**
    * Delete a quote.
-   * Only active or expired quotes can be deleted.
+   * Only active, expired, or partially_converted quotes can be deleted.
    * Uses conditional delete to prevent race conditions.
    */
   async remove(id: number): Promise<void> {
-    // Use deleteMany with status condition for atomic check-and-delete
-    // This prevents race conditions where status changes between read and delete
     const deleteResult = await this.prisma.quote.deleteMany({
       where: {
         id,
-        status: { in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED] },
+        status: {
+          in: [
+            QuoteStatus.ACTIVE,
+            QuoteStatus.EXPIRED,
+            QuoteStatus.PARTIALLY_CONVERTED,
+          ],
+        },
       },
     });
 
     if (deleteResult.count === 0) {
-      // Either quote doesn't exist or status is converted
       const quote = await this.prisma.quote.findUnique({ where: { id } });
 
       if (!quote) {
         throw new NotFoundException(`Quote with ID ${id} not found`);
       }
 
-      // Quote exists but couldn't be deleted due to status
       throw new ConflictException(
         'Cannot delete a converted quote. It is linked to an order.',
       );
@@ -331,7 +583,6 @@ export class QuoteService {
   /**
    * Mark all expired quotes.
    * Called by scheduler to automatically mark quotes past validUntil.
-   * @returns Number of quotes marked as expired
    */
   async markExpiredQuotes(): Promise<number> {
     const result = await this.prisma.quote.updateMany({
@@ -357,20 +608,18 @@ export class QuoteService {
    * Batch convert multiple quotes into a single order.
    * All quotes must belong to the same customer, be active, and not expired.
    * Uses Redis distributed lock for concurrent protection.
-   * Creates order with items in a Prisma transaction.
+   * Reads items from quote.items relation for multi-item support.
    */
   async batchConvertToOrder(dto: ConvertQuotesToOrderDto): Promise<Order> {
-    // Check Redis availability — required for concurrent protection
     if (!this.redisService.isAvailable()) {
       throw new ServiceUnavailableException(
         'Redis is required for conversion — concurrent protection unavailable',
       );
     }
 
-    // Sort quote IDs to prevent deadlocks when acquiring locks
     const sortedIds = [...dto.quoteIds].sort((a, b) => a - b);
 
-    // Acquire locks for all quote IDs
+    // Acquire locks
     const acquiredLocks: number[] = [];
     for (const id of sortedIds) {
       const locked = await this.redisService.acquireLock(
@@ -378,7 +627,6 @@ export class QuoteService {
         30,
       );
       if (!locked) {
-        // Release already-acquired locks before throwing
         for (const acquiredId of acquiredLocks) {
           await this.redisService.releaseLock(`quote:convert:${acquiredId}`);
         }
@@ -391,10 +639,17 @@ export class QuoteService {
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        // Fetch all quotes with fabric info
+        // Fetch all quotes with items
         const quotes = await tx.quote.findMany({
           where: { id: { in: sortedIds } },
-          include: { fabric: { select: { id: true } } },
+          include: {
+            items: {
+              include: {
+                fabric: { select: { id: true } },
+                product: { select: { id: true } },
+              },
+            },
+          },
         });
 
         // Validate all quotes found
@@ -437,14 +692,25 @@ export class QuoteService {
 
         const customerId = quotes[0].customerId;
 
+        // Collect all fabric IDs from quote items for supplier lookup
+        const allFabricIds = [
+          ...new Set(
+            quotes.flatMap((q) =>
+              q.items
+                .filter((i) => i.fabricId !== null)
+                .map((i) => i.fabricId!),
+            ),
+          ),
+        ];
+
         // Look up cheapest suppliers for each fabric
-        // Note: Prisma distinct+orderBy is non-deterministic on MySQL,
-        // so we fetch all and pick cheapest in application code.
-        const fabricIds = [...new Set(quotes.map((q) => q.fabricId))];
-        const allFabricSuppliers = await tx.fabricSupplier.findMany({
-          where: { fabricId: { in: fabricIds } },
-          orderBy: { purchasePrice: 'asc' },
-        });
+        const allFabricSuppliers =
+          allFabricIds.length > 0
+            ? await tx.fabricSupplier.findMany({
+                where: { fabricId: { in: allFabricIds } },
+                orderBy: { purchasePrice: 'asc' },
+              })
+            : [];
         const supplierMap = new Map<number, number>();
         for (const fs of allFabricSuppliers) {
           if (!supplierMap.has(fs.fabricId)) {
@@ -457,9 +723,27 @@ export class QuoteService {
           CodePrefix.ORDER,
         );
 
+        // Flatten all items from all quotes
+        const allItems = quotes.flatMap((q) =>
+          q.items.map((item) => ({
+            fabricId: item.fabricId ?? null,
+            productId: item.productId ?? null,
+            supplierId: item.fabricId
+              ? (supplierMap.get(item.fabricId) ?? null)
+              : null,
+            quoteId: q.id,
+            quoteItemId: item.id,
+            quantity: item.quantity,
+            unit: item.unit,
+            salePrice: item.unitPrice,
+            subtotal: item.subtotal,
+            status: OrderItemStatus.PENDING,
+          })),
+        );
+
         // Calculate total amount
-        const totalAmount = quotes.reduce(
-          (sum, q) => sum + Number(q.quantity) * Number(q.unitPrice),
+        const totalAmount = allItems.reduce(
+          (sum, item) => sum + Number(item.subtotal),
           0,
         );
 
@@ -473,21 +757,13 @@ export class QuoteService {
             customerPaid: 0,
             customerPayStatus: 'unpaid',
             items: {
-              create: quotes.map((q) => ({
-                fabricId: q.fabricId,
-                supplierId: supplierMap.get(q.fabricId) ?? null,
-                quoteId: q.id,
-                quantity: q.quantity,
-                salePrice: q.unitPrice,
-                subtotal: Number(q.quantity) * Number(q.unitPrice),
-                status: OrderItemStatus.PENDING,
-              })),
+              create: allItems,
             },
           },
           include: { items: true, customer: true },
         });
 
-        // Create timeline entries for each item
+        // Create timeline entries
         await tx.orderTimeline.createMany({
           data: order.items.map((item) => ({
             orderItemId: item.id,
@@ -506,9 +782,63 @@ export class QuoteService {
         return order;
       });
     } finally {
-      // Always release all locks
       for (const id of sortedIds) {
         await this.redisService.releaseLock(`quote:convert:${id}`);
+      }
+    }
+  }
+
+  /**
+   * Recalculate quote totalPrice from its items' subtotals.
+   */
+  private async recalculateQuoteTotal(
+    tx: Prisma.TransactionClient,
+    quoteId: number,
+  ): Promise<void> {
+    const items = await tx.quoteItem.findMany({
+      where: { quoteId },
+      select: { subtotal: true },
+    });
+    const totalPrice = items.reduce(
+      (sum, item) => sum + Number(item.subtotal),
+      0,
+    );
+    await tx.quote.update({
+      where: { id: quoteId },
+      data: { totalPrice },
+    });
+  }
+
+  /**
+   * Validate that all referenced fabric/product IDs exist.
+   */
+  private async validateItemReferences(
+    fabricIds: number[],
+    productIds: number[],
+  ): Promise<void> {
+    if (fabricIds.length > 0) {
+      const fabrics = await this.prisma.fabric.findMany({
+        where: { id: { in: fabricIds }, isActive: true },
+        select: { id: true },
+      });
+      if (fabrics.length !== fabricIds.length) {
+        const foundIds = new Set(fabrics.map((f) => f.id));
+        const missing = fabricIds.filter((id) => !foundIds.has(id));
+        throw new NotFoundException(`Fabrics not found: ${missing.join(', ')}`);
+      }
+    }
+
+    if (productIds.length > 0) {
+      const products = await this.prisma.product.findMany({
+        where: { id: { in: productIds }, isActive: true },
+        select: { id: true },
+      });
+      if (products.length !== productIds.length) {
+        const foundIds = new Set(products.map((p) => p.id));
+        const missing = productIds.filter((id) => !foundIds.has(id));
+        throw new NotFoundException(
+          `Products not found: ${missing.join(', ')}`,
+        );
       }
     }
   }
