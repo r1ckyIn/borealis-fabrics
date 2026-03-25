@@ -199,10 +199,20 @@ Plans:
 
 **Requirements:** MCAT-07, MCAT-08
 
+**Plans:** 3 plans
+
+Plans:
+- [x] 07-01-PLAN.md — Schema migration (OrderItem extension + QuoteItem table) + OrderItem product-aware CRUD
+- [ ] 07-02-PLAN.md — Quote multi-item restructure (DTOs + service rewrite + controller + item management)
+- [ ] 07-03-PLAN.md — Quote partial conversion (item-level conversion + scheduler update + full verification)
+
 **Success Criteria:**
 1. User can add non-fabric products as order items alongside fabric items
 2. OrderItem enforces exactly-one product reference (fabricId XOR productId)
 3. Quotes support non-fabric products with correct pricing and units
+4. Quote converted from single-item to multi-item model (Quote + QuoteItem[])
+5. Partial quote conversion: select specific items to convert to order
+6. Quote status tracks conversion: active → partially_converted → converted
 
 **Dependencies:** Phase 5 (needs products table for FK)
 
@@ -287,4 +297,4 @@ Unmapped: 0
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 06 complete — 2/2 plans executed, verification passed)*
+*Last updated: 2026-03-25 (Phase 07 planned — 3 plans for order/quote multi-category extension)*

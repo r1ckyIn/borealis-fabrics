@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-25T03:26:32.838Z"
+last_updated: "2026-03-25T07:10:50.586Z"
 progress:
   total_phases: 11
-  completed_phases: 6
-  total_plans: 23
-  completed_plans: 23
+  completed_phases: 7
+  total_plans: 26
+  completed_plans: 25
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 06 complete — next: Phase 07 (Order/Quote Multi-Category Extension)
+**Current focus:** Phase 07 — order-quote-multi-category-extension
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 06 |
-| Name | Import Strategy Refactor |
-| Status | Complete |
-| Current Plan | 2 of 2 |
-| Branch | feature/gsd-06-import-strategy-refactor |
+| Phase | 07 |
+| Name | Order/Quote Multi-Category Extension |
+| Status | In Progress |
+| Current Plan | 3 of 3 |
+| Branch | feature/gsd-07-order-quote-multi-category-extension |
 
 ## Progress
 
@@ -40,7 +40,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 4 — Frontend Component Decomposition | ● Complete | 4/4 |
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
 | 6 — Import Strategy Refactor | ● Complete | 2/2 |
-| 7 — Order/Quote Multi-Category Extension | ○ Not Started | — |
+| 7 — Order/Quote Multi-Category Extension | ● Complete | 3/3 |
 | 8 — Frontend Multi-Category Pages | ○ Not Started | — |
 | 9 — Contract OCR Skill | ○ Not Started | — |
 | 10 — Real Data Testing | ○ Not Started | — |
@@ -50,7 +50,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Milestone | Phases | Status |
 |-----------|--------|--------|
 | M1: Code Remediation | 1-4 | ● Complete (4/4 phases) |
-| M2: Feature Expansion + Real Data Testing | 5-10 | ◆ In Progress (2/6 phases) |
+| M2: Feature Expansion + Real Data Testing | 5-10 | ◆ In Progress (3/6 phases) |
 
 ## Key Decisions Log
 
@@ -110,6 +110,15 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Supplier map pre-loaded in getExistingKeys() lifecycle | Follows existing call pattern; getExistingKeys() called once before validateRow() |
 | 2026-03-25 | Dry-run at importData level with single !dryRun conditional | All strategies benefit automatically, minimal code change |
 | 2026-03-25 | dryRun defaults to false via DefaultValuePipe | Backward compatible, no breaking changes to existing API consumers |
+| 2026-03-25 | NoAction FK for fabricId/productId on OrderItem/QuoteItem | MySQL CHECK constraint incompatible with SET NULL/CASCADE FK action |
+| 2026-03-25 | IsIntegerWhenFieldPresent custom decorator (not dual @ValidateIf) | class-validator AND-logic on same property prevents dual validation groups |
+| 2026-03-25 | Single migration with inline data migration SQL for quote restructure | Move existing quote fabricId/quantity/unitPrice to QuoteItem before dropping columns |
+| 2026-03-25 | IsIntegerWhenFieldPresent reused for quote item validation | Consistent with OrderItem pattern, avoids dual @ValidateIf issue |
+| 2026-03-25 | Quote update allows only validUntil + notes; items via dedicated endpoints | Separation of header vs item management |
+| 2026-03-25 | PARTIALLY_CONVERTED status allowed for update and delete operations | Partially converted quotes still editable |
+| 2026-03-25 | OrderWithItems local type alias for strict TS typing of included relations | Order + items relation from Prisma create/findUniqueOrThrow |
+| 2026-03-25 | Validations before Redis lock in convertQuoteItems | Fail fast, avoid unnecessary lock acquisition |
+| 2026-03-25 | Timeline remark 'Converted from quote item' | Distinguishes from direct order creation |
 
 ## Accumulated Context
 
@@ -144,7 +153,10 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | Phase 05 Plan 02 | Completed 05-02-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-02-SUMMARY.md` |
 | 2026-03-25 | Phase 06 Plan 01 | Completed 06-01-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-01-SUMMARY.md` |
 | 2026-03-25 | Phase 06 Plan 02 | Completed 06-02-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-02-SUMMARY.md` |
+| 2026-03-25 | Phase 07 Plan 01 | Completed 07-01-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-01-SUMMARY.md` |
+| 2026-03-25 | Phase 07 Plan 02 | Completed 07-02-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-02-SUMMARY.md` |
+| 2026-03-25 | Phase 07 Plan 03 | Completed 07-03-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-03-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 06 complete — import system extended with product endpoints, dry-run for all types, 784 backend tests passing)*
+*Last updated: 2026-03-25 (Phase 07 Plan 03 complete — Item-level partial quote conversion, ConvertQuoteItemsDto replaces batch-convert, 792 backend tests passing)*

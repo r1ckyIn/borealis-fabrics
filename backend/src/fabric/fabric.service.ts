@@ -253,7 +253,7 @@ export class FabricService {
       this.prisma.fabricSupplier.count({ where: { fabricId: id } }),
       this.prisma.customerPricing.count({ where: { fabricId: id } }),
       this.prisma.orderItem.count({ where: { fabricId: id } }),
-      this.prisma.quote.count({ where: { fabricId: id } }),
+      this.prisma.quoteItem.count({ where: { fabricId: id } }),
     ]);
 
     const hasRelations =

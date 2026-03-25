@@ -97,7 +97,7 @@ describe('FabricService', () => {
     delete: jest.fn(),
   };
   const orderItemMock = { count: jest.fn() };
-  const quoteMock = { count: jest.fn() };
+  const quoteItemMock = { count: jest.fn() };
   const supplierMock = { findFirst: jest.fn() };
   const customerMock = { findFirst: jest.fn() };
 
@@ -116,7 +116,7 @@ describe('FabricService', () => {
     fabricSupplier: fabricSupplierMock,
     customerPricing: customerPricingMock,
     orderItem: orderItemMock,
-    quote: quoteMock,
+    quoteItem: quoteItemMock,
     supplier: supplierMock,
     customer: customerMock,
     $transaction: jest.fn().mockImplementation((callback: CallableFunction) =>
@@ -450,7 +450,7 @@ describe('FabricService', () => {
       fabricSupplierMock.count.mockResolvedValue(0);
       customerPricingMock.count.mockResolvedValue(0);
       orderItemMock.count.mockResolvedValue(0);
-      quoteMock.count.mockResolvedValue(0);
+      quoteItemMock.count.mockResolvedValue(0);
     });
 
     it('should throw NotFoundException if fabric not found', async () => {
@@ -513,7 +513,7 @@ describe('FabricService', () => {
       expect(orderItemMock.count).toHaveBeenCalledWith({
         where: { fabricId: 1 },
       });
-      expect(quoteMock.count).toHaveBeenCalledWith({
+      expect(quoteItemMock.count).toHaveBeenCalledWith({
         where: { fabricId: 1 },
       });
     });
@@ -524,7 +524,7 @@ describe('FabricService', () => {
       fabricSupplierMock.count.mockResolvedValue(3);
       customerPricingMock.count.mockResolvedValue(1);
       orderItemMock.count.mockResolvedValue(5);
-      quoteMock.count.mockResolvedValue(4);
+      quoteItemMock.count.mockResolvedValue(4);
 
       try {
         await service.remove(1, false);

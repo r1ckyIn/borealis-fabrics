@@ -29,11 +29,13 @@ import {
 } from './order.includes';
 import {
   validateFabricExists,
+  validateProductExists,
   validateSupplierExists,
   validateQuoteExists,
   validateOrderExists,
   validateOrderItemExists,
 } from './order.validators';
+import { getUnitForProduct, FABRIC_UNIT } from '../common/utils/product-units';
 import { OrderItem, OrderTimeline, Prisma } from '@prisma/client';
 
 @Injectable()
@@ -60,6 +62,7 @@ export class OrderItemService {
 
   /**
    * Add a new item to an order (3.2.7).
+   * Supports both fabric items (fabricId) and product items (productId).
    * Creates the item, updates order total, and records timeline.
    */
   async addOrderItem(
@@ -79,13 +82,59 @@ export class OrderItemService {
       );
     }
 
-    // Validate references
-    await validateFabricExists(this.prisma, dto.fabricId);
+    // Validate XOR constraint at service level (defense in depth alongside DTO)
+    if (dto.fabricId && dto.productId) {
+      throw new BadRequestException(
+        'Cannot specify both fabricId and productId',
+      );
+    }
+    if (!dto.fabricId && !dto.productId) {
+      throw new BadRequestException(
+        'Either fabricId or productId must be specified',
+      );
+    }
+
+    // Validate fabric or product existence
+    if (dto.fabricId) {
+      await validateFabricExists(this.prisma, dto.fabricId);
+    } else if (dto.productId) {
+      await validateProductExists(this.prisma, dto.productId);
+    }
+
+    // Validate optional references
     if (dto.supplierId !== undefined) {
       await validateSupplierExists(this.prisma, dto.supplierId);
     }
     if (dto.quoteId !== undefined) {
       await validateQuoteExists(this.prisma, dto.quoteId);
+    }
+
+    // Auto-fill supplier from cheapest ProductSupplier if productId and no supplier
+    let autoSupplierId = dto.supplierId;
+    let autoPurchasePrice = dto.purchasePrice;
+    if (dto.productId && !dto.supplierId) {
+      const cheapest = await this.prisma.productSupplier.findFirst({
+        where: { productId: dto.productId },
+        orderBy: { purchasePrice: 'asc' },
+      });
+      if (cheapest) {
+        autoSupplierId = cheapest.supplierId;
+        autoPurchasePrice = autoPurchasePrice ?? Number(cheapest.purchasePrice);
+      }
+    }
+
+    // Derive unit
+    let unit = dto.unit;
+    if (!unit) {
+      if (dto.fabricId) {
+        unit = FABRIC_UNIT;
+      } else if (dto.productId) {
+        const product = await this.prisma.product.findUnique({
+          where: { id: dto.productId },
+          select: { subCategory: true },
+        });
+        unit = product ? getUnitForProduct(product.subCategory) : 'piece';
+      }
     }
 
     // Calculate subtotal
@@ -96,12 +145,14 @@ export class OrderItemService {
       const item = await tx.orderItem.create({
         data: {
           orderId,
-          fabricId: dto.fabricId,
-          supplierId: dto.supplierId,
+          fabricId: dto.fabricId ?? null,
+          productId: dto.productId ?? null,
+          supplierId: autoSupplierId,
           quoteId: dto.quoteId,
           quantity: dto.quantity,
+          unit: unit ?? FABRIC_UNIT,
           salePrice: dto.salePrice,
-          purchasePrice: dto.purchasePrice,
+          purchasePrice: autoPurchasePrice,
           subtotal,
           status: OrderItemStatus.INQUIRY,
           deliveryDate: dto.deliveryDate
@@ -123,8 +174,8 @@ export class OrderItemService {
       });
 
       // Update supplier payment if supplier is specified
-      if (dto.supplierId !== undefined && dto.purchasePrice !== undefined) {
-        await this.upsertSupplierPayment(tx, orderId, dto.supplierId);
+      if (autoSupplierId !== undefined && autoPurchasePrice !== undefined) {
+        await this.upsertSupplierPayment(tx, orderId, autoSupplierId);
       }
 
       // Update order total and aggregate status
@@ -473,6 +524,9 @@ export class OrderItemService {
     }
     if (dto.notes !== undefined) {
       updateData.notes = dto.notes;
+    }
+    if (dto.unit !== undefined) {
+      updateData.unit = dto.unit;
     }
 
     // Recalculate subtotal

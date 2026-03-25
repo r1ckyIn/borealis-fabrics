@@ -34,6 +34,16 @@ export const FABRIC_SELECT = {
 } as const satisfies Prisma.FabricSelect;
 
 /**
+ * Basic product select fields.
+ */
+export const PRODUCT_SELECT = {
+  id: true,
+  productCode: true,
+  name: true,
+  subCategory: true,
+} as const satisfies Prisma.ProductSelect;
+
+/**
  * Supplier select fields.
  */
 export const SUPPLIER_SELECT = {
@@ -65,6 +75,7 @@ export const OPERATOR_SELECT = {
  */
 export const ORDER_ITEM_INCLUDE_DETAIL = {
   fabric: { select: FABRIC_SELECT },
+  product: { select: PRODUCT_SELECT },
   supplier: { select: SUPPLIER_SELECT },
   quote: { select: QUOTE_SELECT },
   timelines: { orderBy: { createdAt: 'desc' as const } },
@@ -76,6 +87,7 @@ export const ORDER_ITEM_INCLUDE_DETAIL = {
  */
 export const ORDER_ITEM_INCLUDE_BASIC = {
   fabric: { select: FABRIC_SELECT },
+  product: { select: PRODUCT_SELECT },
   supplier: { select: SUPPLIER_SELECT },
 } as const satisfies Prisma.OrderItemInclude;
 
@@ -88,10 +100,12 @@ export const ORDER_INCLUDE_LIST = {
     select: {
       id: true,
       fabricId: true,
+      productId: true,
       quantity: true,
       salePrice: true,
       subtotal: true,
       status: true,
+      unit: true,
     },
   },
 } as const satisfies Prisma.OrderInclude;
@@ -120,6 +134,7 @@ export const ORDER_INCLUDE_PAYMENT = ORDER_INCLUDE_LIST;
  */
 export const ORDER_ITEM_INCLUDE_WITH_TIMELINE = {
   fabric: { select: FABRIC_SELECT },
+  product: { select: PRODUCT_SELECT },
   supplier: { select: SUPPLIER_SELECT },
   quote: { select: QUOTE_SELECT },
   timelines: {
@@ -140,6 +155,13 @@ export const TIMELINE_INCLUDE_ORDER = {
         select: {
           id: true,
           fabricCode: true,
+          name: true,
+        },
+      },
+      product: {
+        select: {
+          id: true,
+          productCode: true,
           name: true,
         },
       },

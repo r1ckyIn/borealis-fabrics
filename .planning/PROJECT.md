@@ -44,7 +44,7 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 
 - [ ] Fix all broken frontend buttons, forms, and API call failures
 - [ ] Fix frontend-backend API inconsistencies
-- [ ] Implement quote-to-order conversion (currently `NotImplementedException`)
+- [x] Implement quote-to-order conversion with item-level partial conversion — Validated in Phase 7
 - [ ] Migrate file service from local storage to Tencent COS SDK
 - [x] Refactor oversized components (FabricDetailPage 815→169L, CustomerDetailPage 703→190L, OrderItemsSection 654→78L) — Validated in Phase 4
 - [ ] Refactor oversized services (OrderService 1121L)
@@ -115,6 +115,7 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - M1 (Code Remediation) complete — next is M2 Phase 5
 - GSD M2 Phase 5 (multi-category schema + product CRUD) complete — 4 new tables, ProductModule with 18 endpoints, 737 backend tests
 - GSD M2 Phase 6 (import strategy refactor) complete — ProductImportStrategy, dry-run for all imports, 784 backend tests
+- GSD M2 Phase 7 (order/quote multi-category extension) complete — OrderItem XOR fabric/product, Quote multi-item restructure, item-level partial conversion, 792 backend tests
 - Pure local development, not deployed
 
 ## Constraints
@@ -138,4 +139,4 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 | U2Living = 铂润 in system | Same entity, no need for parent-subsidiary data model | ✓ Good |
 
 ---
-*Last updated: 2026-03-25 after Phase 6 completion (M2 Phase 6 complete — import strategy refactor with product import + dry-run)*
+*Last updated: 2026-03-25 after Phase 7 completion (M2 Phase 7 complete — order/quote multi-category extension with item-level partial conversion)*

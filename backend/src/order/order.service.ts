@@ -33,6 +33,7 @@ import {
   buildPaginationArgs,
   buildPaginatedResult,
 } from '../common/common.module';
+import { getUnitForProduct, FABRIC_UNIT } from '../common/utils/product-units';
 
 const MAX_CODE_GENERATION_RETRIES = 3;
 
@@ -48,7 +49,7 @@ export class OrderService {
   /**
    * Create a new order with items.
    * - Validates customer existence
-   * - Validates all fabric IDs
+   * - Validates all fabric/product IDs
    * - Validates supplier IDs if provided
    * - Generates order code (ORD-YYMM-NNNN)
    * - Creates order and items in transaction
@@ -63,16 +64,27 @@ export class OrderService {
 
     // Extract and validate all IDs from items
     const fabricIds = extractUniqueIds(createDto.items, 'fabricId');
+    const productIds = extractUniqueIds(createDto.items, 'productId');
     const supplierIds = extractUniqueIds(createDto.items, 'supplierId');
     const quoteIds = extractUniqueIds(createDto.items, 'quoteId');
 
     await Promise.all([
-      validateEntityIds(
-        this.prisma,
-        'Fabric',
-        fabricIds,
-        this.prisma.fabric.findMany.bind(this.prisma.fabric),
-      ),
+      fabricIds.length > 0
+        ? validateEntityIds(
+            this.prisma,
+            'Fabric',
+            fabricIds,
+            this.prisma.fabric.findMany.bind(this.prisma.fabric),
+          )
+        : Promise.resolve(new Set<number>()),
+      productIds.length > 0
+        ? validateEntityIds(
+            this.prisma,
+            'Product',
+            productIds,
+            this.prisma.product.findMany.bind(this.prisma.product),
+          )
+        : Promise.resolve(new Set<number>()),
       supplierIds.length > 0
         ? validateEntityIds(
             this.prisma,
@@ -92,10 +104,50 @@ export class OrderService {
         : Promise.resolve(new Set<number>()),
     ]);
 
+    // Build product subCategory map for unit derivation
+    const productSubCategoryMap = new Map<number, string>();
+    if (productIds.length > 0) {
+      const products = await this.prisma.product.findMany({
+        where: { id: { in: productIds }, isActive: true },
+        select: { id: true, subCategory: true },
+      });
+      for (const p of products) {
+        productSubCategoryMap.set(p.id, p.subCategory);
+      }
+    }
+
     // Calculate total amount from items
     const totalAmount = createDto.items.reduce((sum, item) => {
       return sum + item.quantity * item.salePrice;
     }, 0);
+
+    // Build item data with derived units
+    const itemsData = createDto.items.map((item) => {
+      let unit = item.unit ?? FABRIC_UNIT;
+      if (item.productId && !item.unit) {
+        const subCategory = productSubCategoryMap.get(item.productId);
+        if (subCategory) {
+          unit = getUnitForProduct(subCategory);
+        }
+      }
+
+      return {
+        fabricId: item.fabricId ?? null,
+        productId: item.productId ?? null,
+        supplierId: item.supplierId,
+        quoteId: item.quoteId,
+        quantity: item.quantity,
+        unit,
+        salePrice: item.salePrice,
+        purchasePrice: item.purchasePrice,
+        subtotal: item.quantity * item.salePrice,
+        status: OrderItemStatus.INQUIRY,
+        deliveryDate: item.deliveryDate
+          ? new Date(item.deliveryDate)
+          : undefined,
+        notes: item.notes,
+      };
+    });
 
     // Retry loop for handling order code conflicts
     for (let attempt = 1; attempt <= MAX_CODE_GENERATION_RETRIES; attempt++) {
@@ -118,20 +170,7 @@ export class OrderService {
               deliveryAddress: createDto.deliveryAddress,
               notes: createDto.notes,
               items: {
-                create: createDto.items.map((item) => ({
-                  fabricId: item.fabricId,
-                  supplierId: item.supplierId,
-                  quoteId: item.quoteId,
-                  quantity: item.quantity,
-                  salePrice: item.salePrice,
-                  purchasePrice: item.purchasePrice,
-                  subtotal: item.quantity * item.salePrice,
-                  status: OrderItemStatus.INQUIRY,
-                  deliveryDate: item.deliveryDate
-                    ? new Date(item.deliveryDate)
-                    : undefined,
-                  notes: item.notes,
-                })),
+                create: itemsData,
               },
             },
             include: {
