@@ -62,3 +62,18 @@ export const CATEGORY_TAG_LABELS: Record<string, string> = {
   MATTRESS: '床垫',
   ACCESSORY: '配件',
 };
+
+/**
+ * Parse a composite value string ("fabric:1" / "product:5") into type and id.
+ * Returns null if the value is invalid.
+ */
+export function parseCompositeValue(
+  value: string
+): { type: 'fabric' | 'product'; id: number } | null {
+  const [type, idStr] = value.split(':');
+  const id = parseInt(idStr, 10);
+  if ((type === 'fabric' || type === 'product') && !isNaN(id)) {
+    return { type: type as 'fabric' | 'product', id };
+  }
+  return null;
+}

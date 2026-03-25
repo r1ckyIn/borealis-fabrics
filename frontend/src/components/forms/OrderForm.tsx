@@ -30,11 +30,13 @@ const { Text } = Typography;
 
 /** Internal form values type for items (deliveryDate is Dayjs). */
 interface OrderItemFormValues {
-  fabricId: number;
+  fabricId?: number;
+  productId?: number;
   supplierId?: number;
   quantity: number;
   salePrice: number;
   purchasePrice?: number;
+  unit?: string;
   deliveryDate?: Dayjs;
   notes?: string;
 }
@@ -110,13 +112,15 @@ export function OrderForm({
         deliveryAddress: values.deliveryAddress,
         notes: values.notes,
         items: (values.items ?? []).map((item) => ({
-          fabricId: item.fabricId,
-          supplierId: item.supplierId,
+          fabricId: item.fabricId ? Number(item.fabricId) : undefined,
+          productId: item.productId ? Number(item.productId) : undefined,
+          supplierId: item.supplierId ? Number(item.supplierId) : undefined,
           quantity: item.quantity,
           salePrice: item.salePrice,
           purchasePrice: item.purchasePrice,
           deliveryDate: item.deliveryDate?.format('YYYY-MM-DD'),
           notes: item.notes,
+          unit: item.unit,
         })),
       });
     }

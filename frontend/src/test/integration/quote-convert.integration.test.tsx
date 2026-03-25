@@ -3,6 +3,8 @@
  *
  * Mocks at the API module level (@/api/quote.api) while keeping
  * TanStack Query hooks, components, and routing running with real code.
+ *
+ * Updated for Phase 7/8 multi-item quote model (QuoteItem).
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -11,6 +13,7 @@ import { Route, Routes } from 'react-router-dom';
 import QuoteDetailPage from '@/pages/quotes/QuoteDetailPage';
 import {
   createMockQuote,
+  createMockQuoteItem,
   createMockCustomer,
   createMockFabric,
   createMockOrder,
@@ -66,10 +69,6 @@ function renderQuoteRoutes(initialEntries: string[] = ['/quotes/1']) {
   );
 }
 
-// TODO(phase-08): Rewrite integration tests for multi-item quote model
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type LegacyQuoteOverrides = Record<string, any>;
-
 describe('Quote Conversion Integration', () => {
   const mockCustomer = createMockCustomer({ id: 1, companyName: '测试客户' });
   const mockFabric = createMockFabric({ id: 1, fabricCode: 'FAB-0001', name: '棉布' });
@@ -81,20 +80,29 @@ describe('Quote Conversion Integration', () => {
   });
 
   describe('Active Quote', () => {
-    it('displays convert-to-order button for active quotes', async () => {
+    it('displays convert button (disabled until items selected) for active quotes', async () => {
+      const quoteItem = createMockQuoteItem({
+        id: 10,
+        fabricId: mockFabric.id,
+        fabric: mockFabric,
+        isConverted: false,
+      });
       const quote = createMockQuote({
         id: 1,
         status: QuoteStatus.ACTIVE,
         customer: mockCustomer,
-        fabric: mockFabric,
-      } as LegacyQuoteOverrides);
+        items: [quoteItem],
+      });
       quoteApi.getQuote.mockResolvedValue(quote);
 
       renderQuoteRoutes();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /转换为订单/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /转化为订单/ })).toBeInTheDocument();
       });
+
+      // Convert button is disabled until items are selected
+      expect(screen.getByRole('button', { name: /转化为订单/ })).toBeDisabled();
 
       // Edit button should be enabled
       const editButton = screen.getByRole('button', { name: /编辑/ });
@@ -105,13 +113,25 @@ describe('Quote Conversion Integration', () => {
       expect(deleteButton).not.toBeDisabled();
     });
 
-    it('convert flow: click → confirm → API call → navigate to order', async () => {
+    it('convert flow: select items → click → confirm → API call → navigate to order', async () => {
+      const quoteItem1 = createMockQuoteItem({
+        id: 10,
+        fabricId: mockFabric.id,
+        fabric: mockFabric,
+        isConverted: false,
+      });
+      const quoteItem2 = createMockQuoteItem({
+        id: 11,
+        fabricId: mockFabric.id,
+        fabric: mockFabric,
+        isConverted: false,
+      });
       const quote = createMockQuote({
         id: 1,
         status: QuoteStatus.ACTIVE,
         customer: mockCustomer,
-        fabric: mockFabric,
-      } as LegacyQuoteOverrides);
+        items: [quoteItem1, quoteItem2],
+      });
       const newOrder = createMockOrder({ id: 42 });
 
       quoteApi.getQuote.mockResolvedValue(quote);
@@ -120,15 +140,22 @@ describe('Quote Conversion Integration', () => {
       renderQuoteRoutes();
       const user = userEvent.setup();
 
-      // Wait for page to load
+      // Wait for page and items table to load
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /转换为订单/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /转化为订单/ })).toBeInTheDocument();
       });
 
-      // Click convert button
-      await user.click(screen.getByRole('button', { name: /转换为订单/ }));
+      // Select the first item checkbox
+      const checkboxes = document.querySelectorAll('.ant-table-row .ant-checkbox-input');
+      expect(checkboxes.length).toBe(2);
+      await user.click(checkboxes[0] as HTMLElement);
 
-      // Confirm modal appears - find the ok button in modal footer
+      // Convert button should now be enabled
+      const convertBtn = screen.getByRole('button', { name: /转化为订单/ });
+      expect(convertBtn).not.toBeDisabled();
+      await user.click(convertBtn);
+
+      // Confirm modal appears
       await waitFor(() => {
         expect(document.querySelector('.ant-modal-footer')).not.toBeNull();
       });
@@ -137,9 +164,9 @@ describe('Quote Conversion Integration', () => {
       const okButton = modalFooter!.querySelector('.ant-btn-primary') as HTMLButtonElement;
       await user.click(okButton);
 
-      // Verify API call (new multi-item conversion, quote has no items in mock so empty array)
+      // Verify API call with selected item IDs
       await waitFor(() => {
-        expect(quoteApi.convertQuoteItems).toHaveBeenCalledWith({ quoteItemIds: [] });
+        expect(quoteApi.convertQuoteItems).toHaveBeenCalledWith({ quoteItemIds: [10] });
       });
 
       // Should navigate to the new order page
@@ -149,12 +176,18 @@ describe('Quote Conversion Integration', () => {
     });
 
     it('convert failure: stays on page with error message', async () => {
+      const quoteItem = createMockQuoteItem({
+        id: 10,
+        fabricId: mockFabric.id,
+        fabric: mockFabric,
+        isConverted: false,
+      });
       const quote = createMockQuote({
         id: 1,
         status: QuoteStatus.ACTIVE,
         customer: mockCustomer,
-        fabric: mockFabric,
-      } as LegacyQuoteOverrides);
+        items: [quoteItem],
+      });
 
       quoteApi.getQuote.mockResolvedValue(quote);
       quoteApi.convertQuoteItems.mockRejectedValue({
@@ -167,10 +200,14 @@ describe('Quote Conversion Integration', () => {
       const user = userEvent.setup();
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /转换为订单/ })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /转化为订单/ })).toBeInTheDocument();
       });
 
-      await user.click(screen.getByRole('button', { name: /转换为订单/ }));
+      // Select item first
+      const checkbox = document.querySelector('.ant-table-row .ant-checkbox-input') as HTMLElement;
+      await user.click(checkbox);
+
+      await user.click(screen.getByRole('button', { name: /转化为订单/ }));
 
       await waitFor(() => {
         expect(document.querySelector('.ant-modal-footer')).not.toBeNull();
@@ -180,7 +217,7 @@ describe('Quote Conversion Integration', () => {
       const okButton = modalFooter!.querySelector('.ant-btn-primary') as HTMLButtonElement;
       await user.click(okButton);
 
-      // Error message should appear (mapped from HTTP status code 500)
+      // Error message should appear
       await waitFor(() => {
         expect(screen.getByText('服务器错误，请稍后重试')).toBeInTheDocument();
       });
@@ -194,8 +231,8 @@ describe('Quote Conversion Integration', () => {
         id: 1,
         status: QuoteStatus.ACTIVE,
         customer: mockCustomer,
-        fabric: mockFabric,
-      } as LegacyQuoteOverrides);
+        items: [],
+      });
 
       quoteApi.getQuote.mockResolvedValue(quote);
       quoteApi.deleteQuote.mockResolvedValue(undefined);
@@ -232,8 +269,8 @@ describe('Quote Conversion Integration', () => {
         id: 1,
         status: QuoteStatus.ACTIVE,
         customer: mockCustomer,
-        fabric: mockFabric,
-      } as LegacyQuoteOverrides);
+        items: [],
+      });
 
       quoteApi.getQuote.mockResolvedValue(quote);
       quoteApi.deleteQuote.mockRejectedValue({
@@ -271,8 +308,8 @@ describe('Quote Conversion Integration', () => {
         id: 2,
         status: QuoteStatus.EXPIRED,
         customer: mockCustomer,
-        fabric: mockFabric,
-      } as LegacyQuoteOverrides);
+        items: [],
+      });
       quoteApi.getQuote.mockResolvedValue(quote);
 
       renderQuoteRoutes(['/quotes/2']);
@@ -282,8 +319,8 @@ describe('Quote Conversion Integration', () => {
         expect(screen.getByRole('button', { name: /编辑/ })).toBeInTheDocument();
       });
 
-      // Convert button should not be rendered
-      expect(screen.queryByRole('button', { name: /转换为订单/ })).not.toBeInTheDocument();
+      // Convert button should not be rendered for expired quotes
+      expect(screen.queryByRole('button', { name: /转化为订单/ })).not.toBeInTheDocument();
 
       // Edit button should be enabled for expired quotes (can extend validUntil)
       expect(screen.getByRole('button', { name: /编辑/ })).not.toBeDisabled();
@@ -296,8 +333,8 @@ describe('Quote Conversion Integration', () => {
         id: 3,
         status: QuoteStatus.CONVERTED,
         customer: mockCustomer,
-        fabric: mockFabric,
-      } as LegacyQuoteOverrides);
+        items: [],
+      });
       quoteApi.getQuote.mockResolvedValue(quote);
 
       renderQuoteRoutes(['/quotes/3']);
@@ -308,7 +345,7 @@ describe('Quote Conversion Integration', () => {
       });
 
       // Convert button should not be rendered
-      expect(screen.queryByRole('button', { name: /转换为订单/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /转化为订单/ })).not.toBeInTheDocument();
 
       // Edit button should be disabled
       expect(screen.getByRole('button', { name: /编辑/ })).toBeDisabled();

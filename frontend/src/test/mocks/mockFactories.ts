@@ -11,6 +11,7 @@ import type {
   Order,
   OrderItem,
   Quote,
+  QuoteItem,
   SupplierPayment,
   OrderTimelineEntry,
 } from '@/types/entities.types';
@@ -222,6 +223,25 @@ export function createMockOrderItem(
   };
 }
 
+export function createMockQuoteItem(overrides?: Partial<QuoteItem>): QuoteItem {
+  const id = overrides?.id ?? getNextId();
+  return {
+    id,
+    quoteId: 1,
+    fabricId: 1,
+    productId: null,
+    quantity: 100,
+    unitPrice: 25,
+    subtotal: 2500,
+    unit: '米',
+    isConverted: false,
+    notes: null,
+    createdAt: '2025-01-01T00:00:00.000Z',
+    updatedAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
 export function createMockQuote(overrides?: Partial<Quote>): Quote {
   const id = overrides?.id ?? getNextId();
   return {
@@ -232,6 +252,7 @@ export function createMockQuote(overrides?: Partial<Quote>): Quote {
     validUntil: '2026-12-31T00:00:00.000Z',
     status: QuoteStatus.ACTIVE,
     notes: null,
+    items: [],
     createdAt: '2025-01-01T00:00:00.000Z',
     updatedAt: '2025-01-01T00:00:00.000Z',
     ...overrides,

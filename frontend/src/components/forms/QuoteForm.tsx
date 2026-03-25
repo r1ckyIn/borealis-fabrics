@@ -25,10 +25,8 @@ import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 
 import { CustomerSelector } from '@/components/business/CustomerSelector';
-import {
-  UnifiedProductSelector,
-  parseCompositeValue,
-} from '@/components/business/UnifiedProductSelector';
+import { UnifiedProductSelector } from '@/components/business/UnifiedProductSelector';
+import { parseCompositeValue } from '@/utils/product-constants';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { getCustomers } from '@/api/customer.api';
 import type { Quote, CreateQuoteData } from '@/types';
@@ -327,8 +325,8 @@ export function QuoteForm({
         validUntil: values.validUntil.format('YYYY-MM-DD'),
         notes: values.notes,
         items: (values.items ?? []).map((item) => ({
-          fabricId: item.fabricId || undefined,
-          productId: item.productId || undefined,
+          fabricId: item.fabricId ? Number(item.fabricId) : undefined,
+          productId: item.productId ? Number(item.productId) : undefined,
           quantity: item.quantity!,
           unitPrice: item.unitPrice!,
           unit: item.unit,

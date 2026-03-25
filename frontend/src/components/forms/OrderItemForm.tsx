@@ -20,8 +20,8 @@ import { DeleteOutlined } from '@ant-design/icons';
 
 import {
   UnifiedProductSelector,
-  parseCompositeValue,
 } from '@/components/business/UnifiedProductSelector';
+import { parseCompositeValue } from '@/utils/product-constants';
 import { SupplierSelector } from '@/components/business/SupplierSelector';
 import { getSuppliers } from '@/api/supplier.api';
 import { formatCurrency } from '@/utils/format';

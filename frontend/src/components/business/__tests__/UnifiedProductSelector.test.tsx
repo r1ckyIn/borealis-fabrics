@@ -4,10 +4,8 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  UnifiedProductSelector,
-  parseCompositeValue,
-} from '../UnifiedProductSelector';
+import { UnifiedProductSelector } from '../UnifiedProductSelector';
+import { parseCompositeValue } from '@/utils/product-constants';
 import type { Fabric, Product, FabricSupplier, ProductSupplier } from '@/types/entities.types';
 import type { PaginatedResult } from '@/types/api.types';
 

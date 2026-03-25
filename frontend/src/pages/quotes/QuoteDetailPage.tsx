@@ -17,7 +17,6 @@ import {
   Tooltip,
   Tag,
   Typography,
-  Modal,
   message,
 } from 'antd';
 import {
@@ -62,6 +61,7 @@ export default function QuoteDetailPage(): React.ReactElement {
 
   // Modal states
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [convertModalOpen, setConvertModalOpen] = useState(false);
 
   // Checkbox selection for partial conversion
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
@@ -104,36 +104,29 @@ export default function QuoteDetailPage(): React.ReactElement {
     }
   }, [quoteId, deleteMutation, navigate]);
 
-  /** Handle convert with selected items. */
-  const handleConvert = useCallback(async (): Promise<void> => {
+  /** Handle convert confirmation. */
+  const handleConvertConfirm = useCallback(async (): Promise<void> => {
     if (selectedRowKeys.length === 0) return;
 
-    Modal.confirm({
-      title: '确认转化',
-      content: `确定将选中的 ${selectedRowKeys.length} 项报价明细转化为订单吗？`,
-      okText: '确认转化',
-      cancelText: '取消',
-      onOk: async () => {
-        try {
-          const order = await convertMutation.mutateAsync({
-            quoteItemIds: selectedRowKeys,
-          });
-          message.success('转化成功');
-          setSelectedRowKeys([]);
-          navigate(`/orders/${order.id}`);
-        } catch (error: unknown) {
-          console.error('Convert error:', error);
-          const apiError = error as ApiError;
-          if (apiError.code === 409) {
-            message.warning('该报价正在被其他请求转换，请稍后重试');
-          } else if (apiError.code === 503) {
-            message.warning('系统暂时不可用，请稍后重试');
-          } else {
-            message.error(getErrorMessage(apiError));
-          }
-        }
-      },
-    });
+    try {
+      const order = await convertMutation.mutateAsync({
+        quoteItemIds: selectedRowKeys,
+      });
+      message.success('转化成功');
+      setSelectedRowKeys([]);
+      setConvertModalOpen(false);
+      navigate(`/orders/${order.id}`);
+    } catch (error: unknown) {
+      console.error('Convert error:', error);
+      const apiError = error as ApiError;
+      if (apiError.code === 409) {
+        message.warning('该报价正在被其他请求转换，请稍后重试');
+      } else if (apiError.code === 503) {
+        message.warning('系统暂时不可用，请稍后重试');
+      } else {
+        message.error(getErrorMessage(apiError));
+      }
+    }
   }, [selectedRowKeys, convertMutation, navigate]);
 
   // QuoteItem table columns
@@ -283,7 +276,7 @@ export default function QuoteDetailPage(): React.ReactElement {
   const isPartiallyConverted =
     quote.status === QuoteStatus.PARTIALLY_CONVERTED;
   const isConverted = quote.status === QuoteStatus.CONVERTED;
-  const canEdit = isActive || isPartiallyConverted;
+  const canEdit = !isConverted;
   const canConvert = isActive || isPartiallyConverted;
 
   return (
@@ -371,7 +364,7 @@ export default function QuoteDetailPage(): React.ReactElement {
               type="primary"
               disabled={selectedRowKeys.length === 0}
               loading={convertMutation.isPending}
-              onClick={handleConvert}
+              onClick={() => setConvertModalOpen(true)}
             >
               转化为订单 ({selectedRowKeys.length} 项)
             </Button>
@@ -395,6 +388,17 @@ export default function QuoteDetailPage(): React.ReactElement {
         confirmText="删除"
         danger
         loading={deleteMutation.isPending}
+      />
+
+      {/* Convert Confirmation Modal */}
+      <ConfirmModal
+        open={convertModalOpen}
+        title="确认转化"
+        content={`确定将选中的 ${selectedRowKeys.length} 项报价明细转化为订单吗？`}
+        onConfirm={handleConvertConfirm}
+        onCancel={() => setConvertModalOpen(false)}
+        confirmText="确认转化"
+        loading={convertMutation.isPending}
       />
     </PageContainer>
   );

@@ -50,21 +50,6 @@ export interface UnifiedProductSelectorProps {
   style?: React.CSSProperties;
 }
 
-/**
- * Parse a composite value string into type and id.
- * Returns null if the value is invalid.
- */
-export function parseCompositeValue(
-  value: string
-): { type: 'fabric' | 'product'; id: number } | null {
-  const [type, idStr] = value.split(':');
-  const id = parseInt(idStr, 10);
-  if ((type === 'fabric' || type === 'product') && !isNaN(id)) {
-    return { type: type as 'fabric' | 'product', id };
-  }
-  return null;
-}
-
 /** Debounce delay in milliseconds */
 const DEBOUNCE_DELAY = 300;
 
