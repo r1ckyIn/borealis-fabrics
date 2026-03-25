@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-25T03:26:32.838Z"
+last_updated: "2026-03-25T06:29:07Z"
 progress:
   total_phases: 11
   completed_phases: 6
-  total_plans: 23
+  total_plans: 26
   completed_plans: 23
 ---
 
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 06 complete — next: Phase 07 (Order/Quote Multi-Category Extension)
+**Current focus:** Phase 07 — order-quote-multi-category-extension
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 06 |
-| Name | Import Strategy Refactor |
-| Status | Complete |
-| Current Plan | 2 of 2 |
-| Branch | feature/gsd-06-import-strategy-refactor |
+| Phase | 07 |
+| Name | Order/Quote Multi-Category Extension |
+| Status | In Progress |
+| Current Plan | 1 of 3 |
+| Branch | feature/gsd-07-order-quote-multi-category-extension |
 
 ## Progress
 
@@ -40,7 +40,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 4 — Frontend Component Decomposition | ● Complete | 4/4 |
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
 | 6 — Import Strategy Refactor | ● Complete | 2/2 |
-| 7 — Order/Quote Multi-Category Extension | ○ Not Started | — |
+| 7 — Order/Quote Multi-Category Extension | ◆ In Progress | 1/3 |
 | 8 — Frontend Multi-Category Pages | ○ Not Started | — |
 | 9 — Contract OCR Skill | ○ Not Started | — |
 | 10 — Real Data Testing | ○ Not Started | — |
@@ -110,6 +110,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Supplier map pre-loaded in getExistingKeys() lifecycle | Follows existing call pattern; getExistingKeys() called once before validateRow() |
 | 2026-03-25 | Dry-run at importData level with single !dryRun conditional | All strategies benefit automatically, minimal code change |
 | 2026-03-25 | dryRun defaults to false via DefaultValuePipe | Backward compatible, no breaking changes to existing API consumers |
+| 2026-03-25 | NoAction FK for fabricId/productId on OrderItem/QuoteItem | MySQL CHECK constraint incompatible with SET NULL/CASCADE FK action |
+| 2026-03-25 | IsIntegerWhenFieldPresent custom decorator (not dual @ValidateIf) | class-validator AND-logic on same property prevents dual validation groups |
+| 2026-03-25 | Single migration with inline data migration SQL for quote restructure | Move existing quote fabricId/quantity/unitPrice to QuoteItem before dropping columns |
 
 ## Accumulated Context
 
@@ -144,7 +147,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | Phase 05 Plan 02 | Completed 05-02-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-02-SUMMARY.md` |
 | 2026-03-25 | Phase 06 Plan 01 | Completed 06-01-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-01-SUMMARY.md` |
 | 2026-03-25 | Phase 06 Plan 02 | Completed 06-02-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-02-SUMMARY.md` |
+| 2026-03-25 | Phase 07 Plan 01 | Completed 07-01-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-01-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 06 complete — import system extended with product endpoints, dry-run for all types, 784 backend tests passing)*
+*Last updated: 2026-03-25 (Phase 07 Plan 01 complete — OrderItem multi-category extension, QuoteItem table, XOR constraints, 119 order tests passing)*

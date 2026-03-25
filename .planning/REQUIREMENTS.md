@@ -65,7 +65,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **MCAT-04**: Hardware/accessories CRUD with specifications and pricing
 - [x] **MCAT-05**: Product import templates for each new category
 - [x] **MCAT-06**: ProductImportStrategy integrated into ImportService
-- [ ] **MCAT-07**: OrderItem extended with productId FK (nullable, exactly-one guard with fabricId)
+- [x] **MCAT-07**: OrderItem extended with productId FK (nullable, exactly-one guard with fabricId)
 - [ ] **MCAT-08**: Quote extended to support non-fabric products
 - [x] **MCAT-09**: Product code generation (category-specific prefixes via CodeGeneratorService)
 - [ ] **MCAT-10**: Frontend product list page with category filter
@@ -160,7 +160,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | MCAT-04 | Phase 5 | Complete |
 | MCAT-05 | Phase 6 | Complete |
 | MCAT-06 | Phase 6 | Complete |
-| MCAT-07 | Phase 7 | Pending |
+| MCAT-07 | Phase 7 | Complete |
 | MCAT-08 | Phase 7 | Pending |
 | MCAT-09 | Phase 5 | Complete |
 | MCAT-10 | Phase 8 | Pending |

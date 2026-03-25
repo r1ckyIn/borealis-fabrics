@@ -202,7 +202,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — Schema migration (OrderItem extension + QuoteItem table) + OrderItem product-aware CRUD
+- [x] 07-01-PLAN.md — Schema migration (OrderItem extension + QuoteItem table) + OrderItem product-aware CRUD
 - [ ] 07-02-PLAN.md — Quote multi-item restructure (DTOs + service rewrite + controller + item management)
 - [ ] 07-03-PLAN.md — Quote partial conversion (item-level conversion + scheduler update + full verification)
 
