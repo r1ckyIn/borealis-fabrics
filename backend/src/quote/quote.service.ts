@@ -20,18 +20,18 @@ import {
 } from './dto';
 import { OrderItemStatus } from '../order/enums/order-status.enum';
 import { Quote, Order, OrderItem, Prisma } from '@prisma/client';
-
-// Order with items relation included (from create/findUniqueOrThrow with include)
-type OrderWithItems = Order & { items: OrderItem[] };
-type TransactionClient = Parameters<
-  Parameters<PrismaService['$transaction']>[0]
->[0];
 import {
   buildPaginationArgs,
   buildPaginatedResult,
   PaginatedResult,
 } from '../common/utils/pagination';
 import { FABRIC_UNIT, getUnitForProduct } from '../common/utils/product-units';
+
+// Order with items relation included (from create/findUniqueOrThrow with include)
+type OrderWithItems = Order & { items: OrderItem[] };
+type TransactionClient = Parameters<
+  Parameters<PrismaService['$transaction']>[0]
+>[0];
 
 // Maximum retries for handling quote code conflicts
 const MAX_CODE_GENERATION_RETRIES = 3;

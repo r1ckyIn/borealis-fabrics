@@ -121,6 +121,34 @@ export class OrderService {
       return sum + item.quantity * item.salePrice;
     }, 0);
 
+    // Build item data with derived units
+    const itemsData = createDto.items.map((item) => {
+      let unit = item.unit ?? FABRIC_UNIT;
+      if (item.productId && !item.unit) {
+        const subCategory = productSubCategoryMap.get(item.productId);
+        if (subCategory) {
+          unit = getUnitForProduct(subCategory);
+        }
+      }
+
+      return {
+        fabricId: item.fabricId ?? null,
+        productId: item.productId ?? null,
+        supplierId: item.supplierId,
+        quoteId: item.quoteId,
+        quantity: item.quantity,
+        unit,
+        salePrice: item.salePrice,
+        purchasePrice: item.purchasePrice,
+        subtotal: item.quantity * item.salePrice,
+        status: OrderItemStatus.INQUIRY,
+        deliveryDate: item.deliveryDate
+          ? new Date(item.deliveryDate)
+          : undefined,
+        notes: item.notes,
+      };
+    });
+
     // Retry loop for handling order code conflicts
     for (let attempt = 1; attempt <= MAX_CODE_GENERATION_RETRIES; attempt++) {
       try {
@@ -142,28 +170,7 @@ export class OrderService {
               deliveryAddress: createDto.deliveryAddress,
               notes: createDto.notes,
               items: {
-                create: createDto.items.map((item) => ({
-                  fabricId: item.fabricId ?? null,
-                  productId: item.productId ?? null,
-                  supplierId: item.supplierId,
-                  quoteId: item.quoteId,
-                  quantity: item.quantity,
-                  unit:
-                    item.unit ??
-                    (item.productId
-                      ? getUnitForProduct(
-                          productSubCategoryMap.get(item.productId) ?? '',
-                        )
-                      : FABRIC_UNIT),
-                  salePrice: item.salePrice,
-                  purchasePrice: item.purchasePrice,
-                  subtotal: item.quantity * item.salePrice,
-                  status: OrderItemStatus.INQUIRY,
-                  deliveryDate: item.deliveryDate
-                    ? new Date(item.deliveryDate)
-                    : undefined,
-                  notes: item.notes,
-                })),
+                create: itemsData,
               },
             },
             include: {
