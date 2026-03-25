@@ -116,21 +116,45 @@ export interface UpdateCustomerPricingData {
   specialPrice: number;
 }
 
-export interface CreateQuoteData {
-  customerId: number;
-  fabricId: number;
+export interface CreateQuoteItemData {
+  fabricId?: number;
+  productId?: number;
   quantity: number;
   unitPrice: number;
-  validUntil: string;
+  unit?: string;
   notes?: string;
 }
 
+export interface CreateQuoteData {
+  customerId: number;
+  validUntil: string;
+  notes?: string;
+  items: CreateQuoteItemData[];
+}
+
 export interface UpdateQuoteData {
+  validUntil?: string;
+  notes?: string;
+}
+
+export interface AddQuoteItemData {
+  fabricId?: number;
+  productId?: number;
+  quantity: number;
+  unitPrice: number;
+  unit?: string;
+  notes?: string;
+}
+
+export interface UpdateQuoteItemData {
   quantity?: number;
   unitPrice?: number;
-  validUntil?: string;
-  status?: QuoteStatus;
   notes?: string;
+}
+
+export interface ConvertQuoteItemsData {
+  quoteItemIds: number[];
+  orderId?: number;
 }
 
 export interface QueryQuoteParams extends PaginationParams {
@@ -144,12 +168,14 @@ export interface QueryQuoteParams extends PaginationParams {
 }
 
 export interface AddOrderItemData {
-  fabricId: number;
+  fabricId?: number;
+  productId?: number;
   supplierId?: number;
   quoteId?: number;
   quantity: number;
   salePrice: number;
   purchasePrice?: number;
+  unit?: string;
   deliveryDate?: string;
   notes?: string;
 }
@@ -277,4 +303,51 @@ export interface CreateFabricPricingData {
 
 export interface UpdateFabricPricingData {
   specialPrice: number;
+}
+
+export interface CreateProductData {
+  name: string;
+  category: string;
+  subCategory: string;
+  modelNumber?: string;
+  specification?: string;
+  defaultPrice?: number;
+  specs?: Record<string, unknown>;
+  notes?: string;
+}
+
+export type UpdateProductData = Partial<CreateProductData>;
+
+export interface QueryProductParams extends PaginationParams {
+  keyword?: string;
+  subCategory?: string;
+  category?: string;
+}
+
+export interface CreateProductSupplierData {
+  supplierId: number;
+  purchasePrice: number;
+  minOrderQty?: number;
+  leadTimeDays?: number;
+}
+
+export type UpdateProductSupplierData = Partial<
+  Omit<CreateProductSupplierData, 'supplierId'>
+>;
+
+export interface QueryProductSuppliersParams extends PaginationParams {
+  supplierName?: string;
+}
+
+export interface CreateProductPricingData {
+  customerId: number;
+  specialPrice: number;
+}
+
+export interface UpdateProductPricingData {
+  specialPrice: number;
+}
+
+export interface QueryProductPricingParams extends PaginationParams {
+  customerName?: string;
 }

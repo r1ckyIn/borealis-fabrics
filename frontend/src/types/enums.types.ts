@@ -87,6 +87,7 @@ export const QuoteStatus = {
   ACTIVE: 'active',
   EXPIRED: 'expired',
   CONVERTED: 'converted',
+  PARTIALLY_CONVERTED: 'partially_converted',
 } as const;
 
 export type QuoteStatus = (typeof QuoteStatus)[keyof typeof QuoteStatus];
@@ -95,6 +96,7 @@ export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {
   [QuoteStatus.ACTIVE]: '有效',
   [QuoteStatus.EXPIRED]: '已过期',
   [QuoteStatus.CONVERTED]: '已转换',
+  [QuoteStatus.PARTIALLY_CONVERTED]: '部分转换',
 };
 
 /** Supplier status. */
@@ -151,4 +153,34 @@ export type PaymentRecordType =
 export const PAYMENT_RECORD_TYPE_LABELS: Record<PaymentRecordType, string> = {
   [PaymentRecordType.CUSTOMER]: '客户付款',
   [PaymentRecordType.SUPPLIER]: '供应商付款',
+};
+
+/** Product category. */
+export const ProductCategory = {
+  IRON_FRAME_MOTOR: 'IRON_FRAME_MOTOR',
+} as const;
+
+export type ProductCategory =
+  (typeof ProductCategory)[keyof typeof ProductCategory];
+
+export const PRODUCT_CATEGORY_LABELS: Record<ProductCategory, string> = {
+  [ProductCategory.IRON_FRAME_MOTOR]: '铁架电机',
+};
+
+/** Product sub-category. */
+export const ProductSubCategory = {
+  IRON_FRAME: 'IRON_FRAME',
+  MOTOR: 'MOTOR',
+  MATTRESS: 'MATTRESS',
+  ACCESSORY: 'ACCESSORY',
+} as const;
+
+export type ProductSubCategory =
+  (typeof ProductSubCategory)[keyof typeof ProductSubCategory];
+
+export const PRODUCT_SUB_CATEGORY_LABELS: Record<ProductSubCategory, string> = {
+  [ProductSubCategory.IRON_FRAME]: '铁架',
+  [ProductSubCategory.MOTOR]: '电机',
+  [ProductSubCategory.MATTRESS]: '床垫',
+  [ProductSubCategory.ACCESSORY]: '配件',
 };
