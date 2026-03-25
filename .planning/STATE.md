@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-24T09:42:26.103Z"
+last_updated: "2026-03-25T03:26:32.838Z"
 progress:
   total_phases: 11
   completed_phases: 5
-  total_plans: 21
-  completed_plans: 20
+  total_plans: 23
+  completed_plans: 21
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 05 — multi-category-schema-product-crud
+**Current focus:** Phase 06 — import-strategy-refactor
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 05 |
-| Name | Multi-Category Schema + Product CRUD |
-| Status | Complete |
-| Current Plan | 2 of 2 |
-| Branch | feature/gsd-05-multi-category-schema |
+| Phase | 06 |
+| Name | Import Strategy Refactor |
+| Status | In Progress |
+| Current Plan | 1 of 2 |
+| Branch | feature/gsd-06-import-strategy-refactor |
 
 ## Progress
 
@@ -39,7 +39,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 3 — Backend Service Decomposition | ● Complete | 4/4 |
 | 4 — Frontend Component Decomposition | ● Complete | 4/4 |
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
-| 6 — Import Strategy Refactor | ○ Not Started | — |
+| 6 — Import Strategy Refactor | ◐ In Progress | 1/2 |
 | 7 — Order/Quote Multi-Category Extension | ○ Not Started | — |
 | 8 — Frontend Multi-Category Pages | ○ Not Started | — |
 | 9 — Contract OCR Skill | ○ Not Started | — |
@@ -105,6 +105,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | Non-null assertion on fabricId in FabricPricingItem | Fabric pricing always has fabricId; nullable change only affects product pricing rows |
 | 2026-03-24 | ProductModule uses global CommonModule (no explicit import) | CommonModule is @Global, CodeGeneratorService available via DI without module import |
 | 2026-03-24 | Bundle routes before :id routes in ProductController | Prevents NestJS parsing "bundles" as numeric ID parameter |
+| 2026-03-25 | Composite key separator :: for modelNumber+name dedup | Avoids collision with common characters in product names |
+| 2026-03-25 | DB duplicates reported as failures (not skips) for product import | Per user decision — products should fail, not silently skip |
+| 2026-03-25 | Supplier map pre-loaded in getExistingKeys() lifecycle | Follows existing call pattern; getExistingKeys() called once before validateRow() |
 
 ## Accumulated Context
 
@@ -137,7 +140,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | Phase 04.1 Plan 03 | Completed 04.1-03-PLAN.md | `.planning/phases/04.1-pdf/04.1-03-SUMMARY.md` |
 | 2026-03-24 | Phase 05 Plan 01 | Completed 05-01-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-01-SUMMARY.md` |
 | 2026-03-24 | Phase 05 Plan 02 | Completed 05-02-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-02-SUMMARY.md` |
+| 2026-03-25 | Phase 06 Plan 01 | Completed 06-01-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-01-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-24 (Phase 05 Plan 02 complete — ProductModule with 18 REST endpoints, 13 DTOs, full CRUD for products/suppliers/pricing/bundles, 737 backend tests passing)*
+*Last updated: 2026-03-25 (Phase 06 Plan 01 complete — ProductImportStrategy with composite key dedup, 24 new tests, 88 total import tests passing)*
