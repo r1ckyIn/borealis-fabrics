@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Res,
   UploadedFile,
   UseInterceptors,
@@ -9,6 +10,8 @@ import {
   ParseFilePipe,
   MaxFileSizeValidator,
   FileValidator,
+  DefaultValuePipe,
+  ParseBoolPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -17,6 +20,7 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ImportService } from './import.service';
@@ -77,7 +81,7 @@ export class ImportController {
   constructor(private readonly importService: ImportService) {}
 
   /**
-   * 3.4.3 Download fabric import template
+   * Download fabric import template
    */
   @Get('templates/fabrics')
   @ApiOperation({ summary: 'Download fabric import template' })
@@ -103,7 +107,7 @@ export class ImportController {
   }
 
   /**
-   * 3.4.4 Download supplier import template
+   * Download supplier import template
    */
   @Get('templates/suppliers')
   @ApiOperation({ summary: 'Download supplier import template' })
@@ -129,7 +133,33 @@ export class ImportController {
   }
 
   /**
-   * 3.4.1 Import fabrics from Excel
+   * Download product import template
+   */
+  @Get('templates/products')
+  @ApiOperation({ summary: 'Download product import template' })
+  @ApiResponse({
+    status: 200,
+    description: 'Excel template file',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {},
+    },
+  })
+  async downloadProductTemplate(@Res() res: Response): Promise<void> {
+    const buffer = await this.importService.generateProductTemplate();
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=product_import_template.xlsx',
+    );
+    res.send(buffer);
+  }
+
+  /**
+   * Import fabrics from Excel
    */
   @Post('fabrics')
   @UseInterceptors(FileInterceptor('file'))
@@ -147,6 +177,12 @@ export class ImportController {
       },
       required: ['file'],
     },
+  })
+  @ApiQuery({
+    name: 'dryRun',
+    required: false,
+    type: Boolean,
+    description: 'Validate without writing to database',
   })
   @ApiResponse({
     status: 201,
@@ -179,12 +215,14 @@ export class ImportController {
       }),
     )
     file: Express.Multer.File,
+    @Query('dryRun', new DefaultValuePipe(false), ParseBoolPipe)
+    dryRun: boolean,
   ): Promise<ImportResultDto> {
-    return this.importService.importFabrics(file);
+    return this.importService.importFabrics(file, dryRun);
   }
 
   /**
-   * 3.4.2 Import suppliers from Excel
+   * Import suppliers from Excel
    */
   @Post('suppliers')
   @UseInterceptors(FileInterceptor('file'))
@@ -202,6 +240,12 @@ export class ImportController {
       },
       required: ['file'],
     },
+  })
+  @ApiQuery({
+    name: 'dryRun',
+    required: false,
+    type: Boolean,
+    description: 'Validate without writing to database',
   })
   @ApiResponse({
     status: 201,
@@ -234,7 +278,72 @@ export class ImportController {
       }),
     )
     file: Express.Multer.File,
+    @Query('dryRun', new DefaultValuePipe(false), ParseBoolPipe)
+    dryRun: boolean,
   ): Promise<ImportResultDto> {
-    return this.importService.importSuppliers(file);
+    return this.importService.importSuppliers(file, dryRun);
+  }
+
+  /**
+   * Import products from Excel
+   */
+  @Post('products')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Import products from Excel file' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Excel file (.xlsx)',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiQuery({
+    name: 'dryRun',
+    required: false,
+    type: Boolean,
+    description: 'Validate without writing to database',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Import result',
+    type: ImportResultDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid file' })
+  async importProducts(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
+          new ExcelFileValidator({}),
+        ],
+        fileIsRequired: true,
+        exceptionFactory: (error) => {
+          if (error === 'File is required') {
+            return new BadRequestException('File is required');
+          }
+          if (error.includes('size')) {
+            return new BadRequestException('File size exceeds 10MB limit');
+          }
+          if (error.includes('type') || error.includes('Validation failed')) {
+            return new BadRequestException(
+              'Invalid file type. Only .xlsx files are allowed',
+            );
+          }
+          return new BadRequestException(error);
+        },
+      }),
+    )
+    file: Express.Multer.File,
+    @Query('dryRun', new DefaultValuePipe(false), ParseBoolPipe)
+    dryRun: boolean,
+  ): Promise<ImportResultDto> {
+    return this.importService.importProducts(file, dryRun);
   }
 }
