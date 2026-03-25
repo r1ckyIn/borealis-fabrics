@@ -661,7 +661,7 @@ describe('ImportService', () => {
   // Strategy getRowKey Tests
   // ============================================================
   describe('getRowKey', () => {
-    it('FabricImportStrategy.getRowKey returns fabricCode (column 1)', async () => {
+    it('FabricImportStrategy.getRowKey returns fabricCode (column 1)', () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Test');
       worksheet.columns = [
@@ -671,21 +671,27 @@ describe('ImportService', () => {
       worksheet.addRow({ fabricCode: 'FB-KEY-001', name: 'Test Fabric' });
 
       const row = worksheet.getRow(2);
-      const fabricStrategy = module.get<FabricImportStrategy>(FabricImportStrategy);
+      const fabricStrategy =
+        module.get<FabricImportStrategy>(FabricImportStrategy);
       expect(fabricStrategy.getRowKey(row)).toBe('FB-KEY-001');
     });
 
-    it('SupplierImportStrategy.getRowKey returns companyName (column 1)', async () => {
+    it('SupplierImportStrategy.getRowKey returns companyName (column 1)', () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Test');
       worksheet.columns = [
         { header: 'companyName*', key: 'companyName', width: 30 },
         { header: 'contactName', key: 'contactName', width: 20 },
       ];
-      worksheet.addRow({ companyName: 'Test Supplier Co', contactName: 'John' });
+      worksheet.addRow({
+        companyName: 'Test Supplier Co',
+        contactName: 'John',
+      });
 
       const row = worksheet.getRow(2);
-      const supplierStrategy = module.get<SupplierImportStrategy>(SupplierImportStrategy);
+      const supplierStrategy = module.get<SupplierImportStrategy>(
+        SupplierImportStrategy,
+      );
       expect(supplierStrategy.getRowKey(row)).toBe('Test Supplier Co');
     });
   });

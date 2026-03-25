@@ -227,12 +227,7 @@ describe('ProductImportStrategy', () => {
         supplierName: 'Valid Supplier',
         purchasePrice: 100,
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(false);
       expect(result.failure?.reason).toContain('subCategory');
     });
@@ -244,12 +239,7 @@ describe('ProductImportStrategy', () => {
         supplierName: 'Valid Supplier',
         purchasePrice: 100,
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(false);
       expect(result.failure?.reason).toContain('modelNumber');
     });
@@ -261,12 +251,7 @@ describe('ProductImportStrategy', () => {
         supplierName: 'Valid Supplier',
         purchasePrice: 100,
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(false);
       expect(result.failure?.reason).toContain('name');
     });
@@ -278,12 +263,7 @@ describe('ProductImportStrategy', () => {
         name: 'Test',
         purchasePrice: 100,
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(false);
       expect(result.failure?.reason).toContain('supplierName');
     });
@@ -295,12 +275,7 @@ describe('ProductImportStrategy', () => {
         name: 'Test',
         supplierName: 'Valid Supplier',
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(false);
       expect(result.failure?.reason).toContain('purchasePrice');
     });
@@ -313,12 +288,7 @@ describe('ProductImportStrategy', () => {
         supplierName: 'Valid Supplier',
         purchasePrice: 100,
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(false);
       expect(result.failure?.reason).toContain('subCategory');
     });
@@ -332,12 +302,7 @@ describe('ProductImportStrategy', () => {
         purchasePrice: 100,
       });
       const existingKeys = new Set(['EXISTING::Existing Product']);
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        existingKeys,
-      );
+      const result = strategy.validateRow(row, 2, new Set(), existingKeys);
       expect(result.valid).toBe(false);
       // Critical: must be failure, NOT skipped
       expect(result.failure).toBeDefined();
@@ -354,12 +319,7 @@ describe('ProductImportStrategy', () => {
         purchasePrice: 100,
       });
       const batchKeys = new Set(['M001::Batch Dup']);
-      const result = strategy.validateRow(
-        row,
-        2,
-        batchKeys,
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, batchKeys, new Set());
       expect(result.valid).toBe(false);
       expect(result.failure?.reason).toContain('Duplicate');
     });
@@ -372,12 +332,7 @@ describe('ProductImportStrategy', () => {
         supplierName: 'Unknown Supplier',
         purchasePrice: 100,
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(false);
       expect(result.failure?.reason).toContain('Unknown Supplier');
       expect(result.failure?.reason).toContain('not found');
@@ -394,12 +349,7 @@ describe('ProductImportStrategy', () => {
         purchasePrice: 150,
         notes: 'Some notes',
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(true);
     });
 
@@ -411,12 +361,7 @@ describe('ProductImportStrategy', () => {
         supplierName: 'Valid Supplier',
         purchasePrice: 100,
       });
-      const result = strategy.validateRow(
-        row,
-        2,
-        new Set(),
-        new Set(),
-      );
+      const result = strategy.validateRow(row, 2, new Set(), new Set());
       expect(result.valid).toBe(true);
     });
   });
@@ -483,17 +428,19 @@ describe('ProductImportStrategy', () => {
       mockCodeGenerator.generateCode.mockResolvedValue('TJ-2603-0001');
 
       const mockProduct = { id: 42, productCode: 'TJ-2603-0001' };
-      mockTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
-        const tx = {
-          product: {
-            create: jest.fn().mockResolvedValue(mockProduct),
-          },
-          productSupplier: {
-            create: jest.fn().mockResolvedValue({}),
-          },
-        };
-        return cb(tx);
-      });
+      mockTransaction.mockImplementation(
+        async (cb: (tx: unknown) => Promise<unknown>) => {
+          const tx = {
+            product: {
+              create: jest.fn().mockResolvedValue(mockProduct),
+            },
+            productSupplier: {
+              create: jest.fn().mockResolvedValue({}),
+            },
+          };
+          return cb(tx);
+        },
+      );
 
       const entities = [
         {
@@ -522,12 +469,14 @@ describe('ProductImportStrategy', () => {
       const txProductCreate = jest.fn().mockResolvedValue({ id: 1 });
       const txProductSupplierCreate = jest.fn();
 
-      mockTransaction.mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) => {
-        return cb({
-          product: { create: txProductCreate },
-          productSupplier: { create: txProductSupplierCreate },
-        });
-      });
+      mockTransaction.mockImplementation(
+        async (cb: (tx: unknown) => Promise<unknown>) => {
+          return cb({
+            product: { create: txProductCreate },
+            productSupplier: { create: txProductSupplierCreate },
+          });
+        },
+      );
 
       const entities = [
         {
