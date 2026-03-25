@@ -13,7 +13,6 @@ import { CodeGeneratorService } from '../common/services';
 import { RedisService } from '../common/services/redis.service';
 import { QuoteStatus, CreateQuoteDto, CreateQuoteItemDto } from './dto';
 import { OrderItemStatus } from '../order/enums/order-status.enum';
-import { Order } from '@prisma/client';
 import { Prisma } from '@prisma/client';
 
 describe('QuoteService', () => {
@@ -24,6 +23,7 @@ describe('QuoteService', () => {
       findFirst: jest.Mock;
       findMany: jest.Mock;
       findUnique: jest.Mock;
+      findUniqueOrThrow: jest.Mock;
       update: jest.Mock;
       updateMany: jest.Mock;
       delete: jest.Mock;
@@ -35,13 +35,21 @@ describe('QuoteService', () => {
       findMany: jest.Mock;
       findUnique: jest.Mock;
       update: jest.Mock;
+      updateMany: jest.Mock;
       delete: jest.Mock;
     };
     customer: { findFirst: jest.Mock };
     fabric: { findFirst: jest.Mock; findMany: jest.Mock };
     product: { findMany: jest.Mock; findUnique: jest.Mock };
     fabricSupplier: { findMany: jest.Mock };
-    order: { create: jest.Mock };
+    productSupplier: { findMany: jest.Mock };
+    order: {
+      create: jest.Mock;
+      findUnique: jest.Mock;
+      findUniqueOrThrow: jest.Mock;
+      update: jest.Mock;
+    };
+    orderItem: { create: jest.Mock; findMany: jest.Mock };
     orderTimeline: { createMany: jest.Mock };
     $transaction: jest.Mock;
   };
@@ -100,36 +108,6 @@ describe('QuoteService', () => {
     items: [mockQuoteItem],
   };
 
-  // Factory for quote fixtures with items
-  const makeQuote = (overrides = {}) => ({
-    id: 1,
-    quoteCode: 'QT-2603-0001',
-    customerId: 1,
-    totalPrice: new Prisma.Decimal(2500),
-    status: 'active',
-    validUntil: new Date(Date.now() + 86400000), // tomorrow
-    notes: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    items: [
-      {
-        id: 1,
-        quoteId: 1,
-        fabricId: 1,
-        productId: null,
-        quantity: new Prisma.Decimal(100),
-        unitPrice: new Prisma.Decimal(25),
-        subtotal: new Prisma.Decimal(2500),
-        unit: 'meter',
-        isConverted: false,
-        notes: null,
-        fabric: { id: 1 },
-        product: null,
-      },
-    ],
-    ...overrides,
-  });
-
   beforeEach(async () => {
     mockPrismaService = {
       quote: {
@@ -137,6 +115,7 @@ describe('QuoteService', () => {
         findFirst: jest.fn(),
         findMany: jest.fn(),
         findUnique: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
         update: jest.fn(),
         updateMany: jest.fn(),
         delete: jest.fn(),
@@ -148,13 +127,21 @@ describe('QuoteService', () => {
         findMany: jest.fn(),
         findUnique: jest.fn(),
         update: jest.fn(),
+        updateMany: jest.fn(),
         delete: jest.fn(),
       },
       customer: { findFirst: jest.fn() },
       fabric: { findFirst: jest.fn(), findMany: jest.fn() },
       product: { findMany: jest.fn(), findUnique: jest.fn() },
       fabricSupplier: { findMany: jest.fn() },
-      order: { create: jest.fn() },
+      productSupplier: { findMany: jest.fn() },
+      order: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
+        update: jest.fn(),
+      },
+      orderItem: { create: jest.fn(), findMany: jest.fn() },
       orderTimeline: { createMany: jest.fn() },
       $transaction: jest.fn(
         <T>(callback: (tx: typeof mockPrismaService) => Promise<T>) =>
@@ -684,7 +671,7 @@ describe('QuoteService', () => {
   });
 
   describe('markExpiredQuotes', () => {
-    it('should mark expired quotes', async () => {
+    it('should mark expired quotes with both active and partially_converted statuses', async () => {
       mockPrismaService.quote.updateMany.mockResolvedValue({ count: 5 });
 
       const result = await service.markExpiredQuotes();
@@ -692,7 +679,9 @@ describe('QuoteService', () => {
       expect(result).toBe(5);
       expect(mockPrismaService.quote.updateMany).toHaveBeenCalledWith({
         where: {
-          status: QuoteStatus.ACTIVE,
+          status: {
+            in: [QuoteStatus.ACTIVE, QuoteStatus.PARTIALLY_CONVERTED],
+          },
           validUntil: { lt: expect.any(Date) },
         },
         data: { status: QuoteStatus.EXPIRED },
@@ -700,58 +689,96 @@ describe('QuoteService', () => {
     });
   });
 
-  describe('convertToOrder', () => {
-    it('should delegate to batchConvertToOrder with single ID', async () => {
-      const spy = jest
-        .spyOn(service, 'batchConvertToOrder')
-        .mockResolvedValue({ id: 1 } as unknown as Order);
+  describe('convertQuoteItems', () => {
+    // Fixtures for conversion tests
+    const fabricQuoteItem = {
+      id: 1,
+      quoteId: 1,
+      fabricId: 1,
+      productId: null,
+      quantity: new Prisma.Decimal(100),
+      unitPrice: new Prisma.Decimal(25),
+      subtotal: new Prisma.Decimal(2500),
+      unit: 'meter',
+      isConverted: false,
+      notes: null,
+      quote: {
+        id: 1,
+        customerId: 1,
+        status: QuoteStatus.ACTIVE,
+        validUntil: new Date('2030-12-31'),
+      },
+      fabric: { id: 1 },
+      product: null,
+    };
 
-      await service.convertToOrder(5);
-
-      expect(spy).toHaveBeenCalledWith({ quoteIds: [5] });
-    });
-  });
-
-  describe('batchConvertToOrder', () => {
-    const quote1 = makeQuote({ id: 1 });
-    const quote2 = makeQuote({
+    const productQuoteItem = {
       id: 2,
-      quoteCode: 'QT-2603-0002',
-      items: [
-        {
-          id: 2,
-          quoteId: 2,
-          fabricId: 2,
-          productId: null,
-          quantity: new Prisma.Decimal(100),
-          unitPrice: new Prisma.Decimal(25),
-          subtotal: new Prisma.Decimal(2500),
-          unit: 'meter',
-          isConverted: false,
-          notes: null,
-          fabric: { id: 2 },
-          product: null,
-        },
-      ],
-    });
+      quoteId: 1,
+      fabricId: null,
+      productId: 10,
+      quantity: new Prisma.Decimal(5),
+      unitPrice: new Prisma.Decimal(200),
+      subtotal: new Prisma.Decimal(1000),
+      unit: 'set',
+      isConverted: false,
+      notes: null,
+      quote: {
+        id: 1,
+        customerId: 1,
+        status: QuoteStatus.ACTIVE,
+        validUntil: new Date('2030-12-31'),
+      },
+      fabric: null,
+      product: { id: 10, subCategory: 'IRON_FRAME' },
+    };
 
-    const mockOrder = {
+    const mockOrderWithItems = {
       id: 1,
       orderCode: 'ORD-2603-0001',
       customerId: 1,
       status: OrderItemStatus.PENDING,
-      totalAmount: 5000,
+      totalAmount: 3500,
       customerPaid: 0,
       customerPayStatus: 'unpaid',
       items: [
-        { id: 10, fabricId: 1, supplierId: 100, quoteId: 1 },
-        { id: 11, fabricId: 2, supplierId: null, quoteId: 2 },
+        {
+          id: 10,
+          orderId: 1,
+          fabricId: 1,
+          productId: null,
+          quoteItemId: 1,
+          supplierId: 100,
+          quantity: new Prisma.Decimal(100),
+          salePrice: new Prisma.Decimal(25),
+          subtotal: 2500,
+          unit: 'meter',
+          status: OrderItemStatus.PENDING,
+        },
+        {
+          id: 11,
+          orderId: 1,
+          fabricId: null,
+          productId: 10,
+          quoteItemId: 2,
+          supplierId: 200,
+          quantity: new Prisma.Decimal(5),
+          salePrice: new Prisma.Decimal(200),
+          subtotal: 1000,
+          unit: 'set',
+          status: OrderItemStatus.PENDING,
+        },
       ],
       customer: { id: 1, companyName: 'Test Customer' },
     };
 
-    it('should convert 2 quotes into 1 order reading items from quote.items', async () => {
-      mockPrismaService.quote.findMany.mockResolvedValue([quote1, quote2]);
+    it('should convert all items of a quote and set status to converted', async () => {
+      mockPrismaService.quoteItem.findMany
+        .mockResolvedValueOnce([fabricQuoteItem, productQuoteItem]) // fetch items
+        .mockResolvedValueOnce([
+          { isConverted: true },
+          { isConverted: true },
+        ]); // check all converted
       mockPrismaService.fabricSupplier.findMany.mockResolvedValue([
         {
           fabricId: 1,
@@ -759,75 +786,402 @@ describe('QuoteService', () => {
           purchasePrice: new Prisma.Decimal(20),
         },
       ]);
+      mockPrismaService.productSupplier.findMany.mockResolvedValue([
+        {
+          productId: 10,
+          supplierId: 200,
+          purchasePrice: new Prisma.Decimal(150),
+        },
+      ]);
       mockCodeGeneratorService.generateCode.mockResolvedValue('ORD-2603-0001');
-      mockPrismaService.order.create.mockResolvedValue(mockOrder);
+      mockPrismaService.order.create.mockResolvedValue(mockOrderWithItems);
       mockPrismaService.orderTimeline.createMany.mockResolvedValue({
         count: 2,
       });
-      mockPrismaService.quote.updateMany.mockResolvedValue({ count: 2 });
+      mockPrismaService.quoteItem.updateMany.mockResolvedValue({ count: 2 });
+      mockPrismaService.quote.update.mockResolvedValue({});
 
-      const result = await service.batchConvertToOrder({ quoteIds: [1, 2] });
+      const result = await service.convertQuoteItems({
+        quoteItemIds: [1, 2],
+      });
 
-      expect(result).toEqual(mockOrder);
-      expect(mockPrismaService.quote.updateMany).toHaveBeenCalledWith({
+      expect(result).toEqual(mockOrderWithItems);
+      // Should mark items as converted
+      expect(mockPrismaService.quoteItem.updateMany).toHaveBeenCalledWith({
         where: { id: { in: [1, 2] } },
+        data: { isConverted: true },
+      });
+      // Should set quote to converted (all items converted)
+      expect(mockPrismaService.quote.update).toHaveBeenCalledWith({
+        where: { id: 1 },
         data: { status: QuoteStatus.CONVERTED },
       });
     });
 
-    it('should throw ServiceUnavailableException when Redis is unavailable', async () => {
-      mockRedisService.isAvailable.mockReturnValue(false);
+    it('should convert subset of items and set status to partially_converted', async () => {
+      mockPrismaService.quoteItem.findMany
+        .mockResolvedValueOnce([fabricQuoteItem]) // only one item selected
+        .mockResolvedValueOnce([
+          { isConverted: true },
+          { isConverted: false },
+        ]); // one converted, one not
+      mockPrismaService.fabricSupplier.findMany.mockResolvedValue([
+        {
+          fabricId: 1,
+          supplierId: 100,
+          purchasePrice: new Prisma.Decimal(20),
+        },
+      ]);
+      mockPrismaService.productSupplier.findMany.mockResolvedValue([]);
+      mockCodeGeneratorService.generateCode.mockResolvedValue('ORD-2603-0001');
 
-      await expect(
-        service.batchConvertToOrder({ quoteIds: [1] }),
-      ).rejects.toThrow(ServiceUnavailableException);
+      const partialOrder = {
+        ...mockOrderWithItems,
+        items: [mockOrderWithItems.items[0]],
+        totalAmount: 2500,
+      };
+      mockPrismaService.order.create.mockResolvedValue(partialOrder);
+      mockPrismaService.orderTimeline.createMany.mockResolvedValue({
+        count: 1,
+      });
+      mockPrismaService.quoteItem.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.quote.update.mockResolvedValue({});
+
+      const result = await service.convertQuoteItems({
+        quoteItemIds: [1],
+      });
+
+      expect(result).toEqual(partialOrder);
+      // Should set quote to partially_converted
+      expect(mockPrismaService.quote.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { status: QuoteStatus.PARTIALLY_CONVERTED },
+      });
     });
 
-    it('should throw ConflictException when lock fails', async () => {
-      mockRedisService.acquireLock
-        .mockResolvedValueOnce(true)
-        .mockResolvedValueOnce(false);
+    it('should create OrderItems with correct fabricId/productId/unit/quoteItemId', async () => {
+      mockPrismaService.quoteItem.findMany
+        .mockResolvedValueOnce([fabricQuoteItem, productQuoteItem])
+        .mockResolvedValueOnce([
+          { isConverted: true },
+          { isConverted: true },
+        ]);
+      mockPrismaService.fabricSupplier.findMany.mockResolvedValue([]);
+      mockPrismaService.productSupplier.findMany.mockResolvedValue([]);
+      mockCodeGeneratorService.generateCode.mockResolvedValue('ORD-2603-0001');
+      mockPrismaService.order.create.mockResolvedValue(mockOrderWithItems);
+      mockPrismaService.orderTimeline.createMany.mockResolvedValue({
+        count: 2,
+      });
+      mockPrismaService.quoteItem.updateMany.mockResolvedValue({ count: 2 });
+      mockPrismaService.quote.update.mockResolvedValue({});
+
+      await service.convertQuoteItems({ quoteItemIds: [1, 2] });
+
+      expect(mockPrismaService.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            items: expect.objectContaining({
+              create: expect.arrayContaining([
+                expect.objectContaining({
+                  fabricId: 1,
+                  productId: null,
+                  quoteItemId: 1,
+                  unit: 'meter',
+                }),
+                expect.objectContaining({
+                  fabricId: null,
+                  productId: 10,
+                  quoteItemId: 2,
+                  unit: 'set',
+                }),
+              ]),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should auto-fill cheapest supplier for both fabric and product items', async () => {
+      mockPrismaService.quoteItem.findMany
+        .mockResolvedValueOnce([fabricQuoteItem, productQuoteItem])
+        .mockResolvedValueOnce([
+          { isConverted: true },
+          { isConverted: true },
+        ]);
+      mockPrismaService.fabricSupplier.findMany.mockResolvedValue([
+        {
+          fabricId: 1,
+          supplierId: 100,
+          purchasePrice: new Prisma.Decimal(20),
+        },
+        {
+          fabricId: 1,
+          supplierId: 101,
+          purchasePrice: new Prisma.Decimal(22),
+        },
+      ]);
+      mockPrismaService.productSupplier.findMany.mockResolvedValue([
+        {
+          productId: 10,
+          supplierId: 200,
+          purchasePrice: new Prisma.Decimal(150),
+        },
+        {
+          productId: 10,
+          supplierId: 201,
+          purchasePrice: new Prisma.Decimal(180),
+        },
+      ]);
+      mockCodeGeneratorService.generateCode.mockResolvedValue('ORD-2603-0001');
+      mockPrismaService.order.create.mockResolvedValue(mockOrderWithItems);
+      mockPrismaService.orderTimeline.createMany.mockResolvedValue({
+        count: 2,
+      });
+      mockPrismaService.quoteItem.updateMany.mockResolvedValue({ count: 2 });
+      mockPrismaService.quote.update.mockResolvedValue({});
+
+      await service.convertQuoteItems({ quoteItemIds: [1, 2] });
+
+      // Verify cheapest suppliers used (sorted by asc, first wins)
+      expect(mockPrismaService.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            items: expect.objectContaining({
+              create: expect.arrayContaining([
+                expect.objectContaining({
+                  fabricId: 1,
+                  supplierId: 100, // cheapest fabric supplier
+                  purchasePrice: 20,
+                }),
+                expect.objectContaining({
+                  productId: 10,
+                  supplierId: 200, // cheapest product supplier
+                  purchasePrice: 150,
+                }),
+              ]),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('should reject already-converted QuoteItems', async () => {
+      const convertedItem = { ...fabricQuoteItem, isConverted: true };
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([
+        convertedItem,
+      ]);
 
       await expect(
-        service.batchConvertToOrder({ quoteIds: [1, 2] }),
-      ).rejects.toThrow(ConflictException);
+        service.convertQuoteItems({ quoteItemIds: [1] }),
+      ).rejects.toThrow(BadRequestException);
+    });
 
+    it('should reject items from different quotes', async () => {
+      const itemFromOtherQuote = {
+        ...productQuoteItem,
+        quoteId: 2,
+        quote: { ...productQuoteItem.quote, id: 2 },
+      };
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([
+        fabricQuoteItem,
+        itemFromOtherQuote,
+      ]);
+
+      await expect(
+        service.convertQuoteItems({ quoteItemIds: [1, 2] }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject if quote is expired', async () => {
+      const expiredItem = {
+        ...fabricQuoteItem,
+        quote: {
+          ...fabricQuoteItem.quote,
+          status: QuoteStatus.EXPIRED,
+        },
+      };
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([
+        expiredItem,
+      ]);
+
+      await expect(
+        service.convertQuoteItems({ quoteItemIds: [1] }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject if quote is already fully converted', async () => {
+      const convertedStatusItem = {
+        ...fabricQuoteItem,
+        quote: {
+          ...fabricQuoteItem.quote,
+          status: QuoteStatus.CONVERTED,
+        },
+      };
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([
+        convertedStatusItem,
+      ]);
+
+      await expect(
+        service.convertQuoteItems({ quoteItemIds: [1] }),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should create timeline entries for new OrderItems', async () => {
+      mockPrismaService.quoteItem.findMany
+        .mockResolvedValueOnce([fabricQuoteItem])
+        .mockResolvedValueOnce([{ isConverted: true }]);
+      mockPrismaService.fabricSupplier.findMany.mockResolvedValue([]);
+      mockPrismaService.productSupplier.findMany.mockResolvedValue([]);
+      mockCodeGeneratorService.generateCode.mockResolvedValue('ORD-2603-0001');
+
+      const order = {
+        ...mockOrderWithItems,
+        items: [mockOrderWithItems.items[0]],
+      };
+      mockPrismaService.order.create.mockResolvedValue(order);
+      mockPrismaService.orderTimeline.createMany.mockResolvedValue({
+        count: 1,
+      });
+      mockPrismaService.quoteItem.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.quote.update.mockResolvedValue({});
+
+      await service.convertQuoteItems({ quoteItemIds: [1] });
+
+      expect(mockPrismaService.orderTimeline.createMany).toHaveBeenCalledWith({
+        data: expect.arrayContaining([
+          expect.objectContaining({
+            orderItemId: expect.any(Number),
+            fromStatus: null,
+            toStatus: OrderItemStatus.PENDING,
+            remark: 'Converted from quote item',
+          }),
+        ]),
+      });
+    });
+
+    it('should use Redis lock for concurrent protection', async () => {
+      mockPrismaService.quoteItem.findMany
+        .mockResolvedValueOnce([fabricQuoteItem])
+        .mockResolvedValueOnce([{ isConverted: true }]);
+      mockPrismaService.fabricSupplier.findMany.mockResolvedValue([]);
+      mockPrismaService.productSupplier.findMany.mockResolvedValue([]);
+      mockCodeGeneratorService.generateCode.mockResolvedValue('ORD-2603-0001');
+      mockPrismaService.order.create.mockResolvedValue({
+        ...mockOrderWithItems,
+        items: [mockOrderWithItems.items[0]],
+      });
+      mockPrismaService.orderTimeline.createMany.mockResolvedValue({
+        count: 1,
+      });
+      mockPrismaService.quoteItem.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.quote.update.mockResolvedValue({});
+
+      await service.convertQuoteItems({ quoteItemIds: [1] });
+
+      expect(mockRedisService.acquireLock).toHaveBeenCalledWith(
+        'quote:convert:1',
+        30,
+      );
       expect(mockRedisService.releaseLock).toHaveBeenCalledWith(
         'quote:convert:1',
       );
     });
 
-    it('should throw NotFoundException when a quote does not exist', async () => {
-      mockPrismaService.quote.findMany.mockResolvedValue([quote1]);
+    it('should throw ServiceUnavailableException when Redis is unavailable', async () => {
+      mockRedisService.isAvailable.mockReturnValue(false);
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([
+        fabricQuoteItem,
+      ]);
 
       await expect(
-        service.batchConvertToOrder({ quoteIds: [1, 999] }),
+        service.convertQuoteItems({ quoteItemIds: [1] }),
+      ).rejects.toThrow(ServiceUnavailableException);
+    });
+
+    it('should throw ConflictException when lock fails', async () => {
+      mockRedisService.acquireLock.mockResolvedValue(false);
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([
+        fabricQuoteItem,
+      ]);
+
+      await expect(
+        service.convertQuoteItems({ quoteItemIds: [1] }),
+      ).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw NotFoundException when quote items not found', async () => {
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([]);
+
+      await expect(
+        service.convertQuoteItems({ quoteItemIds: [999] }),
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw BadRequestException for non-active quotes', async () => {
-      const converted = makeQuote({ id: 2, status: QuoteStatus.CONVERTED });
-      mockPrismaService.quote.findMany.mockResolvedValue([quote1, converted]);
-
-      await expect(
-        service.batchConvertToOrder({ quoteIds: [1, 2] }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should release locks even when transaction fails', async () => {
-      mockPrismaService.quote.findMany.mockResolvedValue([quote1]);
+    it('should release lock even when transaction fails', async () => {
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([
+        fabricQuoteItem,
+      ]);
       mockPrismaService.fabricSupplier.findMany.mockResolvedValue([]);
+      mockPrismaService.productSupplier.findMany.mockResolvedValue([]);
       mockCodeGeneratorService.generateCode.mockRejectedValue(
         new Error('Code generation failed'),
       );
 
       await expect(
-        service.batchConvertToOrder({ quoteIds: [1] }),
+        service.convertQuoteItems({ quoteItemIds: [1] }),
       ).rejects.toThrow('Code generation failed');
 
       expect(mockRedisService.releaseLock).toHaveBeenCalledWith(
         'quote:convert:1',
       );
+    });
+
+    it('should add items to existing order when orderId provided', async () => {
+      const existingOrder = {
+        id: 5,
+        customerId: 1,
+        status: OrderItemStatus.PENDING,
+      };
+
+      mockPrismaService.quoteItem.findMany
+        .mockResolvedValueOnce([fabricQuoteItem])
+        .mockResolvedValueOnce([{ isConverted: true }]);
+      mockPrismaService.fabricSupplier.findMany.mockResolvedValue([]);
+      mockPrismaService.productSupplier.findMany.mockResolvedValue([]);
+      mockPrismaService.order.findUnique.mockResolvedValue(existingOrder);
+      mockPrismaService.orderItem.create.mockResolvedValue({
+        id: 20,
+        orderId: 5,
+        quoteItemId: 1,
+      });
+      mockPrismaService.orderItem.findMany.mockResolvedValue([
+        { subtotal: new Prisma.Decimal(2500) },
+      ]);
+      mockPrismaService.order.update.mockResolvedValue({});
+      mockPrismaService.order.findUniqueOrThrow.mockResolvedValue({
+        ...mockOrderWithItems,
+        id: 5,
+        items: [{ ...mockOrderWithItems.items[0], orderId: 5, id: 20 }],
+      });
+      mockPrismaService.orderTimeline.createMany.mockResolvedValue({
+        count: 1,
+      });
+      mockPrismaService.quoteItem.updateMany.mockResolvedValue({ count: 1 });
+      mockPrismaService.quote.update.mockResolvedValue({});
+
+      const result = await service.convertQuoteItems({
+        quoteItemIds: [1],
+        orderId: 5,
+      });
+
+      expect(result).toBeDefined();
+      expect(mockPrismaService.order.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 5 },
+        }),
+      );
+      expect(mockPrismaService.orderItem.create).toHaveBeenCalled();
     });
   });
 });

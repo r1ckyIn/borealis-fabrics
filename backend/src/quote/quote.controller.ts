@@ -26,7 +26,7 @@ import {
   UpdateQuoteDto,
   UpdateQuoteItemDto,
   QueryQuoteDto,
-  ConvertQuotesToOrderDto,
+  ConvertQuoteItemsDto,
   QuoteStatus,
 } from './dto';
 
@@ -91,31 +91,34 @@ export class QuoteController {
     return this.quoteService.findAll(query);
   }
 
-  @Post('batch-convert')
+  @Post('convert-items')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Batch convert quotes to a single order',
+    summary: 'Convert specific quote items to an order',
     description:
-      'Convert multiple quotes for the same customer into a single order. ' +
-      'All quotes must be active and non-expired.',
+      'Select specific QuoteItems to convert. Creates a new order or adds to existing. ' +
+      'Supports partial conversion — unconverted items remain.',
   })
-  @ApiBody({ type: ConvertQuotesToOrderDto })
-  @ApiResponse({ status: 201, description: 'Order created from quotes' })
+  @ApiBody({ type: ConvertQuoteItemsDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Order created/updated from quote items',
+  })
   @ApiResponse({
     status: 400,
-    description: 'Validation error or quotes invalid',
+    description: 'Validation error or items invalid',
   })
   @ApiResponse({
     status: 404,
-    description: 'One or more quotes not found',
+    description: 'Quote items or order not found',
   })
   @ApiResponse({
     status: 409,
     description: 'Quote is being converted by another request',
   })
   @ApiResponse({ status: 503, description: 'Redis unavailable' })
-  batchConvertToOrder(@Body() dto: ConvertQuotesToOrderDto) {
-    return this.quoteService.batchConvertToOrder(dto);
+  convertQuoteItems(@Body() dto: ConvertQuoteItemsDto) {
+    return this.quoteService.convertQuoteItems(dto);
   }
 
   @Get(':id')
@@ -224,32 +227,5 @@ export class QuoteController {
   })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.quoteService.remove(id);
-  }
-
-  @Post(':id/convert-to-order')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Convert a quote to an order',
-    description:
-      'Only active quotes that have not expired can be converted. ' +
-      'Creates an order with order items from the quote items.',
-  })
-  @ApiParam({ name: 'id', description: 'Quote ID', type: Number })
-  @ApiResponse({
-    status: 201,
-    description: 'Order created successfully from quote',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Quote is not active or has expired',
-  })
-  @ApiResponse({ status: 404, description: 'Quote not found' })
-  @ApiResponse({
-    status: 409,
-    description: 'Quote is being converted by another request',
-  })
-  @ApiResponse({ status: 503, description: 'Redis unavailable' })
-  convertToOrder(@Param('id', ParseIntPipe) id: number) {
-    return this.quoteService.convertToOrder(id);
   }
 }

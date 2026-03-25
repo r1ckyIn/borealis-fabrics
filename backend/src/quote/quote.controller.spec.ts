@@ -14,8 +14,7 @@ describe('QuoteController', () => {
     addItem: jest.Mock;
     updateItem: jest.Mock;
     removeItem: jest.Mock;
-    convertToOrder: jest.Mock;
-    batchConvertToOrder: jest.Mock;
+    convertQuoteItems: jest.Mock;
   };
 
   const mockQuote = {
@@ -54,8 +53,7 @@ describe('QuoteController', () => {
       addItem: jest.fn(),
       updateItem: jest.fn(),
       removeItem: jest.fn(),
-      convertToOrder: jest.fn(),
-      batchConvertToOrder: jest.fn(),
+      convertQuoteItems: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -177,31 +175,37 @@ describe('QuoteController', () => {
     });
   });
 
-  describe('convertToOrder', () => {
-    it('should call convertToOrder service method', async () => {
-      mockQuoteService.convertToOrder.mockRejectedValue(
-        new Error('Not implemented'),
-      );
-
-      await expect(controller.convertToOrder(1)).rejects.toThrow();
-      expect(mockQuoteService.convertToOrder).toHaveBeenCalledWith(1);
-    });
-  });
-
-  describe('batchConvertToOrder', () => {
-    it('should call batchConvertToOrder service method', async () => {
-      mockQuoteService.batchConvertToOrder.mockResolvedValue({
+  describe('convertQuoteItems', () => {
+    it('should call convertQuoteItems service method', async () => {
+      const mockOrder = {
         id: 1,
         orderCode: 'ORD-2601-0001',
+        items: [],
+      };
+      mockQuoteService.convertQuoteItems.mockResolvedValue(mockOrder);
+
+      const result = await controller.convertQuoteItems({
+        quoteItemIds: [1, 2],
       });
 
-      const result = await controller.batchConvertToOrder({
-        quoteIds: [1, 2],
+      expect(result).toEqual(mockOrder);
+      expect(mockQuoteService.convertQuoteItems).toHaveBeenCalledWith({
+        quoteItemIds: [1, 2],
+      });
+    });
+
+    it('should pass orderId when provided', async () => {
+      const mockOrder = { id: 5, orderCode: 'ORD-2601-0005' };
+      mockQuoteService.convertQuoteItems.mockResolvedValue(mockOrder);
+
+      await controller.convertQuoteItems({
+        quoteItemIds: [1],
+        orderId: 5,
       });
 
-      expect(result).toBeDefined();
-      expect(mockQuoteService.batchConvertToOrder).toHaveBeenCalledWith({
-        quoteIds: [1, 2],
+      expect(mockQuoteService.convertQuoteItems).toHaveBeenCalledWith({
+        quoteItemIds: [1],
+        orderId: 5,
       });
     });
   });

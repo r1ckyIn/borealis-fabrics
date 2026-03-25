@@ -1,18 +1,28 @@
-import { IsArray, ArrayMinSize, IsInt, Min } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, ArrayMinSize, IsInt, Min, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 /**
- * DTO for batch converting quotes to a single order.
- * All quotes must belong to the same customer and be active/non-expired.
+ * DTO for converting specific quote items to an order.
+ * All items must belong to the same quote.
+ * Creates a new order or adds to an existing one.
  */
-export class ConvertQuotesToOrderDto {
+export class ConvertQuoteItemsDto {
   @ApiProperty({
-    description: 'Array of quote IDs to convert',
+    description: 'Array of QuoteItem IDs to convert',
     example: [1, 2, 3],
   })
   @IsArray()
-  @ArrayMinSize(1, { message: 'At least one quote ID is required' })
+  @ArrayMinSize(1, { message: 'At least one quote item ID is required' })
   @IsInt({ each: true })
   @Min(1, { each: true })
-  quoteIds!: number[];
+  quoteItemIds!: number[];
+
+  @ApiPropertyOptional({
+    description: 'Existing order ID to add items to (omit to create new order)',
+    example: 1,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  orderId?: number;
 }

@@ -15,11 +15,14 @@ import {
   UpdateQuoteDto,
   UpdateQuoteItemDto,
   QueryQuoteDto,
-  ConvertQuotesToOrderDto,
+  ConvertQuoteItemsDto,
   QuoteStatus,
 } from './dto';
 import { OrderItemStatus } from '../order/enums/order-status.enum';
-import { Quote, Order, Prisma } from '@prisma/client';
+import { Quote, Order, OrderItem, Prisma } from '@prisma/client';
+
+// Order with items relation included (from create/findUniqueOrThrow with include)
+type OrderWithItems = Order & { items: OrderItem[] };
 import {
   buildPaginationArgs,
   buildPaginatedResult,
@@ -583,11 +586,14 @@ export class QuoteService {
   /**
    * Mark all expired quotes.
    * Called by scheduler to automatically mark quotes past validUntil.
+   * Includes both active and partially_converted quotes.
    */
   async markExpiredQuotes(): Promise<number> {
     const result = await this.prisma.quote.updateMany({
       where: {
-        status: QuoteStatus.ACTIVE,
+        status: {
+          in: [QuoteStatus.ACTIVE, QuoteStatus.PARTIALLY_CONVERTED],
+        },
         validUntil: { lt: new Date() },
       },
       data: { status: QuoteStatus.EXPIRED },
@@ -597,194 +603,292 @@ export class QuoteService {
   }
 
   /**
-   * Convert a single quote to an order.
-   * Delegates to batchConvertToOrder for consistent logic.
+   * Convert selected quote items to order items.
+   * Creates a new order or adds to existing order.
+   * Supports partial conversion -- unconverted items remain on the quote.
    */
-  async convertToOrder(id: number): Promise<Order> {
-    return this.batchConvertToOrder({ quoteIds: [id] });
-  }
-
-  /**
-   * Batch convert multiple quotes into a single order.
-   * All quotes must belong to the same customer, be active, and not expired.
-   * Uses Redis distributed lock for concurrent protection.
-   * Reads items from quote.items relation for multi-item support.
-   */
-  async batchConvertToOrder(dto: ConvertQuotesToOrderDto): Promise<Order> {
+  async convertQuoteItems(dto: ConvertQuoteItemsDto): Promise<Order> {
+    // Check Redis availability
     if (!this.redisService.isAvailable()) {
       throw new ServiceUnavailableException(
         'Redis is required for conversion — concurrent protection unavailable',
       );
     }
 
-    const sortedIds = [...dto.quoteIds].sort((a, b) => a - b);
+    // Fetch all QuoteItems to find their quoteId
+    const quoteItems = await this.prisma.quoteItem.findMany({
+      where: { id: { in: dto.quoteItemIds } },
+      include: {
+        quote: {
+          select: {
+            id: true,
+            customerId: true,
+            status: true,
+            validUntil: true,
+          },
+        },
+        fabric: { select: { id: true } },
+        product: { select: { id: true, subCategory: true } },
+      },
+    });
 
-    // Acquire locks
-    const acquiredLocks: number[] = [];
-    for (const id of sortedIds) {
-      const locked = await this.redisService.acquireLock(
-        `quote:convert:${id}`,
-        30,
+    // Validate all items found
+    if (quoteItems.length !== dto.quoteItemIds.length) {
+      const foundIds = new Set(quoteItems.map((qi) => qi.id));
+      const missing = dto.quoteItemIds.filter((id) => !foundIds.has(id));
+      throw new NotFoundException(
+        `Quote items not found: ${missing.join(', ')}`,
       );
-      if (!locked) {
-        for (const acquiredId of acquiredLocks) {
-          await this.redisService.releaseLock(`quote:convert:${acquiredId}`);
-        }
-        throw new ConflictException(
-          `Quote ${id} is being converted by another request`,
-        );
-      }
-      acquiredLocks.push(id);
+    }
+
+    // Validate all items belong to the same quote
+    const quoteIds = new Set(quoteItems.map((qi) => qi.quoteId));
+    if (quoteIds.size > 1) {
+      throw new BadRequestException(
+        'All quote items must belong to the same quote',
+      );
+    }
+
+    const quoteId = quoteItems[0].quoteId;
+    const quote = quoteItems[0].quote;
+
+    // Validate quote status (active or partially_converted)
+    if (
+      (quote.status as QuoteStatus) !== QuoteStatus.ACTIVE &&
+      (quote.status as QuoteStatus) !== QuoteStatus.PARTIALLY_CONVERTED
+    ) {
+      throw new BadRequestException(
+        `Quote status is ${quote.status}. Only active or partially_converted quotes can be converted.`,
+      );
+    }
+
+    // Validate quote not expired
+    if (quote.validUntil < new Date()) {
+      throw new BadRequestException('Quote has expired');
+    }
+
+    // Validate none of the selected items are already converted
+    const alreadyConverted = quoteItems.filter((qi) => qi.isConverted);
+    if (alreadyConverted.length > 0) {
+      const ids = alreadyConverted.map((qi) => qi.id).join(', ');
+      throw new BadRequestException(
+        `Quote items already converted: ${ids}`,
+      );
+    }
+
+    // Acquire Redis lock on the quote
+    const lockKey = `quote:convert:${quoteId}`;
+    const locked = await this.redisService.acquireLock(lockKey, 30);
+    if (!locked) {
+      throw new ConflictException(
+        'Quote is being converted by another request',
+      );
     }
 
     try {
       return await this.prisma.$transaction(async (tx) => {
-        // Fetch all quotes with items
-        const quotes = await tx.quote.findMany({
-          where: { id: { in: sortedIds } },
-          include: {
-            items: {
-              include: {
-                fabric: { select: { id: true } },
-                product: { select: { id: true } },
-              },
-            },
-          },
-        });
-
-        // Validate all quotes found
-        if (quotes.length !== sortedIds.length) {
-          const foundIds = new Set(quotes.map((q) => q.id));
-          const missingIds = sortedIds.filter((id) => !foundIds.has(id));
-          throw new NotFoundException(
-            `Quotes not found: ${missingIds.join(', ')}`,
-          );
-        }
-
-        // Validate all quotes are active
-        const nonActiveQuotes = quotes.filter(
-          (q) => (q.status as QuoteStatus) !== QuoteStatus.ACTIVE,
-        );
-        if (nonActiveQuotes.length > 0) {
-          const details = nonActiveQuotes
-            .map((q) => `Quote ${q.id} (status: ${q.status})`)
-            .join(', ');
-          throw new BadRequestException(
-            `All quotes must be active. Invalid: ${details}`,
-          );
-        }
-
-        // Validate none are expired
-        const now = new Date();
-        const expiredQuotes = quotes.filter((q) => q.validUntil < now);
-        if (expiredQuotes.length > 0) {
-          const expiredIds = expiredQuotes.map((q) => q.id).join(', ');
-          throw new BadRequestException(`Quotes have expired: ${expiredIds}`);
-        }
-
-        // Validate all quotes belong to the same customer
-        const customerIds = new Set(quotes.map((q) => q.customerId));
-        if (customerIds.size > 1) {
-          throw new BadRequestException(
-            'All quotes must belong to the same customer',
-          );
-        }
-
-        const customerId = quotes[0].customerId;
-
-        // Collect all fabric IDs from quote items for supplier lookup
-        const allFabricIds = [
+        // Look up cheapest suppliers for fabric items
+        const fabricIds = [
           ...new Set(
-            quotes.flatMap((q) =>
-              q.items
-                .filter((i) => i.fabricId !== null)
-                .map((i) => i.fabricId!),
-            ),
+            quoteItems
+              .filter((qi) => qi.fabricId)
+              .map((qi) => qi.fabricId!),
           ),
         ];
-
-        // Look up cheapest suppliers for each fabric
         const allFabricSuppliers =
-          allFabricIds.length > 0
+          fabricIds.length > 0
             ? await tx.fabricSupplier.findMany({
-                where: { fabricId: { in: allFabricIds } },
+                where: { fabricId: { in: fabricIds } },
                 orderBy: { purchasePrice: 'asc' },
               })
             : [];
-        const supplierMap = new Map<number, number>();
+        const fabricSupplierMap = new Map<
+          number,
+          { supplierId: number; price: number }
+        >();
         for (const fs of allFabricSuppliers) {
-          if (!supplierMap.has(fs.fabricId)) {
-            supplierMap.set(fs.fabricId, fs.supplierId);
+          if (!fabricSupplierMap.has(fs.fabricId)) {
+            fabricSupplierMap.set(fs.fabricId, {
+              supplierId: fs.supplierId,
+              price: Number(fs.purchasePrice),
+            });
           }
         }
 
-        // Generate order code
-        const orderCode = await this.codeGeneratorService.generateCode(
-          CodePrefix.ORDER,
-        );
+        // Look up cheapest suppliers for product items
+        const productIds = [
+          ...new Set(
+            quoteItems
+              .filter((qi) => qi.productId)
+              .map((qi) => qi.productId!),
+          ),
+        ];
+        const allProductSuppliers =
+          productIds.length > 0
+            ? await tx.productSupplier.findMany({
+                where: { productId: { in: productIds } },
+                orderBy: { purchasePrice: 'asc' },
+              })
+            : [];
+        const productSupplierMap = new Map<
+          number,
+          { supplierId: number; price: number }
+        >();
+        for (const ps of allProductSuppliers) {
+          if (!productSupplierMap.has(ps.productId)) {
+            productSupplierMap.set(ps.productId, {
+              supplierId: ps.supplierId,
+              price: Number(ps.purchasePrice),
+            });
+          }
+        }
 
-        // Flatten all items from all quotes
-        const allItems = quotes.flatMap((q) =>
-          q.items.map((item) => ({
-            fabricId: item.fabricId ?? null,
-            productId: item.productId ?? null,
-            supplierId: item.fabricId
-              ? (supplierMap.get(item.fabricId) ?? null)
-              : null,
-            quoteId: q.id,
-            quoteItemId: item.id,
-            quantity: item.quantity,
-            unit: item.unit,
-            salePrice: item.unitPrice,
-            subtotal: item.subtotal,
-            status: OrderItemStatus.PENDING,
-          })),
-        );
+        let order: OrderWithItems;
 
-        // Calculate total amount
-        const totalAmount = allItems.reduce(
-          (sum, item) => sum + Number(item.subtotal),
-          0,
-        );
+        if (dto.orderId) {
+          // Add to existing order -- validate it exists and belongs to same customer
+          const existingOrder = await tx.order.findUnique({
+            where: { id: dto.orderId },
+            select: { id: true, customerId: true, status: true },
+          });
+          if (!existingOrder) {
+            throw new NotFoundException(
+              `Order with ID ${dto.orderId} not found`,
+            );
+          }
+          if (existingOrder.customerId !== quote.customerId) {
+            throw new BadRequestException(
+              'Order must belong to the same customer as the quote',
+            );
+          }
 
-        // Create order with items
-        const order = await tx.order.create({
-          data: {
-            orderCode,
-            customerId,
-            status: OrderItemStatus.PENDING,
-            totalAmount,
-            customerPaid: 0,
-            customerPayStatus: 'unpaid',
-            items: {
-              create: allItems,
+          // Create OrderItems from QuoteItems
+          for (const qi of quoteItems) {
+            const supplierInfo = qi.fabricId
+              ? fabricSupplierMap.get(qi.fabricId)
+              : qi.productId
+                ? productSupplierMap.get(qi.productId)
+                : undefined;
+
+            await tx.orderItem.create({
+              data: {
+                orderId: dto.orderId,
+                fabricId: qi.fabricId,
+                productId: qi.productId,
+                quoteId: quoteId,
+                quoteItemId: qi.id,
+                supplierId: supplierInfo?.supplierId ?? null,
+                quantity: qi.quantity,
+                salePrice: qi.unitPrice,
+                purchasePrice: supplierInfo?.price ?? null,
+                subtotal: Number(qi.subtotal),
+                unit: qi.unit,
+                status: OrderItemStatus.PENDING,
+              },
+            });
+          }
+
+          // Recalculate order totals
+          const allItems = await tx.orderItem.findMany({
+            where: { orderId: dto.orderId },
+            select: { subtotal: true },
+          });
+          const totalAmount = allItems.reduce(
+            (sum, i) => sum + Number(i.subtotal),
+            0,
+          );
+          await tx.order.update({
+            where: { id: dto.orderId },
+            data: { totalAmount },
+          });
+
+          order = await tx.order.findUniqueOrThrow({
+            where: { id: dto.orderId },
+            include: { items: true, customer: true },
+          });
+        } else {
+          // Create new order
+          const orderCode =
+            await this.codeGeneratorService.generateCode(CodePrefix.ORDER);
+          const totalAmount = quoteItems.reduce(
+            (sum, qi) => sum + Number(qi.quantity) * Number(qi.unitPrice),
+            0,
+          );
+
+          order = await tx.order.create({
+            data: {
+              orderCode,
+              customerId: quote.customerId,
+              status: OrderItemStatus.PENDING,
+              totalAmount,
+              customerPaid: 0,
+              customerPayStatus: 'unpaid',
+              items: {
+                create: quoteItems.map((qi) => {
+                  const supplierInfo = qi.fabricId
+                    ? fabricSupplierMap.get(qi.fabricId)
+                    : qi.productId
+                      ? productSupplierMap.get(qi.productId)
+                      : undefined;
+                  return {
+                    fabricId: qi.fabricId,
+                    productId: qi.productId,
+                    quoteId: quoteId,
+                    quoteItemId: qi.id,
+                    supplierId: supplierInfo?.supplierId ?? null,
+                    quantity: qi.quantity,
+                    salePrice: qi.unitPrice,
+                    purchasePrice: supplierInfo?.price ?? null,
+                    subtotal: Number(qi.quantity) * Number(qi.unitPrice),
+                    unit: qi.unit,
+                    status: OrderItemStatus.PENDING,
+                  };
+                }),
+              },
             },
-          },
-          include: { items: true, customer: true },
-        });
+            include: { items: true, customer: true },
+          });
+        }
 
-        // Create timeline entries
+        // Create timeline entries for each new OrderItem
         await tx.orderTimeline.createMany({
-          data: order.items.map((item) => ({
-            orderItemId: item.id,
-            fromStatus: null,
-            toStatus: OrderItemStatus.PENDING,
-            remark: 'Converted from quote',
-          })),
+          data: order.items
+            .filter((item) =>
+              quoteItems.some((qi) => qi.id === item.quoteItemId),
+            )
+            .map((item) => ({
+              orderItemId: item.id,
+              fromStatus: null,
+              toStatus: OrderItemStatus.PENDING,
+              remark: 'Converted from quote item',
+            })),
         });
 
-        // Update all quotes to CONVERTED status
-        await tx.quote.updateMany({
-          where: { id: { in: sortedIds } },
-          data: { status: QuoteStatus.CONVERTED },
+        // Mark selected QuoteItems as converted
+        await tx.quoteItem.updateMany({
+          where: { id: { in: dto.quoteItemIds } },
+          data: { isConverted: true },
+        });
+
+        // Determine new quote status
+        const allQuoteItems = await tx.quoteItem.findMany({
+          where: { quoteId },
+          select: { isConverted: true },
+        });
+        const allConverted = allQuoteItems.every((qi) => qi.isConverted);
+        const newStatus = allConverted
+          ? QuoteStatus.CONVERTED
+          : QuoteStatus.PARTIALLY_CONVERTED;
+
+        await tx.quote.update({
+          where: { id: quoteId },
+          data: { status: newStatus },
         });
 
         return order;
       });
     } finally {
-      for (const id of sortedIds) {
-        await this.redisService.releaseLock(`quote:convert:${id}`);
-      }
+      await this.redisService.releaseLock(lockKey);
     }
   }
 
