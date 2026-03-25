@@ -71,7 +71,7 @@ const mockFabric: Fabric = {
 // Helper to render with providers
 function renderWithProviders(
   ui: React.ReactElement,
-  { initialEntries = ['/fabrics/new'] } = {}
+  { initialEntries = ['/products/fabrics/new'] } = {}
 ) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -84,8 +84,8 @@ function renderWithProviders(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={initialEntries}>
         <Routes>
-          <Route path="/fabrics/new" element={ui} />
-          <Route path="/fabrics/:id/edit" element={ui} />
+          <Route path="/products/fabrics/new" element={ui} />
+          <Route path="/products/fabrics/:id/edit" element={ui} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -151,7 +151,7 @@ describe('FabricFormPage', () => {
       expect(cancelButton).toBeTruthy();
       await user.click(cancelButton!);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics');
+      expect(mockNavigate).toHaveBeenCalledWith('/products/fabrics');
     });
   });
 
@@ -166,7 +166,7 @@ describe('FabricFormPage', () => {
 
     it('should render edit mode page with fabric name', async () => {
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/1/edit'],
+        initialEntries: ['/products/fabrics/1/edit'],
       });
 
       await waitFor(() => {
@@ -177,7 +177,7 @@ describe('FabricFormPage', () => {
 
     it('should disable fabricCode input in edit mode', async () => {
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/1/edit'],
+        initialEntries: ['/products/fabrics/1/edit'],
       });
 
       await waitFor(() => {
@@ -196,7 +196,7 @@ describe('FabricFormPage', () => {
       });
 
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/1/edit'],
+        initialEntries: ['/products/fabrics/1/edit'],
       });
 
       await waitFor(() => {
@@ -214,7 +214,7 @@ describe('FabricFormPage', () => {
       });
 
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/1/edit'],
+        initialEntries: ['/products/fabrics/1/edit'],
       });
 
       await waitFor(() => {
@@ -231,7 +231,7 @@ describe('FabricFormPage', () => {
       });
 
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/1/edit'],
+        initialEntries: ['/products/fabrics/1/edit'],
       });
 
       await waitFor(() => {
@@ -247,7 +247,7 @@ describe('FabricFormPage', () => {
       });
 
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/1/edit'],
+        initialEntries: ['/products/fabrics/1/edit'],
       });
 
       // Find retry button by role and check it exists in the Result extra section
@@ -268,7 +268,7 @@ describe('FabricFormPage', () => {
       });
 
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/999/edit'],
+        initialEntries: ['/products/fabrics/999/edit'],
       });
 
       await waitFor(() => {
@@ -287,7 +287,7 @@ describe('FabricFormPage', () => {
       });
 
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/999/edit'],
+        initialEntries: ['/products/fabrics/999/edit'],
       });
 
       await waitFor(() => {
@@ -297,7 +297,7 @@ describe('FabricFormPage', () => {
       const backButton = screen.getByText('返回列表').closest('button');
       await user.click(backButton!);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics');
+      expect(mockNavigate).toHaveBeenCalledWith('/products/fabrics');
     });
   });
 
@@ -355,7 +355,7 @@ describe('FabricFormPage', () => {
       });
 
       renderWithProviders(<FabricFormPage />, {
-        initialEntries: ['/fabrics/1/edit'],
+        initialEntries: ['/products/fabrics/1/edit'],
       });
 
       await waitFor(() => {

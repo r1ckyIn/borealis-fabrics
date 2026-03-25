@@ -7,7 +7,13 @@
 
 import type { ComponentType } from 'react';
 import { Suspense, lazy } from 'react';
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+  useParams,
+  useLocation,
+} from 'react-router-dom';
 
 import { ProtectedRoute } from './ProtectedRoute';
 import { FullPageSpinner } from './FullPageSpinner';
@@ -19,6 +25,13 @@ const OAuthCallback = lazy(() => import('@/pages/auth/OAuthCallback'));
 const FabricListPage = lazy(() => import('@/pages/fabrics/FabricListPage'));
 const FabricDetailPage = lazy(() => import('@/pages/fabrics/FabricDetailPage'));
 const FabricFormPage = lazy(() => import('@/pages/fabrics/FabricFormPage'));
+const ProductListPage = lazy(() => import('@/pages/products/ProductListPage'));
+const ProductDetailPage = lazy(
+  () => import('@/pages/products/ProductDetailPage')
+);
+const ProductFormPage = lazy(
+  () => import('@/pages/products/ProductFormPage')
+);
 const SupplierListPage = lazy(() => import('@/pages/suppliers/SupplierListPage'));
 const SupplierDetailPage = lazy(() => import('@/pages/suppliers/SupplierDetailPage'));
 const SupplierFormPage = lazy(() => import('@/pages/suppliers/SupplierFormPage'));
@@ -46,6 +59,19 @@ function withSuspense(Component: React.LazyExoticComponent<ComponentType>): Reac
 }
 
 /**
+ * Redirect wrapper for old /fabrics/:id routes to /products/fabrics/:id.
+ * Handles both detail and edit sub-routes.
+ */
+function FabricParamRedirect() {
+  const { id } = useParams();
+  const location = useLocation();
+  const target = id
+    ? `/products/fabrics/${id}${location.pathname.endsWith('/edit') ? '/edit' : ''}`
+    : '/products/fabrics';
+  return <Navigate to={target} replace />;
+}
+
+/**
  * Application router configuration.
  */
 const router = createBrowserRouter([
@@ -66,28 +92,64 @@ const router = createBrowserRouter([
       {
         element: withSuspense(MainLayout),
         children: [
-          // Root redirect to fabrics
+          // Root redirect to product fabrics
           {
             path: '/',
-            element: <Navigate to="/fabrics" replace />,
+            element: <Navigate to="/products/fabrics" replace />,
           },
 
-          // Fabric routes
+          // Fabric routes (under /products, more specific — listed first)
           {
-            path: '/fabrics',
+            path: '/products/fabrics',
             element: withSuspense(FabricListPage),
           },
           {
-            path: '/fabrics/new',
+            path: '/products/fabrics/new',
             element: withSuspense(FabricFormPage),
           },
           {
-            path: '/fabrics/:id',
+            path: '/products/fabrics/:id',
             element: withSuspense(FabricDetailPage),
           },
           {
-            path: '/fabrics/:id/edit',
+            path: '/products/fabrics/:id/edit',
             element: withSuspense(FabricFormPage),
+          },
+
+          // Product routes (non-fabric categories, generic :category param)
+          {
+            path: '/products/:category',
+            element: withSuspense(ProductListPage),
+          },
+          {
+            path: '/products/:category/new',
+            element: withSuspense(ProductFormPage),
+          },
+          {
+            path: '/products/:category/:id',
+            element: withSuspense(ProductDetailPage),
+          },
+          {
+            path: '/products/:category/:id/edit',
+            element: withSuspense(ProductFormPage),
+          },
+
+          // Fabric route redirects (backward compatibility)
+          {
+            path: '/fabrics',
+            element: <Navigate to="/products/fabrics" replace />,
+          },
+          {
+            path: '/fabrics/new',
+            element: <Navigate to="/products/fabrics/new" replace />,
+          },
+          {
+            path: '/fabrics/:id',
+            element: <FabricParamRedirect />,
+          },
+          {
+            path: '/fabrics/:id/edit',
+            element: <FabricParamRedirect />,
           },
 
           // Supplier routes

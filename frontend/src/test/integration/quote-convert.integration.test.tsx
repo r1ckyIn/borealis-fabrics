@@ -137,9 +137,9 @@ describe('Quote Conversion Integration', () => {
       const okButton = modalFooter!.querySelector('.ant-btn-primary') as HTMLButtonElement;
       await user.click(okButton);
 
-      // Verify API call
+      // Verify API call (new multi-item conversion, quote has no items in mock so empty array)
       await waitFor(() => {
-        expect(quoteApi.convertQuoteItems).toHaveBeenCalledWith(1);
+        expect(quoteApi.convertQuoteItems).toHaveBeenCalledWith({ quoteItemIds: [] });
       });
 
       // Should navigate to the new order page

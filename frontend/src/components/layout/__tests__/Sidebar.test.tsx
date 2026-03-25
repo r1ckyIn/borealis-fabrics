@@ -25,14 +25,22 @@ describe('Sidebar', () => {
     vi.clearAllMocks();
   });
 
-  it('should render all 6 menu items', () => {
+  it('should render top-level menu items and product SubMenu', () => {
     render(
-      <MemoryRouter initialEntries={['/']}>
+      <MemoryRouter initialEntries={['/products/fabrics']}>
         <Sidebar collapsed={false} />
       </MemoryRouter>
     );
 
-    expect(screen.getByText('面料管理')).toBeInTheDocument();
+    // Product SubMenu parent
+    expect(screen.getByText('产品管理')).toBeInTheDocument();
+    // Product sub-items (visible when SubMenu is expanded)
+    expect(screen.getByText('面料')).toBeInTheDocument();
+    expect(screen.getByText('铁架')).toBeInTheDocument();
+    expect(screen.getByText('电机')).toBeInTheDocument();
+    expect(screen.getByText('床垫')).toBeInTheDocument();
+    expect(screen.getByText('配件')).toBeInTheDocument();
+    // Other top-level items
     expect(screen.getByText('供应商管理')).toBeInTheDocument();
     expect(screen.getByText('客户管理')).toBeInTheDocument();
     expect(screen.getByText('报价管理')).toBeInTheDocument();
@@ -62,27 +70,27 @@ describe('Sidebar', () => {
     expect(screen.queryByText('BF')).not.toBeInTheDocument();
   });
 
-  it('should highlight current route', () => {
+  it('should highlight fabric sub-item when on /products/fabrics', () => {
     render(
-      <MemoryRouter initialEntries={['/fabrics']}>
+      <MemoryRouter initialEntries={['/products/fabrics']}>
         <Sidebar collapsed={false} />
       </MemoryRouter>
     );
 
-    // Find the menu item for fabrics and check it's selected
-    const fabricsMenuItem = screen.getByText('面料管理').closest('li');
+    // The sub-item "面料" should be selected
+    const fabricsMenuItem = screen.getByText('面料').closest('li');
     expect(fabricsMenuItem).toHaveClass('ant-menu-item-selected');
   });
 
-  it('should highlight parent route for nested paths', () => {
+  it('should highlight fabric sub-item for nested fabric paths', () => {
     render(
-      <MemoryRouter initialEntries={['/fabrics/123/edit']}>
+      <MemoryRouter initialEntries={['/products/fabrics/123/edit']}>
         <Sidebar collapsed={false} />
       </MemoryRouter>
     );
 
-    // Should still highlight fabrics for nested routes
-    const fabricsMenuItem = screen.getByText('面料管理').closest('li');
+    // Should still highlight "面料" for nested routes
+    const fabricsMenuItem = screen.getByText('面料').closest('li');
     expect(fabricsMenuItem).toHaveClass('ant-menu-item-selected');
   });
 
@@ -100,5 +108,21 @@ describe('Sidebar', () => {
     await user.click(suppliersMenuItem);
 
     expect(mockNavigate).toHaveBeenCalledWith('/suppliers');
+  });
+
+  it('should navigate to product sub-page when sub-item is clicked', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <MemoryRouter initialEntries={['/products/fabrics']}>
+        <Sidebar collapsed={false} />
+      </MemoryRouter>
+    );
+
+    // Click on iron frames sub-item
+    const ironFramesItem = screen.getByText('铁架');
+    await user.click(ironFramesItem);
+
+    expect(mockNavigate).toHaveBeenCalledWith('/products/iron-frames');
   });
 });

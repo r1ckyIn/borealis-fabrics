@@ -191,7 +191,7 @@ describe('useFabricDetail', () => {
 
     expect(result.current.breadcrumbs).toEqual([
       { label: '首页', path: '/' },
-      { label: '面料管理', path: '/fabrics' },
+      { label: '面料管理', path: '/products/fabrics' },
       { label: '测试面料' },
     ]);
   });

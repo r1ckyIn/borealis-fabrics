@@ -145,7 +145,7 @@ function createDefaultHookReturn(
     },
     breadcrumbs: [
       { label: '首页', path: '/' },
-      { label: '面料管理', path: '/fabrics' },
+      { label: '面料管理', path: '/products/fabrics' },
       { label: '高档涤纶面料' },
     ],
     ...overrides,
@@ -155,7 +155,7 @@ function createDefaultHookReturn(
 // Render helper
 function renderWithProviders(
   ui: React.ReactElement,
-  { initialEntries = ['/fabrics/1'] } = {}
+  { initialEntries = ['/products/fabrics/1'] } = {}
 ) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -168,7 +168,7 @@ function renderWithProviders(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={initialEntries}>
         <Routes>
-          <Route path="/fabrics/:id" element={ui} />
+          <Route path="/products/fabrics/:id" element={ui} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -269,7 +269,7 @@ describe('FabricDetailPage', () => {
       const backButton = screen.getByText('返回列表').closest('button');
       await user.click(backButton!);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics');
+      expect(mockNavigate).toHaveBeenCalledWith('/products/fabrics');
     });
   });
 
@@ -302,7 +302,7 @@ describe('FabricDetailPage', () => {
       const editButton = screen.getByText('编辑').closest('button');
       await user.click(editButton!);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics/1/edit');
+      expect(mockNavigate).toHaveBeenCalledWith('/products/fabrics/1/edit');
     });
   });
 

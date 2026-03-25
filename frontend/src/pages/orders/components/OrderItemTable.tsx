@@ -73,7 +73,7 @@ export function OrderItemTable({
             <Button
               type="link"
               style={{ padding: 0 }}
-              onClick={() => navigate(`/fabrics/${record.fabricId}`)}
+              onClick={() => navigate(`/products/fabrics/${record.fabricId}`)}
             >
               {record.fabric.fabricCode} - {record.fabric.name}
             </Button>

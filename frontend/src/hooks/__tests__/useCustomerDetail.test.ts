@@ -311,7 +311,7 @@ describe('useCustomerDetail', () => {
         result.current.navigation.goToFabricDetail(10);
       });
 
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics/10');
+      expect(mockNavigate).toHaveBeenCalledWith('/products/fabrics/10');
     });
   });
 
