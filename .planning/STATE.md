@@ -18,7 +18,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 06 — import-strategy-refactor
+**Current focus:** Phase 06 complete — next: Phase 07 (Order/Quote Multi-Category Extension)
 
 ## Current Phase
 
@@ -50,7 +50,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Milestone | Phases | Status |
 |-----------|--------|--------|
 | M1: Code Remediation | 1-4 | ● Complete (4/4 phases) |
-| M2: Feature Expansion + Real Data Testing | 5-10 | ○ Not Started |
+| M2: Feature Expansion + Real Data Testing | 5-10 | ◆ In Progress (2/6 phases) |
 
 ## Key Decisions Log
 

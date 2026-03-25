@@ -15,7 +15,7 @@
 | 4 | Frontend Component Decomposition | M1 | 4/4 Complete | QUAL-03~09, TEST-06~07 |
 | 4.1 | Payment Voucher Upload | M1+ | Mandatory voucher upload for all payment operations | PVOU-01~08 |
 | 5 | Multi-Category Schema + Product CRUD | M2 | 2/2 Complete | MCAT-01~04, MCAT-09 |
-| 6 | Import Strategy Refactor | M2 | Extensible import + new category templates | MCAT-05~06, DATA-08~09 |
+| 6 | Import Strategy Refactor | M2 | 2/2 Complete | MCAT-05~06, DATA-08~09 |
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
 | 9 | Contract OCR Skill | M2 | Chinese PDFs converted to importable Excel | DATA-01~02 |
@@ -287,4 +287,4 @@ Unmapped: 0
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 06 planned — 2 plans, 2 waves)*
+*Last updated: 2026-03-25 (Phase 06 complete — 2/2 plans executed, verification passed)*
