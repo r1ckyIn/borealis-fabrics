@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-25T12:11:06Z"
+last_updated: "2026-03-25T12:14:28.439Z"
 progress:
   total_phases: 11
   completed_phases: 7
@@ -126,6 +126,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Composite value format (fabric:N/product:N) for unified selector | Avoids ID collisions between fabric and product entities |
 | 2026-03-25 | PaginationParams sortBy+sortOrder to fetch cheapest supplier in single API call | Efficient lowest-price supplier resolution per item |
 | 2026-03-25 | Hidden Form.Items pattern for derived form values (fabricId, productId, unit) | Ensures derived values included in form submission |
+| 2026-03-25 | Self-contained tab components with inline TanStack Query hooks (not monolith hook) | Simpler for products without image gallery tab |
+| 2026-03-25 | Config-driven SPEC_FIELDS record per subCategory for dynamic form rendering | Adding new product category only requires new config entry |
+| 2026-03-25 | Column composition: BASE + CATEGORY_COLUMNS[subCategory] + TAIL concatenated | Clean column switching without per-category JSX |
 
 ## Accumulated Context
 
@@ -164,8 +167,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Phase 07 Plan 02 | Completed 07-02-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-02-SUMMARY.md` |
 | 2026-03-25 | Phase 07 Plan 03 | Completed 07-03-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-03-SUMMARY.md` |
 | 2026-03-25 | Phase 08 Plan 01 | Completed 08-01-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-01-SUMMARY.md` |
+| 2026-03-25 | Phase 08 Plan 02 | Completed 08-02-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-02-SUMMARY.md` |
 | 2026-03-25 | Phase 08 Plan 03 | Completed 08-03-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-03-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 08 Plan 03 complete — UnifiedProductSelector + OrderItemForm refactoring, 978 frontend tests passing)*
+*Last updated: 2026-03-25 (Phase 08 Plan 02 complete — Product list/detail/form pages with dynamic columns, 3-tab detail, config-driven form fields, 33 new tests)*
