@@ -671,9 +671,7 @@ export class QuoteService {
     const alreadyConverted = quoteItems.filter((qi) => qi.isConverted);
     if (alreadyConverted.length > 0) {
       const ids = alreadyConverted.map((qi) => qi.id).join(', ');
-      throw new BadRequestException(
-        `Quote items already converted: ${ids}`,
-      );
+      throw new BadRequestException(`Quote items already converted: ${ids}`);
     }
 
     // Acquire Redis lock on the quote
@@ -690,9 +688,7 @@ export class QuoteService {
         // Look up cheapest suppliers for fabric items
         const fabricIds = [
           ...new Set(
-            quoteItems
-              .filter((qi) => qi.fabricId)
-              .map((qi) => qi.fabricId!),
+            quoteItems.filter((qi) => qi.fabricId).map((qi) => qi.fabricId!),
           ),
         ];
         const allFabricSuppliers =
@@ -718,9 +714,7 @@ export class QuoteService {
         // Look up cheapest suppliers for product items
         const productIds = [
           ...new Set(
-            quoteItems
-              .filter((qi) => qi.productId)
-              .map((qi) => qi.productId!),
+            quoteItems.filter((qi) => qi.productId).map((qi) => qi.productId!),
           ),
         ];
         const allProductSuppliers =
@@ -808,8 +802,9 @@ export class QuoteService {
           });
         } else {
           // Create new order
-          const orderCode =
-            await this.codeGeneratorService.generateCode(CodePrefix.ORDER);
+          const orderCode = await this.codeGeneratorService.generateCode(
+            CodePrefix.ORDER,
+          );
           const totalAmount = quoteItems.reduce(
             (sum, qi) => sum + Number(qi.quantity) * Number(qi.unitPrice),
             0,

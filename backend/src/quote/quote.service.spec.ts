@@ -775,10 +775,7 @@ describe('QuoteService', () => {
     it('should convert all items of a quote and set status to converted', async () => {
       mockPrismaService.quoteItem.findMany
         .mockResolvedValueOnce([fabricQuoteItem, productQuoteItem]) // fetch items
-        .mockResolvedValueOnce([
-          { isConverted: true },
-          { isConverted: true },
-        ]); // check all converted
+        .mockResolvedValueOnce([{ isConverted: true }, { isConverted: true }]); // check all converted
       mockPrismaService.fabricSupplier.findMany.mockResolvedValue([
         {
           fabricId: 1,
@@ -821,10 +818,7 @@ describe('QuoteService', () => {
     it('should convert subset of items and set status to partially_converted', async () => {
       mockPrismaService.quoteItem.findMany
         .mockResolvedValueOnce([fabricQuoteItem]) // only one item selected
-        .mockResolvedValueOnce([
-          { isConverted: true },
-          { isConverted: false },
-        ]); // one converted, one not
+        .mockResolvedValueOnce([{ isConverted: true }, { isConverted: false }]); // one converted, one not
       mockPrismaService.fabricSupplier.findMany.mockResolvedValue([
         {
           fabricId: 1,
@@ -862,10 +856,7 @@ describe('QuoteService', () => {
     it('should create OrderItems with correct fabricId/productId/unit/quoteItemId', async () => {
       mockPrismaService.quoteItem.findMany
         .mockResolvedValueOnce([fabricQuoteItem, productQuoteItem])
-        .mockResolvedValueOnce([
-          { isConverted: true },
-          { isConverted: true },
-        ]);
+        .mockResolvedValueOnce([{ isConverted: true }, { isConverted: true }]);
       mockPrismaService.fabricSupplier.findMany.mockResolvedValue([]);
       mockPrismaService.productSupplier.findMany.mockResolvedValue([]);
       mockCodeGeneratorService.generateCode.mockResolvedValue('ORD-2603-0001');
@@ -905,10 +896,7 @@ describe('QuoteService', () => {
     it('should auto-fill cheapest supplier for both fabric and product items', async () => {
       mockPrismaService.quoteItem.findMany
         .mockResolvedValueOnce([fabricQuoteItem, productQuoteItem])
-        .mockResolvedValueOnce([
-          { isConverted: true },
-          { isConverted: true },
-        ]);
+        .mockResolvedValueOnce([{ isConverted: true }, { isConverted: true }]);
       mockPrismaService.fabricSupplier.findMany.mockResolvedValue([
         {
           fabricId: 1,
@@ -1001,9 +989,7 @@ describe('QuoteService', () => {
           status: QuoteStatus.EXPIRED,
         },
       };
-      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([
-        expiredItem,
-      ]);
+      mockPrismaService.quoteItem.findMany.mockResolvedValueOnce([expiredItem]);
 
       await expect(
         service.convertQuoteItems({ quoteItemIds: [1] }),
