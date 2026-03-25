@@ -24,7 +24,8 @@ import { IsIntegerWhenFieldPresent } from '../../common/validators/integer-quant
  */
 export class UpdateOrderItemDto {
   @ApiPropertyOptional({
-    description: 'Product ID (include when updating quantity on product items for integer validation)',
+    description:
+      'Product ID (include when updating quantity on product items for integer validation)',
     example: 1,
   })
   @IsOptional()

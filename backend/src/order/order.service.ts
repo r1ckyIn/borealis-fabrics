@@ -63,16 +63,27 @@ export class OrderService {
 
     // Extract and validate all IDs from items
     const fabricIds = extractUniqueIds(createDto.items, 'fabricId');
+    const productIds = extractUniqueIds(createDto.items, 'productId');
     const supplierIds = extractUniqueIds(createDto.items, 'supplierId');
     const quoteIds = extractUniqueIds(createDto.items, 'quoteId');
 
     await Promise.all([
-      validateEntityIds(
-        this.prisma,
-        'Fabric',
-        fabricIds,
-        this.prisma.fabric.findMany.bind(this.prisma.fabric),
-      ),
+      fabricIds.length > 0
+        ? validateEntityIds(
+            this.prisma,
+            'Fabric',
+            fabricIds,
+            this.prisma.fabric.findMany.bind(this.prisma.fabric),
+          )
+        : Promise.resolve(new Set<number>()),
+      productIds.length > 0
+        ? validateEntityIds(
+            this.prisma,
+            'Product',
+            productIds,
+            this.prisma.product.findMany.bind(this.prisma.product),
+          )
+        : Promise.resolve(new Set<number>()),
       supplierIds.length > 0
         ? validateEntityIds(
             this.prisma,
@@ -119,10 +130,12 @@ export class OrderService {
               notes: createDto.notes,
               items: {
                 create: createDto.items.map((item) => ({
-                  fabricId: item.fabricId,
+                  fabricId: item.fabricId ?? null,
+                  productId: item.productId ?? null,
                   supplierId: item.supplierId,
                   quoteId: item.quoteId,
                   quantity: item.quantity,
+                  unit: item.unit ?? 'meter',
                   salePrice: item.salePrice,
                   purchasePrice: item.purchasePrice,
                   subtotal: item.quantity * item.salePrice,

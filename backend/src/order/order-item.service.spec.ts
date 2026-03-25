@@ -36,6 +36,12 @@ describe('OrderItemService', () => {
       upsert: jest.Mock;
     };
     fabric: { findFirst: jest.Mock };
+    product: {
+      findFirst: jest.Mock;
+      findUnique: jest.Mock;
+      findMany: jest.Mock;
+    };
+    productSupplier: { findFirst: jest.Mock };
     supplier: { findFirst: jest.Mock };
     quote: { findUnique: jest.Mock };
     $transaction: jest.Mock;
@@ -53,6 +59,7 @@ describe('OrderItemService', () => {
     id: 1,
     orderId: 1,
     fabricId: 1,
+    productId: null,
     supplierId: null,
     quantity: 100,
     salePrice: 35.5,
@@ -60,12 +67,14 @@ describe('OrderItemService', () => {
     subtotal: 3550,
     status: OrderItemStatus.INQUIRY,
     prevStatus: null,
+    unit: 'meter',
     fabric: {
       id: 1,
       fabricCode: 'BF-2601-0001',
       name: 'Cotton',
       composition: '100% Cotton',
     },
+    product: null,
     supplier: null,
   };
 
@@ -98,6 +107,12 @@ describe('OrderItemService', () => {
         upsert: jest.fn(),
       },
       fabric: { findFirst: jest.fn() },
+      product: {
+        findFirst: jest.fn(),
+        findUnique: jest.fn(),
+        findMany: jest.fn(),
+      },
+      productSupplier: { findFirst: jest.fn() },
       supplier: { findFirst: jest.fn() },
       quote: { findUnique: jest.fn() },
       $transaction: jest.fn(
@@ -215,6 +230,125 @@ describe('OrderItemService', () => {
       });
 
       await expect(service.addOrderItem(1, addDto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should add product item with auto-filled supplier', async () => {
+      const productDto = {
+        productId: 1,
+        quantity: 5,
+        salePrice: 200,
+      };
+      const mockProductItem = {
+        ...mockOrderItem,
+        id: 2,
+        fabricId: null,
+        productId: 1,
+        unit: 'set',
+        quantity: 5,
+        salePrice: 200,
+        subtotal: 1000,
+        fabric: null,
+        product: {
+          id: 1,
+          productCode: 'P-001',
+          name: 'Iron Frame',
+          subCategory: 'IRON_FRAME',
+        },
+        supplier: {
+          id: 1,
+          companyName: 'Supplier A',
+          contactName: 'John',
+          phone: '123',
+        },
+      };
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+      mockPrismaService.product.findFirst.mockResolvedValue({
+        id: 1,
+        isActive: true,
+      });
+      mockPrismaService.productSupplier.findFirst.mockResolvedValue({
+        supplierId: 1,
+        purchasePrice: 150,
+      });
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        subCategory: 'IRON_FRAME',
+      });
+      mockPrismaService.orderItem.create.mockResolvedValue(mockProductItem);
+      mockPrismaService.orderTimeline.create.mockResolvedValue({});
+      mockPrismaService.orderItem.findMany.mockResolvedValue([mockProductItem]);
+      mockPrismaService.order.update.mockResolvedValue(mockOrder);
+      mockPrismaService.supplierPayment.upsert.mockResolvedValue({});
+
+      const result = await service.addOrderItem(1, productDto);
+
+      expect(result.productId).toBe(1);
+      expect(result.fabricId).toBeNull();
+      expect(mockPrismaService.productSupplier.findFirst).toHaveBeenCalledWith({
+        where: { productId: 1 },
+        orderBy: { purchasePrice: 'asc' },
+      });
+    });
+
+    it('should add product item with no supplier when none exists', async () => {
+      const productDto = {
+        productId: 1,
+        quantity: 3,
+        salePrice: 100,
+      };
+      const mockProductItem = {
+        ...mockOrderItem,
+        id: 3,
+        fabricId: null,
+        productId: 1,
+        supplierId: null,
+        unit: 'piece',
+        quantity: 3,
+        salePrice: 100,
+        subtotal: 300,
+        fabric: null,
+        product: {
+          id: 1,
+          productCode: 'P-002',
+          name: 'Motor',
+          subCategory: 'MOTOR',
+        },
+      };
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+      mockPrismaService.product.findFirst.mockResolvedValue({
+        id: 1,
+        isActive: true,
+      });
+      mockPrismaService.productSupplier.findFirst.mockResolvedValue(null);
+      mockPrismaService.product.findUnique.mockResolvedValue({
+        subCategory: 'MOTOR',
+      });
+      mockPrismaService.orderItem.create.mockResolvedValue(mockProductItem);
+      mockPrismaService.orderTimeline.create.mockResolvedValue({});
+      mockPrismaService.orderItem.findMany.mockResolvedValue([mockProductItem]);
+      mockPrismaService.order.update.mockResolvedValue(mockOrder);
+
+      const result = await service.addOrderItem(1, productDto);
+
+      expect(result.productId).toBe(1);
+      expect(result.supplierId).toBeNull();
+    });
+
+    it('should throw BadRequestException when both fabricId and productId provided', async () => {
+      const badDto = { fabricId: 1, productId: 1, quantity: 10, salePrice: 50 };
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+
+      await expect(service.addOrderItem(1, badDto)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('should throw BadRequestException when neither fabricId nor productId provided', async () => {
+      const badDto = { quantity: 10, salePrice: 50 };
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+
+      await expect(service.addOrderItem(1, badDto)).rejects.toThrow(
         BadRequestException,
       );
     });

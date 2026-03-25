@@ -18,7 +18,7 @@ import { Prisma } from '@prisma/client';
  */
 export async function validateEntityIds<T extends { id: number }>(
   tx: Prisma.TransactionClient,
-  entityType: 'Customer' | 'Fabric' | 'Supplier' | 'Quote',
+  entityType: 'Customer' | 'Fabric' | 'Supplier' | 'Quote' | 'Product',
   ids: number[],
   findMany: (args: {
     where: { id: { in: number[] }; isActive?: boolean };
@@ -177,6 +177,20 @@ export async function validateQuoteExists(
 }
 
 /**
+ * Validates a product exists and is active.
+ */
+export async function validateProductExists(
+  prisma: Prisma.TransactionClient,
+  productId: number,
+): Promise<void> {
+  const product = await prisma.product.findFirst({
+    where: { id: productId, isActive: true },
+    select: { id: true },
+  });
+  validateEntityExists(product, 'Product', productId);
+}
+
+/**
  * Extracts unique IDs from an array of items with an optional ID property.
  */
 export function extractUniqueIds<T>(items: T[], key: keyof T): number[] {
@@ -196,28 +210,41 @@ export function extractUniqueIds<T>(items: T[], key: keyof T): number[] {
 
 /**
  * Validates multiple entity types in batch.
- * Used when creating/updating orders with items that reference fabrics, suppliers, quotes.
+ * Used when creating/updating orders with items that reference fabrics, products, suppliers, quotes.
+ * Items may have either fabricId or productId (XOR constraint).
  */
 export async function validateOrderItemReferences(
   prisma: Prisma.TransactionClient,
   items: Array<{
-    fabricId: number;
+    fabricId?: number;
+    productId?: number;
     supplierId?: number;
     quoteId?: number;
   }>,
 ): Promise<void> {
   const fabricIds = extractUniqueIds(items, 'fabricId');
+  const productIds = extractUniqueIds(items, 'productId');
   const supplierIds = extractUniqueIds(items, 'supplierId');
   const quoteIds = extractUniqueIds(items, 'quoteId');
 
   // Validate in parallel for better performance
   await Promise.all([
-    validateEntityIds(
-      prisma,
-      'Fabric',
-      fabricIds,
-      prisma.fabric.findMany.bind(prisma.fabric),
-    ),
+    fabricIds.length > 0
+      ? validateEntityIds(
+          prisma,
+          'Fabric',
+          fabricIds,
+          prisma.fabric.findMany.bind(prisma.fabric),
+        )
+      : Promise.resolve(new Set<number>()),
+    productIds.length > 0
+      ? validateEntityIds(
+          prisma,
+          'Product',
+          productIds,
+          prisma.product.findMany.bind(prisma.product),
+        )
+      : Promise.resolve(new Set<number>()),
     supplierIds.length > 0
       ? validateEntityIds(
           prisma,
