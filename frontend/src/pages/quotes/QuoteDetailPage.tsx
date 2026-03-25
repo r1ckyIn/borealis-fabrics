@@ -116,7 +116,7 @@ export default function QuoteDetailPage(): React.ReactElement {
       }
       setConvertModalOpen(false);
     }
-  }, [quoteId, convertMutation, navigate]);
+  }, [quoteId, quote, convertMutation, navigate]);
 
   // Loading state
   if (isLoadingQuote) {

@@ -19,7 +19,7 @@ import {
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 type MenuItem = Required<MenuProps>['items'][number];
@@ -84,17 +84,18 @@ export function Sidebar({ collapsed }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Manage open keys for SubMenu expansion
-  const [menuOpenKeys, setMenuOpenKeys] = useState<string[]>([]);
+  // Manage open keys for SubMenu expansion.
+  // User-toggled state is tracked separately; product SubMenu auto-expands on product pages.
+  const [userOpenKeys, setUserOpenKeys] = useState<string[]>([]);
 
-  // Auto-expand product SubMenu when navigating to a product page
-  useEffect(() => {
-    if (location.pathname.startsWith('/products')) {
-      setMenuOpenKeys((prev) =>
-        prev.includes('/products') ? prev : [...prev, '/products']
-      );
+  // Computed open keys: user-toggled keys merged with auto-expansion for current route
+  const menuOpenKeys = useMemo(() => {
+    const keys = [...userOpenKeys];
+    if (location.pathname.startsWith('/products') && !keys.includes('/products')) {
+      keys.push('/products');
     }
-  }, [location.pathname]);
+    return keys;
+  }, [userOpenKeys, location.pathname]);
 
   // Determine selected key based on current path
   const selectedKey = useMemo(() => {
@@ -154,7 +155,7 @@ export function Sidebar({ collapsed }: SidebarProps) {
         mode="inline"
         selectedKeys={[selectedKey]}
         openKeys={menuOpenKeys}
-        onOpenChange={setMenuOpenKeys}
+        onOpenChange={setUserOpenKeys}
         items={menuItems}
         onClick={handleMenuClick}
         style={{ flex: 1, borderRight: 0 }}
