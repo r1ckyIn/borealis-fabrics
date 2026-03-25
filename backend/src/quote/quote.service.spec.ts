@@ -49,7 +49,11 @@ describe('QuoteService', () => {
       findUniqueOrThrow: jest.Mock;
       update: jest.Mock;
     };
-    orderItem: { create: jest.Mock; findMany: jest.Mock };
+    orderItem: {
+      create: jest.Mock;
+      findMany: jest.Mock;
+      updateMany: jest.Mock;
+    };
     orderTimeline: { createMany: jest.Mock };
     $transaction: jest.Mock;
   };
@@ -141,7 +145,11 @@ describe('QuoteService', () => {
         findUniqueOrThrow: jest.fn(),
         update: jest.fn(),
       },
-      orderItem: { create: jest.fn(), findMany: jest.fn() },
+      orderItem: {
+        create: jest.fn(),
+        findMany: jest.fn(),
+        updateMany: jest.fn(),
+      },
       orderTimeline: { createMany: jest.fn() },
       $transaction: jest.fn(
         <T>(callback: (tx: typeof mockPrismaService) => Promise<T>) =>
@@ -634,7 +642,7 @@ describe('QuoteService', () => {
   });
 
   describe('remove', () => {
-    it('should delete quote successfully', async () => {
+    it('should delete active/expired quote successfully', async () => {
       mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 1 });
 
       await expect(service.remove(1)).resolves.not.toThrow();
@@ -642,13 +650,27 @@ describe('QuoteService', () => {
         where: {
           id: 1,
           status: {
-            in: [
-              QuoteStatus.ACTIVE,
-              QuoteStatus.EXPIRED,
-              QuoteStatus.PARTIALLY_CONVERTED,
-            ],
+            in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED],
           },
         },
+      });
+    });
+
+    it('should delete partially_converted quote with FK cleanup', async () => {
+      mockPrismaService.quote.deleteMany.mockResolvedValue({ count: 0 });
+      mockPrismaService.quote.findUnique.mockResolvedValue({
+        status: QuoteStatus.PARTIALLY_CONVERTED,
+      });
+      mockPrismaService.orderItem.updateMany.mockResolvedValue({ count: 2 });
+      mockPrismaService.quote.delete.mockResolvedValue(mockQuote);
+
+      await expect(service.remove(1)).resolves.not.toThrow();
+      expect(mockPrismaService.orderItem.updateMany).toHaveBeenCalledWith({
+        where: { quoteId: 1 },
+        data: { quoteId: null },
+      });
+      expect(mockPrismaService.quote.delete).toHaveBeenCalledWith({
+        where: { id: 1 },
       });
     });
 

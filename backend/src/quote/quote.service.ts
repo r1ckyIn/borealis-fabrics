@@ -23,6 +23,9 @@ import { Quote, Order, OrderItem, Prisma } from '@prisma/client';
 
 // Order with items relation included (from create/findUniqueOrThrow with include)
 type OrderWithItems = Order & { items: OrderItem[] };
+type TransactionClient = Parameters<
+  Parameters<PrismaService['$transaction']>[0]
+>[0];
 import {
   buildPaginationArgs,
   buildPaginatedResult,
@@ -383,16 +386,17 @@ export class QuoteService {
         );
       }
 
-      // Validate fabric/product existence
+      // Validate fabric/product existence (use tx for transaction isolation)
       await this.validateItemReferences(
         itemDto.fabricId ? [itemDto.fabricId] : [],
         itemDto.productId ? [itemDto.productId] : [],
+        tx,
       );
 
-      // Derive unit
+      // Derive unit (use tx for transaction isolation)
       let unit = itemDto.unit ?? FABRIC_UNIT;
       if (itemDto.productId && !itemDto.unit) {
-        const product = await this.prisma.product.findUnique({
+        const product = await tx.product.findUnique({
           where: { id: itemDto.productId },
           select: { subCategory: true },
         });
@@ -554,33 +558,49 @@ export class QuoteService {
   /**
    * Delete a quote.
    * Only active, expired, or partially_converted quotes can be deleted.
-   * Uses conditional delete to prevent race conditions.
+   * For partially_converted quotes, nullifies quoteId on linked OrderItems
+   * before deletion to avoid FK RESTRICT violations.
+   * Uses transaction for atomicity.
    */
   async remove(id: number): Promise<void> {
-    const deleteResult = await this.prisma.quote.deleteMany({
-      where: {
-        id,
-        status: {
-          in: [
-            QuoteStatus.ACTIVE,
-            QuoteStatus.EXPIRED,
-            QuoteStatus.PARTIALLY_CONVERTED,
-          ],
+    await this.prisma.$transaction(async (tx) => {
+      const deleteResult = await tx.quote.deleteMany({
+        where: {
+          id,
+          status: {
+            in: [QuoteStatus.ACTIVE, QuoteStatus.EXPIRED],
+          },
         },
-      },
-    });
+      });
 
-    if (deleteResult.count === 0) {
-      const quote = await this.prisma.quote.findUnique({ where: { id } });
+      if (deleteResult.count > 0) return;
+
+      // Check if it's a partially_converted quote (needs FK cleanup)
+      const quote = await tx.quote.findUnique({
+        where: { id },
+        select: { status: true },
+      });
 
       if (!quote) {
         throw new NotFoundException(`Quote with ID ${id} not found`);
       }
 
+      if ((quote.status as QuoteStatus) === QuoteStatus.PARTIALLY_CONVERTED) {
+        // Nullify quoteId on linked OrderItems to avoid FK RESTRICT
+        await tx.orderItem.updateMany({
+          where: { quoteId: id },
+          data: { quoteId: null },
+        });
+
+        // Now safe to delete (QuoteItems cascade via onDelete: Cascade)
+        await tx.quote.delete({ where: { id } });
+        return;
+      }
+
       throw new ConflictException(
         'Cannot delete a converted quote. It is linked to an order.',
       );
-    }
+    });
   }
 
   /**
@@ -914,9 +934,10 @@ export class QuoteService {
   private async validateItemReferences(
     fabricIds: number[],
     productIds: number[],
+    prismaClient: TransactionClient | PrismaService = this.prisma,
   ): Promise<void> {
     if (fabricIds.length > 0) {
-      const fabrics = await this.prisma.fabric.findMany({
+      const fabrics = await prismaClient.fabric.findMany({
         where: { id: { in: fabricIds }, isActive: true },
         select: { id: true },
       });
@@ -928,7 +949,7 @@ export class QuoteService {
     }
 
     if (productIds.length > 0) {
-      const products = await this.prisma.product.findMany({
+      const products = await prismaClient.product.findMany({
         where: { id: { in: productIds }, isActive: true },
         select: { id: true },
       });

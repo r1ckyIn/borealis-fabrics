@@ -33,6 +33,7 @@ import {
   buildPaginationArgs,
   buildPaginatedResult,
 } from '../common/common.module';
+import { getUnitForProduct, FABRIC_UNIT } from '../common/utils/product-units';
 
 const MAX_CODE_GENERATION_RETRIES = 3;
 
@@ -48,7 +49,7 @@ export class OrderService {
   /**
    * Create a new order with items.
    * - Validates customer existence
-   * - Validates all fabric IDs
+   * - Validates all fabric/product IDs
    * - Validates supplier IDs if provided
    * - Generates order code (ORD-YYMM-NNNN)
    * - Creates order and items in transaction
@@ -103,6 +104,18 @@ export class OrderService {
         : Promise.resolve(new Set<number>()),
     ]);
 
+    // Build product subCategory map for unit derivation
+    const productSubCategoryMap = new Map<number, string>();
+    if (productIds.length > 0) {
+      const products = await this.prisma.product.findMany({
+        where: { id: { in: productIds }, isActive: true },
+        select: { id: true, subCategory: true },
+      });
+      for (const p of products) {
+        productSubCategoryMap.set(p.id, p.subCategory);
+      }
+    }
+
     // Calculate total amount from items
     const totalAmount = createDto.items.reduce((sum, item) => {
       return sum + item.quantity * item.salePrice;
@@ -135,7 +148,13 @@ export class OrderService {
                   supplierId: item.supplierId,
                   quoteId: item.quoteId,
                   quantity: item.quantity,
-                  unit: item.unit ?? 'meter',
+                  unit:
+                    item.unit ??
+                    (item.productId
+                      ? getUnitForProduct(
+                          productSubCategoryMap.get(item.productId) ?? '',
+                        )
+                      : FABRIC_UNIT),
                   salePrice: item.salePrice,
                   purchasePrice: item.purchasePrice,
                   subtotal: item.quantity * item.salePrice,
