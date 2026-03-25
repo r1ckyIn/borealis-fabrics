@@ -125,10 +125,13 @@ export default function QuoteListPage(): React.ReactElement {
         key: 'fabric',
         width: 200,
         ellipsis: true,
-        render: (_, record) =>
-          record.fabric
-            ? `${record.fabric.fabricCode} - ${record.fabric.name}`
-            : '-',
+        // TODO(phase-08): Rewrite for multi-item quote model
+        render: (_, record) => {
+          const legacy = record as unknown as Record<string, Record<string, string>>;
+          return legacy.fabric
+            ? `${legacy.fabric.fabricCode} - ${legacy.fabric.name}`
+            : '-';
+        },
       },
       {
         title: '数量',

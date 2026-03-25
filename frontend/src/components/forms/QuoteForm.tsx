@@ -94,13 +94,15 @@ export function QuoteForm({
   }, [quantity, unitPrice]);
 
   // Set initial values when in edit mode
+  // TODO(phase-08): Rewrite for multi-item quote model
   useEffect(() => {
     if (initialValues) {
+      const legacy = initialValues as Quote & Record<string, unknown>;
       form.setFieldsValue({
         customerId: initialValues.customerId,
-        fabricId: initialValues.fabricId,
-        quantity: Number(initialValues.quantity),
-        unitPrice: Number(initialValues.unitPrice),
+        fabricId: legacy.fabricId as number | undefined,
+        quantity: Number(legacy.quantity ?? 0),
+        unitPrice: Number(legacy.unitPrice ?? 0),
         validUntil: dayjs(initialValues.validUntil),
         notes: initialValues.notes ?? undefined,
       });
@@ -116,7 +118,7 @@ export function QuoteForm({
       ...(isEditMode ? editableFields : values),
       validUntil: values.validUntil.format('YYYY-MM-DD'),
     };
-    await onSubmit(submitData as CreateQuoteData);
+    await onSubmit(submitData as unknown as CreateQuoteData);
   }
 
   const isEditMode = mode === 'edit';

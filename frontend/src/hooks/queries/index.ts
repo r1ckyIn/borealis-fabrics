@@ -76,6 +76,16 @@ export {
   type DeleteCustomerPricingParams,
 } from './useCustomers';
 
+// Product hooks
+export {
+  productKeys,
+  useProducts,
+  useProduct,
+  useCreateProduct,
+  useUpdateProduct,
+  useDeleteProduct,
+} from './useProducts';
+
 // Quote hooks
 export {
   quoteKeys,
@@ -84,7 +94,10 @@ export {
   useCreateQuote,
   useUpdateQuote,
   useDeleteQuote,
-  useConvertQuoteToOrder,
+  useAddQuoteItem,
+  useUpdateQuoteItem,
+  useDeleteQuoteItem,
+  useConvertQuoteItems,
 } from './useQuotes';
 
 // Order hooks

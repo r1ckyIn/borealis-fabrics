@@ -30,6 +30,7 @@ const QUOTE_COLORS: Record<QuoteStatus, AntdTagColor> = {
   [QuoteStatus.ACTIVE]: 'success',
   [QuoteStatus.EXPIRED]: 'error',
   [QuoteStatus.CONVERTED]: 'processing',
+  [QuoteStatus.PARTIALLY_CONVERTED]: 'warning',
 };
 
 const SUPPLIER_COLORS: Record<SupplierStatus, AntdTagColor> = {

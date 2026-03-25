@@ -30,7 +30,7 @@ import { getDeleteErrorMessage, getErrorMessage } from '@/utils/errorMessages';
 import {
   useQuote,
   useDeleteQuote,
-  useConvertQuoteToOrder,
+  useConvertQuoteItems,
 } from '@/hooks/queries/useQuotes';
 import { formatDate, formatQuantity, parseEntityId } from '@/utils';
 import { QuoteStatus } from '@/types';
@@ -63,7 +63,8 @@ export default function QuoteDetailPage(): React.ReactElement {
 
   // Mutations
   const deleteMutation = useDeleteQuote();
-  const convertMutation = useConvertQuoteToOrder();
+  // TODO(phase-08): Rewrite for multi-item quote conversion
+  const convertMutation = useConvertQuoteItems();
 
   // Breadcrumbs
   const breadcrumbs = useMemo(
@@ -97,7 +98,9 @@ export default function QuoteDetailPage(): React.ReactElement {
     if (!quoteId) return;
 
     try {
-      const order = await convertMutation.mutateAsync(quoteId);
+      // TODO(phase-08): Rewrite with item-level selection UI
+      const itemIds = (quote?.items ?? []).map((item) => item.id);
+      const order = await convertMutation.mutateAsync({ quoteItemIds: itemIds });
       message.success('报价已成功转换为订单');
       setConvertModalOpen(false);
       navigate(`/orders/${order.id}`);
@@ -231,27 +234,28 @@ export default function QuoteDetailPage(): React.ReactElement {
               '-'
             )}
           </Descriptions.Item>
+          {/* TODO(phase-08): Rewrite for multi-item quote model */}
           <Descriptions.Item label="面料编码">
-            {quote.fabric ? (
+            {(quote as unknown as Record<string, unknown>).fabric ? (
               <Button
                 type="link"
                 style={{ padding: 0 }}
-                onClick={() => navigate(`/fabrics/${quote.fabricId}`)}
+                onClick={() => navigate(`/products/fabrics/${(quote as unknown as Record<string, unknown>).fabricId}`)}
               >
-                {quote.fabric.fabricCode}
+                {((quote as unknown as Record<string, unknown>).fabric as Record<string, string>)?.fabricCode}
               </Button>
             ) : (
               '-'
             )}
           </Descriptions.Item>
           <Descriptions.Item label="面料名称">
-            {quote.fabric?.name ?? '-'}
+            {((quote as unknown as Record<string, unknown>).fabric as Record<string, string>)?.name ?? '-'}
           </Descriptions.Item>
           <Descriptions.Item label="数量">
-            {formatQuantity(quote.quantity)}
+            {formatQuantity((quote as unknown as Record<string, number>).quantity)}
           </Descriptions.Item>
           <Descriptions.Item label="单价">
-            <AmountDisplay value={quote.unitPrice} suffix="/米" />
+            <AmountDisplay value={(quote as unknown as Record<string, number>).unitPrice} suffix="/米" />
           </Descriptions.Item>
           <Descriptions.Item label="合计金额">
             <AmountDisplay value={quote.totalPrice} />

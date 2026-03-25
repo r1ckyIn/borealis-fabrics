@@ -10,7 +10,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import QuoteDetailPage from '../QuoteDetailPage';
 import { QuoteStatus } from '@/types';
-import type { Quote } from '@/types';
+// TODO(phase-08): Re-add Quote import when tests rewritten for multi-item model
 
 // Mock hooks
 const mockUseQuote = vi.fn();
@@ -20,7 +20,7 @@ const mockUseConvertQuoteToOrder = vi.fn();
 vi.mock('@/hooks/queries/useQuotes', () => ({
   useQuote: (...args: unknown[]) => mockUseQuote(...args),
   useDeleteQuote: () => mockUseDeleteQuote(),
-  useConvertQuoteToOrder: () => mockUseConvertQuoteToOrder(),
+  useConvertQuoteItems: () => mockUseConvertQuoteToOrder(),
 }));
 
 // Mock navigate
@@ -47,7 +47,8 @@ vi.mock('antd', async () => {
 });
 
 // Mock quote data
-const mockQuote: Quote = {
+// TODO(phase-08): Rewrite test for multi-item quote model
+const mockQuote = {
   id: 1,
   quoteCode: 'QT-2401-0001',
   customerId: 1,

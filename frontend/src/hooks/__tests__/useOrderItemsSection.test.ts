@@ -86,6 +86,7 @@ const mockOrderItem: OrderItem = {
   salePrice: 25.5,
   purchasePrice: 18.0,
   subtotal: 1275,
+  unit: '米',
   status: OrderItemStatus.ORDERED,
   prevStatus: null,
   deliveryDate: '2026-04-15',

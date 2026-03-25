@@ -17,6 +17,7 @@ export * from './system.api';
 export * from './supplier.api';
 export * from './customer.api';
 export * from './fabric.api';
+export * from './product.api';
 export * from './quote.api';
 export * from './order.api';
 export * from './logistics.api';
