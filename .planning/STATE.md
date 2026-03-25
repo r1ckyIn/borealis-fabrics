@@ -6,9 +6,9 @@ status: unknown
 last_updated: "2026-03-25T03:26:32.838Z"
 progress:
   total_phases: 11
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 23
-  completed_plans: 21
+  completed_plans: 23
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 |-------|-------|
 | Phase | 06 |
 | Name | Import Strategy Refactor |
-| Status | In Progress |
-| Current Plan | 1 of 2 |
+| Status | Complete |
+| Current Plan | 2 of 2 |
 | Branch | feature/gsd-06-import-strategy-refactor |
 
 ## Progress
@@ -39,7 +39,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 3 — Backend Service Decomposition | ● Complete | 4/4 |
 | 4 — Frontend Component Decomposition | ● Complete | 4/4 |
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
-| 6 — Import Strategy Refactor | ◐ In Progress | 1/2 |
+| 6 — Import Strategy Refactor | ● Complete | 2/2 |
 | 7 — Order/Quote Multi-Category Extension | ○ Not Started | — |
 | 8 — Frontend Multi-Category Pages | ○ Not Started | — |
 | 9 — Contract OCR Skill | ○ Not Started | — |
@@ -108,6 +108,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Composite key separator :: for modelNumber+name dedup | Avoids collision with common characters in product names |
 | 2026-03-25 | DB duplicates reported as failures (not skips) for product import | Per user decision — products should fail, not silently skip |
 | 2026-03-25 | Supplier map pre-loaded in getExistingKeys() lifecycle | Follows existing call pattern; getExistingKeys() called once before validateRow() |
+| 2026-03-25 | Dry-run at importData level with single !dryRun conditional | All strategies benefit automatically, minimal code change |
+| 2026-03-25 | dryRun defaults to false via DefaultValuePipe | Backward compatible, no breaking changes to existing API consumers |
 
 ## Accumulated Context
 
@@ -141,7 +143,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-24 | Phase 05 Plan 01 | Completed 05-01-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-01-SUMMARY.md` |
 | 2026-03-24 | Phase 05 Plan 02 | Completed 05-02-PLAN.md | `.planning/phases/05-multi-category-schema-product-crud/05-02-SUMMARY.md` |
 | 2026-03-25 | Phase 06 Plan 01 | Completed 06-01-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-01-SUMMARY.md` |
+| 2026-03-25 | Phase 06 Plan 02 | Completed 06-02-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 06 Plan 01 complete — ProductImportStrategy with composite key dedup, 24 new tests, 88 total import tests passing)*
+*Last updated: 2026-03-25 (Phase 06 complete — import system extended with product endpoints, dry-run for all types, 784 backend tests passing)*

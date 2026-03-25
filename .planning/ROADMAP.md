@@ -180,8 +180,8 @@ Plans:
 **Plans:** 2 plans
 
 Plans:
-- [ ] 06-01-PLAN.md — ProductImportStrategy class + ImportStrategy interface extension (getRowKey) + unit tests
-- [ ] 06-02-PLAN.md — Wire strategy into ImportModule/Service/Controller + dry-run support for all types + service tests
+- [x] 06-01-PLAN.md — ProductImportStrategy class + ImportStrategy interface extension (getRowKey) + unit tests
+- [x] 06-02-PLAN.md — Wire strategy into ImportModule/Service/Controller + dry-run support for all types + service tests
 
 **Success Criteria:**
 1. Excel import templates exist for each new product category (iron frame, motor, hardware)
