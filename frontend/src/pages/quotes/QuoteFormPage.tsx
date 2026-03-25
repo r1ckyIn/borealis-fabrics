@@ -1,6 +1,7 @@
 /**
  * Quote form page for creating and editing quotes.
- * Handles both create and edit modes based on URL parameter.
+ * Create mode: full multi-item form with UnifiedProductSelector.
+ * Edit mode: header-only (validUntil, notes); items managed on detail page.
  */
 
 import { useCallback } from 'react';
@@ -52,12 +53,18 @@ export default function QuoteFormPage(): React.ReactElement {
     async (values: CreateQuoteData): Promise<void> => {
       try {
         if (isEditMode && quoteId) {
+          // Edit mode: only send header fields (validUntil, notes)
+          const updateData: UpdateQuoteData = {
+            validUntil: values.validUntil,
+            notes: values.notes,
+          };
           await updateMutation.mutateAsync({
             id: quoteId,
-            data: values as UpdateQuoteData,
+            data: updateData,
           });
           message.success('报价更新成功');
         } else {
+          // Create mode: send full data with items[]
           await createMutation.mutateAsync(values);
           message.success('报价创建成功');
         }
