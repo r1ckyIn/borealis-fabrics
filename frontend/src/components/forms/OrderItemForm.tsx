@@ -1,6 +1,7 @@
 /**
  * Order item form row for use inside OrderForm's Form.List.
- * Renders a single order line item with fabric/supplier selectors,
+ * Renders a single order line item with unified product selector,
+ * supplier selector (auto-populated from lowest-price supplier),
  * quantity, prices, delivery date, notes, subtotal, and remove button.
  */
 
@@ -17,9 +18,11 @@ import {
 } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 
-import { FabricSelector } from '@/components/business/FabricSelector';
+import {
+  UnifiedProductSelector,
+  parseCompositeValue,
+} from '@/components/business/UnifiedProductSelector';
 import { SupplierSelector } from '@/components/business/SupplierSelector';
-import { getFabrics } from '@/api/fabric.api';
 import { getSuppliers } from '@/api/supplier.api';
 import { formatCurrency } from '@/utils/format';
 
@@ -32,12 +35,6 @@ export interface OrderItemFormProps {
   onRemove: () => void;
   /** Disable remove when only 1 item exists */
   removeDisabled?: boolean;
-}
-
-/** Search fabrics for selector. */
-async function searchFabrics(keyword: string) {
-  const result = await getFabrics({ keyword, pageSize: 20 });
-  return result.items;
 }
 
 /** Search suppliers for selector. */
@@ -53,9 +50,10 @@ export function OrderItemForm({
 }: OrderItemFormProps) {
   const form = Form.useFormInstance();
 
-  // Watch quantity and salePrice for subtotal calculation
+  // Watch quantity, salePrice for subtotal, and unit for dynamic addon
   const quantity = Form.useWatch(['items', fieldName, 'quantity'], form);
   const salePrice = Form.useWatch(['items', fieldName, 'salePrice'], form);
+  const unit = Form.useWatch(['items', fieldName, 'unit'], form);
 
   const subtotal = useMemo(() => {
     if (quantity && salePrice) {
@@ -74,16 +72,96 @@ export function OrderItemForm({
         background: '#fafafa',
       }}
     >
+      {/* Hidden fields for fabricId, productId, unit — included in form values */}
+      <Form.Item name={[fieldName, 'fabricId']} hidden>
+        <Input />
+      </Form.Item>
+      <Form.Item name={[fieldName, 'productId']} hidden>
+        <Input />
+      </Form.Item>
+      <Form.Item name={[fieldName, 'unit']} hidden>
+        <Input />
+      </Form.Item>
+
       <Row gutter={12}>
         <Col xs={24} sm={12} md={7}>
           <Form.Item
-            name={[fieldName, 'fabricId']}
-            label="面料"
-            rules={[{ required: true, message: '请选择面料' }]}
+            name={[fieldName, 'productSelection']}
+            label="产品"
+            rules={[{ required: true, message: '请选择产品' }]}
           >
-            <FabricSelector
-              onSearch={searchFabrics}
-              placeholder="请选择面料"
+            <UnifiedProductSelector
+              placeholder="搜索面料或产品"
+              onChange={(compositeValue, result) => {
+                if (result && compositeValue) {
+                  const parsed = parseCompositeValue(compositeValue);
+                  if (parsed) {
+                    // Set fabricId or productId, clear the other
+                    if (parsed.type === 'fabric') {
+                      form.setFieldValue(
+                        ['items', fieldName, 'fabricId'],
+                        parsed.id
+                      );
+                      form.setFieldValue(
+                        ['items', fieldName, 'productId'],
+                        undefined
+                      );
+                    } else {
+                      form.setFieldValue(
+                        ['items', fieldName, 'productId'],
+                        parsed.id
+                      );
+                      form.setFieldValue(
+                        ['items', fieldName, 'fabricId'],
+                        undefined
+                      );
+                    }
+                    // Auto-populate unit
+                    form.setFieldValue(
+                      ['items', fieldName, 'unit'],
+                      result.unit
+                    );
+                    // Auto-populate supplier (lowest-price from supplier relationship)
+                    if (result.lowestSupplierId != null) {
+                      form.setFieldValue(
+                        ['items', fieldName, 'supplierId'],
+                        result.lowestSupplierId
+                      );
+                    }
+                    // Auto-populate purchase price from lowest supplier price, fallback to defaultPrice
+                    const autoPrice =
+                      result.lowestSupplierPrice ?? result.defaultPrice;
+                    if (autoPrice != null) {
+                      form.setFieldValue(
+                        ['items', fieldName, 'purchasePrice'],
+                        autoPrice
+                      );
+                    }
+                  }
+                } else {
+                  // Cleared selection
+                  form.setFieldValue(
+                    ['items', fieldName, 'fabricId'],
+                    undefined
+                  );
+                  form.setFieldValue(
+                    ['items', fieldName, 'productId'],
+                    undefined
+                  );
+                  form.setFieldValue(
+                    ['items', fieldName, 'unit'],
+                    undefined
+                  );
+                  form.setFieldValue(
+                    ['items', fieldName, 'supplierId'],
+                    undefined
+                  );
+                  form.setFieldValue(
+                    ['items', fieldName, 'purchasePrice'],
+                    undefined
+                  );
+                }
+              }}
             />
           </Form.Item>
         </Col>
@@ -110,7 +188,7 @@ export function OrderItemForm({
               min={0.01}
               max={1000000}
               precision={2}
-              addonAfter="米"
+              addonAfter={unit || '米'}
             />
           </Form.Item>
         </Col>

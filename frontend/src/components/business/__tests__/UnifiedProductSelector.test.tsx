@@ -79,10 +79,12 @@ const mockProductSupplier: ProductSupplier = {
 function createPaginatedResult<T>(items: T[]): PaginatedResult<T> {
   return {
     items,
-    total: items.length,
-    page: 1,
-    pageSize: 10,
-    totalPages: 1,
+    pagination: {
+      total: items.length,
+      page: 1,
+      pageSize: 10,
+      totalPages: 1,
+    },
   };
 }
 
