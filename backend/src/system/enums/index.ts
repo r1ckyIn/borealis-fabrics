@@ -58,6 +58,7 @@ export const QUOTE_STATUS_LABELS = {
   active: '有效',
   expired: '已过期',
   converted: '已转订单',
+  partially_converted: '部分转订单',
 } as const satisfies Record<string, string>;
 
 /**

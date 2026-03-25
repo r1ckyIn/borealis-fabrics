@@ -1,4 +1,11 @@
-import { IsOptional, IsEnum, IsInt, IsDateString, Min } from 'class-validator';
+import {
+  IsOptional,
+  IsEnum,
+  IsInt,
+  IsString,
+  IsDateString,
+  Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
 import { QuoteStatus } from './create-quote.dto';
@@ -25,6 +32,14 @@ export class QueryQuoteDto extends PaginationDto {
   sortBy?: QuoteSortField = QuoteSortField.createdAt;
 
   @ApiPropertyOptional({
+    description: 'Search keyword (quote code)',
+    example: 'QT-2602',
+  })
+  @IsOptional()
+  @IsString()
+  keyword?: string;
+
+  @ApiPropertyOptional({
     description: 'Filter by customer ID',
     example: 1,
   })
@@ -32,15 +47,6 @@ export class QueryQuoteDto extends PaginationDto {
   @IsInt()
   @Min(1)
   customerId?: number;
-
-  @ApiPropertyOptional({
-    description: 'Filter by fabric ID',
-    example: 1,
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  fabricId?: number;
 
   @ApiPropertyOptional({
     description: 'Filter by quote status',
