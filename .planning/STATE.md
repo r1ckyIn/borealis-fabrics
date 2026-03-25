@@ -8,7 +8,7 @@ progress:
   total_phases: 11
   completed_phases: 7
   total_plans: 31
-  completed_plans: 28
+  completed_plans: 29
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | 08 |
 | Name | Frontend Multi-Category Pages |
 | Status | In Progress |
-| Current Plan | 3 of 5 |
+| Current Plan | 4 of 5 |
 | Branch | feature/gsd-08-frontend-multi-category-pages |
 
 ## Progress
@@ -41,7 +41,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
 | 6 — Import Strategy Refactor | ● Complete | 2/2 |
 | 7 — Order/Quote Multi-Category Extension | ● Complete | 3/3 |
-| 8 — Frontend Multi-Category Pages | ◆ In Progress | 3/5 |
+| 8 — Frontend Multi-Category Pages | ◆ In Progress | 4/5 |
 | 9 — Contract OCR Skill | ○ Not Started | — |
 | 10 — Real Data Testing | ○ Not Started | — |
 
@@ -129,6 +129,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Self-contained tab components with inline TanStack Query hooks (not monolith hook) | Simpler for products without image gallery tab |
 | 2026-03-25 | Config-driven SPEC_FIELDS record per subCategory for dynamic form rendering | Adding new product category only requires new config entry |
 | 2026-03-25 | Column composition: BASE + CATEGORY_COLUMNS[subCategory] + TAIL concatenated | Clean column switching without per-category JSX |
+| 2026-03-25 | Quote edit mode header-only; items managed on detail page | Matches OrderForm pattern, avoids complex item sync on edit |
+| 2026-03-25 | Conversion UI shown for ACTIVE and PARTIALLY_CONVERTED only | Fully CONVERTED quotes hide checkboxes and convert button |
+| 2026-03-25 | Modal.confirm for conversion action (not ConfirmModal) | Supports async onOk pattern for mutation + navigation |
 
 ## Accumulated Context
 
@@ -169,7 +172,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Phase 08 Plan 01 | Completed 08-01-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-01-SUMMARY.md` |
 | 2026-03-25 | Phase 08 Plan 02 | Completed 08-02-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-02-SUMMARY.md` |
 | 2026-03-25 | Phase 08 Plan 03 | Completed 08-03-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-03-SUMMARY.md` |
+| 2026-03-25 | Phase 08 Plan 04 | Completed 08-04-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-04-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 08 Plan 02 complete — Product list/detail/form pages with dynamic columns, 3-tab detail, config-driven form fields, 33 new tests)*
+*Last updated: 2026-03-25 (Phase 08 Plan 04 complete — All 3 quote pages rebuilt for multi-item model: expandable list, Form.List quote form, checkbox-based partial conversion, 35 tests)*
