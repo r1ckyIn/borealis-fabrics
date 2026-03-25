@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-25T06:49:42.404Z"
+last_updated: "2026-03-25T07:02:38Z"
 progress:
   total_phases: 11
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 26
-  completed_plans: 24
+  completed_plans: 25
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | 07 |
 | Name | Order/Quote Multi-Category Extension |
 | Status | In Progress |
-| Current Plan | 2 of 3 |
+| Current Plan | 3 of 3 |
 | Branch | feature/gsd-07-order-quote-multi-category-extension |
 
 ## Progress
@@ -40,7 +40,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 4 — Frontend Component Decomposition | ● Complete | 4/4 |
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
 | 6 — Import Strategy Refactor | ● Complete | 2/2 |
-| 7 — Order/Quote Multi-Category Extension | ◆ In Progress | 2/3 |
+| 7 — Order/Quote Multi-Category Extension | ● Complete | 3/3 |
 | 8 — Frontend Multi-Category Pages | ○ Not Started | — |
 | 9 — Contract OCR Skill | ○ Not Started | — |
 | 10 — Real Data Testing | ○ Not Started | — |
@@ -50,7 +50,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Milestone | Phases | Status |
 |-----------|--------|--------|
 | M1: Code Remediation | 1-4 | ● Complete (4/4 phases) |
-| M2: Feature Expansion + Real Data Testing | 5-10 | ◆ In Progress (2/6 phases) |
+| M2: Feature Expansion + Real Data Testing | 5-10 | ◆ In Progress (3/6 phases) |
 
 ## Key Decisions Log
 
@@ -116,6 +116,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | IsIntegerWhenFieldPresent reused for quote item validation | Consistent with OrderItem pattern, avoids dual @ValidateIf issue |
 | 2026-03-25 | Quote update allows only validUntil + notes; items via dedicated endpoints | Separation of header vs item management |
 | 2026-03-25 | PARTIALLY_CONVERTED status allowed for update and delete operations | Partially converted quotes still editable |
+| 2026-03-25 | OrderWithItems local type alias for strict TS typing of included relations | Order + items relation from Prisma create/findUniqueOrThrow |
+| 2026-03-25 | Validations before Redis lock in convertQuoteItems | Fail fast, avoid unnecessary lock acquisition |
+| 2026-03-25 | Timeline remark 'Converted from quote item' | Distinguishes from direct order creation |
 
 ## Accumulated Context
 
@@ -152,7 +155,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Phase 06 Plan 02 | Completed 06-02-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-02-SUMMARY.md` |
 | 2026-03-25 | Phase 07 Plan 01 | Completed 07-01-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-01-SUMMARY.md` |
 | 2026-03-25 | Phase 07 Plan 02 | Completed 07-02-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-02-SUMMARY.md` |
+| 2026-03-25 | Phase 07 Plan 03 | Completed 07-03-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-03-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 07 Plan 02 complete — Quote multi-item restructure, DTOs rewritten, QuoteService CRUD with item management, 56 quote tests passing)*
+*Last updated: 2026-03-25 (Phase 07 Plan 03 complete — Item-level partial quote conversion, ConvertQuoteItemsDto replaces batch-convert, 792 backend tests passing)*
