@@ -68,9 +68,9 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **MCAT-07**: OrderItem extended with productId FK (nullable, exactly-one guard with fabricId)
 - [x] **MCAT-08**: Quote extended to support non-fabric products
 - [x] **MCAT-09**: Product code generation (category-specific prefixes via CodeGeneratorService)
-- [ ] **MCAT-10**: Frontend product list page with category filter
-- [ ] **MCAT-11**: Frontend product detail/edit pages for each category
-- [ ] **MCAT-12**: Frontend order form supports selecting products from any category
+- [x] **MCAT-10**: Frontend product list page with category filter
+- [x] **MCAT-11**: Frontend product detail/edit pages for each category
+- [x] **MCAT-12**: Frontend order form supports selecting products from any category
 
 ### OCR & Data Testing (DATA)
 
@@ -163,9 +163,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | MCAT-07 | Phase 7 | Complete |
 | MCAT-08 | Phase 7 | Complete |
 | MCAT-09 | Phase 5 | Complete |
-| MCAT-10 | Phase 8 | Pending |
-| MCAT-11 | Phase 8 | Pending |
-| MCAT-12 | Phase 8 | Pending |
+| MCAT-10 | Phase 8 | Complete |
+| MCAT-11 | Phase 8 | Complete |
+| MCAT-12 | Phase 8 | Complete |
 | DATA-01 | Phase 9 | Pending |
 | DATA-02 | Phase 9 | Pending |
 | DATA-03 | Phase 10 | Pending |
