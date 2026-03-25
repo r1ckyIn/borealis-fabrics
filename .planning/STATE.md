@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-25T06:29:07Z"
+last_updated: "2026-03-25T06:49:42.404Z"
 progress:
   total_phases: 11
   completed_phases: 6
   total_plans: 26
-  completed_plans: 23
+  completed_plans: 24
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | 07 |
 | Name | Order/Quote Multi-Category Extension |
 | Status | In Progress |
-| Current Plan | 1 of 3 |
+| Current Plan | 2 of 3 |
 | Branch | feature/gsd-07-order-quote-multi-category-extension |
 
 ## Progress
@@ -40,7 +40,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 4 — Frontend Component Decomposition | ● Complete | 4/4 |
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
 | 6 — Import Strategy Refactor | ● Complete | 2/2 |
-| 7 — Order/Quote Multi-Category Extension | ◆ In Progress | 1/3 |
+| 7 — Order/Quote Multi-Category Extension | ◆ In Progress | 2/3 |
 | 8 — Frontend Multi-Category Pages | ○ Not Started | — |
 | 9 — Contract OCR Skill | ○ Not Started | — |
 | 10 — Real Data Testing | ○ Not Started | — |
@@ -113,6 +113,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | NoAction FK for fabricId/productId on OrderItem/QuoteItem | MySQL CHECK constraint incompatible with SET NULL/CASCADE FK action |
 | 2026-03-25 | IsIntegerWhenFieldPresent custom decorator (not dual @ValidateIf) | class-validator AND-logic on same property prevents dual validation groups |
 | 2026-03-25 | Single migration with inline data migration SQL for quote restructure | Move existing quote fabricId/quantity/unitPrice to QuoteItem before dropping columns |
+| 2026-03-25 | IsIntegerWhenFieldPresent reused for quote item validation | Consistent with OrderItem pattern, avoids dual @ValidateIf issue |
+| 2026-03-25 | Quote update allows only validUntil + notes; items via dedicated endpoints | Separation of header vs item management |
+| 2026-03-25 | PARTIALLY_CONVERTED status allowed for update and delete operations | Partially converted quotes still editable |
 
 ## Accumulated Context
 
@@ -148,7 +151,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Phase 06 Plan 01 | Completed 06-01-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-01-SUMMARY.md` |
 | 2026-03-25 | Phase 06 Plan 02 | Completed 06-02-PLAN.md | `.planning/phases/06-import-strategy-refactor/06-02-SUMMARY.md` |
 | 2026-03-25 | Phase 07 Plan 01 | Completed 07-01-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-01-SUMMARY.md` |
+| 2026-03-25 | Phase 07 Plan 02 | Completed 07-02-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 07 Plan 01 complete — OrderItem multi-category extension, QuoteItem table, XOR constraints, 119 order tests passing)*
+*Last updated: 2026-03-25 (Phase 07 Plan 02 complete — Quote multi-item restructure, DTOs rewritten, QuoteService CRUD with item management, 56 quote tests passing)*
