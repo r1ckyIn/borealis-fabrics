@@ -67,32 +67,19 @@ async function resolveSupplier(
   type: 'fabric' | 'product',
   itemId: number
 ): Promise<SupplierResolution> {
+  const fetchFn = type === 'fabric' ? getFabricSuppliers : getProductSuppliers;
   try {
-    if (type === 'fabric') {
-      const res = await getFabricSuppliers(itemId, {
-        pageSize: 1,
-        sortBy: 'purchasePrice',
-        sortOrder: 'asc',
-      });
-      return {
-        type,
-        itemId,
-        supplierId: res.items[0]?.supplierId ?? null,
-        price: res.items[0] ? Number(res.items[0].purchasePrice) : null,
-      };
-    } else {
-      const res = await getProductSuppliers(itemId, {
-        pageSize: 1,
-        sortBy: 'purchasePrice',
-        sortOrder: 'asc',
-      });
-      return {
-        type,
-        itemId,
-        supplierId: res.items[0]?.supplierId ?? null,
-        price: res.items[0] ? Number(res.items[0].purchasePrice) : null,
-      };
-    }
+    const res = await fetchFn(itemId, {
+      pageSize: 1,
+      sortBy: 'purchasePrice',
+      sortOrder: 'asc',
+    });
+    return {
+      type,
+      itemId,
+      supplierId: res.items[0]?.supplierId ?? null,
+      price: res.items[0] ? Number(res.items[0].purchasePrice) : null,
+    };
   } catch {
     return { type, itemId, supplierId: null, price: null };
   }
@@ -146,7 +133,7 @@ async function unifiedSearch(keyword: string): Promise<UnifiedSearchResult[]> {
       id: fabric.id,
       code: fabric.fabricCode,
       name: fabric.name,
-      categoryLabel: CATEGORY_TAG_LABELS['fabric'] || '面料',
+      categoryLabel: CATEGORY_TAG_LABELS['fabric'],
       defaultPrice: fabric.defaultPrice,
       unit: UNIT_LABEL_FABRIC,
       lowestSupplierId: supplierInfo?.supplierId ?? null,
@@ -200,10 +187,10 @@ export function UnifiedProductSelector({
     try {
       const results = await unifiedSearch(keyword);
       setOptions(results);
-      // Update result map
-      for (const r of results) {
-        resultMapRef.current.set(r.compositeValue, r);
-      }
+      // Replace result map (avoid unbounded growth from accumulated searches)
+      resultMapRef.current = new Map(
+        results.map((r) => [r.compositeValue, r])
+      );
     } catch (error) {
       console.error('Failed to fetch unified search results:', error);
       setOptions([]);
