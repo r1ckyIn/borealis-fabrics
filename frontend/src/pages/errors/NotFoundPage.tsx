@@ -24,7 +24,7 @@ export default function NotFoundPage(): React.ReactNode {
         title="404"
         subTitle="抱歉，您访问的页面不存在"
         extra={
-          <Button type="primary" onClick={() => navigate('/fabrics')}>
+          <Button type="primary" onClick={() => navigate('/products/fabrics')}>
             返回首页
           </Button>
         }

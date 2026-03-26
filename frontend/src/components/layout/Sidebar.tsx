@@ -3,11 +3,13 @@
  *
  * Features:
  * - Collapsible sidebar with menu items
+ * - SubMenu pattern for product category navigation
  * - Route-aware active item highlighting
  * - Ant Design icons for each menu item
  */
 
 import {
+  AppstoreOutlined,
   FileTextOutlined,
   ImportOutlined,
   ShopOutlined,
@@ -17,7 +19,7 @@ import {
 } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Menu } from 'antd';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 type MenuItem = Required<MenuProps>['items'][number];
@@ -29,12 +31,20 @@ export interface SidebarProps {
 
 /**
  * Navigation menu items configuration.
+ * Product management uses SubMenu pattern with 5 sub-items.
  */
 const menuItems: MenuItem[] = [
   {
-    key: '/fabrics',
-    icon: <SkinOutlined />,
-    label: '面料管理',
+    key: '/products',
+    icon: <AppstoreOutlined />,
+    label: '产品管理',
+    children: [
+      { key: '/products/fabrics', icon: <SkinOutlined />, label: '面料' },
+      { key: '/products/iron-frames', label: '铁架' },
+      { key: '/products/motors', label: '电机' },
+      { key: '/products/mattresses', label: '床垫' },
+      { key: '/products/accessories', label: '配件' },
+    ],
   },
   {
     key: '/suppliers',
@@ -68,17 +78,35 @@ const menuItems: MenuItem[] = [
  *
  * Displays the main navigation menu with icons.
  * Highlights the current route and handles navigation on click.
+ * Product management SubMenu auto-expands when a product sub-page is active.
  */
 export function Sidebar({ collapsed }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Determine selected key based on current path
-  // Match the first segment of the path (e.g., /fabrics/123 -> /fabrics)
-  const selectedKey = useMemo(
-    () => '/' + location.pathname.split('/')[1],
-    [location.pathname]
+  // Manage open keys for SubMenu expansion.
+  // User-toggled state is tracked; product SubMenu auto-expands on initial navigation.
+  const [openKeys, setOpenKeys] = useState<string[]>(() =>
+    location.pathname.startsWith('/products') ? ['/products'] : []
   );
+
+  // Computed open keys: respect collapsed state (no open submenus when collapsed)
+  const menuOpenKeys = useMemo(() => {
+    if (collapsed) return [];
+    return openKeys;
+  }, [collapsed, openKeys]);
+
+  // Determine selected key based on current path
+  const selectedKey = useMemo(() => {
+    const { pathname } = location;
+    // Match product sub-pages (e.g., /products/iron-frames/123 -> /products/iron-frames)
+    if (pathname.startsWith('/products/')) {
+      const segments = pathname.split('/');
+      return `/${segments[1]}/${segments[2]}`;
+    }
+    // Match other top-level pages (e.g., /orders/123 -> /orders)
+    return '/' + pathname.split('/')[1];
+  }, [location]);
 
   // Handle menu item click
   const handleMenuClick = useCallback<Required<MenuProps>['onClick']>(
@@ -125,6 +153,8 @@ export function Sidebar({ collapsed }: SidebarProps) {
         theme="dark"
         mode="inline"
         selectedKeys={[selectedKey]}
+        openKeys={menuOpenKeys}
+        onOpenChange={setOpenKeys}
         items={menuItems}
         onClick={handleMenuClick}
         style={{ flex: 1, borderRight: 0 }}

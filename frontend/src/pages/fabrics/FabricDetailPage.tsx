@@ -46,7 +46,7 @@ export default function FabricDetailPage(): React.ReactElement {
     breadcrumbs,
   } = useFabricDetail(fabricId, navigate);
 
-  const goToList = useCallback(() => navigate('/fabrics'), [navigate]);
+  const goToList = useCallback(() => navigate('/products/fabrics'), [navigate]);
 
   if (isLoading) {
     return (
@@ -135,7 +135,7 @@ export default function FabricDetailPage(): React.ReactElement {
       breadcrumbs={breadcrumbs}
       extra={
         <Space>
-          <Button type="primary" icon={<EditOutlined />} onClick={() => navigate(`/fabrics/${fabricId}/edit`)}>
+          <Button type="primary" icon={<EditOutlined />} onClick={() => navigate(`/products/fabrics/${fabricId}/edit`)}>
             编辑
           </Button>
           <Button danger icon={<DeleteOutlined />} onClick={() => deleteFabric.setModalOpen(true)}>

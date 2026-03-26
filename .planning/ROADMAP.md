@@ -212,7 +212,7 @@ Plans:
 3. Quotes support non-fabric products with correct pricing and units
 4. Quote converted from single-item to multi-item model (Quote + QuoteItem[])
 5. Partial quote conversion: select specific items to convert to order
-6. Quote status tracks conversion: active → partially_converted → converted
+6. Quote status tracks conversion: active -> partially_converted -> converted
 
 **Dependencies:** Phase 5 (needs products table for FK)
 
@@ -220,9 +220,18 @@ Plans:
 
 ### Phase 8: Frontend Multi-Category Pages
 
-**Goal:** Frontend displays and manages all product categories with category-specific UI.
+**Goal:** Frontend displays and manages all product categories with category-specific UI, sidebar restructured to SubMenu, order/quote forms support multi-category product selection, quote pages rebuilt for multi-item model.
 
 **Requirements:** MCAT-10, MCAT-11, MCAT-12
+
+**Plans:** 5 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — Foundation: types, enums, product API, hooks, constants, sidebar SubMenu, routes
+- [ ] 08-02-PLAN.md — Product pages: ProductListPage (dynamic columns), ProductDetailPage (3 tabs), ProductFormPage (config-driven fields)
+- [ ] 08-03-PLAN.md — UnifiedProductSelector (parallel fabric+product search) + OrderItemForm refactor
+- [ ] 08-04-PLAN.md — Quote pages rebuild: expandable list, multi-item form, partial conversion detail
+- [ ] 08-05-PLAN.md — Integration: Sidebar test, fabric link fixes, OrderDetailPage product support, visual verification
 
 **Success Criteria:**
 1. Product list page with category filter shows all products
@@ -297,4 +306,4 @@ Unmapped: 0
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 07 planned — 3 plans for order/quote multi-category extension)*
+*Last updated: 2026-03-25 (Phase 08 planned — 5 plans for frontend multi-category pages)*

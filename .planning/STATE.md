@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-25T07:10:50.586Z"
+last_updated: "2026-03-25T23:37:38.879Z"
 progress:
   total_phases: 11
-  completed_phases: 7
-  total_plans: 26
-  completed_plans: 25
+  completed_phases: 8
+  total_plans: 31
+  completed_plans: 30
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 07 — order-quote-multi-category-extension
+**Current focus:** Phase 08 — frontend-multi-category-pages
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 07 |
-| Name | Order/Quote Multi-Category Extension |
+| Phase | 08 |
+| Name | Frontend Multi-Category Pages |
 | Status | In Progress |
-| Current Plan | 3 of 3 |
-| Branch | feature/gsd-07-order-quote-multi-category-extension |
+| Current Plan | 4 of 5 |
+| Branch | feature/gsd-08-frontend-multi-category-pages |
 
 ## Progress
 
@@ -41,7 +41,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
 | 6 — Import Strategy Refactor | ● Complete | 2/2 |
 | 7 — Order/Quote Multi-Category Extension | ● Complete | 3/3 |
-| 8 — Frontend Multi-Category Pages | ○ Not Started | — |
+| 8 — Frontend Multi-Category Pages | ◆ In Progress | 4/5 |
 | 9 — Contract OCR Skill | ○ Not Started | — |
 | 10 — Real Data Testing | ○ Not Started | — |
 
@@ -119,6 +119,19 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | OrderWithItems local type alias for strict TS typing of included relations | Order + items relation from Prisma create/findUniqueOrThrow |
 | 2026-03-25 | Validations before Redis lock in convertQuoteItems | Fail fast, avoid unnecessary lock acquisition |
 | 2026-03-25 | Timeline remark 'Converted from quote item' | Distinguishes from direct order creation |
+| 2026-03-25 | Sidebar SubMenu computed openKeys via useMemo (not useEffect+setState) | Satisfies React Compiler lint rule against synchronous setState in effects |
+| 2026-03-25 | All /fabrics/ routes moved to /products/fabrics/ with redirects | Clean URL structure, backward compatible |
+| 2026-03-25 | Placeholder product pages as stubs for Plan 02 | Routes resolve immediately, no build errors |
+| 2026-03-25 | Temporary type casts on existing quote pages for Quote model migration | Pages will be rewritten in Plan 03-04, no point fixing now |
+| 2026-03-25 | Composite value format (fabric:N/product:N) for unified selector | Avoids ID collisions between fabric and product entities |
+| 2026-03-25 | PaginationParams sortBy+sortOrder to fetch cheapest supplier in single API call | Efficient lowest-price supplier resolution per item |
+| 2026-03-25 | Hidden Form.Items pattern for derived form values (fabricId, productId, unit) | Ensures derived values included in form submission |
+| 2026-03-25 | Self-contained tab components with inline TanStack Query hooks (not monolith hook) | Simpler for products without image gallery tab |
+| 2026-03-25 | Config-driven SPEC_FIELDS record per subCategory for dynamic form rendering | Adding new product category only requires new config entry |
+| 2026-03-25 | Column composition: BASE + CATEGORY_COLUMNS[subCategory] + TAIL concatenated | Clean column switching without per-category JSX |
+| 2026-03-25 | Quote edit mode header-only; items managed on detail page | Matches OrderForm pattern, avoids complex item sync on edit |
+| 2026-03-25 | Conversion UI shown for ACTIVE and PARTIALLY_CONVERTED only | Fully CONVERTED quotes hide checkboxes and convert button |
+| 2026-03-25 | Modal.confirm for conversion action (not ConfirmModal) | Supports async onOk pattern for mutation + navigation |
 
 ## Accumulated Context
 
@@ -156,7 +169,11 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Phase 07 Plan 01 | Completed 07-01-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-01-SUMMARY.md` |
 | 2026-03-25 | Phase 07 Plan 02 | Completed 07-02-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-02-SUMMARY.md` |
 | 2026-03-25 | Phase 07 Plan 03 | Completed 07-03-PLAN.md | `.planning/phases/07-order-quote-multi-category-extension/07-03-SUMMARY.md` |
+| 2026-03-25 | Phase 08 Plan 01 | Completed 08-01-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-01-SUMMARY.md` |
+| 2026-03-25 | Phase 08 Plan 02 | Completed 08-02-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-02-SUMMARY.md` |
+| 2026-03-25 | Phase 08 Plan 03 | Completed 08-03-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-03-SUMMARY.md` |
+| 2026-03-25 | Phase 08 Plan 04 | Completed 08-04-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-04-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 07 Plan 03 complete — Item-level partial quote conversion, ConvertQuoteItemsDto replaces batch-convert, 792 backend tests passing)*
+*Last updated: 2026-03-25 (Phase 08 Plan 04 complete — All 3 quote pages rebuilt for multi-item model: expandable list, Form.List quote form, checkbox-based partial conversion, 35 tests)*

@@ -343,7 +343,7 @@ describe('SupplierDetailPage', () => {
       const fabricLink = screen.getByText('FB-2401-0001');
       await user.click(fabricLink);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics/10');
+      expect(mockNavigate).toHaveBeenCalledWith('/products/fabrics/10');
     });
   });
 });

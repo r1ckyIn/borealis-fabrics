@@ -170,7 +170,7 @@ export function useFabricDetail(
   const breadcrumbs = useMemo<BreadcrumbItem[]>(
     () => [
       { label: '首页', path: '/' },
-      { label: '面料管理', path: '/fabrics' },
+      { label: '面料管理', path: '/products/fabrics' },
       { label: fabric?.name ?? '面料详情' },
     ],
     [fabric?.name]
@@ -185,7 +185,7 @@ export function useFabricDetail(
     try {
       await deleteFabricMutation.mutateAsync(fabricId);
       message.success('面料已删除');
-      navigate('/fabrics');
+      navigate('/products/fabrics');
     } catch (error) {
       console.error('Delete fabric failed:', error);
       message.error(getDeleteErrorMessage(error as ApiError, '面料'));

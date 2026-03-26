@@ -127,7 +127,7 @@ export function useCustomerDetail(customerId: number | undefined) {
   );
 
   const goToFabricDetail = useCallback(
-    (fabricId: number) => navigate(`/fabrics/${fabricId}`),
+    (fabricId: number) => navigate(`/products/fabrics/${fabricId}`),
     [navigate]
   );
 

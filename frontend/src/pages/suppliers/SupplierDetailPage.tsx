@@ -94,7 +94,7 @@ export default function SupplierDetailPage(): React.ReactElement {
 
   /** Navigate to fabric detail page. */
   const goToFabricDetail = useCallback(
-    (fabricId: number) => navigate(`/fabrics/${fabricId}`),
+    (fabricId: number) => navigate(`/products/fabrics/${fabricId}`),
     [navigate]
   );
 

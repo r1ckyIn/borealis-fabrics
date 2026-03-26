@@ -139,4 +139,4 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 | U2Living = 铂润 in system | Same entity, no need for parent-subsidiary data model | ✓ Good |
 
 ---
-*Last updated: 2026-03-25 after Phase 7 completion (M2 Phase 7 complete — order/quote multi-category extension with item-level partial conversion)*
+*Last updated: 2026-03-26 after Phase 8 completion (M2 Phase 8 complete — frontend multi-category product pages, unified product selector, quote pages multi-item rebuild)*

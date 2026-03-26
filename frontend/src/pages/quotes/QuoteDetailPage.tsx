@@ -1,6 +1,7 @@
 /**
- * Quote detail page showing all quote information.
- * Includes action buttons for edit, convert-to-order, and delete.
+ * Quote detail page showing quote header info and QuoteItem table.
+ * Supports checkbox selection for partial quote-to-order conversion.
+ * Already-converted items show a "converted" tag and disabled checkboxes.
  */
 
 import { useState, useCallback, useMemo } from 'react';
@@ -8,19 +9,22 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
   Descriptions,
+  Table,
   Button,
   Spin,
   Result,
   Space,
   Tooltip,
+  Tag,
   Typography,
   message,
 } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
-  SwapOutlined,
 } from '@ant-design/icons';
+import type { ColumnsType } from 'antd/es/table';
+import type { TableRowSelection } from 'antd/es/table/interface';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { StatusTag } from '@/components/common/StatusTag';
@@ -30,11 +34,16 @@ import { getDeleteErrorMessage, getErrorMessage } from '@/utils/errorMessages';
 import {
   useQuote,
   useDeleteQuote,
-  useConvertQuoteToOrder,
+  useConvertQuoteItems,
 } from '@/hooks/queries/useQuotes';
-import { formatDate, formatQuantity, parseEntityId } from '@/utils';
-import { QuoteStatus } from '@/types';
-import type { ApiError } from '@/types/api.types';
+import { formatDate, parseEntityId } from '@/utils';
+import { QuoteStatus, PRODUCT_SUB_CATEGORY_LABELS } from '@/types';
+import type { QuoteItem, ApiError } from '@/types';
+import type { ProductSubCategory } from '@/types';
+import {
+  CATEGORY_TAG_COLORS,
+  CATEGORY_TAG_LABELS,
+} from '@/utils/product-constants';
 
 const { Text } = Typography;
 
@@ -54,6 +63,9 @@ export default function QuoteDetailPage(): React.ReactElement {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [convertModalOpen, setConvertModalOpen] = useState(false);
 
+  // Checkbox selection for partial conversion
+  const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
+
   // Fetch quote data
   const {
     data: quote,
@@ -63,7 +75,7 @@ export default function QuoteDetailPage(): React.ReactElement {
 
   // Mutations
   const deleteMutation = useDeleteQuote();
-  const convertMutation = useConvertQuoteToOrder();
+  const convertMutation = useConvertQuoteItems();
 
   // Breadcrumbs
   const breadcrumbs = useMemo(
@@ -94,11 +106,14 @@ export default function QuoteDetailPage(): React.ReactElement {
 
   /** Handle convert confirmation. */
   const handleConvertConfirm = useCallback(async (): Promise<void> => {
-    if (!quoteId) return;
+    if (selectedRowKeys.length === 0) return;
 
     try {
-      const order = await convertMutation.mutateAsync(quoteId);
-      message.success('报价已成功转换为订单');
+      const order = await convertMutation.mutateAsync({
+        quoteItemIds: selectedRowKeys,
+      });
+      message.success('转化成功');
+      setSelectedRowKeys([]);
       setConvertModalOpen(false);
       navigate(`/orders/${order.id}`);
     } catch (error: unknown) {
@@ -111,9 +126,98 @@ export default function QuoteDetailPage(): React.ReactElement {
       } else {
         message.error(getErrorMessage(apiError));
       }
-      setConvertModalOpen(false);
     }
-  }, [quoteId, convertMutation, navigate]);
+  }, [selectedRowKeys, convertMutation, navigate]);
+
+  // QuoteItem table columns
+  const itemColumns: ColumnsType<QuoteItem> = useMemo(
+    () => [
+      {
+        title: '产品',
+        key: 'product',
+        render: (_, item) => {
+          if (item.fabric)
+            return `${item.fabric.fabricCode} - ${item.fabric.name}`;
+          if (item.product)
+            return `${item.product.productCode} - ${item.product.name}`;
+          return '-';
+        },
+      },
+      {
+        title: '分类',
+        key: 'category',
+        width: 80,
+        render: (_, item) => {
+          if (item.fabric) {
+            return (
+              <Tag color={CATEGORY_TAG_COLORS['fabric']}>
+                {CATEGORY_TAG_LABELS['fabric']}
+              </Tag>
+            );
+          }
+          if (item.product) {
+            const subCat = item.product.subCategory;
+            const label =
+              PRODUCT_SUB_CATEGORY_LABELS[subCat as ProductSubCategory] ||
+              subCat;
+            const color = CATEGORY_TAG_COLORS[subCat] || 'default';
+            return <Tag color={color}>{label}</Tag>;
+          }
+          return '-';
+        },
+      },
+      {
+        title: '数量',
+        key: 'quantity',
+        width: 100,
+        render: (_, item) => `${Number(item.quantity)} ${item.unit}`,
+      },
+      {
+        title: '单价',
+        dataIndex: 'unitPrice',
+        key: 'unitPrice',
+        width: 120,
+        render: (v: number) => `¥${Number(v).toFixed(2)}`,
+      },
+      {
+        title: '小计',
+        dataIndex: 'subtotal',
+        key: 'subtotal',
+        width: 120,
+        render: (v: number) => `¥${Number(v).toFixed(2)}`,
+      },
+      {
+        title: '状态',
+        key: 'convertStatus',
+        width: 100,
+        render: (_, item) =>
+          item.isConverted ? (
+            <Tag color="blue">已转换</Tag>
+          ) : (
+            <Tag color="green">待转换</Tag>
+          ),
+      },
+      {
+        title: '备注',
+        dataIndex: 'notes',
+        key: 'notes',
+        ellipsis: true,
+      },
+    ],
+    []
+  );
+
+  // Row selection config — disable checkboxes for already-converted items
+  const rowSelection: TableRowSelection<QuoteItem> = useMemo(
+    () => ({
+      selectedRowKeys,
+      onChange: (keys) => setSelectedRowKeys(keys as number[]),
+      getCheckboxProps: (record: QuoteItem) => ({
+        disabled: record.isConverted,
+      }),
+    }),
+    [selectedRowKeys]
+  );
 
   // Loading state
   if (isLoadingQuote) {
@@ -169,9 +273,11 @@ export default function QuoteDetailPage(): React.ReactElement {
   }
 
   const isActive = quote.status === QuoteStatus.ACTIVE;
-  const isExpired = quote.status === QuoteStatus.EXPIRED;
+  const isPartiallyConverted =
+    quote.status === QuoteStatus.PARTIALLY_CONVERTED;
   const isConverted = quote.status === QuoteStatus.CONVERTED;
-  const canEdit = isActive || isExpired;
+  const canEdit = !isConverted;
+  const canConvert = isActive || isPartiallyConverted;
 
   return (
     <PageContainer
@@ -188,15 +294,6 @@ export default function QuoteDetailPage(): React.ReactElement {
               编辑
             </Button>
           </Tooltip>
-          {isActive && (
-            <Button
-              type="primary"
-              icon={<SwapOutlined />}
-              onClick={() => setConvertModalOpen(true)}
-            >
-              转换为订单
-            </Button>
-          )}
           <Tooltip title={isConverted ? '已转换的报价无法删除' : undefined}>
             <Button
               danger
@@ -210,7 +307,8 @@ export default function QuoteDetailPage(): React.ReactElement {
         </Space>
       }
     >
-      <Card>
+      {/* Quote Header Info */}
+      <Card style={{ marginBottom: 16 }}>
         <Descriptions bordered column={{ xs: 1, sm: 2, md: 3 }}>
           <Descriptions.Item label="报价单号">
             <Text strong>{quote.quoteCode}</Text>
@@ -231,29 +329,7 @@ export default function QuoteDetailPage(): React.ReactElement {
               '-'
             )}
           </Descriptions.Item>
-          <Descriptions.Item label="面料编码">
-            {quote.fabric ? (
-              <Button
-                type="link"
-                style={{ padding: 0 }}
-                onClick={() => navigate(`/fabrics/${quote.fabricId}`)}
-              >
-                {quote.fabric.fabricCode}
-              </Button>
-            ) : (
-              '-'
-            )}
-          </Descriptions.Item>
-          <Descriptions.Item label="面料名称">
-            {quote.fabric?.name ?? '-'}
-          </Descriptions.Item>
-          <Descriptions.Item label="数量">
-            {formatQuantity(quote.quantity)}
-          </Descriptions.Item>
-          <Descriptions.Item label="单价">
-            <AmountDisplay value={quote.unitPrice} suffix="/米" />
-          </Descriptions.Item>
-          <Descriptions.Item label="合计金额">
+          <Descriptions.Item label="总金额">
             <AmountDisplay value={quote.totalPrice} />
           </Descriptions.Item>
           <Descriptions.Item label="有效期至">
@@ -262,13 +338,38 @@ export default function QuoteDetailPage(): React.ReactElement {
           <Descriptions.Item label="创建时间">
             {formatDate(quote.createdAt)}
           </Descriptions.Item>
-          <Descriptions.Item label="更新时间">
-            {formatDate(quote.updatedAt)}
-          </Descriptions.Item>
           <Descriptions.Item label="备注" span={3}>
             {quote.notes ?? '-'}
           </Descriptions.Item>
         </Descriptions>
+      </Card>
+
+      {/* Quote Items Table */}
+      <Card
+        title={`报价明细 (${quote.items?.length ?? 0} 项)`}
+      >
+        <Table<QuoteItem>
+          columns={itemColumns}
+          dataSource={quote.items ?? []}
+          rowKey="id"
+          pagination={false}
+          rowSelection={canConvert ? rowSelection : undefined}
+          size="middle"
+        />
+
+        {/* Conversion Action */}
+        {canConvert && (
+          <div style={{ marginTop: 16, textAlign: 'right' }}>
+            <Button
+              type="primary"
+              disabled={selectedRowKeys.length === 0}
+              loading={convertMutation.isPending}
+              onClick={() => setConvertModalOpen(true)}
+            >
+              转化为订单 ({selectedRowKeys.length} 项)
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Delete Confirmation Modal */}
@@ -277,7 +378,7 @@ export default function QuoteDetailPage(): React.ReactElement {
         title="确认删除"
         content={
           <>
-            确定要删除报价 <Text strong>"{quote.quoteCode}"</Text> 吗？
+            确定要删除报价 <Text strong>&quot;{quote.quoteCode}&quot;</Text> 吗？
             <br />
             <Text type="secondary">此操作不可恢复</Text>
           </>
@@ -292,17 +393,11 @@ export default function QuoteDetailPage(): React.ReactElement {
       {/* Convert Confirmation Modal */}
       <ConfirmModal
         open={convertModalOpen}
-        title="确认转换"
-        content={
-          <>
-            确定要将报价 <Text strong>"{quote.quoteCode}"</Text> 转换为订单吗？
-            <br />
-            <Text type="secondary">转换后报价状态将变为「已转换」，无法再编辑或删除</Text>
-          </>
-        }
+        title="确认转化"
+        content={`确定将选中的 ${selectedRowKeys.length} 项报价明细转化为订单吗？`}
         onConfirm={handleConvertConfirm}
         onCancel={() => setConvertModalOpen(false)}
-        confirmText="确认转换"
+        confirmText="确认转化"
         loading={convertMutation.isPending}
       />
     </PageContainer>

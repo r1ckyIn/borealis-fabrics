@@ -1,5 +1,5 @@
 /**
- * Unit tests for QuoteFormPage component.
+ * Unit tests for QuoteFormPage component (multi-item quote model).
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -46,29 +46,73 @@ vi.mock('antd', async () => {
   };
 });
 
-// Mock customer and fabric APIs for selectors
+// Mock customer API for selector
 vi.mock('@/api/customer.api', () => ({
   getCustomers: vi.fn().mockResolvedValue({ items: [] }),
 }));
 
+// Mock fabric and product APIs for UnifiedProductSelector
 vi.mock('@/api/fabric.api', () => ({
   getFabrics: vi.fn().mockResolvedValue({ items: [] }),
+  getFabricSuppliers: vi.fn().mockResolvedValue({ items: [] }),
 }));
 
-// Mock quote data
+vi.mock('@/api/product.api', () => ({
+  getProducts: vi.fn().mockResolvedValue({ items: [] }),
+  getProductSuppliers: vi.fn().mockResolvedValue({ items: [] }),
+}));
+
+/** Multi-item mock quote. */
 const mockQuote: Quote = {
   id: 1,
   quoteCode: 'QT-2401-0001',
   customerId: 1,
-  fabricId: 1,
-  quantity: 100,
-  unitPrice: 25.5,
-  totalPrice: 2550,
+  totalPrice: 5550,
   validUntil: '2026-12-31T00:00:00.000Z',
   status: QuoteStatus.ACTIVE,
-  notes: undefined,
-  customer: undefined,
-  fabric: undefined,
+  notes: 'Test notes',
+  customer: {
+    id: 1,
+    companyName: 'Test Customer',
+    contactName: 'Alice',
+    phone: '13800000001',
+    email: null,
+    addresses: null,
+    creditType: 'prepay' as const,
+    isActive: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
+  items: [
+    {
+      id: 101,
+      quoteId: 1,
+      fabricId: 1,
+      productId: null,
+      quantity: 100,
+      unitPrice: 25.5,
+      subtotal: 2550,
+      unit: '米',
+      isConverted: false,
+      notes: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    },
+    {
+      id: 102,
+      quoteId: 1,
+      fabricId: null,
+      productId: 5,
+      quantity: 10,
+      unitPrice: 300,
+      subtotal: 3000,
+      unit: '套',
+      isConverted: false,
+      notes: null,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    },
+  ],
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
@@ -119,12 +163,35 @@ describe('QuoteFormPage', () => {
   });
 
   describe('Create Mode', () => {
-    it('should render create mode page', async () => {
+    it('should render create mode page with multi-item form', async () => {
       renderWithProviders(<QuoteFormPage />);
 
       await waitFor(() => {
         expect(screen.getAllByText('新建报价').length).toBeGreaterThan(0);
       });
+
+      // Multi-item form should have an "Add Item" button
+      expect(screen.getByText('添加明细')).toBeInTheDocument();
+    });
+
+    it('should render customer selector and validUntil fields', async () => {
+      renderWithProviders(<QuoteFormPage />);
+
+      await waitFor(() => {
+        expect(screen.getAllByText('客户').length).toBeGreaterThan(0);
+      });
+      expect(screen.getAllByText('有效期至').length).toBeGreaterThan(0);
+    });
+
+    it('should NOT show supplier fields on quote form', async () => {
+      renderWithProviders(<QuoteFormPage />);
+
+      await waitFor(() => {
+        expect(screen.getAllByText('新建报价').length).toBeGreaterThan(0);
+      });
+
+      // Quote form should NOT have supplierId field
+      expect(screen.queryByText('供应商')).not.toBeInTheDocument();
     });
 
     it('should navigate to list on cancel', async () => {
@@ -163,32 +230,16 @@ describe('QuoteFormPage', () => {
       });
     });
 
-    it('should handle Prisma Decimal string values without validation errors', async () => {
-      // Prisma Decimal fields serialize as strings in JSON responses
-      const quoteWithStringDecimals: Quote = {
-        ...mockQuote,
-        quantity: '641.00' as unknown as number,
-        unitPrice: '25.00' as unknown as number,
-        totalPrice: '16025.00' as unknown as number,
-      };
-
-      mockUseQuote.mockReturnValue({
-        data: quoteWithStringDecimals,
-        isLoading: false,
-        error: null,
-      });
-
+    it('should show info alert about item management in edit mode', async () => {
       renderWithProviders(<QuoteFormPage />, {
         initialEntries: ['/quotes/1/edit'],
       });
 
       await waitFor(() => {
-        expect(screen.getAllByText(/编辑报价/).length).toBeGreaterThan(0);
+        expect(
+          screen.getByText('报价明细管理')
+        ).toBeInTheDocument();
       });
-
-      // Validation errors should NOT appear
-      expect(screen.queryByText('数量必须大于0')).not.toBeInTheDocument();
-      expect(screen.queryByText('单价必须大于0')).not.toBeInTheDocument();
     });
   });
 

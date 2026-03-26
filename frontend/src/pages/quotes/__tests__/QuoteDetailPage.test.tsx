@@ -1,5 +1,6 @@
 /**
- * Unit tests for QuoteDetailPage component.
+ * Unit tests for QuoteDetailPage component (multi-item quote model).
+ * Tests: header info, QuoteItem table, checkbox selection, partial conversion.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -10,17 +11,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import QuoteDetailPage from '../QuoteDetailPage';
 import { QuoteStatus } from '@/types';
-import type { Quote } from '@/types';
+import type { Quote, QuoteItem } from '@/types';
 
 // Mock hooks
 const mockUseQuote = vi.fn();
 const mockUseDeleteQuote = vi.fn();
-const mockUseConvertQuoteToOrder = vi.fn();
+const mockUseConvertQuoteItems = vi.fn();
 
 vi.mock('@/hooks/queries/useQuotes', () => ({
   useQuote: (...args: unknown[]) => mockUseQuote(...args),
   useDeleteQuote: () => mockUseDeleteQuote(),
-  useConvertQuoteToOrder: () => mockUseConvertQuoteToOrder(),
+  useConvertQuoteItems: () => mockUseConvertQuoteItems(),
 }));
 
 // Mock navigate
@@ -46,17 +47,64 @@ vi.mock('antd', async () => {
   };
 });
 
-// Mock quote data
+/** Quote items for multi-item model. */
+const mockItems: QuoteItem[] = [
+  {
+    id: 101,
+    quoteId: 1,
+    fabricId: 1,
+    productId: null,
+    quantity: 100,
+    unitPrice: 25.5,
+    subtotal: 2550,
+    unit: '米',
+    isConverted: false,
+    notes: null,
+    fabric: {
+      id: 1,
+      fabricCode: 'FB-2401-0001',
+      name: 'Test Fabric',
+      isActive: true,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    },
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
+  {
+    id: 102,
+    quoteId: 1,
+    fabricId: null,
+    productId: 5,
+    quantity: 10,
+    unitPrice: 300,
+    subtotal: 3000,
+    unit: '套',
+    isConverted: true,
+    notes: 'Already converted item',
+    product: {
+      id: 5,
+      productCode: 'PRD-2401-0001',
+      name: 'Test Iron Frame',
+      category: 'IRON_FRAME_MOTOR',
+      subCategory: 'IRON_FRAME',
+      isActive: true,
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    },
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
+  },
+];
+
+/** Multi-item mock quote with PARTIALLY_CONVERTED status. */
 const mockQuote: Quote = {
   id: 1,
   quoteCode: 'QT-2401-0001',
   customerId: 1,
-  fabricId: 1,
-  quantity: 100,
-  unitPrice: 25.5,
-  totalPrice: 2550,
+  totalPrice: 5550,
   validUntil: '2026-12-31T00:00:00.000Z',
-  status: QuoteStatus.ACTIVE,
+  status: QuoteStatus.PARTIALLY_CONVERTED,
   notes: 'Test notes',
   customer: {
     id: 1,
@@ -70,28 +118,7 @@ const mockQuote: Quote = {
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
   },
-  fabric: {
-    id: 1,
-    fabricCode: 'FB-2401-0001',
-    name: 'Test Fabric',
-    material: undefined,
-    composition: undefined,
-    color: undefined,
-    weight: undefined,
-    width: undefined,
-    thickness: undefined,
-    handFeel: undefined,
-    glossLevel: undefined,
-    application: undefined,
-    defaultPrice: undefined,
-    defaultLeadTime: undefined,
-    description: undefined,
-    tags: undefined,
-    notes: undefined,
-    isActive: true,
-    createdAt: '2024-01-01T00:00:00.000Z',
-    updatedAt: '2024-01-01T00:00:00.000Z',
-  },
+  items: mockItems,
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
 };
@@ -134,29 +161,129 @@ describe('QuoteDetailPage', () => {
       isPending: false,
     });
 
-    mockUseConvertQuoteToOrder.mockReturnValue({
+    mockUseConvertQuoteItems.mockReturnValue({
       mutateAsync: vi.fn().mockResolvedValue({ id: 1 }),
       isPending: false,
     });
   });
 
-  describe('Rendering', () => {
-    it('should render quote details', async () => {
+  describe('Quote Header', () => {
+    it('should render quote header info (quoteCode, customer, totalPrice)', async () => {
       renderWithProviders(<QuoteDetailPage />);
 
-      // Quote code appears in multiple places (title, breadcrumb, descriptions)
       await waitFor(() => {
         expect(screen.getAllByText('QT-2401-0001').length).toBeGreaterThan(0);
       });
       expect(screen.getByText('Test Customer')).toBeInTheDocument();
-      expect(screen.getByText('FB-2401-0001')).toBeInTheDocument();
     });
 
-    it('should render action buttons for active quote', async () => {
+    it('should render PARTIALLY_CONVERTED status tag', async () => {
       renderWithProviders(<QuoteDetailPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('转换为订单')).toBeInTheDocument();
+        expect(screen.getByText('部分转换')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('QuoteItem Table', () => {
+    it('should render QuoteItem table with rows', async () => {
+      renderWithProviders(<QuoteDetailPage />);
+
+      await waitFor(() => {
+        // Fabric item row
+        expect(
+          screen.getByText('FB-2401-0001 - Test Fabric')
+        ).toBeInTheDocument();
+        // Product item row
+        expect(
+          screen.getByText('PRD-2401-0001 - Test Iron Frame')
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('should show conversion status tags for items', async () => {
+      renderWithProviders(<QuoteDetailPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('已转换')).toBeInTheDocument();
+        expect(screen.getByText('待转换')).toBeInTheDocument();
+      });
+    });
+
+    it('should show item count in card title', async () => {
+      renderWithProviders(<QuoteDetailPage />);
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/报价明细.*2.*项/)
+        ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Checkbox Selection', () => {
+    it('should have checkboxes enabled for non-converted items', async () => {
+      renderWithProviders(<QuoteDetailPage />);
+
+      await waitFor(() => {
+        const checkboxes = document.querySelectorAll(
+          '.ant-table-tbody .ant-checkbox-input'
+        );
+        // There should be 2 checkboxes (one per row)
+        expect(checkboxes.length).toBe(2);
+      });
+    });
+
+    it('should have disabled checkbox for isConverted=true items', async () => {
+      renderWithProviders(<QuoteDetailPage />);
+
+      await waitFor(() => {
+        const disabledCheckboxes = document.querySelectorAll(
+          '.ant-table-tbody .ant-checkbox-input[disabled]'
+        );
+        // The second item (isConverted=true) should be disabled
+        expect(disabledCheckboxes.length).toBe(1);
+      });
+    });
+  });
+
+  describe('Conversion Action', () => {
+    it('should show 转化为订单 button disabled when no items selected', async () => {
+      renderWithProviders(<QuoteDetailPage />);
+
+      await waitFor(() => {
+        const convertButton = screen
+          .getByText(/转化为订单/)
+          .closest('button');
+        expect(convertButton).toBeInTheDocument();
+        expect(convertButton).toBeDisabled();
+      });
+    });
+
+    it('should enable 转化为订单 button after selecting a non-converted item', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<QuoteDetailPage />);
+
+      await waitFor(() => {
+        const checkboxes = document.querySelectorAll(
+          '.ant-table-tbody .ant-checkbox-input:not([disabled])'
+        );
+        expect(checkboxes.length).toBe(1);
+      });
+
+      // Click the non-disabled checkbox (first non-converted item)
+      const enabledCheckbox = document.querySelector(
+        '.ant-table-tbody .ant-checkbox-input:not([disabled])'
+      ) as HTMLElement;
+      await user.click(enabledCheckbox);
+
+      // Button should now show count and be enabled
+      await waitFor(() => {
+        const convertButton = screen
+          .getByText(/转化为订单.*1.*项/)
+          .closest('button');
+        expect(convertButton).not.toBeDisabled();
       });
     });
   });
@@ -209,82 +336,23 @@ describe('QuoteDetailPage', () => {
     });
   });
 
-  describe('Convert to Order Error Handling', () => {
-    it('should show warning on 409 Conflict', async () => {
-      const { message: antdMessage } = await import('antd');
-      const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 409,
-        message: 'CONFLICT',
-        data: null,
-      });
-      mockUseConvertQuoteToOrder.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
+  describe('Converted Quote', () => {
+    it('should hide conversion UI for fully converted quotes', async () => {
+      mockUseQuote.mockReturnValue({
+        data: {
+          ...mockQuote,
+          status: QuoteStatus.CONVERTED,
+          items: mockItems.map((item) => ({ ...item, isConverted: true })),
+        },
+        isLoading: false,
+        error: null,
       });
 
       renderWithProviders(<QuoteDetailPage />);
 
-      // Click convert button
       await waitFor(() => {
-        expect(screen.getByText('转换为订单')).toBeInTheDocument();
-      });
-      const convertBtn = screen.getByText('转换为订单').closest('button');
-      await user.click(convertBtn!);
-
-      // Wait for modal to open
-      await waitFor(() => {
-        expect(screen.getAllByText('确认转换').length).toBeGreaterThanOrEqual(2);
-      });
-
-      // Click confirm button in modal footer
-      const confirmButton = document.querySelector('.ant-modal-footer .ant-btn-primary');
-      expect(confirmButton).toBeInTheDocument();
-      await user.click(confirmButton!);
-
-      // Verify warning message for concurrent conversion
-      await waitFor(() => {
-        expect(antdMessage.warning).toHaveBeenCalledWith('该报价正在被其他请求转换，请稍后重试');
-      });
-    });
-
-    it('should show warning on 503 Service Unavailable', async () => {
-      const { message: antdMessage } = await import('antd');
-      const user = userEvent.setup();
-
-      const mockMutateAsync = vi.fn().mockRejectedValue({
-        code: 503,
-        message: 'SERVICE_UNAVAILABLE',
-        data: null,
-      });
-      mockUseConvertQuoteToOrder.mockReturnValue({
-        mutateAsync: mockMutateAsync,
-        isPending: false,
-      });
-
-      renderWithProviders(<QuoteDetailPage />);
-
-      // Click convert button
-      await waitFor(() => {
-        expect(screen.getByText('转换为订单')).toBeInTheDocument();
-      });
-      const convertBtn = screen.getByText('转换为订单').closest('button');
-      await user.click(convertBtn!);
-
-      // Wait for modal to open
-      await waitFor(() => {
-        expect(screen.getAllByText('确认转换').length).toBeGreaterThanOrEqual(2);
-      });
-
-      // Click confirm button in modal footer
-      const confirmButton = document.querySelector('.ant-modal-footer .ant-btn-primary');
-      expect(confirmButton).toBeInTheDocument();
-      await user.click(confirmButton!);
-
-      // Verify warning message for service unavailability
-      await waitFor(() => {
-        expect(antdMessage.warning).toHaveBeenCalledWith('系统暂时不可用，请稍后重试');
+        // Should NOT show convert button for fully converted quotes
+        expect(screen.queryByText(/转化为订单/)).not.toBeInTheDocument();
       });
     });
   });

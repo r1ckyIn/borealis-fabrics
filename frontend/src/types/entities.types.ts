@@ -119,6 +119,50 @@ export interface FabricImage {
   createdAt: string;
 }
 
+export interface Product extends SoftDeletableEntity {
+  productCode: string;
+  name: string;
+  category: string;
+  subCategory: string;
+  modelNumber?: string | null;
+  specification?: string | null;
+  defaultPrice?: number | null;
+  specs?: Record<string, unknown> | null;
+  notes?: string | null;
+}
+
+export interface ProductSupplier extends BaseEntity {
+  productId: number;
+  supplierId: number;
+  purchasePrice: number;
+  minOrderQty?: number | null;
+  leadTimeDays?: number | null;
+  product?: Product;
+  supplier?: Supplier;
+}
+
+export interface ProductPricing extends BaseEntity {
+  customerId: number;
+  productId: number;
+  specialPrice: number;
+  customer?: Customer;
+  product?: Product;
+}
+
+export interface QuoteItem extends BaseEntity {
+  quoteId: number;
+  fabricId?: number | null;
+  productId?: number | null;
+  quantity: number;
+  unitPrice: number;
+  subtotal: number;
+  unit: string;
+  isConverted: boolean;
+  notes?: string | null;
+  fabric?: Fabric;
+  product?: Product;
+}
+
 export interface FileEntity {
   id: number;
   key: string;
@@ -132,15 +176,12 @@ export interface FileEntity {
 export interface Quote extends BaseEntity {
   quoteCode: string;
   customerId: number;
-  fabricId: number;
-  quantity: number;
-  unitPrice: number;
   totalPrice: number;
   validUntil: string;
   status: QuoteStatus;
   notes?: string | null;
   customer?: Customer;
-  fabric?: Fabric;
+  items?: QuoteItem[];
 }
 
 export interface Order extends BaseEntity {
@@ -163,19 +204,22 @@ export interface Order extends BaseEntity {
 
 export interface OrderItem extends BaseEntity {
   orderId: number;
-  fabricId: number;
+  fabricId?: number | null;
+  productId?: number | null;
   supplierId?: number | null;
   quoteId?: number | null;
   quantity: number;
   salePrice: number;
   purchasePrice?: number | null;
   subtotal: number;
+  unit: string;
   status: OrderItemStatus;
   prevStatus?: string | null;
   deliveryDate?: string | null;
   notes?: string | null;
   order?: Order;
   fabric?: Fabric;
+  product?: Product;
   supplier?: Supplier;
   quote?: Quote;
   logistics?: Logistics[];

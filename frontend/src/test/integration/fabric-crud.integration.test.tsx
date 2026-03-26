@@ -63,13 +63,13 @@ function createPaginatedResponse(
   };
 }
 
-function renderFabricRoutes(initialEntries: string[] = ['/fabrics']) {
+function renderFabricRoutes(initialEntries: string[] = ['/products/fabrics']) {
   return renderIntegration(
     <Routes>
-      <Route path="/fabrics" element={<FabricListPage />} />
-      <Route path="/fabrics/new" element={<FabricFormPage />} />
-      <Route path="/fabrics/:id" element={<div>Detail Page</div>} />
-      <Route path="/fabrics/:id/edit" element={<FabricFormPage />} />
+      <Route path="/products/fabrics" element={<FabricListPage />} />
+      <Route path="/products/fabrics/new" element={<FabricFormPage />} />
+      <Route path="/products/fabrics/:id" element={<div>Detail Page</div>} />
+      <Route path="/products/fabrics/:id/edit" element={<FabricFormPage />} />
     </Routes>,
     { initialEntries, withAuth: true },
   );
@@ -179,7 +179,7 @@ describe('Fabric CRUD Integration', () => {
       });
       fabricApi.getFabric.mockResolvedValue(existingFabric);
 
-      renderFabricRoutes(['/fabrics/7/edit']);
+      renderFabricRoutes(['/products/fabrics/7/edit']);
 
       await waitFor(() => {
         expect(fabricApi.getFabric).toHaveBeenCalledWith(7);
@@ -195,7 +195,7 @@ describe('Fabric CRUD Integration', () => {
     it('shows 404 when fabric does not exist', async () => {
       fabricApi.getFabric.mockResolvedValue(null as unknown as Fabric);
 
-      renderFabricRoutes(['/fabrics/999/edit']);
+      renderFabricRoutes(['/products/fabrics/999/edit']);
 
       await waitFor(() => {
         expect(screen.getByText('面料不存在')).toBeInTheDocument();

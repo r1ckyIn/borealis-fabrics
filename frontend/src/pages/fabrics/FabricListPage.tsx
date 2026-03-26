@@ -74,8 +74,8 @@ export default function FabricListPage(): React.ReactElement {
   }, [setPage]);
 
   /** Navigate to fabric pages. */
-  const goToDetail = useCallback((f: Fabric) => navigate(`/fabrics/${f.id}`), [navigate]);
-  const goToCreate = useCallback(() => navigate('/fabrics/new'), [navigate]);
+  const goToDetail = useCallback((f: Fabric) => navigate(`/products/fabrics/${f.id}`), [navigate]);
+  const goToCreate = useCallback(() => navigate('/products/fabrics/new'), [navigate]);
 
   // Table columns configuration
   const columns: ColumnsType<Fabric> = useMemo(

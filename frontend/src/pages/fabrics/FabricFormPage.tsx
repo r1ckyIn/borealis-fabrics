@@ -62,7 +62,7 @@ export default function FabricFormPage(): React.ReactElement {
           await createMutation.mutateAsync(values);
           message.success('面料创建成功');
         }
-        navigate('/fabrics');
+        navigate('/products/fabrics');
       } catch (error: unknown) {
         console.error('Submit error:', error);
         const apiError = error as ApiError;
@@ -91,13 +91,13 @@ export default function FabricFormPage(): React.ReactElement {
 
   /** Navigate back to fabric list. */
   const goToList = useCallback((): void => {
-    navigate('/fabrics');
+    navigate('/products/fabrics');
   }, [navigate]);
 
   // Breadcrumb configuration
   const breadcrumbs = [
     { label: '首页', path: '/' },
-    { label: '面料管理', path: '/fabrics' },
+    { label: '面料管理', path: '/products/fabrics' },
     { label: isEditMode ? '编辑面料' : '新建面料' },
   ];
 

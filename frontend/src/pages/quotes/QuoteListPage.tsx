@@ -1,11 +1,11 @@
 /**
  * Quote list page with search, filter, and pagination.
- * Displays quote data in a table with view operation.
+ * Displays quote data with expandable rows showing QuoteItem details.
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Typography, Empty } from 'antd';
+import { Card, Table, Button, Typography, Tag, Empty } from 'antd';
 import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
@@ -16,12 +16,18 @@ import { StatusTag } from '@/components/common/StatusTag';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
 import { useQuotes } from '@/hooks/queries/useQuotes';
-import { formatDate, formatQuantity } from '@/utils';
+import { formatDate } from '@/utils';
 import {
   QuoteStatus,
   QUOTE_STATUS_LABELS,
+  PRODUCT_SUB_CATEGORY_LABELS,
 } from '@/types';
-import type { Quote, QueryQuoteParams } from '@/types';
+import type { Quote, QuoteItem, QueryQuoteParams } from '@/types';
+import type { ProductSubCategory } from '@/types';
+import {
+  CATEGORY_TAG_COLORS,
+  CATEGORY_TAG_LABELS,
+} from '@/utils/product-constants';
 
 const { Text } = Typography;
 
@@ -44,6 +50,73 @@ const SEARCH_FIELDS: SearchField[] = [
     name: 'createdDateRange',
     label: '创建日期',
     type: 'dateRange',
+  },
+];
+
+/** Columns for the expanded QuoteItem sub-table. */
+const ITEM_COLUMNS: ColumnsType<QuoteItem> = [
+  {
+    title: '产品',
+    key: 'product',
+    render: (_, item) => {
+      if (item.fabric) return `${item.fabric.fabricCode} - ${item.fabric.name}`;
+      if (item.product)
+        return `${item.product.productCode} - ${item.product.name}`;
+      return '-';
+    },
+  },
+  {
+    title: '分类',
+    key: 'category',
+    width: 80,
+    render: (_, item) => {
+      if (item.fabric) {
+        return (
+          <Tag color={CATEGORY_TAG_COLORS['fabric']}>
+            {CATEGORY_TAG_LABELS['fabric']}
+          </Tag>
+        );
+      }
+      if (item.product) {
+        const subCat = item.product.subCategory;
+        const label =
+          PRODUCT_SUB_CATEGORY_LABELS[subCat as ProductSubCategory] || subCat;
+        const color = CATEGORY_TAG_COLORS[subCat] || 'default';
+        return <Tag color={color}>{label}</Tag>;
+      }
+      return '-';
+    },
+  },
+  {
+    title: '数量',
+    key: 'quantity',
+    width: 100,
+    render: (_, item) => `${Number(item.quantity)} ${item.unit}`,
+  },
+  {
+    title: '单价',
+    dataIndex: 'unitPrice',
+    key: 'unitPrice',
+    width: 100,
+    render: (v: number) => `¥${Number(v).toFixed(2)}`,
+  },
+  {
+    title: '小计',
+    dataIndex: 'subtotal',
+    key: 'subtotal',
+    width: 100,
+    render: (v: number) => `¥${Number(v).toFixed(2)}`,
+  },
+  {
+    title: '状态',
+    key: 'convertStatus',
+    width: 80,
+    render: (_, item) =>
+      item.isConverted ? (
+        <Tag color="blue">已转换</Tag>
+      ) : (
+        <Tag color="green">待转换</Tag>
+      ),
   },
 ];
 
@@ -100,7 +173,10 @@ export default function QuoteListPage(): React.ReactElement {
   }, [setPage]);
 
   /** Navigate to quote pages. */
-  const goToDetail = useCallback((q: Quote) => navigate(`/quotes/${q.id}`), [navigate]);
+  const goToDetail = useCallback(
+    (q: Quote) => navigate(`/quotes/${q.id}`),
+    [navigate]
+  );
   const goToCreate = useCallback(() => navigate('/quotes/new'), [navigate]);
 
   // Table columns configuration
@@ -121,33 +197,14 @@ export default function QuoteListPage(): React.ReactElement {
         render: (_, record) => record.customer?.companyName ?? '-',
       },
       {
-        title: '面料',
-        key: 'fabric',
-        width: 200,
-        ellipsis: true,
-        render: (_, record) =>
-          record.fabric
-            ? `${record.fabric.fabricCode} - ${record.fabric.name}`
-            : '-',
+        title: '明细数',
+        key: 'itemCount',
+        width: 80,
+        align: 'center',
+        render: (_, record) => record.items?.length ?? 0,
       },
       {
-        title: '数量',
-        dataIndex: 'quantity',
-        key: 'quantity',
-        width: 100,
-        align: 'right',
-        render: (qty: number) => formatQuantity(qty),
-      },
-      {
-        title: '单价',
-        dataIndex: 'unitPrice',
-        key: 'unitPrice',
-        width: 120,
-        align: 'right',
-        render: (price: number) => <AmountDisplay value={price} suffix="/米" />,
-      },
-      {
-        title: '合计',
+        title: '总金额',
         dataIndex: 'totalPrice',
         key: 'totalPrice',
         width: 120,
@@ -229,20 +286,46 @@ export default function QuoteListPage(): React.ReactElement {
           }}
           locale={{
             emptyText: (
-              <Empty description="暂无报价单数据" image={Empty.PRESENTED_IMAGE_SIMPLE}>
-                <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
+              <Empty
+                description="暂无报价单数据"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              >
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={goToCreate}
+                >
                   新建报价单
                 </Button>
               </Empty>
             ),
           }}
-          onChange={handleTableChange as Parameters<typeof Table<Quote>>['0']['onChange']}
-
-          scroll={{ x: 1400 }}
+          onChange={
+            handleTableChange as Parameters<
+              typeof Table<Quote>
+            >['0']['onChange']
+          }
+          expandable={{
+            expandedRowRender: (record) => {
+              if (!record.items || record.items.length === 0) {
+                return <Empty description="暂无明细" />;
+              }
+              return (
+                <Table<QuoteItem>
+                  size="small"
+                  dataSource={record.items}
+                  rowKey="id"
+                  pagination={false}
+                  columns={ITEM_COLUMNS}
+                />
+              );
+            },
+            rowExpandable: (record) => (record.items?.length ?? 0) > 0,
+          }}
+          scroll={{ x: 1000 }}
           size="middle"
         />
       </Card>
-
     </PageContainer>
   );
 }

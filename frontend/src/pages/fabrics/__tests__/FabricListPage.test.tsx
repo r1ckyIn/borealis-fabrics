@@ -213,7 +213,7 @@ describe('FabricListPage', () => {
       const newButton = screen.getByText('新建面料').closest('button');
       await user.click(newButton!);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics/new');
+      expect(mockNavigate).toHaveBeenCalledWith('/products/fabrics/new');
     });
 
     it('should navigate to detail page when clicking view button', async () => {
@@ -227,7 +227,7 @@ describe('FabricListPage', () => {
       const viewButtons = screen.getAllByText('查看');
       await user.click(viewButtons[0]);
 
-      expect(mockNavigate).toHaveBeenCalledWith('/fabrics/1');
+      expect(mockNavigate).toHaveBeenCalledWith('/products/fabrics/1');
     });
   });
 
