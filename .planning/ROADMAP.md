@@ -18,7 +18,7 @@
 | 6 | Import Strategy Refactor | M2 | 2/2 Complete | MCAT-05~06, DATA-08~09 |
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
-| 10 | Real Data Testing | M2 | System validated with real company documents | DATA-03~07 |
+| 9 | Real Data Testing | M2 | System validated with real company documents | DATA-03~07 |
 
 ## Phase Details
 
@@ -247,6 +247,13 @@ Plans:
 
 **Requirements:** DATA-03, DATA-04, DATA-05, DATA-06, DATA-07
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — Data preparation scripts (price list conversion) + detectStrategy RichText fix
+- [ ] 09-02-PLAN.md — New import strategies (PurchaseOrder + SalesContract) + backend endpoints + frontend tabs
+- [ ] 09-03-PLAN.md — End-to-end import execution + page stability verification + manual entry testing
+
 **Success Criteria:**
 1. Manual entry of complete supplier-customer-product-quote-order chain with real data succeeds
 2. Real fabric price list (面料价格明细2025.8.15.xlsx) imports with correct data
@@ -254,7 +261,7 @@ Plans:
 4. Real purchase order (海宁优途-采购单) imports with correct order items
 5. All pages load correctly after bulk data import — no broken links, no missing data
 
-**Dependencies:** Phases 8 + 9 (needs everything working)
+**Dependencies:** Phase 8 (needs everything working)
 
 ---
 
@@ -268,7 +275,6 @@ Phase 1 (standalone — M1 start)
               ├→ Phase 04.1 (urgent: payment voucher upload)
               └→ Phase 5 (M2 start — schema + CRUD)
                   ├→ Phase 6 (import strategy — can parallel with 7)
-                  │   └→ Phase 9 (OCR needs import templates)
                   └→ Phase 7 (order/quote extension)
                       └→ Phase 8 (frontend pages)
                           └→ Phase 9 (real data testing — needs all)
@@ -280,15 +286,15 @@ Phase 1 (standalone — M1 start)
 |----------|-------|--------|
 | Bug Fix (BUGF) | 6 | 6 |
 | Core Feature (FEAT) | 5 | 5 |
-| Code Quality (QUAL) 
+| Code Quality (QUAL) | 9 | 9 |
 | Test Coverage (TEST) | 7 | 7 |
 | Payment Voucher (PVOU) | 8 | 8 |
 | Multi-Category (MCAT) | 12 | 12 |
-| OCR & Data (DATA) 
+| OCR & Data (DATA) | 9 | 9 |
 | **Total** | **56** | **56** |
 
 Unmapped: 0
 
 ---
 *Roadmap created: 2009-03-17*
-*Last updated: 2009-03-25 (Phase 08 planned — 5 plans for frontend multi-category pages)*
+*Last updated: 2026-03-26 (Phase 09 planned — 3 plans for real data testing)*
