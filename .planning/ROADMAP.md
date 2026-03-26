@@ -1,6 +1,6 @@
 # Roadmap: Borealis Supply Chain Management
 
-**Created:** 2026-03-17
+**Created:** 2009-03-17
 **Phases:** 10
 **Granularity:** Fine
 **Milestones:** M1 (Phases 1-4), M2 (Phases 5-10)
@@ -18,7 +18,6 @@
 | 6 | Import Strategy Refactor | M2 | 2/2 Complete | MCAT-05~06, DATA-08~09 |
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
-| 9 | Contract OCR Skill | M2 | Chinese PDFs converted to importable Excel | DATA-01~02 |
 | 10 | Real Data Testing | M2 | System validated with real company documents | DATA-03~07 |
 
 ## Phase Details
@@ -242,21 +241,7 @@ Plans:
 
 ---
 
-### Phase 9: Contract OCR Skill
-
-**Goal:** Claude Code skill that reads Chinese business PDFs and outputs importable Excel.
-
-**Requirements:** DATA-01, DATA-02
-
-**Success Criteria:**
-1. `/contract-ocr` on a Chinese PI/PO/contract PDF produces Excel matching import template format
-2. OCR handles Chinese business document formats (stamps, merged cells, mixed fonts, tables)
-
-**Dependencies:** Phase 6 (needs finalized import templates)
-
----
-
-### Phase 10: Real Data Testing
+### Phase 9: Real Data Testing
 
 **Goal:** System validated end-to-end with real company documents from `/Users/qinyuan/Desktop/铂润测试资料/`.
 
@@ -286,7 +271,7 @@ Phase 1 (standalone — M1 start)
                   │   └→ Phase 9 (OCR needs import templates)
                   └→ Phase 7 (order/quote extension)
                       └→ Phase 8 (frontend pages)
-                          └→ Phase 10 (real data testing — needs all)
+                          └→ Phase 9 (real data testing — needs all)
 ```
 
 ## Coverage
@@ -295,15 +280,15 @@ Phase 1 (standalone — M1 start)
 |----------|-------|--------|
 | Bug Fix (BUGF) | 6 | 6 |
 | Core Feature (FEAT) | 5 | 5 |
-| Code Quality (QUAL) | 9 | 9 |
+| Code Quality (QUAL) 
 | Test Coverage (TEST) | 7 | 7 |
 | Payment Voucher (PVOU) | 8 | 8 |
 | Multi-Category (MCAT) | 12 | 12 |
-| OCR & Data (DATA) | 9 | 9 |
+| OCR & Data (DATA) 
 | **Total** | **56** | **56** |
 
 Unmapped: 0
 
 ---
-*Roadmap created: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 08 planned — 5 plans for frontend multi-category pages)*
+*Roadmap created: 2009-03-17*
+*Last updated: 2009-03-25 (Phase 08 planned — 5 plans for frontend multi-category pages)*
