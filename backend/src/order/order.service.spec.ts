@@ -208,7 +208,7 @@ describe('OrderService', () => {
         data: expect.objectContaining({
           orderCode: 'ORD-2601-0001',
           customerId: 1,
-          status: OrderItemStatus.INQUIRY,
+          status: OrderItemStatus.PENDING,
           totalAmount: 3550.0,
           deliveryAddress: 'Test Address',
           notes: 'Test notes',
@@ -461,13 +461,13 @@ describe('OrderService', () => {
           {
             orderItemId: 1,
             fromStatus: null,
-            toStatus: OrderItemStatus.INQUIRY,
+            toStatus: OrderItemStatus.PENDING,
             remark: 'Order created',
           },
           {
             orderItemId: 2,
             fromStatus: null,
-            toStatus: OrderItemStatus.INQUIRY,
+            toStatus: OrderItemStatus.PENDING,
             remark: 'Order created',
           },
         ],
@@ -853,17 +853,17 @@ describe('OrderService', () => {
   });
 
   describe('remove', () => {
-    it('should delete order with INQUIRY status and no payment records using atomic operation', async () => {
+    it('should delete order with INQUIRY or PENDING status and no payment records using atomic operation', async () => {
       // Mock deleteMany returning count: 1 (success)
       mockPrismaService.order.deleteMany.mockResolvedValue({ count: 1 });
 
       await service.remove(1);
 
-      // Verify atomic conditional delete was used
+      // Verify atomic conditional delete was used with both INQUIRY and PENDING
       expect(mockPrismaService.order.deleteMany).toHaveBeenCalledWith({
         where: {
           id: 1,
-          status: OrderItemStatus.INQUIRY,
+          status: { in: [OrderItemStatus.INQUIRY, OrderItemStatus.PENDING] },
           customerPaid: 0,
         },
       });
@@ -881,7 +881,7 @@ describe('OrderService', () => {
       );
     });
 
-    it('should throw BadRequestException when order status is not INQUIRY', async () => {
+    it('should throw BadRequestException when order status is not INQUIRY or PENDING', async () => {
       // deleteMany returns 0 due to status mismatch
       mockPrismaService.order.deleteMany.mockResolvedValue({ count: 0 });
       // findUnique returns the order to check why
@@ -895,7 +895,7 @@ describe('OrderService', () => {
 
       await expect(service.remove(1)).rejects.toThrow(BadRequestException);
       await expect(service.remove(1)).rejects.toThrow(
-        'Cannot delete order - only INQUIRY status orders can be deleted',
+        'Cannot delete order - only INQUIRY or PENDING status orders can be deleted',
       );
     });
 
@@ -944,7 +944,7 @@ describe('OrderService', () => {
       expect(mockPrismaService.order.deleteMany).toHaveBeenCalledWith({
         where: {
           id: 1,
-          status: OrderItemStatus.INQUIRY,
+          status: { in: [OrderItemStatus.INQUIRY, OrderItemStatus.PENDING] },
           customerPaid: 0,
         },
       });
