@@ -111,12 +111,18 @@ async function checkEndpoint(
       };
     }
 
-    const body = await response.json() as Record<string, unknown>;
+    const rawBody = await response.json() as Record<string, unknown>;
+
+    // Unwrap response envelope: { code, message, data: ... }
+    const body = (rawBody.data && typeof rawBody.data === 'object')
+      ? rawBody.data as Record<string, unknown>
+      : rawBody;
 
     if (endpoint.type === 'list') {
-      // Paginated list should have items array and total
+      // Paginated list should have items array and pagination.total
       const items = body.items as unknown[] | undefined;
-      const total = body.total as number | undefined;
+      const pagination = body.pagination as { total?: number } | undefined;
+      const total = pagination?.total ?? (body.total as number | undefined);
 
       if (!Array.isArray(items)) {
         return {
@@ -205,9 +211,10 @@ async function main(): Promise<void> {
       );
 
       if (listResponse.ok) {
-        const body = (await listResponse.json()) as {
-          items?: Array<{ id: number }>;
-        };
+        const rawBody = (await listResponse.json()) as Record<string, unknown>;
+        const body = (rawBody.data && typeof rawBody.data === 'object')
+          ? rawBody.data as { items?: Array<{ id: number }> }
+          : rawBody as { items?: Array<{ id: number }> };
         if (body.items && body.items.length > 0) {
           const firstId = body.items[0].id;
           const detailEndpoint: EndpointCheck = {

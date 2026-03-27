@@ -39,30 +39,34 @@ const FABRICS_FILE = path.join(OUTPUT_DIR, 'fabrics-prepared.xlsx');
 const PRODUCTS_FILE = path.join(OUTPUT_DIR, 'products-prepared.xlsx');
 
 // Raw test files (purchase orders, sales contracts, customer orders)
+// NOTE: The 2026 PO files use non-breaking space (U+00A0) between 单 and the date.
+// The 2025 file uses a regular space.
 const PURCHASE_ORDER_FILES = [
   path.join(TEST_DATA_DIR, '海宁优途-采购单 2025.11.26.xlsx'),
-  path.join(TEST_DATA_DIR, '海宁优途-采购单 2026.03.06.xlsx'),
-  path.join(TEST_DATA_DIR, '海宁优途-采购单 2026.3.13.xlsx'),
+  path.join(TEST_DATA_DIR, '海宁优途-采购单\u00a02026.03.06.xlsx'),
+  path.join(TEST_DATA_DIR, '海宁优途-采购单\u00a02026.3.13.xlsx'),
 ];
 
+// NOTE: Sales contract filenames use non-breaking spaces (U+00A0) between segments.
 const SALES_CONTRACT_FILES = [
   path.join(
     TEST_DATA_DIR,
-    '购销合同SH20260129-03 77854 77855 (U16-116面料).xlsx',
+    '购销合同SH20260129-03\u00a077854\u00a077855\u00a0(U16-116面料).xlsx',
   ),
   path.join(
     TEST_DATA_DIR,
-    '购销合同SH20260131-02（U18-111铁架）.xlsx',
+    '购销合同SH20260131-02\uff08U18-111铁架\uff09.xlsx',
   ),
 ];
 
+// NOTE: Customer order filenames also use non-breaking spaces (U+00A0).
 const CUSTOMER_ORDER_FILES = [
-  path.join(TEST_DATA_DIR, '77947 U19-156 U18-111面料.xlsx'),
-  path.join(TEST_DATA_DIR, '77947 U19-156 U18-111铁架.xlsx'),
-  path.join(TEST_DATA_DIR, '77955 MABLE U72面料.xlsx'),
-  path.join(TEST_DATA_DIR, '77955 MABLE U72铁架.xlsx'),
-  path.join(TEST_DATA_DIR, '77962 SYDNEY面料.xlsx'),
-  path.join(TEST_DATA_DIR, '77962 SYDNEY铁架.xlsx'),
+  path.join(TEST_DATA_DIR, '77947\u00a0U19-156\u00a0U18-111面料.xlsx'),
+  path.join(TEST_DATA_DIR, '77947\u00a0U19-156\u00a0U18-111铁架.xlsx'),
+  path.join(TEST_DATA_DIR, '77955\u00a0MABLE\u00a0U72面料.xlsx'),
+  path.join(TEST_DATA_DIR, '77955\u00a0MABLE\u00a0U72铁架.xlsx'),
+  path.join(TEST_DATA_DIR, '77962\u00a0SYDNEY面料.xlsx'),
+  path.join(TEST_DATA_DIR, '77962\u00a0SYDNEY铁架.xlsx'),
 ];
 
 // Suppliers to create before import (derived from prepare-fabric-pricelist.ts SUPPLIER_MAP)
@@ -190,7 +194,16 @@ async function uploadFile(
     throw new Error(`HTTP ${response.status}: ${text}`);
   }
 
-  return (await response.json()) as ImportResult;
+  const body = (await response.json()) as
+    | ImportResult
+    | { data: ImportResult; code: number; message: string };
+
+  // Handle wrapped response format: { code, message, data: ImportResult }
+  if ('data' in body && body.data && typeof body.data === 'object') {
+    return body.data as ImportResult;
+  }
+
+  return body as ImportResult;
 }
 
 /**
