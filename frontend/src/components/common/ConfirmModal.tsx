@@ -41,6 +41,7 @@ export function ConfirmModal({
 
   return (
     <Modal
+      centered
       open={open}
       title={
         <span>
