@@ -254,7 +254,7 @@ Plans:
 - [x] 09-02-PLAN.md — New import strategies (PurchaseOrder + SalesContract) + backend endpoints + frontend tabs
 - [x] 09-03-PLAN.md — End-to-end import execution + page stability verification + manual entry testing
 - [x] 09-04-PLAN.md — (Gap closure) Fix SalesContractImportStrategy column offsets + customer resolution + summary row skipping
-- [ ] 09-05-PLAN.md — (Gap closure) Verify import fixes + manual entry test + REQUIREMENTS.md update
+- [x] 09-05-PLAN.md — (Gap closure) Verify import fixes + manual entry test + REQUIREMENTS.md update
 
 **Success Criteria:**
 1. Manual entry of complete supplier-customer-product-quote-order chain with real data succeeds
