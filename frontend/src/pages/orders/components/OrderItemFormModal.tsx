@@ -3,6 +3,7 @@
  * quantity, pricing, delivery date, and notes.
  */
 
+import { useCallback } from 'react';
 import { Modal, Form, Input, InputNumber, DatePicker } from 'antd';
 import type { FormInstance } from 'antd';
 
@@ -20,16 +21,27 @@ async function searchFabrics(keyword: string) {
   return result.items;
 }
 
-async function searchSuppliers(keyword: string) {
-  const result = await getSuppliers({ keyword, pageSize: 20 });
-  return result.items;
-}
-
 // ---------------------------------------------------------------------------
 // Shared form fields
 // ---------------------------------------------------------------------------
 
 function ItemFormFields({ isEdit }: { isEdit: boolean }): React.ReactElement {
+  const form = Form.useFormInstance();
+
+  /** Search suppliers, filtered by fabricId when a fabric is selected. */
+  const searchSuppliers = useCallback(
+    async (keyword: string) => {
+      const fabricId = form.getFieldValue('fabricId') as number | undefined;
+      const result = await getSuppliers({
+        keyword,
+        pageSize: 20,
+        fabricId: fabricId || undefined,
+      });
+      return result.items;
+    },
+    [form],
+  );
+
   return (
     <>
       <Form.Item

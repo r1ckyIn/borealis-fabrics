@@ -5,7 +5,7 @@
  * quantity, prices, delivery date, notes, subtotal, and remove button.
  */
 
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Form,
   InputNumber,
@@ -37,18 +37,28 @@ export interface OrderItemFormProps {
   removeDisabled?: boolean;
 }
 
-/** Search suppliers for selector. */
-async function searchSuppliers(keyword: string) {
-  const result = await getSuppliers({ keyword, pageSize: 20 });
-  return result.items;
-}
-
 export function OrderItemForm({
   fieldName,
   onRemove,
   removeDisabled = false,
 }: OrderItemFormProps) {
   const form = Form.useFormInstance();
+
+  /** Search suppliers, filtered by fabricId when a fabric is selected. */
+  const searchSuppliers = useCallback(
+    async (keyword: string) => {
+      const fabricId = form.getFieldValue(['items', fieldName, 'fabricId']) as
+        | number
+        | undefined;
+      const result = await getSuppliers({
+        keyword,
+        pageSize: 20,
+        fabricId: fabricId || undefined,
+      });
+      return result.items;
+    },
+    [form, fieldName],
+  );
 
   // Watch quantity, salePrice for subtotal, and unit for dynamic addon
   const quantity = Form.useWatch(['items', fieldName, 'quantity'], form);

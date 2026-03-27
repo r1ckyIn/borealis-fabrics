@@ -33,6 +33,8 @@ export type UpdateSupplierData = Partial<CreateSupplierData>;
 export interface QuerySupplierParams extends PaginationParams {
   keyword?: string;
   status?: SupplierStatus;
+  /** Filter suppliers by fabric relationship (only suppliers linked via FabricSupplier) */
+  fabricId?: number;
 }
 
 export interface AddressFormData {
