@@ -2,8 +2,8 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Milestone complete
-last_updated: "2026-03-27T09:46:07.998Z"
+status: Executing Phase 10
+last_updated: "2026-03-27T10:20:14.275Z"
 progress:
   total_phases: 10
   completed_phases: 9
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 09 — real-data-testing
+**Current focus:** Phase 10 — uat-bug-fixes
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 09 |
-| Name | Real Data Testing |
+| Phase | 10 |
+| Name | UAT Bug Fixes |
 | Status | In Progress |
-| Current Plan | 3 of 3 |
-| Branch | main |
+| Current Plan | 2 of 2 |
+| Branch | feature/phase10-uat-bug-fixes |
 
 ## Progress
 
@@ -43,6 +43,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 7 — Order/Quote Multi-Category Extension | ● Complete | 3/3 |
 | 8 — Frontend Multi-Category Pages | ● Complete | 5/5 |
 | 9 — Real Data Testing | ◆ In Progress | 2/3 |
+| 10 — UAT Bug Fixes | ◆ In Progress | 1/2 |
 
 ## Milestone Tracking
 
@@ -137,6 +138,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-27 | Self-customer pattern for PO import (铂润面料 as customerId) | Order requires customerId but POs are TO suppliers |
 | 2026-03-27 | Single SalesContractImportStrategy for 8 files (购销合同+客户订单) | Same template layout per RESEARCH.md analysis |
 | 2026-03-27 | importNonStandardData() with headerRowNumber parameter | Reusable for any non-standard Excel layout |
+| 2026-03-27 | Dynamic fabricId read from form at search time (not reactive prop) | Avoids unnecessary re-renders, reads current form value on each search |
+| 2026-03-27 | Manual duplicate check for customers without DB unique constraint | Customer companyName has no unique constraint, search+exact match before create |
 
 ## Accumulated Context
 
@@ -181,7 +184,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-27 | Phase 09 Plan 01 | Completed 09-01-PLAN.md | `.planning/phases/09-real-data-testing/09-01-SUMMARY.md` |
 | 2026-03-27 | Phase 09 Plan 02 | Completed 09-02-PLAN.md | `.planning/phases/09-real-data-testing/09-02-SUMMARY.md` |
 | 2026-03-27 | Phase 09 Plan 03 | Checkpoint: Task 3 (user verify imported data) | Tasks 1-2 complete: 60f2ed4, b3e263f |
+| 2026-03-27 | Phase 10 Plan 02 | Completed 10-02-PLAN.md | `.planning/phases/10-uat-bug-fixes/10-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-27 (Phase 09 Plan 03 Tasks 1-2 complete — 13 xlsx files imported, 12/12 page stability checks pass, awaiting user UI verification)*
+*Last updated: 2026-03-27 (Phase 10 Plan 02 complete — supplier fabricId filter, import script dedup)*

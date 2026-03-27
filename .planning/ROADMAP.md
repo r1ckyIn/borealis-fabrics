@@ -19,7 +19,7 @@
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
 | 9 | Real Data Testing | M2 | System validated with real company documents | DATA-03~07 |
-| 10 | UAT Bug Fixes | M2 | Fix 8 issues found during Phase 09 manual testing | UAT-01~08 |
+| 10 | UAT Bug Fixes | 1/2 | In Progress|  |
 
 ## Phase Details
 
