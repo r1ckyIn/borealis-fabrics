@@ -77,8 +77,8 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [ ] **DATA-01**: `/contract-ocr` Claude Code skill reads PDF and outputs importable Excel
 - [ ] **DATA-02**: OCR skill handles Chinese business document formats (PI, PO, contracts)
 - [ ] **DATA-03**: Manual entry test: create supplier, customer, fabric, quote, order with real data
-- [ ] **DATA-04**: Excel import test: import real fabric price list (面料价格明细2025.8.15.xlsx)
-- [ ] **DATA-05**: Excel import test: import real iron frame/motor price list (铁架电机价格2025.xlsx)
+- [x] **DATA-04**: Excel import test: import real fabric price list (面料价格明细2025.8.15.xlsx)
+- [x] **DATA-05**: Excel import test: import real iron frame/motor price list (铁架电机价格2025.xlsx)
 - [ ] **DATA-06**: Excel import test: import real purchase order (海宁优途-采购单)
 - [ ] **DATA-07**: System stability: all pages load correctly after bulk data import
 - [x] **DATA-08**: Import result shows per-row failure details (row number + reason)
@@ -169,8 +169,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-01 | Phase 9 | Pending |
 | DATA-02 | Phase 9 | Pending |
 | DATA-03 | Phase 10 | Pending |
-| DATA-04 | Phase 10 | Pending |
-| DATA-05 | Phase 10 | Pending |
+| DATA-04 | Phase 10 | Complete |
+| DATA-05 | Phase 10 | Complete |
 | DATA-06 | Phase 10 | Pending |
 | DATA-07 | Phase 10 | Pending |
 | DATA-08 | Phase 6 | Complete |

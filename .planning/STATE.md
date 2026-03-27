@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-26T03:19:45.081Z"
+last_updated: "2026-03-27T02:28:11.254Z"
 progress:
   total_phases: 10
   completed_phases: 8
-  total_plans: 31
-  completed_plans: 30
+  total_plans: 34
+  completed_plans: 31
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,17 +18,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-17)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 08 — frontend-multi-category-pages
+**Current focus:** Phase 09 — real-data-testing
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
-| Phase | 08 |
-| Name | Frontend Multi-Category Pages |
+| Phase | 09 |
+| Name | Real Data Testing |
 | Status | In Progress |
-| Current Plan | 4 of 5 |
-| Branch | feature/gsd-08-frontend-multi-category-pages |
+| Current Plan | 1 of 3 |
+| Branch | main |
 
 ## Progress
 
@@ -41,9 +41,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
 | 6 — Import Strategy Refactor | ● Complete | 2/2 |
 | 7 — Order/Quote Multi-Category Extension | ● Complete | 3/3 |
-| 8 — Frontend Multi-Category Pages | ◆ In Progress | 4/5 |
-| 9 — Contract OCR Skill | ○ Not Started | — |
-| 10 — Real Data Testing | ○ Not Started | — |
+| 8 — Frontend Multi-Category Pages | ● Complete | 5/5 |
+| 9 — Real Data Testing | ◆ In Progress | 1/3 |
 
 ## Milestone Tracking
 
@@ -132,6 +131,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Quote edit mode header-only; items managed on detail page | Matches OrderForm pattern, avoids complex item sync on edit |
 | 2026-03-25 | Conversion UI shown for ACTIVE and PARTIALLY_CONVERTED only | Fully CONVERTED quotes hide checkboxes and convert button |
 | 2026-03-25 | Modal.confirm for conversion action (not ConfirmModal) | Supports async onOk pattern for mutation + navigation |
+| 2026-03-27 | RichText header extraction via richText.map(rt.text).join('') in detectStrategy | Real business Excel files use bold/formatted headers |
+| 2026-03-27 | Supplier abbreviation mapping hardcoded in scripts (not DB lookup) | One-time conversion, no need for dynamic resolution |
+| 2026-03-27 | Product subCategory inferred from name keywords | Avoids manual classification for 172 products |
 
 ## Accumulated Context
 
@@ -173,7 +175,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Phase 08 Plan 02 | Completed 08-02-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-02-SUMMARY.md` |
 | 2026-03-25 | Phase 08 Plan 03 | Completed 08-03-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-03-SUMMARY.md` |
 | 2026-03-25 | Phase 08 Plan 04 | Completed 08-04-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-04-SUMMARY.md` |
+| 2026-03-27 | Phase 09 Plan 01 | Completed 09-01-PLAN.md | `.planning/phases/09-real-data-testing/09-01-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-25 (Phase 08 Plan 04 complete — All 3 quote pages rebuilt for multi-item model: expandable list, Form.List quote form, checkbox-based partial conversion, 35 tests)*
+*Last updated: 2026-03-27 (Phase 09 Plan 01 complete — Data prep scripts for fabric (182 rows) and product (172 rows) conversion, RichText detectStrategy fix, 147 import tests pass)*
