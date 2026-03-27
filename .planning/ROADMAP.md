@@ -247,19 +247,22 @@ Plans:
 
 **Requirements:** DATA-03, DATA-04, DATA-05, DATA-06, DATA-07
 
-**Plans:** 3 plans
+**Plans:** 5 plans
 
 Plans:
-- [ ] 09-01-PLAN.md — Data preparation scripts (price list conversion) + detectStrategy RichText fix
-- [ ] 09-02-PLAN.md — New import strategies (PurchaseOrder + SalesContract) + backend endpoints + frontend tabs
-- [ ] 09-03-PLAN.md — End-to-end import execution + page stability verification + manual entry testing
+- [x] 09-01-PLAN.md — Data preparation scripts (price list conversion) + detectStrategy RichText fix
+- [x] 09-02-PLAN.md — New import strategies (PurchaseOrder + SalesContract) + backend endpoints + frontend tabs
+- [x] 09-03-PLAN.md — End-to-end import execution + page stability verification + manual entry testing
+- [ ] 09-04-PLAN.md — (Gap closure) Fix SalesContractImportStrategy column offsets + customer resolution + summary row skipping
+- [ ] 09-05-PLAN.md — (Gap closure) Verify import fixes + manual entry test + REQUIREMENTS.md update
 
 **Success Criteria:**
 1. Manual entry of complete supplier-customer-product-quote-order chain with real data succeeds
 2. Real fabric price list (面料价格明细2025.8.15.xlsx) imports with correct data
 3. Real iron frame/motor price list (铁架电机价格2025.xlsx) imports correctly
 4. Real purchase order (海宁优途-采购单) imports with correct order items
-5. All pages load correctly after bulk data import — no broken links, no missing data
+5. Sales contract/customer order import produces > 0 successful records from real files
+6. All pages load correctly after bulk data import — no broken links, no missing data
 
 **Dependencies:** Phase 8 (needs everything working)
 
@@ -297,4 +300,4 @@ Unmapped: 0
 
 ---
 *Roadmap created: 2009-03-17*
-*Last updated: 2026-03-26 (Phase 09 planned — 3 plans for real data testing)*
+*Last updated: 2026-03-27 (Phase 09 gap closure — 2 additional plans for SalesContract fix + verification)*
