@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: Executing Phase 10
-last_updated: "2026-03-27T10:20:14.275Z"
+last_updated: "2026-03-27T10:22:02.589Z"
 progress:
   total_phases: 10
   completed_phases: 9
@@ -140,6 +140,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-27 | importNonStandardData() with headerRowNumber parameter | Reusable for any non-standard Excel layout |
 | 2026-03-27 | Dynamic fabricId read from form at search time (not reactive prop) | Avoids unnecessary re-renders, reads current form value on each search |
 | 2026-03-27 | Manual duplicate check for customers without DB unique constraint | Customer companyName has no unique constraint, search+exact match before create |
+| 2026-03-27 | Direct order creation uses PENDING status (not INQUIRY) | PENDING is semantically correct for newly created orders awaiting supplier placement |
+| 2026-03-27 | Order delete check expanded to include PENDING status | Newly created direct orders (PENDING) should be deletable like INQUIRY orders |
 
 ## Accumulated Context
 
@@ -184,6 +186,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-27 | Phase 09 Plan 01 | Completed 09-01-PLAN.md | `.planning/phases/09-real-data-testing/09-01-SUMMARY.md` |
 | 2026-03-27 | Phase 09 Plan 02 | Completed 09-02-PLAN.md | `.planning/phases/09-real-data-testing/09-02-SUMMARY.md` |
 | 2026-03-27 | Phase 09 Plan 03 | Checkpoint: Task 3 (user verify imported data) | Tasks 1-2 complete: 60f2ed4, b3e263f |
+| 2026-03-27 | Phase 10 Plan 01 | Completed 10-01-PLAN.md | `.planning/phases/10-uat-bug-fixes/10-01-SUMMARY.md` |
 | 2026-03-27 | Phase 10 Plan 02 | Completed 10-02-PLAN.md | `.planning/phases/10-uat-bug-fixes/10-02-SUMMARY.md` |
 
 ---
