@@ -3,10 +3,12 @@
  * Renders address list with label and default tags.
  */
 
-import { List, Empty, Tag, Space } from 'antd';
+import { Row, Col, Card, Empty, Tag, Space, Typography } from 'antd';
 import { EnvironmentOutlined, StarFilled } from '@ant-design/icons';
 
 import type { Address } from '@/types';
+
+const { Text } = Typography;
 
 export interface CustomerAddressTabProps {
   addresses: Address[] | null | undefined;
@@ -26,20 +28,15 @@ export function CustomerAddressTab({ addresses }: CustomerAddressTabProps): Reac
   }
 
   return (
-    <List
-      dataSource={addresses}
-      renderItem={(address, index) => (
-        <List.Item
-          className="rounded-lg border border-gray-200 mb-2 p-4"
-          key={index}
-        >
-          <List.Item.Meta
-            avatar={<EnvironmentOutlined className="text-2xl text-blue-500" />}
-            title={
+    <Row gutter={[16, 16]}>
+      {addresses.map((address, index) => (
+        <Col xs={24} md={12} key={index}>
+          <Card size="small" hoverable>
+            <Space direction="vertical" size={4} style={{ width: '100%' }}>
               <Space>
-                <span>
-                  {address.contactName} {address.contactPhone}
-                </span>
+                <EnvironmentOutlined className="text-blue-500" />
+                <Text strong>{address.contactName}</Text>
+                <Text type="secondary">{address.contactPhone}</Text>
                 {address.label && <Tag color="blue">{address.label}</Tag>}
                 {address.isDefault && (
                   <Tag color="gold" icon={<StarFilled />}>
@@ -47,11 +44,13 @@ export function CustomerAddressTab({ addresses }: CustomerAddressTabProps): Reac
                   </Tag>
                 )}
               </Space>
-            }
-            description={formatAddress(address)}
-          />
-        </List.Item>
-      )}
-    />
+              <Text type="secondary" style={{ paddingLeft: 22 }}>
+                {formatAddress(address)}
+              </Text>
+            </Space>
+          </Card>
+        </Col>
+      ))}
+    </Row>
   );
 }
