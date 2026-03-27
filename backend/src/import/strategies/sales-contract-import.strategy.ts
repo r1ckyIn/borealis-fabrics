@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type * as ExcelJS from 'exceljs';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
@@ -16,45 +16,52 @@ import { getCellValue, parseNumber } from '../utils/excel.utils';
 /** Variant types for this strategy */
 export type ContractVariant = 'fabric' | 'product';
 
-// Fabric variant column indices (1-based)
-const FABRIC_COL_NAME = 1; // 面料名称
-const FABRIC_COL_COATING = 2; // 涂层
-const FABRIC_COL_SERIES = 3; // 系列
-const FABRIC_COL_COLOR_CODE = 4; // 色号
-const FABRIC_COL_COLOR_CN = 5; // 颜色中文
-const FABRIC_COL_COLOR_EN = 6; // 颜色英文
-const FABRIC_COL_UNIT = 7; // 单位
-const FABRIC_COL_QUANTITY = 8; // 数量
-const FABRIC_COL_UNIT_PRICE = 9; // 单价
-const FABRIC_COL_AMOUNT = 10; // 金额
-const FABRIC_COL_DELIVERY_DATE = 11; // 交货日期
-const FABRIC_COL_PI_NUMBER = 12; // PI.#
-const FABRIC_COL_PRODUCTION_NUMBER = 13; // 生产单号
+// Fabric variant column indices (1-based, matching real file layout)
+// Col 1 is always empty in real files; data starts at Col 2
+const FABRIC_COL_CATEGORY = 2; // 商品名称 (e.g., "呼吸革", "PU")
+const FABRIC_COL_NAME = 3; // 面料名称 (e.g., "LEATHERGEL")
+const FABRIC_COL_COATING = 4; // 涂层
+const FABRIC_COL_SERIES = 5; // 系列
+const FABRIC_COL_COLOR_CODE = 6; // 色号
+const FABRIC_COL_COLOR_EN = 7; // 颜色 (English)
+const FABRIC_COL_COLOR_CN = 8; // 颜色 (Chinese)
+const FABRIC_COL_UNIT = 9; // 单位
+const FABRIC_COL_QUANTITY = 10; // 数量
+const FABRIC_COL_UNIT_PRICE = 11; // 单价
+const FABRIC_COL_AMOUNT = 12; // 金额
+const FABRIC_COL_DELIVERY_DATE = 13; // 交货日期
+const FABRIC_COL_PI_NUMBER = 14; // PI.#
+const FABRIC_COL_PRODUCTION_NUMBER = 15; // 生产单号
 
-// Product variant column indices (1-based)
-const PRODUCT_COL_NAME = 1; // 品名
-const PRODUCT_COL_SPECIFICATION = 2; // 规格
-const PRODUCT_COL_UNIT = 3; // 单位
-const PRODUCT_COL_QUANTITY = 4; // 数量
-const PRODUCT_COL_UNIT_PRICE = 5; // 单价
-const PRODUCT_COL_AMOUNT = 6; // 金额
-const PRODUCT_COL_DELIVERY_DATE = 7; // 交货日期
-const PRODUCT_COL_PI_NUMBER = 8; // PI.#
-const PRODUCT_COL_PRODUCTION_NUMBER = 9; // 生产单号
-const PRODUCT_COL_MODEL_NUMBER = 10; // 型号
-const PRODUCT_COL_NOTES = 11; // 备注
+// Product variant column indices (1-based, matching real file layout)
+// Col 1 is always empty in real files; data starts at Col 2
+const PRODUCT_COL_CATEGORY = 2; // 商品名称 (e.g., "铁架")
+const PRODUCT_COL_NAME = 3; // 品名 (e.g., "A4318HK-11 电动")
+const PRODUCT_COL_SPECIFICATION = 4; // 规格
+const PRODUCT_COL_UNIT = 5; // 单位
+const PRODUCT_COL_QUANTITY = 6; // 数量
+const PRODUCT_COL_UNIT_PRICE = 7; // 单价
+const PRODUCT_COL_AMOUNT = 8; // 金额
+const PRODUCT_COL_DELIVERY_DATE = 9; // 交货日期
+const PRODUCT_COL_PI_NUMBER = 10; // PI.#
+const PRODUCT_COL_PRODUCTION_NUMBER = 11; // 生产单号
+const PRODUCT_COL_MODEL_NUMBER = 12; // 款式型号
+// Columns 13 (工厂型号), 14 (备注), 15 (用料) exist in real files but are not imported
+const PRODUCT_COL_NOTES = 14; // 备注
 
 /**
  * Column definitions for reference (required by ImportStrategy interface).
  * Uses fabric variant as default.
  */
 const SC_COLUMNS: ColumnDefinition[] = [
+  { header: '', key: 'empty', width: 5 },
+  { header: '商品名称', key: 'category', width: 15 },
   { header: '面料名称', key: 'fabricName', width: 20 },
   { header: '涂层', key: 'coating', width: 10 },
   { header: '系列', key: 'series', width: 10 },
   { header: '色号', key: 'colorCode', width: 10 },
-  { header: '颜色中文', key: 'colorCN', width: 12 },
-  { header: '颜色英文', key: 'colorEN', width: 12 },
+  { header: '颜色', key: 'colorEN', width: 12 },
+  { header: '颜色', key: 'colorCN', width: 12 },
   { header: '单位', key: 'unit', width: 10 },
   { header: '数量', key: 'quantity', width: 10 },
   { header: '单价', key: 'unitPrice', width: 12 },
@@ -103,8 +110,6 @@ const SC_INSTRUCTIONS: InstructionRow[] = [
  */
 @Injectable()
 export class SalesContractImportStrategy implements ImportStrategy {
-  private readonly logger = new Logger(SalesContractImportStrategy.name);
-
   /** Currently active variant (set by service during file parsing) */
   private variant: ContractVariant = 'fabric';
 
@@ -327,6 +332,16 @@ export class SalesContractImportStrategy implements ImportStrategy {
     row: ExcelJS.Row,
     rowNumber: number,
   ): RowValidationResult {
+    // Skip summary rows (合计) and contract clause rows (二、through 九、)
+    const firstContentCell = getCellValue(row, FABRIC_COL_CATEGORY);
+    if (
+      firstContentCell &&
+      (firstContentCell.includes('合计') ||
+        /^[一二三四五六七八九十]、/.test(firstContentCell))
+    ) {
+      return { valid: false, skipped: true };
+    }
+
     const fabricName = getCellValue(row, FABRIC_COL_NAME);
     const quantity = parseNumber(row, FABRIC_COL_QUANTITY);
     const unitPrice = parseNumber(row, FABRIC_COL_UNIT_PRICE);
@@ -398,6 +413,16 @@ export class SalesContractImportStrategy implements ImportStrategy {
     row: ExcelJS.Row,
     rowNumber: number,
   ): RowValidationResult {
+    // Skip summary rows (合计) and contract clause rows (二、through 九、)
+    const firstContentCell = getCellValue(row, PRODUCT_COL_CATEGORY);
+    if (
+      firstContentCell &&
+      (firstContentCell.includes('合计') ||
+        /^[一二三四五六七八九十]、/.test(firstContentCell))
+    ) {
+      return { valid: false, skipped: true };
+    }
+
     const productName = getCellValue(row, PRODUCT_COL_NAME);
     const quantity = parseNumber(row, PRODUCT_COL_QUANTITY);
     const unitPrice = parseNumber(row, PRODUCT_COL_UNIT_PRICE);

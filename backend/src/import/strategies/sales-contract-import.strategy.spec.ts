@@ -6,17 +6,20 @@ import { SalesContractImportStrategy } from './sales-contract-import.strategy';
 
 /**
  * Helper to create an ExcelJS row simulating 购销合同/客户订单 fabric variant layout.
- * Columns: 面料名称(1) | 涂层(2) | 系列(3) | 色号(4) | 颜色中文(5) | 颜色英文(6) |
- *          单位(7) | 数量(8) | 单价(9) | 金额(10) | 交货日期(11) | PI.#(12) | 生产单号(13)
+ * Real file layout: Col 1 = empty, Col 2 = 商品名称, Col 3 = 面料名称, ...
+ * Columns: (empty)(1) | 商品名称(2) | 面料名称(3) | 涂层(4) | 系列(5) | 色号(6) |
+ *          颜色EN(7) | 颜色CN(8) | 单位(9) | 数量(10) | 单价(11) | 金额(12) |
+ *          交货日期(13) | PI.#(14) | 生产单号(15)
  */
 function createFabricVariantRow(
   data: Partial<{
+    category: string;
     fabricName: string;
     coating: string;
     series: string;
     colorCode: string;
-    colorCN: string;
     colorEN: string;
+    colorCN: string;
     unit: string;
     quantity: number;
     unitPrice: number;
@@ -29,12 +32,14 @@ function createFabricVariantRow(
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Test');
   worksheet.columns = [
+    { header: '', key: 'empty', width: 5 },
+    { header: '商品名称', key: 'category', width: 15 },
     { header: '面料名称', key: 'fabricName', width: 20 },
     { header: '涂层', key: 'coating', width: 10 },
     { header: '系列', key: 'series', width: 10 },
     { header: '色号', key: 'colorCode', width: 10 },
-    { header: '颜色中文', key: 'colorCN', width: 12 },
-    { header: '颜色英文', key: 'colorEN', width: 12 },
+    { header: '颜色', key: 'colorEN', width: 12 },
+    { header: '颜色', key: 'colorCN', width: 12 },
     { header: '单位', key: 'unit', width: 10 },
     { header: '数量', key: 'quantity', width: 10 },
     { header: '单价', key: 'unitPrice', width: 12 },
@@ -43,17 +48,20 @@ function createFabricVariantRow(
     { header: 'PI.#', key: 'piNumber', width: 15 },
     { header: '生产单号', key: 'productionNumber', width: 15 },
   ];
-  worksheet.addRow(data);
+  worksheet.addRow({ empty: null, ...data });
   return { row: worksheet.getRow(2), worksheet };
 }
 
 /**
- * Helper for iron frame variant.
- * Columns: 品名(1) | 规格(2) | 单位(3) | 数量(4) | 单价(5) | 金额(6) |
- *          交货日期(7) | PI.#(8) | 生产单号(9) | 型号(10) | 备注(11)
+ * Helper for product (iron frame) variant.
+ * Real file layout: Col 1 = empty, Col 2 = 商品名称, Col 3 = 品名, ...
+ * Columns: (empty)(1) | 商品名称(2) | 品名(3) | 规格(4) | 单位(5) | 数量(6) |
+ *          单价(7) | 金额(8) | 交货日期(9) | PI.#(10) | 生产单号(11) | 款式型号(12) |
+ *          备注(13)
  */
 function createProductVariantRow(
   data: Partial<{
+    category: string;
     productName: string;
     specification: string;
     unit: string;
@@ -64,12 +72,15 @@ function createProductVariantRow(
     piNumber: string;
     productionNumber: string;
     modelNumber: string;
+    factoryModel: string;
     notes: string;
   }>,
 ): { row: ExcelJS.Row; worksheet: ExcelJS.Worksheet } {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Test');
   worksheet.columns = [
+    { header: '', key: 'empty', width: 5 },
+    { header: '商品名称', key: 'category', width: 15 },
     { header: '品名', key: 'productName', width: 20 },
     { header: '规格', key: 'specification', width: 15 },
     { header: '单位', key: 'unit', width: 10 },
@@ -79,10 +90,11 @@ function createProductVariantRow(
     { header: '交货日期', key: 'deliveryDate', width: 15 },
     { header: 'PI.#', key: 'piNumber', width: 15 },
     { header: '生产单号', key: 'productionNumber', width: 15 },
-    { header: '型号', key: 'modelNumber', width: 15 },
+    { header: '款式型号', key: 'modelNumber', width: 15 },
+    { header: '工厂型号', key: 'factoryModel', width: 15 },
     { header: '备注', key: 'notes', width: 25 },
   ];
-  worksheet.addRow(data);
+  worksheet.addRow({ empty: null, ...data });
   return { row: worksheet.getRow(2), worksheet };
 }
 
@@ -384,6 +396,55 @@ describe('SalesContractImportStrategy', () => {
       expect(result.piNumber).toBe('PI-002');
       expect(result.notes).toBe('Rush order');
       expect(result._variant).toBe('product');
+    });
+  });
+
+  // ============================================================
+  // summary row skipping
+  // ============================================================
+  describe('summary row skipping', () => {
+    beforeEach(async () => {
+      customerMock.findMany.mockResolvedValue([
+        { id: 1, companyName: 'Customer A' },
+      ]);
+      fabricMock.findMany.mockResolvedValue([{ id: 10, name: 'Fabric X' }]);
+      productMock.findMany.mockResolvedValue([
+        { id: 20, name: 'Product Y', modelNumber: 'M001' },
+      ]);
+      orderMock.findMany.mockResolvedValue([]);
+      strategy.setVariant('fabric');
+      await strategy.getExistingKeys();
+    });
+
+    it('should skip rows where col 2 contains 合计', () => {
+      const { row } = createFabricVariantRow({ category: '合计：' });
+      const result = strategy.validateRow(row, 15, new Set(), new Set());
+      expect(result.valid).toBe(false);
+      expect(result.skipped).toBe(true);
+    });
+
+    it('should skip contract clause rows (二、...)', () => {
+      const { row } = createFabricVariantRow({ category: '二、交货方式' });
+      const result = strategy.validateRow(row, 16, new Set(), new Set());
+      expect(result.valid).toBe(false);
+      expect(result.skipped).toBe(true);
+    });
+
+    it('should skip 合计人民币 summary rows', () => {
+      const { row } = createFabricVariantRow({
+        category: '合计人民币（大写）：',
+      });
+      const result = strategy.validateRow(row, 17, new Set(), new Set());
+      expect(result.valid).toBe(false);
+      expect(result.skipped).toBe(true);
+    });
+
+    it('should skip product variant summary rows', () => {
+      strategy.setVariant('product');
+      const { row } = createProductVariantRow({ category: '合计：' });
+      const result = strategy.validateRow(row, 15, new Set(), new Set());
+      expect(result.valid).toBe(false);
+      expect(result.skipped).toBe(true);
     });
   });
 
