@@ -128,7 +128,7 @@ export function OrderItemTable({
         width: 100,
         align: 'right',
         render: (_, record) =>
-          `${formatQuantity(record.quantity)} ${record.unit || '米'}`,
+          formatQuantity(record.quantity, record.unit || '米'),
       },
       {
         title: '销售单价',
@@ -144,9 +144,12 @@ export function OrderItemTable({
         key: 'purchasePrice',
         width: 110,
         align: 'right',
-        render: (_, record) => (
-          <AmountDisplay value={record.purchasePrice} suffix={`/${record.unit || '米'}`} />
-        ),
+        render: (_, record) =>
+          record.purchasePrice != null ? (
+            <AmountDisplay value={record.purchasePrice} suffix={`/${record.unit || '米'}`} />
+          ) : (
+            '-'
+          ),
       },
       {
         title: '小计',

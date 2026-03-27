@@ -52,8 +52,10 @@ describe('CustomerAddressTab', () => {
   it('should render address list with contact info', () => {
     render(<CustomerAddressTab addresses={mockAddresses} />);
 
-    expect(screen.getByText(/王五 13700137000/)).toBeInTheDocument();
-    expect(screen.getByText(/赵六 13600136000/)).toBeInTheDocument();
+    expect(screen.getByText('王五')).toBeInTheDocument();
+    expect(screen.getByText('13700137000')).toBeInTheDocument();
+    expect(screen.getByText('赵六')).toBeInTheDocument();
+    expect(screen.getByText('13600136000')).toBeInTheDocument();
   });
 
   it('should render label tag for address with label', () => {

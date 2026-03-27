@@ -236,6 +236,39 @@ async function createEntity(
   return { created: false, error: `HTTP ${response.status}: ${text}` };
 }
 
+/**
+ * Create a customer only if no exact companyName match exists.
+ * Customer table has no unique constraint on companyName, so we must
+ * check manually to prevent duplicates on re-runs.
+ */
+async function createCustomerIfNotExists(
+  companyName: string,
+): Promise<{ created: boolean; error?: string }> {
+  // Search for existing customer with exact companyName
+  const searchResponse = await fetch(
+    `${BASE_URL}/customers?keyword=${encodeURIComponent(companyName)}&pageSize=50`,
+    {
+      headers: { Cookie: authCookie },
+    },
+  );
+
+  if (searchResponse.ok) {
+    const data = (await searchResponse.json()) as {
+      items: Array<{ id: number; companyName: string }>;
+    };
+    // Check for exact match (keyword search is fuzzy)
+    const exactMatch = data.items.find(
+      (c) => c.companyName === companyName,
+    );
+    if (exactMatch) {
+      return { created: false };
+    }
+  }
+
+  // No exact match found — create
+  return createEntity('/customers', { companyName });
+}
+
 function logImportResult(label: string, result: ImportResult): void {
   console.log(
     `  ${label}: ${result.successCount} success, ${result.skippedCount} skipped, ${result.failureCount} failed`,
@@ -321,12 +354,12 @@ async function main(): Promise<void> {
   );
   console.log();
 
-  // Step 2: Create customers via API
+  // Step 2: Create customers via API (with duplicate check)
   console.log('Step 2: Creating customers...');
   let customersCreated = 0;
   let customersSkipped = 0;
   for (const customer of CUSTOMERS_TO_CREATE) {
-    const res = await createEntity('/customers', customer);
+    const res = await createCustomerIfNotExists(customer.companyName);
     if (res.created) {
       customersCreated++;
     } else if (res.error) {

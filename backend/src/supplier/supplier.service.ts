@@ -93,6 +93,13 @@ export class SupplierService {
       where.settleType = query.settleType;
     }
 
+    // Filter by fabric relationship (only suppliers that supply the given fabric)
+    if (query.fabricId) {
+      where.fabricSuppliers = {
+        some: { fabricId: query.fabricId },
+      };
+    }
+
     // Build pagination args
     const paginationArgs = buildPaginationArgs(query);
 

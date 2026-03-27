@@ -141,7 +141,7 @@ export class OrderService {
         salePrice: item.salePrice,
         purchasePrice: item.purchasePrice,
         subtotal: item.quantity * item.salePrice,
-        status: OrderItemStatus.INQUIRY,
+        status: OrderItemStatus.PENDING,
         deliveryDate: item.deliveryDate
           ? new Date(item.deliveryDate)
           : undefined,
@@ -163,7 +163,7 @@ export class OrderService {
             data: {
               orderCode,
               customerId: createDto.customerId,
-              status: OrderItemStatus.INQUIRY,
+              status: OrderItemStatus.PENDING,
               totalAmount,
               customerPaid: 0,
               customerPayStatus: CustomerPayStatus.UNPAID,
@@ -184,7 +184,7 @@ export class OrderService {
             data: order.items.map((item) => ({
               orderItemId: item.id,
               fromStatus: null,
-              toStatus: OrderItemStatus.INQUIRY,
+              toStatus: OrderItemStatus.PENDING,
               remark: 'Order created',
             })),
           });
@@ -346,12 +346,12 @@ export class OrderService {
   async remove(id: number): Promise<void> {
     this.logger.debug(`Remove order called with id: ${id}`);
 
-    // Atomic conditional delete: only delete if status is INQUIRY and customerPaid is 0
+    // Atomic conditional delete: only delete if status is INQUIRY or PENDING and customerPaid is 0
     // This prevents TOCTOU race conditions where status might change between check and delete
     const deleteResult = await this.prisma.order.deleteMany({
       where: {
         id,
-        status: OrderItemStatus.INQUIRY,
+        status: { in: [OrderItemStatus.INQUIRY, OrderItemStatus.PENDING] },
         customerPaid: 0,
       },
     });
@@ -369,10 +369,14 @@ export class OrderService {
         throw new NotFoundException(`Order with ID ${id} not found`);
       }
 
-      // Check status is INQUIRY
-      if ((order.status as OrderItemStatus) !== OrderItemStatus.INQUIRY) {
+      // Check status is INQUIRY or PENDING
+      const deletableStatuses: string[] = [
+        OrderItemStatus.INQUIRY,
+        OrderItemStatus.PENDING,
+      ];
+      if (!deletableStatuses.includes(order.status)) {
         throw new BadRequestException(
-          'Cannot delete order - only INQUIRY status orders can be deleted',
+          'Cannot delete order - only INQUIRY or PENDING status orders can be deleted',
         );
       }
 
