@@ -19,7 +19,7 @@
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
 | 9 | Real Data Testing | M2 | System validated with real company documents | DATA-03~07 |
-| 10 | UAT Bug Fixes | M2 | Fix 8 UAT bugs from Phase 09 testing | UAT-01~08 |
+| 10 | UAT Bug Fixes | M2 | Complete    | 2026-03-27 |
 
 ## Phase Details
 
@@ -275,7 +275,7 @@ Plans:
 
 **Requirements:** UAT-01~08 (informal, from 10-CONTEXT.md)
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 10-01-PLAN.md — Fix 5 P0/P2 bugs (order default status, price auto-fill, unit dedup, NaN display, dialog centering)
