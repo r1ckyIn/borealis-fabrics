@@ -96,14 +96,6 @@ export default function FabricListPage(): React.ReactElement {
         ellipsis: true,
       },
       {
-        title: '颜色',
-        dataIndex: 'color',
-        key: 'color',
-        width: 100,
-        render: (color: string | null) =>
-          color ? <Tag>{color}</Tag> : <Text type="secondary">-</Text>,
-      },
-      {
         title: '克重 (g/m²)',
         dataIndex: 'weight',
         key: 'weight',
@@ -130,6 +122,14 @@ export default function FabricListPage(): React.ReactElement {
         render: (price: number | null) => (
           <AmountDisplay value={price} suffix="/米" />
         ),
+      },
+      {
+        title: '颜色',
+        dataIndex: 'color',
+        key: 'color',
+        width: 100,
+        render: (color: string | null) =>
+          color ? <Tag>{color}</Tag> : <Text type="secondary">-</Text>,
       },
       {
         title: '应用领域',
