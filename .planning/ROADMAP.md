@@ -19,7 +19,7 @@
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
 | 9 | Real Data Testing | M2 | System validated with real company documents | DATA-03~07 |
-| 10 | UAT Bug Fixes | 2/2 | Complete   | 2026-03-27 |
+| 10 | UAT Bug Fixes | M2 | Fix 8 UAT bugs from Phase 09 testing | UAT-01~08 |
 
 ## Phase Details
 
@@ -269,6 +269,32 @@ Plans:
 
 ---
 
+### Phase 10: UAT Bug Fixes
+
+**Goal:** Fix 8 UAT bugs found during Phase 09 real-data testing — P0 (order status, price auto-fill, unit duplication, NaN display), P1 (supplier filtering, duplicate customers), P2 (dialog centering, address layout).
+
+**Requirements:** UAT-01~08 (informal, from 10-CONTEXT.md)
+
+**Plans:** 3 plans
+
+Plans:
+- [x] 10-01-PLAN.md — Fix 5 P0/P2 bugs (order default status, price auto-fill, unit dedup, NaN display, dialog centering)
+- [x] 10-02-PLAN.md — Supplier filtering by fabric + duplicate customer prevention
+- [ ] 10-03-PLAN.md — (Gap closure) Address tab layout optimization
+
+**Success Criteria:**
+1. Direct order creation defaults to PENDING status
+2. QuoteForm auto-fills unitPrice from defaultPrice
+3. Order item quantity shows unit exactly once
+4. Purchase price shows "-" when null (not NaN)
+5. Quote-to-order dialog centered on screen
+6. Supplier dropdown filters by selected fabric
+7. Import script prevents duplicate customers
+8. Customer address tab uses compact card layout
+
+**Dependencies:** Phase 9 (UAT findings from real data testing)
+
+---
 ## Dependency Graph
 
 ```
@@ -303,4 +329,4 @@ Unmapped: 0
 
 ---
 *Roadmap created: 2009-03-17*
-*Last updated: 2026-03-27 (Phase 10 added — 8 UAT bug fixes from Phase 09 manual testing)*
+*Last updated: 2026-03-27 (Phase 10 gap closure — address layout plan added)*
