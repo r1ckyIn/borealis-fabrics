@@ -209,22 +209,66 @@ async function main(): Promise<void> {
     const supplierAbbrev = sheetName;
     let rowIndex = 0;
 
+    // Auto-detect column positions from header row text.
+    // Supports 4 known layouts: STANDARD (BY/HF/ML/etc), DAVIS, OTE/瑞茂, 海宏
+    const hdr = worksheet.getRow(1);
+    const colMap: Record<string, number> = {};
+
+    // Collect all price columns for fallback (newest price wins)
+    const priceCols: number[] = [];
+
+    for (let c = 1; c <= worksheet.columnCount; c++) {
+      const h = getCellText(hdr.getCell(c)).replace(/\n/g, '');
+      if (h.includes('面料名称')) colMap['name'] = c;
+      else if (h.includes('克重') || h.includes('门幅')) colMap['weightWidth'] = c;
+      else if (h === '成份' || h.includes('成份')) colMap['composition'] = c;
+      else if (h === '颜色' || h.includes('颜色')) colMap['color'] = c;
+      else if (h === '分类' || h.includes('分类') || h.includes('面料等级')) colMap['category'] = c;
+      else if (h === '备注' && !colMap['notes']) colMap['notes'] = c;
+      // Collect ALL price-like columns (卖价/销售价/新价格/采购价, and date-only headers like "25.12.26" in price zones)
+      const isPriceKeyword = h.includes('卖价') || h.includes('销售价') || h.includes('新价格') || h.includes('采购价') || h.includes('价格');
+      const isDateHeader = /^\d{2,4}[./]\d{1,2}([./]\d{1,2})?$/.test(h);
+      if (isPriceKeyword || isDateHeader) {
+        priceCols.push(c);
+        // Primary sale price column
+        if ((h.includes('卖价') || h.includes('销售价')) && !colMap['salePrice']) colMap['salePrice'] = c;
+      }
+    }
+
+    // Validate: must have at least name and weightWidth
+    if (!colMap['name']) {
+      console.log(`  Sheet "${sheetName}": SKIPPED — no 面料名称 header found`);
+      skippedSheets.push(sheetName);
+      continue;
+    }
+
     worksheet.eachRow((row, rowNumber) => {
       // Skip header row
       if (rowNumber === 1) return;
 
-      // Extract cell values
-      const category = getCellText(row.getCell(1)); // 分类
-      const name = getCellText(row.getCell(2)); // 面料名称
-      const weightWidthRaw = getCellText(row.getCell(3)); // 克重/门幅
-      const color = getCellText(row.getCell(4)); // 颜色
-      const composition = getCellText(row.getCell(5)); // 成份
-      // Col 6: 起订量 (MOQ) — not needed for template
-      // Col 7: 采购价 (purchase price) — not used as defaultPrice
-      const salePriceStr = getCellText(row.getCell(8)); // 卖价 = defaultPrice
+      const name = colMap['name'] ? getCellText(row.getCell(colMap['name'])) : '';
+      const weightWidthRaw = colMap['weightWidth'] ? getCellText(row.getCell(colMap['weightWidth'])) : '';
+      const composition = colMap['composition'] ? getCellText(row.getCell(colMap['composition'])) : '';
+      const color = colMap['color'] ? getCellText(row.getCell(colMap['color'])) : '';
+      const category = colMap['category'] ? getCellText(row.getCell(colMap['category'])) : '';
+      const notesRaw = colMap['notes'] ? getCellText(row.getCell(colMap['notes'])) : '';
 
-      // Skip rows with empty name (likely empty/subtotal rows)
-      if (!name) {
+      // Price extraction with fallback: try primary sale price first,
+      // then scan all price columns (rightmost = newest) for any available price
+      let salePriceStr = colMap['salePrice'] ? getCellText(row.getCell(colMap['salePrice'])) : '';
+      if (!salePriceStr && priceCols.length > 0) {
+        // Scan price columns from right to left (newest first)
+        for (let i = priceCols.length - 1; i >= 0; i--) {
+          const v = getCellText(row.getCell(priceCols[i]));
+          if (v && !isNaN(parseFloat(v))) {
+            salePriceStr = v;
+            break;
+          }
+        }
+      }
+
+      // Skip rows with empty name, note rows, or duplicate header rows
+      if (!name || name.startsWith('备注') || name === '面料名称') {
         totalSkippedRows++;
         return;
       }
@@ -243,7 +287,6 @@ async function main(): Promise<void> {
         salePrice !== null && !isNaN(salePrice) ? salePrice : null;
 
       // Build description from category + any notes
-      const notesRaw = getCellText(row.getCell(9)); // 备注
       const descParts: string[] = [];
       if (category) descParts.push(category);
       if (notesRaw) descParts.push(notesRaw);
