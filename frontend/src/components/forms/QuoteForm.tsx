@@ -163,6 +163,13 @@ function QuoteItemRow({
                       ['items', fieldName, 'unit'],
                       result.unit
                     );
+                    // Auto-fill unitPrice from defaultPrice
+                    if (result.defaultPrice != null) {
+                      form.setFieldValue(
+                        ['items', fieldName, 'unitPrice'],
+                        result.defaultPrice
+                      );
+                    }
                   }
                 } else {
                   // Cleared selection
@@ -176,6 +183,10 @@ function QuoteItemRow({
                   );
                   form.setFieldValue(
                     ['items', fieldName, 'unit'],
+                    undefined
+                  );
+                  form.setFieldValue(
+                    ['items', fieldName, 'unitPrice'],
                     undefined
                   );
                 }
