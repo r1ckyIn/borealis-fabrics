@@ -253,7 +253,7 @@ Plans:
 - [x] 09-01-PLAN.md — Data preparation scripts (price list conversion) + detectStrategy RichText fix
 - [x] 09-02-PLAN.md — New import strategies (PurchaseOrder + SalesContract) + backend endpoints + frontend tabs
 - [x] 09-03-PLAN.md — End-to-end import execution + page stability verification + manual entry testing
-- [ ] 09-04-PLAN.md — (Gap closure) Fix SalesContractImportStrategy column offsets + customer resolution + summary row skipping
+- [x] 09-04-PLAN.md — (Gap closure) Fix SalesContractImportStrategy column offsets + customer resolution + summary row skipping
 - [ ] 09-05-PLAN.md — (Gap closure) Verify import fixes + manual entry test + REQUIREMENTS.md update
 
 **Success Criteria:**
