@@ -6,6 +6,8 @@ import { PrismaService } from '../prisma/prisma.service';
 import { FabricImportStrategy } from './strategies/fabric-import.strategy';
 import { SupplierImportStrategy } from './strategies/supplier-import.strategy';
 import { ProductImportStrategy } from './strategies/product-import.strategy';
+import { PurchaseOrderImportStrategy } from './strategies/purchase-order-import.strategy';
+import { SalesContractImportStrategy } from './strategies/sales-contract-import.strategy';
 import { CodeGeneratorService } from '../common/services/code-generator.service';
 import { loadTestWorkbook } from '../../test/helpers/mock-builders';
 
@@ -131,11 +133,28 @@ describe('ImportService', () => {
     create: jest.fn(),
   };
 
+  const customerMock = {
+    findMany: jest.fn().mockResolvedValue([]),
+    create: jest.fn(),
+  };
+
+  const orderMock = {
+    findMany: jest.fn().mockResolvedValue([]),
+    create: jest.fn(),
+  };
+
+  const orderItemMock = {
+    create: jest.fn(),
+  };
+
   const mockPrismaService = {
     fabric: fabricMock,
     supplier: supplierMock,
     product: productMock,
     productSupplier: productSupplierMock,
+    customer: customerMock,
+    order: orderMock,
+    orderItem: orderItemMock,
     $transaction: jest.fn(),
   };
   // Set up $transaction to execute the callback with mockPrismaService
@@ -155,6 +174,8 @@ describe('ImportService', () => {
         FabricImportStrategy,
         SupplierImportStrategy,
         ProductImportStrategy,
+        PurchaseOrderImportStrategy,
+        SalesContractImportStrategy,
         {
           provide: PrismaService,
           useValue: mockPrismaService,
@@ -1058,14 +1079,10 @@ describe('ImportService', () => {
 
       // Simulate RichText headers (as found in real business Excel files)
       worksheet.getRow(1).getCell(1).value = {
-        richText: [
-          { font: { bold: true, size: 14 }, text: 'fabricCode*' },
-        ],
+        richText: [{ font: { bold: true, size: 14 }, text: 'fabricCode*' }],
       };
       worksheet.getRow(1).getCell(2).value = {
-        richText: [
-          { font: { bold: true, size: 14 }, text: 'name*' },
-        ],
+        richText: [{ font: { bold: true, size: 14 }, text: 'name*' }],
       };
       worksheet.getRow(1).getCell(3).value = {
         richText: [{ text: 'material' }],

@@ -5,6 +5,9 @@ import type { ImportStrategy } from './strategies/import-strategy.interface';
 import { FabricImportStrategy } from './strategies/fabric-import.strategy';
 import { SupplierImportStrategy } from './strategies/supplier-import.strategy';
 import { ProductImportStrategy } from './strategies/product-import.strategy';
+import { PurchaseOrderImportStrategy } from './strategies/purchase-order-import.strategy';
+import { SalesContractImportStrategy } from './strategies/sales-contract-import.strategy';
+import { getCellValue } from './utils/excel.utils';
 
 @Injectable()
 export class ImportService {
@@ -12,6 +15,8 @@ export class ImportService {
     private readonly fabricStrategy: FabricImportStrategy,
     private readonly supplierStrategy: SupplierImportStrategy,
     private readonly productStrategy: ProductImportStrategy,
+    private readonly purchaseOrderStrategy: PurchaseOrderImportStrategy,
+    private readonly salesContractStrategy: SalesContractImportStrategy,
   ) {}
 
   /**
@@ -97,6 +102,41 @@ export class ImportService {
   }
 
   /**
+   * Import purchase orders from Excel (采购单 format).
+   * Non-standard layout: metadata rows 1-3, headers row 4, data row 5+.
+   * Creates products + supplier pricing + Order + OrderItems from PO line items.
+   */
+  async importPurchaseOrders(
+    file: Express.Multer.File,
+    dryRun = false,
+  ): Promise<ImportResultDto> {
+    return this.importNonStandardData(
+      file,
+      this.purchaseOrderStrategy,
+      4,
+      dryRun,
+    );
+  }
+
+  /**
+   * Import sales contracts from Excel (购销合同/客户订单 format).
+   * Non-standard layout: metadata rows 1-8, headers ~row 9, data row 10+.
+   * Creates orders with items referencing existing fabrics/products.
+   * Handles BOTH 购销合同 and 客户订单 files (same layout template).
+   */
+  async importSalesContracts(
+    file: Express.Multer.File,
+    dryRun = false,
+  ): Promise<ImportResultDto> {
+    return this.importNonStandardData(
+      file,
+      this.salesContractStrategy,
+      9,
+      dryRun,
+    );
+  }
+
+  /**
    * Generic import: load workbook, detect strategy from headers,
    * validate/transform/create via strategy methods.
    * When dryRun=true, full validation runs but createBatch is skipped.
@@ -167,6 +207,140 @@ export class ImportService {
   }
 
   /**
+   * Import from non-standard Excel files with metadata rows before the data table.
+   * Skips all rows before headerRowNumber (metadata), then processes data rows.
+   *
+   * For SalesContractImportStrategy, also detects the column variant (fabric vs product)
+   * from the header row and extracts customer info from metadata.
+   *
+   * @param file - Uploaded Excel file
+   * @param strategy - The import strategy to use
+   * @param headerRowNumber - 1-based row number where column headers are located
+   * @param dryRun - If true, validate without writing to database
+   */
+  private async importNonStandardData(
+    file: Express.Multer.File,
+    strategy: ImportStrategy,
+    headerRowNumber: number,
+    dryRun = false,
+  ): Promise<ImportResultDto> {
+    const workbook = new ExcelJS.Workbook();
+
+    try {
+      await workbook.xlsx.load(file.buffer as unknown as ArrayBuffer);
+    } catch {
+      throw new BadRequestException('Invalid Excel file format');
+    }
+
+    const worksheet = workbook.worksheets[0];
+    if (!worksheet || worksheet.rowCount < headerRowNumber + 1) {
+      throw new BadRequestException('Excel file has insufficient rows');
+    }
+
+    // If this is a SalesContractImportStrategy, detect variant and extract metadata
+    if (strategy === this.salesContractStrategy) {
+      this.configureSalesContractStrategy(worksheet, headerRowNumber);
+    }
+
+    const existingKeys = await strategy.getExistingKeys();
+    const batchKeys = new Set<string>();
+    const failures: ImportFailureDto[] = [];
+    let skippedCount = 0;
+    const entitiesToCreate: Record<string, unknown>[] = [];
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber <= headerRowNumber) return; // Skip metadata + header
+
+      const result = strategy.validateRow(
+        row,
+        rowNumber,
+        batchKeys,
+        existingKeys,
+      );
+
+      if (result.skipped) {
+        skippedCount++;
+        return;
+      }
+
+      if (!result.valid) {
+        if (result.failure) {
+          failures.push(result.failure);
+        }
+        return;
+      }
+
+      const key = strategy.getRowKey(row);
+      batchKeys.add(key);
+      entitiesToCreate.push(strategy.transformRow(row));
+    });
+
+    if (entitiesToCreate.length > 0 && !dryRun) {
+      await strategy.createBatch(entitiesToCreate);
+    }
+
+    return {
+      successCount: entitiesToCreate.length,
+      skippedCount,
+      failureCount: failures.length,
+      failures,
+    };
+  }
+
+  /**
+   * Configure the SalesContractImportStrategy before processing.
+   * Detects column variant (fabric vs product) from header row,
+   * and extracts customer name from metadata rows.
+   */
+  private configureSalesContractStrategy(
+    worksheet: ExcelJS.Worksheet,
+    headerRowNumber: number,
+  ): void {
+    // Detect variant from header row
+    const headerRow = worksheet.getRow(headerRowNumber);
+    const headers: string[] = [];
+    headerRow.eachCell((cell, colNumber) => {
+      headers.push(getCellValue(headerRow, colNumber));
+    });
+    const joined = headers.join(' ');
+
+    if (joined.includes('面料名称')) {
+      this.salesContractStrategy.setVariant('fabric');
+    } else {
+      this.salesContractStrategy.setVariant('product');
+    }
+
+    // Extract customer name from metadata rows (typically rows 2-5)
+    // Look for patterns like "买方:" or "客户:" or just company names
+    let customerName = '';
+    for (let r = 1; r <= Math.min(headerRowNumber - 1, 8); r++) {
+      const row = worksheet.getRow(r);
+      for (let c = 1; c <= 10; c++) {
+        const val = getCellValue(row, c);
+        if (val.includes('买方') || val.includes('客户')) {
+          // Extract name after the label
+          const match = val.match(/[买方客户][：:]\s*(.+)/);
+          if (match) {
+            customerName = match[1].trim();
+          }
+        }
+      }
+    }
+
+    // Try to resolve customer from pre-loaded map (need getExistingKeys first)
+    // Since getExistingKeys() hasn't been called yet, we'll set a default customerId
+    // The actual resolution happens after getExistingKeys() is called
+    if (customerName) {
+      // Store for post-getExistingKeys resolution
+      (
+        this.salesContractStrategy as unknown as {
+          _pendingCustomerName: string;
+        }
+      )._pendingCustomerName = customerName;
+    }
+  }
+
+  /**
    * Detect the appropriate import strategy from worksheet headers.
    * Reads column headers from row 1 and matches against registered strategies.
    */
@@ -182,9 +356,7 @@ export class ImportService {
         if (typeof val === 'object' && 'richText' in val) {
           // Extract plain text from RichText cells (common in real business files)
           headers.push(
-            val.richText
-              .map((rt: { text: string }) => rt.text)
-              .join(''),
+            val.richText.map((rt: { text: string }) => rt.text).join(''),
           );
         } else if (typeof val === 'number') {
           headers.push(val.toString());
