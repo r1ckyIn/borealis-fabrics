@@ -153,14 +153,16 @@ export function AddressManager({
   return (
     <div className="address-manager">
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-gray-500">
-          {value.length}/{maxAddresses} 个地址
-        </span>
-        {!disabled && value.length < maxAddresses && (
+        {!disabled && value.length < maxAddresses ? (
           <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
             添加地址
           </Button>
+        ) : (
+          <span />
         )}
+        <span className="text-gray-500">
+          {value.length}/{maxAddresses} 个地址
+        </span>
       </div>
 
       {value.length === 0 ? (
