@@ -1052,6 +1052,69 @@ describe('ImportService', () => {
       expect(result.successCount).toBe(1);
     });
 
+    it('should detect fabric strategy from RichText-formatted headers', async () => {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Data');
+
+      // Simulate RichText headers (as found in real business Excel files)
+      worksheet.getRow(1).getCell(1).value = {
+        richText: [
+          { font: { bold: true, size: 14 }, text: 'fabricCode*' },
+        ],
+      };
+      worksheet.getRow(1).getCell(2).value = {
+        richText: [
+          { font: { bold: true, size: 14 }, text: 'name*' },
+        ],
+      };
+      worksheet.getRow(1).getCell(3).value = {
+        richText: [{ text: 'material' }],
+      };
+      worksheet.getRow(1).getCell(4).value = {
+        richText: [{ text: 'composition' }],
+      };
+      worksheet.getRow(1).getCell(5).value = {
+        richText: [{ text: 'color' }],
+      };
+      worksheet.getRow(1).getCell(6).value = {
+        richText: [{ text: 'weight' }],
+      };
+      worksheet.getRow(1).getCell(7).value = {
+        richText: [{ text: 'width' }],
+      };
+      worksheet.getRow(1).getCell(8).value = {
+        richText: [{ text: 'defaultPrice' }],
+      };
+      worksheet.getRow(1).getCell(9).value = {
+        richText: [{ text: 'description' }],
+      };
+
+      // Add a data row
+      const row2 = worksheet.getRow(2);
+      row2.getCell(1).value = 'FB-RT-001';
+      row2.getCell(2).value = 'RichText Fabric';
+
+      const buffer = Buffer.from(await workbook.xlsx.writeBuffer());
+      const file = {
+        buffer,
+        fieldname: 'file',
+        originalname: 'richtext.xlsx',
+        encoding: '7bit',
+        mimetype:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        size: buffer.length,
+      } as Express.Multer.File;
+
+      fabricMock.findMany.mockResolvedValue([]);
+      fabricMock.createMany.mockResolvedValue({ count: 1 });
+
+      const result = await service.importFabrics(file);
+
+      // Fabric strategy was detected via RichText headers
+      expect(fabricMock.findMany).toHaveBeenCalled();
+      expect(result.successCount).toBe(1);
+    });
+
     it('should throw BadRequestException for unrecognized headers', async () => {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet('Data');

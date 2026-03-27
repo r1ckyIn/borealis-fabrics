@@ -179,7 +179,18 @@ export class ImportService {
       if (typeof val === 'string') {
         headers.push(val);
       } else if (val !== null && val !== undefined) {
-        headers.push(typeof val === 'number' ? val.toString() : '');
+        if (typeof val === 'object' && 'richText' in val) {
+          // Extract plain text from RichText cells (common in real business files)
+          headers.push(
+            val.richText
+              .map((rt: { text: string }) => rt.text)
+              .join(''),
+          );
+        } else if (typeof val === 'number') {
+          headers.push(val.toString());
+        } else {
+          headers.push('');
+        }
       }
     });
 
