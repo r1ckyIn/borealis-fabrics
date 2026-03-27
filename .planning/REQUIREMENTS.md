@@ -79,7 +79,7 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [ ] **DATA-03**: Manual entry test: create supplier, customer, fabric, quote, order with real data
 - [x] **DATA-04**: Excel import test: import real fabric price list (面料价格明细2025.8.15.xlsx)
 - [x] **DATA-05**: Excel import test: import real iron frame/motor price list (铁架电机价格2025.xlsx)
-- [ ] **DATA-06**: Excel import test: import real purchase order (海宁优途-采购单)
+- [x] **DATA-06**: Excel import test: import real purchase order (海宁优途-采购单)
 - [ ] **DATA-07**: System stability: all pages load correctly after bulk data import
 - [x] **DATA-08**: Import result shows per-row failure details (row number + reason)
 - [x] **DATA-09**: Import dry-run mode validates without writing to DB
@@ -171,7 +171,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-03 | Phase 10 | Pending |
 | DATA-04 | Phase 10 | Complete |
 | DATA-05 | Phase 10 | Complete |
-| DATA-06 | Phase 10 | Pending |
+| DATA-06 | Phase 10 | Complete |
 | DATA-07 | Phase 10 | Pending |
 | DATA-08 | Phase 6 | Complete |
 | DATA-09 | Phase 6 | Complete |

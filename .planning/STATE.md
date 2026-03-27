@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-03-27T02:28:11.254Z"
+last_updated: "2026-03-27T02:33:29.459Z"
 progress:
   total_phases: 10
   completed_phases: 8
   total_plans: 34
-  completed_plans: 31
+  completed_plans: 32
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | Phase | 09 |
 | Name | Real Data Testing |
 | Status | In Progress |
-| Current Plan | 1 of 3 |
+| Current Plan | 2 of 3 |
 | Branch | main |
 
 ## Progress
@@ -134,6 +134,9 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-27 | RichText header extraction via richText.map(rt.text).join('') in detectStrategy | Real business Excel files use bold/formatted headers |
 | 2026-03-27 | Supplier abbreviation mapping hardcoded in scripts (not DB lookup) | One-time conversion, no need for dynamic resolution |
 | 2026-03-27 | Product subCategory inferred from name keywords | Avoids manual classification for 172 products |
+| 2026-03-27 | Self-customer pattern for PO import (铂润面料 as customerId) | Order requires customerId but POs are TO suppliers |
+| 2026-03-27 | Single SalesContractImportStrategy for 8 files (购销合同+客户订单) | Same template layout per RESEARCH.md analysis |
+| 2026-03-27 | importNonStandardData() with headerRowNumber parameter | Reusable for any non-standard Excel layout |
 
 ## Accumulated Context
 
@@ -176,7 +179,8 @@ See: .planning/PROJECT.md (updated 2026-03-17)
 | 2026-03-25 | Phase 08 Plan 03 | Completed 08-03-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-03-SUMMARY.md` |
 | 2026-03-25 | Phase 08 Plan 04 | Completed 08-04-PLAN.md | `.planning/phases/08-frontend-multi-category-pages/08-04-SUMMARY.md` |
 | 2026-03-27 | Phase 09 Plan 01 | Completed 09-01-PLAN.md | `.planning/phases/09-real-data-testing/09-01-SUMMARY.md` |
+| 2026-03-27 | Phase 09 Plan 02 | Completed 09-02-PLAN.md | `.planning/phases/09-real-data-testing/09-02-SUMMARY.md` |
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-27 (Phase 09 Plan 01 complete — Data prep scripts for fabric (182 rows) and product (172 rows) conversion, RichText detectStrategy fix, 147 import tests pass)*
+*Last updated: 2026-03-27 (Phase 09 Plan 02 complete — PO+SC import strategies, backend endpoints, 4-tab frontend import page, 147 import tests pass)*
