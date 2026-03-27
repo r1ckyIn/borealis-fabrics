@@ -243,6 +243,27 @@ export class ImportService {
     }
 
     const existingKeys = await strategy.getExistingKeys();
+
+    // Resolve pending customer name to ID after entity maps are loaded
+    if (strategy === this.salesContractStrategy) {
+      const pendingName = (
+        this.salesContractStrategy as unknown as {
+          _pendingCustomerName: string;
+        }
+      )._pendingCustomerName;
+      if (pendingName) {
+        const customerMap = this.salesContractStrategy.getCustomerMap();
+        const customerId = customerMap.get(pendingName);
+        if (customerId) {
+          this.salesContractStrategy.setCustomerId(customerId);
+        } else {
+          throw new BadRequestException(
+            `Customer '${pendingName}' not found in system. Import the customer first.`,
+          );
+        }
+      }
+    }
+
     const batchKeys = new Set<string>();
     const failures: ImportFailureDto[] = [];
     let skippedCount = 0;
@@ -317,9 +338,13 @@ export class ImportService {
       const row = worksheet.getRow(r);
       for (let c = 1; c <= 10; c++) {
         const val = getCellValue(row, c);
-        if (val.includes('买方') || val.includes('客户')) {
-          // Extract name after the label
-          const match = val.match(/[买方客户][：:]\s*(.+)/);
+        if (
+          val.includes('买方') ||
+          val.includes('需方') ||
+          val.includes('客户')
+        ) {
+          // Extract name after the label (alternation, not character class)
+          const match = val.match(/(?:买方|需方|客户)[：:]\s*(.+)/);
           if (match) {
             customerName = match[1].trim();
           }
