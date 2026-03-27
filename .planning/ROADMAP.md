@@ -19,6 +19,7 @@
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
 | 9 | Real Data Testing | M2 | System validated with real company documents | DATA-03~07 |
+| 10 | UAT Bug Fixes | M2 | Fix 8 issues found during Phase 09 manual testing | UAT-01~08 |
 
 ## Phase Details
 
@@ -281,6 +282,7 @@ Phase 1 (standalone — M1 start)
                   └→ Phase 7 (order/quote extension)
                       └→ Phase 8 (frontend pages)
                           └→ Phase 9 (real data testing — needs all)
+                              └→ Phase 10 (UAT bug fixes — from Phase 9 findings)
 ```
 
 ## Coverage
@@ -294,10 +296,11 @@ Phase 1 (standalone — M1 start)
 | Payment Voucher (PVOU) | 8 | 8 |
 | Multi-Category (MCAT) | 12 | 12 |
 | OCR & Data (DATA) | 9 | 9 |
-| **Total** | **56** | **56** |
+| UAT Bug Fix (UAT) | 8 | 8 |
+| **Total** | **64** | **64** |
 
 Unmapped: 0
 
 ---
 *Roadmap created: 2009-03-17*
-*Last updated: 2026-03-27 (Phase 09 gap closure — 2 additional plans for SalesContract fix + verification)*
+*Last updated: 2026-03-27 (Phase 10 added — 8 UAT bug fixes from Phase 09 manual testing)*
