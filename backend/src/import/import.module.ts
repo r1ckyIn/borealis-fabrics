@@ -5,6 +5,8 @@ import { ImportService } from './import.service';
 import { FabricImportStrategy } from './strategies/fabric-import.strategy';
 import { SupplierImportStrategy } from './strategies/supplier-import.strategy';
 import { ProductImportStrategy } from './strategies/product-import.strategy';
+import { PurchaseOrderImportStrategy } from './strategies/purchase-order-import.strategy';
+import { SalesContractImportStrategy } from './strategies/sales-contract-import.strategy';
 
 @Module({
   imports: [PrismaModule],
@@ -14,6 +16,8 @@ import { ProductImportStrategy } from './strategies/product-import.strategy';
     FabricImportStrategy,
     SupplierImportStrategy,
     ProductImportStrategy,
+    PurchaseOrderImportStrategy,
+    SalesContractImportStrategy,
   ],
   exports: [ImportService],
 })

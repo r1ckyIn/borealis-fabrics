@@ -346,4 +346,135 @@ export class ImportController {
   ): Promise<ImportResultDto> {
     return this.importService.importProducts(file, dryRun);
   }
+
+  /**
+   * Import purchase orders from Excel (采购单 format)
+   */
+  @Post('purchase-orders')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary: 'Import purchase orders from Excel file (采购单 format)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Excel file (.xlsx) — 采购单 format',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiQuery({
+    name: 'dryRun',
+    required: false,
+    type: Boolean,
+    description: 'Validate without writing to database',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Import result',
+    type: ImportResultDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid file' })
+  async importPurchaseOrders(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
+          new ExcelFileValidator({}),
+        ],
+        fileIsRequired: true,
+        exceptionFactory: (error) => {
+          if (error === 'File is required') {
+            return new BadRequestException('File is required');
+          }
+          if (error.includes('size')) {
+            return new BadRequestException('File size exceeds 10MB limit');
+          }
+          if (error.includes('type') || error.includes('Validation failed')) {
+            return new BadRequestException(
+              'Invalid file type. Only .xlsx files are allowed',
+            );
+          }
+          return new BadRequestException(error);
+        },
+      }),
+    )
+    file: Express.Multer.File,
+    @Query('dryRun', new DefaultValuePipe(false), ParseBoolPipe)
+    dryRun: boolean,
+  ): Promise<ImportResultDto> {
+    return this.importService.importPurchaseOrders(file, dryRun);
+  }
+
+  /**
+   * Import sales contracts / customer orders from Excel (购销合同/客户订单 format)
+   */
+  @Post('sales-contracts')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary:
+      'Import sales contracts / customer orders from Excel file (购销合同/客户订单 format)',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Excel file (.xlsx) — 购销合同 or 客户订单 format',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiQuery({
+    name: 'dryRun',
+    required: false,
+    type: Boolean,
+    description: 'Validate without writing to database',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Import result',
+    type: ImportResultDto,
+  })
+  @ApiResponse({ status: 400, description: 'Invalid file' })
+  async importSalesContracts(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: MAX_FILE_SIZE }),
+          new ExcelFileValidator({}),
+        ],
+        fileIsRequired: true,
+        exceptionFactory: (error) => {
+          if (error === 'File is required') {
+            return new BadRequestException('File is required');
+          }
+          if (error.includes('size')) {
+            return new BadRequestException('File size exceeds 10MB limit');
+          }
+          if (error.includes('type') || error.includes('Validation failed')) {
+            return new BadRequestException(
+              'Invalid file type. Only .xlsx files are allowed',
+            );
+          }
+          return new BadRequestException(error);
+        },
+      }),
+    )
+    file: Express.Multer.File,
+    @Query('dryRun', new DefaultValuePipe(false), ParseBoolPipe)
+    dryRun: boolean,
+  ): Promise<ImportResultDto> {
+    return this.importService.importSalesContracts(file, dryRun);
+  }
 }

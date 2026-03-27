@@ -241,7 +241,9 @@ export class SalesContractImportStrategy implements ImportStrategy {
   validateRow(
     row: ExcelJS.Row,
     rowNumber: number,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _batchKeys: Set<string>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _existingKeys: Set<string>,
   ): RowValidationResult {
     if (this.variant === 'fabric') {
@@ -280,10 +282,10 @@ export class SalesContractImportStrategy implements ImportStrategy {
       const itemsData = entities.map((entity) => {
         const isFabric = entity._variant === 'fabric';
         const fabricId = isFabric
-          ? this.fabricMap.get(entity.itemName as string) ?? null
+          ? (this.fabricMap.get(entity.itemName as string) ?? null)
           : null;
         const productId = !isFabric
-          ? this.productMap.get(entity.itemName as string) ?? null
+          ? (this.productMap.get(entity.itemName as string) ?? null)
           : null;
 
         return {
@@ -307,7 +309,7 @@ export class SalesContractImportStrategy implements ImportStrategy {
           customerId: this.customerId!,
           status: 'INQUIRY',
           totalAmount,
-          notes: entities[0]?.contractNote as string || null,
+          notes: (entities[0]?.contractNote as string) || null,
           items: {
             create: itemsData,
           },
@@ -356,8 +358,7 @@ export class SalesContractImportStrategy implements ImportStrategy {
         failure: {
           rowNumber,
           identifier,
-          reason:
-            'Missing or invalid required field: quantity (must be > 0)',
+          reason: 'Missing or invalid required field: quantity (must be > 0)',
         },
       };
     }
@@ -428,8 +429,7 @@ export class SalesContractImportStrategy implements ImportStrategy {
         failure: {
           rowNumber,
           identifier,
-          reason:
-            'Missing or invalid required field: quantity (must be > 0)',
+          reason: 'Missing or invalid required field: quantity (must be > 0)',
         },
       };
     }
@@ -483,8 +483,7 @@ export class SalesContractImportStrategy implements ImportStrategy {
       quantity,
       unitPrice,
       subtotal: amount ?? quantity * unitPrice,
-      deliveryDate:
-        getCellValue(row, FABRIC_COL_DELIVERY_DATE) || undefined,
+      deliveryDate: getCellValue(row, FABRIC_COL_DELIVERY_DATE) || undefined,
       piNumber: getCellValue(row, FABRIC_COL_PI_NUMBER) || undefined,
       productionNumber:
         getCellValue(row, FABRIC_COL_PRODUCTION_NUMBER) || undefined,
@@ -500,19 +499,16 @@ export class SalesContractImportStrategy implements ImportStrategy {
 
     return {
       itemName: getCellValue(row, PRODUCT_COL_NAME),
-      specification:
-        getCellValue(row, PRODUCT_COL_SPECIFICATION) || undefined,
+      specification: getCellValue(row, PRODUCT_COL_SPECIFICATION) || undefined,
       unit: getCellValue(row, PRODUCT_COL_UNIT) || '套',
       quantity,
       unitPrice,
       subtotal: amount ?? quantity * unitPrice,
-      deliveryDate:
-        getCellValue(row, PRODUCT_COL_DELIVERY_DATE) || undefined,
+      deliveryDate: getCellValue(row, PRODUCT_COL_DELIVERY_DATE) || undefined,
       piNumber: getCellValue(row, PRODUCT_COL_PI_NUMBER) || undefined,
       productionNumber:
         getCellValue(row, PRODUCT_COL_PRODUCTION_NUMBER) || undefined,
-      modelNumber:
-        getCellValue(row, PRODUCT_COL_MODEL_NUMBER) || undefined,
+      modelNumber: getCellValue(row, PRODUCT_COL_MODEL_NUMBER) || undefined,
       notes: getCellValue(row, PRODUCT_COL_NOTES) || undefined,
       _variant: 'product' as const,
     };

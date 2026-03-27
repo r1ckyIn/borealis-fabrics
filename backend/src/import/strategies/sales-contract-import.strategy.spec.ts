@@ -196,9 +196,7 @@ describe('SalesContractImportStrategy', () => {
       customerMock.findMany.mockResolvedValue([
         { id: 1, companyName: 'Customer A' },
       ]);
-      fabricMock.findMany.mockResolvedValue([
-        { id: 10, name: 'Fabric X' },
-      ]);
+      fabricMock.findMany.mockResolvedValue([{ id: 10, name: 'Fabric X' }]);
       productMock.findMany.mockResolvedValue([
         { id: 20, name: 'Product Y', modelNumber: 'M001' },
       ]);
@@ -397,9 +395,7 @@ describe('SalesContractImportStrategy', () => {
       customerMock.findMany.mockResolvedValue([
         { id: 1, companyName: 'Customer A' },
       ]);
-      fabricMock.findMany.mockResolvedValue([
-        { id: 10, name: 'Fabric X' },
-      ]);
+      fabricMock.findMany.mockResolvedValue([{ id: 10, name: 'Fabric X' }]);
       productMock.findMany.mockResolvedValue([
         { id: 20, name: 'Product Y', modelNumber: 'M001' },
       ]);
@@ -446,6 +442,7 @@ describe('SalesContractImportStrategy', () => {
       expect(count).toBe(1);
       expect(txOrderCreate).toHaveBeenCalledWith(
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           data: expect.objectContaining({
             customerId: 1,
             status: 'INQUIRY',

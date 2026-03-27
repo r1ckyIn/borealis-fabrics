@@ -324,12 +324,16 @@ describe('PurchaseOrderImportStrategy', () => {
         { id: 1, companyName: '海宁优途' },
       ]);
       customerMock.findMany.mockResolvedValue([]);
-      customerMock.create.mockResolvedValue({ id: 99, companyName: '铂润面料' });
+      customerMock.create.mockResolvedValue({
+        id: 99,
+        companyName: '铂润面料',
+      });
 
       await strategy.getExistingKeys();
 
       expect(customerMock.create).toHaveBeenCalledWith(
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           data: expect.objectContaining({
             companyName: '铂润面料',
           }),
@@ -393,6 +397,7 @@ describe('PurchaseOrderImportStrategy', () => {
       expect(txProductSupplierCreate).toHaveBeenCalled();
       expect(txOrderCreate).toHaveBeenCalledWith(
         expect.objectContaining({
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           data: expect.objectContaining({
             customerId: 10,
             status: 'INQUIRY',

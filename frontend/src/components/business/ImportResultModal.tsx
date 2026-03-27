@@ -13,12 +13,14 @@ export interface ImportResultModalProps {
   open: boolean;
   result: ImportResult | null;
   onClose: () => void;
-  importType: 'fabric' | 'supplier';
+  importType: 'fabric' | 'supplier' | 'purchaseOrder' | 'salesContract';
 }
 
 const IMPORT_TYPE_LABELS: Record<ImportResultModalProps['importType'], string> = {
   fabric: '面料',
   supplier: '供应商',
+  purchaseOrder: '采购单',
+  salesContract: '购销合同',
 };
 
 const failureColumns = [

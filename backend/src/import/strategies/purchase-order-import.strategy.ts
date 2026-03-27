@@ -178,14 +178,22 @@ export class PurchaseOrderImportStrategy implements ImportStrategy {
   matchesHeaders(headers: string[]): boolean {
     const joined = headers.join(' ').toLowerCase();
     const hasOrderOrPO =
-      joined.includes('订单') || joined.includes('po#') || joined.includes('po');
+      joined.includes('订单') ||
+      joined.includes('po#') ||
+      joined.includes('po');
     const hasName = joined.includes('名称');
     const hasQuantity = joined.includes('数量');
     // Exclude sales contract headers (面料名称, 品名)
     const hasFabricName = joined.includes('面料名称');
     const hasProductName = joined.includes('品名');
 
-    return hasOrderOrPO && hasName && hasQuantity && !hasFabricName && !hasProductName;
+    return (
+      hasOrderOrPO &&
+      hasName &&
+      hasQuantity &&
+      !hasFabricName &&
+      !hasProductName
+    );
   }
 
   /**
@@ -214,9 +222,7 @@ export class PurchaseOrderImportStrategy implements ImportStrategy {
       where: { isActive: true },
       select: { id: true, companyName: true },
     });
-    const selfCustomer = customers.find((c) =>
-      c.companyName.includes('铂润'),
-    );
+    const selfCustomer = customers.find((c) => c.companyName.includes('铂润'));
 
     if (selfCustomer) {
       this.selfCustomerId = selfCustomer.id;
@@ -283,8 +289,7 @@ export class PurchaseOrderImportStrategy implements ImportStrategy {
         failure: {
           rowNumber,
           identifier,
-          reason:
-            'Missing or invalid required field: quantity (must be > 0)',
+          reason: 'Missing or invalid required field: quantity (must be > 0)',
         },
       };
     }

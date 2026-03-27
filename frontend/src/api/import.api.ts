@@ -87,9 +87,27 @@ export function importSuppliers(
   return uploadImportFile('/import/suppliers', file, onProgress);
 }
 
+/** Import purchase orders from an Excel file (采购单 format). */
+export function importPurchaseOrders(
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<ImportResult> {
+  return uploadImportFile('/import/purchase-orders', file, onProgress);
+}
+
+/** Import sales contracts / customer orders from an Excel file (购销合同/客户订单 format). */
+export function importSalesContracts(
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<ImportResult> {
+  return uploadImportFile('/import/sales-contracts', file, onProgress);
+}
+
 export const importApi = {
   downloadFabricTemplate,
   downloadSupplierTemplate,
   importFabrics,
   importSuppliers,
+  importPurchaseOrders,
+  importSalesContracts,
 };
