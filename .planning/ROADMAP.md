@@ -1,7 +1,7 @@
 # Roadmap: Borealis Supply Chain Management
 
 **Created:** 2009-03-17
-**Phases:** 10
+**Phases:** 11
 **Granularity:** Fine
 **Milestones:** M1 (Phases 1-4), M2 (Phases 5-10)
 
@@ -19,7 +19,8 @@
 | 7 | Order/Quote Multi-Category Extension | M2 | Orders/quotes support non-fabric products | MCAT-07~08 |
 | 8 | Frontend Multi-Category Pages | M2 | Frontend manages all product categories | MCAT-10~12 |
 | 9 | Real Data Testing | M2 | System validated with real company documents | DATA-03~07 |
-| 10 | UAT Bug Fixes | M2 | Complete    | 2026-03-27 |
+| 10 | UAT Bug Fixes | M2 | Complete | 2026-03-27 |
+| 11 | v1.0 Final Gap Closure | M2 | Pending | Integration gaps from audit |
 
 ## Phase Details
 
@@ -295,6 +296,27 @@ Plans:
 **Dependencies:** Phase 9 (UAT findings from real data testing)
 
 ---
+
+### Phase 11: v1.0 Final Gap Closure
+
+**Goal:** Close all integration gaps and broken E2E flows identified by v1.0 milestone audit.
+
+**Gap Closure:** Closes gaps from v1.0-MILESTONE-AUDIT.md
+
+**Tasks:** 3
+
+1. **Add product import tab to ImportPage** — TAB_CONFIG + import.api.ts functions for `importProducts`/`downloadProductTemplate` (closes MCAT-05/MCAT-06 frontend surface gap + "Product Excel Import" broken flow)
+2. **Fix useCustomerDetail.ts hardcoded error strings** — replace lines 216/253 hardcoded Chinese strings with `getErrorMessage()` (closes BUGF-06 partial integration gap)
+3. **Fix stale JSDoc in order.service.ts** — update line 57 comment from INQUIRY to PENDING (tech debt cleanup)
+
+**Success Criteria:**
+1. ImportPage has a product tab that downloads template and imports product Excel files
+2. All error messages in useCustomerDetail.ts use getErrorMessage() utility
+3. order.service.ts JSDoc matches actual code behavior
+
+**Dependencies:** Phase 10 (follows UAT bug fixes)
+
+---
 ## Dependency Graph
 
 ```
@@ -309,6 +331,7 @@ Phase 1 (standalone — M1 start)
                       └→ Phase 8 (frontend pages)
                           └→ Phase 9 (real data testing — needs all)
                               └→ Phase 10 (UAT bug fixes — from Phase 9 findings)
+                                  └→ Phase 11 (v1.0 gap closure — from milestone audit)
 ```
 
 ## Coverage
@@ -316,17 +339,17 @@ Phase 1 (standalone — M1 start)
 | Category | Count | Mapped |
 |----------|-------|--------|
 | Bug Fix (BUGF) | 6 | 6 |
-| Core Feature (FEAT) | 5 | 5 |
+| Core Feature (FEAT) | 4 | 4 |
 | Code Quality (QUAL) | 9 | 9 |
 | Test Coverage (TEST) | 7 | 7 |
 | Payment Voucher (PVOU) | 8 | 8 |
 | Multi-Category (MCAT) | 12 | 12 |
-| OCR & Data (DATA) | 9 | 9 |
+| Data Testing (DATA) | 7 | 7 |
 | UAT Bug Fix (UAT) | 8 | 8 |
-| **Total** | **64** | **64** |
+| **Total** | **61** | **61** |
 
 Unmapped: 0
 
 ---
 *Roadmap created: 2009-03-17*
-*Last updated: 2026-03-27 (Phase 10 gap closure — address layout plan added)*
+*Last updated: 2026-03-28 (Phase 11 gap closure added from milestone audit)*

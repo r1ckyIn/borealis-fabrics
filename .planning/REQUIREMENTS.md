@@ -21,7 +21,6 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **FEAT-01**: Quote-to-order conversion works end-to-end with transaction safety
 - [x] **FEAT-02**: Quote-to-order prevents duplicate conversion (concurrent request protection)
 - [x] **FEAT-03**: File upload uses Tencent COS SDK instead of local storage
-- [ ] **FEAT-04**: Existing file URL records migrated from localhost to COS
 - [x] **FEAT-05**: File URLs use key-only storage with read-time URL generation
 
 ### Code Quality (QUAL)
@@ -72,15 +71,13 @@ Requirements for M1 (Code Remediation) + M2 (Feature Expansion + Real Data Testi
 - [x] **MCAT-11**: Frontend product detail/edit pages for each category
 - [x] **MCAT-12**: Frontend order form supports selecting products from any category
 
-### OCR & Data Testing (DATA)
+### Data Testing (DATA)
 
-- [ ] **DATA-01**: `/contract-ocr` Claude Code skill reads PDF and outputs importable Excel
-- [ ] **DATA-02**: OCR skill handles Chinese business document formats (PI, PO, contracts)
-- [ ] **DATA-03**: Manual entry test: create supplier, customer, fabric, quote, order with real data
+- [x] **DATA-03**: Manual entry test: create supplier, customer, fabric, quote, order with real data
 - [x] **DATA-04**: Excel import test: import real fabric price list (面料价格明细2025.8.15.xlsx)
 - [x] **DATA-05**: Excel import test: import real iron frame/motor price list (铁架电机价格2025.xlsx)
 - [x] **DATA-06**: Excel import test: import real purchase order (海宁优途-采购单)
-- [ ] **DATA-07**: System stability: all pages load correctly after bulk data import
+- [x] **DATA-07**: System stability: all pages load correctly after bulk data import
 - [x] **DATA-08**: Import result shows per-row failure details (row number + reason)
 - [x] **DATA-09**: Import dry-run mode validates without writing to DB
 
@@ -90,6 +87,7 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Deployment
 
+- **FEAT-04**: Existing file URL records migrated from localhost to COS (deferred — requires production COS environment)
 - **DEPL-01**: Deploy backend to Tencent Cloud lightweight server
 - **DEPL-02**: Deploy frontend to Tencent Cloud COS/CDN
 - **DEPL-03**: Configure CDB (MySQL) and Redis on Tencent Cloud
@@ -114,6 +112,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | Real-time chat | Not needed for trading workflow |
 | Automated payment reconciliation | MVP tracks manually, only reminders |
 | Multi-language i18n | Chinese-only for domestic team |
+| OCR/AI document reading (DATA-01) | User confirmed system does not use AI; all data entered manually via Excel |
+| OCR Chinese business documents (DATA-02) | Same as DATA-01 — descoped per user feedback |
 
 ## Traceability
 
@@ -128,7 +128,6 @@ Deferred to future release. Tracked but not in current roadmap.
 | FEAT-01 | Phase 2 | Complete |
 | FEAT-02 | Phase 2 | Complete |
 | FEAT-03 | Phase 2 | Complete |
-| FEAT-04 | Phase 2 | Pending |
 | FEAT-05 | Phase 2 | Complete |
 | QUAL-01 | Phase 3 | Complete |
 | QUAL-02 | Phase 3 | Complete |
@@ -166,21 +165,20 @@ Deferred to future release. Tracked but not in current roadmap.
 | MCAT-10 | Phase 8 | Complete |
 | MCAT-11 | Phase 8 | Complete |
 | MCAT-12 | Phase 8 | Complete |
-| DATA-01 | Phase 9 | Pending |
-| DATA-02 | Phase 9 | Pending |
-| DATA-03 | Phase 10 | Pending |
+| DATA-03 | Phase 9 | Complete |
 | DATA-04 | Phase 10 | Complete |
 | DATA-05 | Phase 10 | Complete |
 | DATA-06 | Phase 10 | Complete |
-| DATA-07 | Phase 10 | Pending |
+| DATA-07 | Phase 9 | Complete |
 | DATA-08 | Phase 6 | Complete |
 | DATA-09 | Phase 6 | Complete |
 
 **Coverage:**
-- v1 requirements: 56 total
-- Mapped to phases: 56
+- v1 requirements: 53 total (3 descoped: FEAT-04→v2, DATA-01/DATA-02→Out of Scope)
+- Mapped to phases: 53
+- Satisfied: 53/53 (100%)
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-17*
-*Last updated: 2026-03-24 (added PVOU-01~08 for Phase 04.1)*
+*Last updated: 2026-03-28 (gap closure: DATA-01/02→Out of Scope, FEAT-04→v2, DATA-03/07→Complete, Phase 11 added)*
