@@ -54,7 +54,7 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 **Plans**: TBD
 
 Plans:
-- [ ] 12-01: Correlation ID middleware + soft delete schema migration
+- [x] 12-01: Correlation ID middleware + soft delete schema migration
 - [ ] 12-02: Sentry integration (backend + frontend) + ErrorBoundary + tech debt fixes
 
 ### Phase 13: Data Safety & Audit
