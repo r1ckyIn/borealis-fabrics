@@ -30,11 +30,11 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 
 ### Observability
 
-- [ ] **OBS-01**: Sentry error tracking integrated on backend (NestJS exception filter + @SentryExceptionCaptured)
-- [ ] **OBS-02**: Sentry error tracking integrated on frontend (Sentry.ErrorBoundary + React Router integration)
-- [ ] **OBS-03**: Sentry beforeSend filters out expected errors (400/401/403/404) and scrubs PII
-- [ ] **OBS-04**: Request correlation ID via nestjs-cls, propagated through pino logs, Sentry context, and response headers
-- [ ] **OBS-05**: React ErrorBoundary with graceful fallback UI and Sentry error reporting
+- [x] **OBS-01**: Sentry error tracking integrated on backend (NestJS exception filter + @SentryExceptionCaptured)
+- [x] **OBS-02**: Sentry error tracking integrated on frontend (Sentry.ErrorBoundary + React Router integration)
+- [x] **OBS-03**: Sentry beforeSend filters out expected errors (400/401/403/404) and scrubs PII
+- [x] **OBS-04**: Request correlation ID via nestjs-cls, propagated through pino logs, Sentry context, and response headers
+- [x] **OBS-05**: React ErrorBoundary with graceful fallback UI and Sentry error reporting
 - [ ] **OBS-06**: Log aggregation via Loki + Grafana sidecar with pino-loki transport
 - [ ] **OBS-07**: Slow query logging via Prisma query event timing with threshold alerting
 
@@ -111,11 +111,11 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-07 | Phase 13 | Pending |
 | DATA-08 | Phase 13 | Pending |
 | DATA-09 | Phase 13 | Pending |
-| OBS-01 | Phase 12 | Pending |
-| OBS-02 | Phase 12 | Pending |
-| OBS-03 | Phase 12 | Pending |
-| OBS-04 | Phase 12 | Pending |
-| OBS-05 | Phase 12 | Pending |
+| OBS-01 | Phase 12 | Complete |
+| OBS-02 | Phase 12 | Complete |
+| OBS-03 | Phase 12 | Complete |
+| OBS-04 | Phase 12 | Complete |
+| OBS-05 | Phase 12 | Complete |
 | OBS-06 | Phase 14 | Pending |
 | OBS-07 | Phase 14 | Pending |
 | PERF-01 | Phase 14 | Pending |
