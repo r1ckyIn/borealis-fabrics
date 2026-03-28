@@ -1,381 +1,476 @@
-# Stack Research
+# Technology Stack: v1.1 Production Readiness
 
-**Domain:** Supply chain management system — multi-category product expansion + PDF OCR skill + code remediation
-**Researched:** 2026-03-17
-**Confidence:** HIGH (Claude API docs verified, npm versions verified, Prisma docs verified)
+**Project:** Borealis Supply Chain Management System
+**Researched:** 2026-03-28
+**Milestone:** v1.1 Production Readiness
+**Overall confidence:** HIGH (official docs + npm verified for all packages)
 
 ---
 
 ## Context: What This Research Covers
 
-The existing NestJS 11 + React 18 + Prisma 6 + MySQL 8 + Redis stack is NOT being re-researched.
-This document covers only the four new capability areas:
+The existing validated stack (NestJS 11, React 18, Prisma 6, MySQL 8, Redis 7, Vite 7, Ant Design 6, nestjs-pino, Helmet, Terminus health checks) is NOT being re-researched. This document covers ONLY the new production readiness capabilities:
 
-1. Multi-category product management (adding iron frame / motor / hardware to the fabric-only data model)
-2. PDF OCR and data extraction (for the `/contract-ocr` Claude Code skill)
-3. Code audit and remediation tooling (for M1 full code remediation)
-4. Excel import expansion (for new product category import templates)
-
----
-
-## Area 1: Multi-Category Product Management
-
-### Recommended Pattern: Multi-Table Inheritance (MTI) via Prisma
-
-**The problem:** The existing `Fabric` model has 20+ fabric-specific fields. Iron frames have model numbers and sets. Motors have control type and channel count. Hardware has piece/set pricing. A single "Product" table with 40+ nullable columns is a maintenance disaster.
-
-**The solution:** MTI with a `Product` base table and category-specific extension tables.
-
-No new library is needed. Prisma 6 (already installed at `^6.19.2`) natively supports this via standard relations.
-
-#### Schema Pattern
-
-```prisma
-// Base product entity — shared fields only
-model Product {
-  id          Int         @id @default(autoincrement())
-  productCode String      @unique @map("product_code")
-  name        String
-  category    ProductCategory
-  defaultPrice Decimal?  @map("default_price") @db.Decimal(10, 2)
-  isActive    Boolean     @default(true) @map("is_active")
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-
-  // Extension tables (1-1, optional)
-  ironFrame   IronFrame?
-  motor       Motor?
-  hardware    Hardware?
-
-  // Shared relations
-  orderItems  OrderItem[]
-  customerPricing CustomerPricing[]
-}
-
-enum ProductCategory {
-  IRON_FRAME
-  MOTOR
-  HARDWARE
-}
-
-model IronFrame {
-  id          Int     @id @default(autoincrement())
-  modelNumber String  @map("model_number")  // e.g. "5618-0", "U18-111"
-  // iron-frame-specific fields...
-  productId   Int     @unique @map("product_id")
-  product     Product @relation(fields: [productId], references: [id])
-}
-```
-
-#### TypeScript Discriminated Union
-
-Prisma MTI maps naturally to TypeScript discriminated unions at the service layer — no extra library needed:
-
-```typescript
-type ProductUnion =
-  | ({ category: 'IRON_FRAME' } & Product & { ironFrame: IronFrame })
-  | ({ category: 'MOTOR' }     & Product & { motor: Motor })
-  | ({ category: 'HARDWARE' }  & Product & { hardware: Hardware });
-```
-
-**Why NOT Single-Table Inheritance (STI):** STI would add 25+ nullable columns to a shared table. `motor.channelCount` is meaningless for iron frames. Queries become fragile and model validation becomes impossible at the database level.
-
-**Why NOT ZenStack / typeorm-polymorphic:** These add schema-level abstraction overhead not needed here. Prisma's MTI is well-documented and directly supported since Prisma 5.0. Source: [Prisma Table Inheritance Docs](https://www.prisma.io/docs/orm/prisma-schema/data-model/table-inheritance) — HIGH confidence.
-
-### Supporting: Strategy Pattern for Category-Specific Import Logic
-
-When adding per-category validation in `ImportService`, use NestJS's built-in dependency injection with a strategy map rather than if/else chains:
-
-```typescript
-// Register strategies by category token
-const IMPORT_STRATEGIES = {
-  [ProductCategory.IRON_FRAME]: IronFrameImportStrategy,
-  [ProductCategory.MOTOR]:      MotorImportStrategy,
-  [ProductCategory.HARDWARE]:   HardwareImportStrategy,
-  [ProductCategory.FABRIC]:     FabricImportStrategy,  // existing
-};
-```
-
-No new library needed. This is a standard NestJS DI pattern.
+1. Docker containerization (backend + frontend + Nginx)
+2. Nginx reverse proxy with SSL termination and compression
+3. CI/CD deploy stage (GitHub Actions extension)
+4. Database backup automation
+5. Sentry error tracking (backend + frontend)
+6. Log aggregation (pino -> Loki)
+7. Request correlation IDs (nestjs-cls)
+8. Gzip/Brotli compression
+9. Redis query caching (cache-aside pattern)
+10. k6 load testing
+11. Dependency security scanning
+12. Web Vitals performance monitoring
+13. PWA manifest + Service Worker
+14. Accessibility (a11y) tooling
 
 ---
 
-## Area 2: PDF OCR and Data Extraction (Claude Code Skill)
+## Recommended Stack Additions
 
-### Recommended: Anthropic SDK + Native PDF Support
+### 1. Docker Containerization
 
-**The `/contract-ocr` skill is a Claude Code skill (shell script / TypeScript CLI), not an in-system API endpoint.** This changes the architecture significantly: no server-side OCR service is needed in the NestJS backend.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Docker multi-stage build | - | Backend + frontend images | Multi-stage: full node for build, slim for runtime. Reduces image size from 1GB+ to ~200MB |
+| node:22-slim | 22 LTS | Base runtime image | Safer than Alpine for production (glibc vs musl compatibility). Node 22 matches CI. |
+| nginx:1.28-alpine | 1.28 stable | Reverse proxy + static file serving | Alpine fine for Nginx (no native Node modules). Handles SSL, compression, static assets |
+| docker compose | v2 | Multi-container orchestration | Production compose for backend + Nginx + backup sidecar. Dev services (MySQL, Redis) already exist locally |
 
-#### Primary Library: `@anthropic-ai/sdk`
+**Key decision: node:22-slim over node:22-alpine.** Alpine uses musl libc which can cause subtle issues with native Node modules (Prisma client, bcrypt). Slim uses glibc and is the officially recommended production choice. Alpine is fine for Nginx since it has no Node dependencies.
 
-| Property | Value |
-|----------|-------|
-| Package | `@anthropic-ai/sdk` |
-| Latest version | `0.79.0` (released 2026-03-16) |
-| Verified from | [GitHub: anthropics/anthropic-sdk-typescript](https://github.com/anthropics/anthropic-sdk-typescript) |
-| Confidence | HIGH |
+**Confidence:** HIGH -- Docker Hub official images, Node.js Docker best practices guide.
 
-**Why this and not Tesseract.js / pdf.js:** The business documents are Chinese-language PDFs with mixed layouts (tables, hand-stamped values, mixed fonts). Tesseract.js accuracy on Chinese business documents is LOW without significant fine-tuning. Claude's native PDF support uses visual understanding, not character-by-character OCR — it reads tables, stamps, and layout context simultaneously. For a small-team skill tool processing 30-document batches, API cost is trivial compared to implementation complexity.
+### 2. Nginx Reverse Proxy
 
-#### Claude API PDF Capabilities (verified from official docs)
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| nginx:1.28-alpine | 1.28 | Reverse proxy, SSL termination, static serving, compression | Industry standard. Handles gzip/brotli better than Node.js middleware. Serves frontend static files directly |
 
-- **Native PDF support**: Pass PDF as `document` block with `source.type: "base64"` or `source.type: "url"`. No page-to-image conversion needed in client code — Claude handles this internally.
-- **Token cost**: 1,500–3,000 tokens per page (text) + image tokens per page. A typical 3-page purchase order costs ~6,000–10,000 tokens total.
-- **Max pages**: 600 pages per request (100 for 200k-context models). Business documents are 1–5 pages — well within limits.
-- **Structured output**: Use `tool_choice: { type: "tool", name: "extract_data" }` with a JSON Schema input_schema to force structured extraction. This is the standard pattern — there is no native `structured_output` field in the Anthropic API (unlike OpenAI).
+**Configuration scope:**
+- Reverse proxy `/api/v1` to NestJS backend (port 3000)
+- Serve frontend static assets directly from `/`
+- SSL termination with Let's Encrypt certificates
+- Gzip + Brotli compression at Nginx level (NOT Express middleware)
+- Security headers (supplement to Helmet)
+- Rate limiting at proxy level (supplement to NestJS throttler)
+- WebSocket passthrough for future needs
 
-Source: [Anthropic PDF Support Docs](https://platform.claude.com/docs/en/build-with-claude/pdf-support) — HIGH confidence.
+**Key decision: Compression at Nginx level, NOT Express middleware.** Nginx is purpose-built for compression and handles it with less CPU overhead than Node.js. The `compression` npm package (v1.8.1) is unnecessary when Nginx sits in front. This avoids adding runtime dependencies to the Node.js process.
 
-#### TypeScript Pattern for Skill
+**Confidence:** HIGH -- standard production architecture pattern.
 
+### 3. CI/CD Deploy Stage
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| GitHub Actions (existing) | v4 actions | CI pipeline extension | Already configured for lint/test/build. Adding deploy stage |
+| actions/checkout@v4 | v4 | Git checkout | Already in use |
+| docker/build-push-action | v6 | Build + push Docker images | Official GitHub Action for Docker builds |
+| appleboy/ssh-action | v1 | SSH deploy to Tencent Cloud | Lightweight, widely-used for simple server deployments |
+
+**Deploy strategy:** Build Docker images in CI -> push to registry -> SSH into server -> docker compose pull + up. This is the simplest approach for a single Tencent Cloud lightweight server.
+
+**NOT recommended:** Kubernetes, Docker Swarm, or any orchestration platform. This is a 2-5 user internal tool on a budget-tier server. docker compose is the right abstraction level.
+
+**Confidence:** HIGH -- GitHub Actions official docs.
+
+### 4. Database Backup Automation
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Tencent Cloud CDB auto-backup | Managed | Automatic daily full backups, binlog-based PITR | CDB includes daily automatic backups with point-in-time recovery. No custom solution needed |
+| mysqldump cron (fallback) | - | Export backup to COS | Only needed if using self-managed MySQL, not CDB |
+
+**CRITICAL FINDING: Tencent Cloud CDB has built-in automatic daily backups with point-in-time recovery (up to 3 days lossless, 5 days cold backup).** The project constraint specifies CDB as the database service. Therefore:
+
+- **Primary backup:** CDB managed auto-backup (zero configuration, built-in)
+- **Supplementary:** A lightweight cron script that exports mysqldump to COS (Tencent Object Storage) weekly for offsite redundancy. This can be a simple Docker sidecar using `fradelg/mysql-cron-backup` image.
+- **Retention:** CDB default + 30-day COS retention for supplementary dumps
+
+**What NOT to build:** A custom NestJS backup module or complex backup rotation system. CDB handles this.
+
+**Confidence:** HIGH -- Tencent Cloud CDB documentation confirms auto-backup feature.
+
+### 5. Sentry Error Tracking
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| @sentry/nestjs | ^10.44 | Backend error tracking + performance monitoring | Official Sentry NestJS SDK. First-class NestJS support with decorators (@SentryExceptionCaptured, @SentryTraced, @SentryCron) |
+| @sentry/react | ^10.46 | Frontend error tracking + performance | Official Sentry React SDK. Integrates with ErrorBoundary (already exists), React Router, TanStack Query |
+
+**Integration points with existing code:**
+- Backend: `@SentryExceptionCaptured()` on existing `AllExceptionsFilter`. `@SentryCron()` on `QuoteExpirationJob`
+- Frontend: Wire existing `ErrorBoundary.onError` callback to `Sentry.captureException()`
+- Pino integration: `Sentry.pinoIntegration()` captures warn/error level pino logs as Sentry events (requires SDK >= 10.18.0)
+- Performance: `tracesSampleRate: 0.1` for production (10% sampling sufficient for 2-5 users)
+
+**Key decision: @sentry/nestjs over @ntegral/nestjs-sentry.** The official Sentry SDK has first-class NestJS support since 2024, making the third-party wrapper unnecessary. Official SDK gets faster updates and has pino integration built-in.
+
+**Confidence:** HIGH -- Sentry official docs, NestJS official recipe.
+
+### 6. Log Aggregation
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| pino-loki | ^2.3 | Pino transport to Grafana Loki | Direct pino-to-Loki transport. No log shippers needed. Works as nestjs-pino transport target |
+| Grafana Loki | 3.x (Docker) | Log storage + query engine | Lightweight log aggregation designed for small deployments. Index-free, stores compressed logs |
+| Grafana | 11.x (Docker) | Log visualization dashboard | Pairs with Loki. Also visualizes Sentry data and future metrics |
+
+**Integration with existing nestjs-pino:**
 ```typescript
-import Anthropic, { toFile } from "@anthropic-ai/sdk";
-import fs from "fs";
-
-const client = new Anthropic(); // reads ANTHROPIC_API_KEY from env
-
-const pdfBuffer = fs.readFileSync("contract.pdf");
-const pdfBase64 = pdfBuffer.toString("base64");
-
-const response = await client.messages.create({
-  model: "claude-opus-4-6",
-  max_tokens: 4096,
-  tools: [{
-    name: "extract_contract_data",
-    description: "Extract structured data from a Chinese supply chain contract",
-    input_schema: {
-      type: "object",
-      properties: {
-        contractNumber: { type: "string" },
-        items: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              productCode: { type: "string" },
-              quantity: { type: "number" },
-              unitPrice: { type: "number" },
-            }
-          }
-        }
-      }
-    }
-  }],
-  tool_choice: { type: "tool", name: "extract_contract_data" },
-  messages: [{
-    role: "user",
-    content: [
-      {
-        type: "document",
-        source: { type: "base64", media_type: "application/pdf", data: pdfBase64 }
-      },
-      { type: "text", text: "Extract all contract line items and metadata." }
-    ]
-  }]
-});
+// app.module.ts LoggerModule config addition
+LoggerModule.forRoot({
+  pinoHttp: {
+    transport: {
+      targets: [
+        { target: 'pino-loki', options: { host: 'http://loki:3100' } },
+        // pino-pretty for dev only
+      ],
+    },
+  },
+})
 ```
 
-#### Installation
+**Key decision: pino-loki over ELK/Elasticsearch.** Loki is dramatically lighter than Elasticsearch (tens of MB vs GB of RAM). For a 2-5 user app, ELK is massive overkill. Loki + Grafana runs in ~128MB RAM total.
 
+**NOT recommended for this scale:** ELK stack, Datadog, New Relic (cost prohibitive), Fluentd/Fluentbit (unnecessary complexity when pino-loki exists).
+
+**Confidence:** MEDIUM -- pino-loki widely used but version may vary. Verify exact latest version at install time.
+
+### 7. Request Correlation IDs
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| nestjs-cls | ^6.2 | Continuation-local storage for NestJS | AsyncLocalStorage-based. Stores request ID, user ID, and other context accessible throughout the request lifecycle without passing through every function |
+| crypto.randomUUID() | Built-in | Generate correlation IDs | Node.js built-in, no dependency needed |
+
+**Integration with existing stack:**
+- Generates `X-Request-ID` header on each request (or preserves incoming one)
+- Injects into pino log context (all logs automatically include correlation ID)
+- Passes to Sentry as tag for cross-referencing errors with logs
+- Zero changes needed in existing service code -- context is available via `ClsService.get('requestId')`
+
+**Key decision: nestjs-cls over custom AsyncLocalStorage wrapper.** nestjs-cls v6 has first-class NestJS 11 support, plugin API, and handles edge cases (WebSocket, microservices, CQRS) that a custom implementation would miss.
+
+**What NOT to use:** `cls-hooked` (deprecated), `@nestified/correlation-id` (too narrow, no plugin ecosystem).
+
+**Confidence:** HIGH -- nestjs-cls official docs, NestJS official recipe for AsyncLocalStorage.
+
+### 8. Gzip/Brotli Compression
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Nginx ngx_http_gzip_module | Built-in | Gzip compression for API responses + static assets | Built into Nginx. Zero npm dependencies. Handles compression at proxy level, freeing Node.js CPU |
+| Nginx ngx_brotli_module | 3rd-party module | Brotli compression (15-25% better than gzip) | Better compression for text/JSON. Falls back to gzip for older clients |
+
+**Key decision: Nginx-level compression, NOT `compression` npm package.**
+
+Rationale:
+- Nginx handles compression with C-level performance, not JavaScript event loop
+- Frontend static assets (JS/CSS/HTML) benefit most; Nginx serves these directly
+- API JSON responses compressed transparently
+- No runtime dependency added to NestJS process
+- `compression` npm package (v1.8.1) becomes unnecessary
+
+**What to REMOVE:** `@nestjs/cache-manager` and `cache-manager` are in package.json but never used in source code. These should be removed during cleanup.
+
+**Confidence:** HIGH -- Nginx documentation, NestJS official compression docs recommend Nginx for production.
+
+### 9. Redis Query Caching (Cache-Aside Pattern)
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| Existing RedisService | - | Cache-aside pattern implementation | Already has get/set/setex/del methods. Extend with JSON serialization helpers |
+| No new dependencies | - | - | The existing `ioredis` + custom `RedisService` is sufficient. No need for `cache-manager` or `@nestjs/cache-manager` |
+
+**Implementation approach:**
+- Add `getJSON<T>()` and `setJSON<T>()` convenience methods to existing `RedisService`
+- Implement cache-aside in service layer: check cache -> miss -> query DB -> populate cache -> return
+- Cache invalidation on mutations (create/update/delete)
+- Key prefix convention: `cache:{entity}:{id}` or `cache:{entity}:list:{hash}`
+- TTL: 5 minutes for lists, 15 minutes for single entities
+
+**Cacheable endpoints (high read, low write):**
+- Fabric list (browsed frequently)
+- Product list (browsed frequently)
+- Supplier list (dropdown data)
+- Customer list (dropdown data)
+- System enums (rarely change)
+
+**NOT cacheable:** Orders (frequently mutated), quotes (status changes), logistics (real-time tracking).
+
+**Key decision: Extend existing RedisService, NOT add cache-manager.** The project already has a well-tested `RedisService` with graceful degradation. Adding `@nestjs/cache-manager` would introduce a second Redis abstraction with its own connection management. The existing service already handles connection failures gracefully.
+
+**What to REMOVE:** `@nestjs/cache-manager` (^3.1.0) and `cache-manager` (^7.2.8) from package.json -- they are installed but never imported in any source file.
+
+**Confidence:** HIGH -- existing code reviewed, cache-aside is a standard pattern.
+
+### 10. k6 Load Testing
+
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| k6 | latest (Go binary) | HTTP load testing | Best-in-class for API load testing. JavaScript test scripts. Not a Node.js dependency -- standalone binary |
+
+**Installation:** Homebrew (dev) / Docker (CI). NOT an npm package.
 ```bash
-# In the Claude Code skill directory (standalone Node.js script)
-npm install @anthropic-ai/sdk
+# macOS
+brew install k6
+
+# Docker (CI)
+docker run --rm grafana/k6 run - <script.js
 ```
 
-**What NOT to use:**
-- `tesseract.js` — Accuracy issues with Chinese business documents, requires image pre-processing
-- `pdf-parse` / `pdfjs-dist` — Text-only extraction, loses table structure and visual layout
-- `pdf2pic` + image upload — Adds conversion step that Claude handles natively in PDF mode
+**Test scope:**
+- Baseline benchmarks for critical API endpoints (fabric list, order create, Excel import)
+- Concurrency testing: 5-10 VUs (virtual users) matches real usage of 2-5 users
+- Soak testing: 30-minute sustained load
+- Store results in Grafana for historical comparison
 
----
+**Key decision: k6 over Artillery/Autocannon/JMeter.** k6 uses JavaScript for test scripts (team already knows JS), runs as a single binary (no Node.js runtime), and integrates with Grafana (already in stack for Loki). Artillery is Node.js-based and heavier. JMeter is Java-based and overkill.
 
-## Area 3: Code Audit and Remediation Tooling
+**Confidence:** HIGH -- k6 is the industry standard for API load testing.
 
-### The Problem
+### 11. Dependency Security Scanning
 
-M1 remediation involves: 97 `any` types in backend tests, 13 in frontend, broken API calls, oversized services (1121L OrderService), and frontend-backend inconsistencies. This is a systematic code quality campaign, not a one-off fix.
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| GitHub Dependabot | Built-in | Automated dependency update PRs | Free for GitHub repos. Creates PRs for vulnerable dependencies. Zero configuration |
+| npm audit | Built-in | CI pipeline vulnerability check | Already available via pnpm. Add `pnpm audit --audit-level=high` to CI |
 
-### Recommended Toolchain (all already in the project)
-
-No new libraries needed for M1. The existing toolchain handles all remediation tasks:
-
-| Tool | Already Installed | Use for M1 |
-|------|------------------|------------|
-| `typescript-eslint` | Yes (ESLint 9.18.0 backend, 9.39.1 frontend) | Detect `any` types, enforce patterns |
-| `tsc --noEmit` | Yes (tsconfig strict) | Catch type errors missed by ESLint |
-| `@typescript-eslint/no-explicit-any` | Yes (ESLint config) | Flag all 97+13 `any` instances |
-| Jest / Vitest | Yes | Verify nothing breaks after refactoring |
-
-#### Automated Detection of `any` Types
-
-Run targeted ESLint to get a full inventory before starting M1:
-
-```bash
-# Backend: get all any-type locations
-cd backend && npx eslint --rule '{"@typescript-eslint/no-explicit-any": "error"}' \
-  --ext .ts src/**/*.spec.ts --format compact
-
-# Frontend: same for test files
-cd frontend && npx eslint --rule '{"@typescript-eslint/no-explicit-any": "error"}' \
-  --ext .ts,tsx src/**/*.test.tsx --format compact
+**CI integration:**
+```yaml
+- name: Security audit
+  run: pnpm audit --audit-level=high
+  continue-on-error: true  # Don't block deploys on moderate issues
 ```
 
-**The `fixToUnknown: true` option:** `@typescript-eslint/no-explicit-any` has an auto-fix that converts `any` → `unknown`. Use this with caution on test files — `unknown` requires explicit type assertions and may break test logic. Manual replacement with proper types is safer than bulk auto-fix.
+**Key decision: Dependabot + npm audit over Snyk.** For a small private project, Dependabot (free, built-in to GitHub) + npm audit in CI covers the dependency scanning need without adding another SaaS tool. Snyk has better vulnerability database but adds complexity and cost for minimal benefit at this scale.
 
-Source: [typescript-eslint no-explicit-any docs](https://typescript-eslint.io/rules/no-explicit-any/) — HIGH confidence.
+**Confidence:** HIGH -- GitHub official feature, npm built-in command.
 
-#### For Oversized Service Decomposition (OrderService 1121L)
+### 12. Web Vitals Performance Monitoring
 
-No new library. Use the NestJS Strategy Pattern:
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| web-vitals | ^5.2 | Core Web Vitals measurement (LCP, INP, CLS, FCP, TTFB) | Google's official library. ~2KB brotli'd. Reports real user metrics |
 
-1. Extract `OrderStateTransitionService` (state machine logic)
-2. Extract `OrderItemService` (item-level tracking)
-3. Extract `OrderTimelineService` (timeline/audit events)
-4. `OrderService` becomes a thin facade orchestrating the three sub-services
+**Integration approach:**
+- Import `web-vitals` in frontend entry point
+- Send metrics to Sentry via `Sentry.captureMessage()` with custom context (or use Sentry's built-in browser tracing which already captures Web Vitals)
+- Alternative: Send to custom `/api/v1/metrics` endpoint for Grafana visualization
 
-This pattern is well-established in NestJS; no third-party library adds value here.
+**Key decision:** Since Sentry is already being added, and `@sentry/react` v10+ automatically captures Web Vitals when `browserTracingIntegration` is enabled, a separate `web-vitals` library may be REDUNDANT. Verify during implementation whether Sentry's built-in Web Vitals capture is sufficient.
 
-#### Optional: SonarQube (if code metrics tracking is wanted)
+**Fallback:** If Sentry Web Vitals are insufficient for detailed analysis, add `web-vitals` (^5.2) and report to a custom endpoint.
 
-| Tool | Verdict |
-|------|---------|
-| SonarQube Community | OPTIONAL — useful for tracking M1 progress (complexity scores, duplication %) but adds Docker dependency |
-| Snyk | NOT NEEDED — dependency vulnerability scanning; existing helmet + validation already in place |
-| Semgrep | NOT NEEDED — overkill for a 2-5 person team; ESLint covers same patterns |
+**Confidence:** MEDIUM -- Sentry may already cover this. Verify at implementation time.
 
-**Recommendation: Skip SonarQube for M1.** The existing ESLint + tsc + test suite is sufficient. SonarQube adds operational overhead that doesn't benefit a small team.
+### 13. PWA Manifest + Service Worker
 
----
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| vite-plugin-pwa | ^1.2 | Auto-generate manifest.webmanifest + service worker | Zero-config PWA for Vite 7. Generates SW via Workbox under the hood. Framework-agnostic, works with React |
+| workbox (transitive) | 7.x | Service worker strategies (cache-first, stale-while-revalidate) | Industry standard. Bundled by vite-plugin-pwa, not installed directly |
 
-## Area 4: Excel Import Expansion for New Product Categories
+**Scope for this project:**
+- `manifest.webmanifest` with Chinese app name, icons, theme color
+- Service worker for static asset caching only (app shell)
+- Strategy: `generateSW` (auto-generated, not custom SW)
+- NO offline data support (supply chain data must be fresh)
+- NO push notifications (out of scope)
 
-### Existing Foundation: ExcelJS 4.4.0 (already installed)
-
-The project already uses `exceljs@^4.4.0`. Latest stable is `4.4.0` — no upgrade needed.
-
-The existing `ImportService` (607L) already implements the full pattern: column definitions as constants, template generation with `styleHeaderRow()`, row-by-row validation with skip-existing logic, and `ImportResultDto` for structured results.
-
-**The expansion is purely additive — no new library is needed.**
-
-#### Recommended Pattern: Column Definition Registry
-
-Instead of duplicating the template generation logic for each new category, extract column definitions into a registry:
-
+**vite-plugin-pwa config:**
 ```typescript
-// Column registry pattern (extend existing FABRIC_COLUMNS / SUPPLIER_COLUMNS)
-const PRODUCT_COLUMNS: Record<ProductCategory, ExcelJS.Column[]> = {
-  [ProductCategory.IRON_FRAME]: [
-    { header: 'modelNumber*', key: 'modelNumber', width: 20 },
-    { header: 'name*', key: 'name', width: 25 },
-    { header: 'defaultPrice', key: 'defaultPrice', width: 15 },
-    // iron-frame specific fields...
-  ],
-  [ProductCategory.MOTOR]: [...],
-  [ProductCategory.HARDWARE]: [...],
-};
+VitePWA({
+  registerType: 'autoUpdate',
+  manifest: {
+    name: '铂润供应链管理系统',
+    short_name: '铂润',
+    theme_color: '#1677ff', // Ant Design primary blue
+  },
+  workbox: {
+    globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+    // Do NOT cache API responses
+    navigateFallback: 'index.html',
+  },
+})
 ```
 
-With the Strategy Pattern from Area 1, each category's import validation logic stays in its own strategy class, while the `ImportService` orchestration code remains unchanged.
+**Key decision: vite-plugin-pwa over manual SW.** Writing service workers manually is error-prone (cache invalidation bugs, update deadlocks). vite-plugin-pwa handles all of this with tested Workbox strategies. v1.2 confirmed compatible with Vite 7.
 
-#### ExcelJS Multi-Sheet for Mixed PO Imports
+**Confidence:** HIGH -- vite-plugin-pwa docs, confirmed Vite 7 compatibility.
 
-Parent company sends mixed POs (fabric + iron frame + motor on one document). When importing real purchase orders, a multi-sheet workbook pattern handles this:
+### 14. Accessibility (a11y) Tooling
 
-```typescript
-// Each category gets its own worksheet in one workbook
-const workbook = new ExcelJS.Workbook();
-workbook.addWorksheet('Fabrics');
-workbook.addWorksheet('Iron Frames');
-workbook.addWorksheet('Motors');
-workbook.addWorksheet('Hardware');
-```
+| Technology | Version | Purpose | Why |
+|------------|---------|---------|-----|
+| eslint-plugin-jsx-a11y | ^6.10 | Static JSX accessibility linting | Catches missing alt text, improper ARIA, semantic HTML issues at lint time. Zero runtime cost |
+| vitest-axe | ^0.1 (or @chialab/vitest-axe ^0.19) | Runtime a11y testing in Vitest | Runs axe-core against rendered components in tests. Catches dynamic a11y issues |
 
-This matches the actual workflow: one Excel file per import batch, with tabs by category.
+**Key decision: eslint-plugin-jsx-a11y + vitest-axe, NOT @axe-core/react.** @axe-core/react does NOT support React 18 (confirmed in their README). The combination of lint-time (eslint-plugin-jsx-a11y) + test-time (vitest-axe) accessibility checking covers both static and dynamic issues without the React 18 incompatibility.
 
-Source: [ExcelJS GitHub](https://github.com/exceljs/exceljs) — HIGH confidence (library already in production use in this project).
+**Integration:**
+- Add `jsx-a11y` plugin to existing ESLint flat config
+- Add `vitest-axe` matchers to vitest setup for `toHaveNoViolations()` assertions
+- Run in existing CI pipeline (no new CI step needed)
 
----
-
-## New Packages to Install
-
-| Package | Version | Area | Where |
-|---------|---------|------|-------|
-| `@anthropic-ai/sdk` | `^0.79.0` | PDF OCR skill | Claude Code skill directory (standalone) |
-| `cos-nodejs-sdk-v5` | `^2.15.4` | COS file migration (M1) | `backend/` |
-
-```bash
-# Backend: COS SDK (needed for M1 file service migration)
-cd backend && pnpm add cos-nodejs-sdk-v5
-
-# Claude Code skill: Anthropic SDK
-# (created as standalone script, not part of backend)
-mkdir contract-ocr-skill && cd contract-ocr-skill
-pnpm init && pnpm add @anthropic-ai/sdk
-```
-
-### cos-nodejs-sdk-v5 Quick Reference
-
-| Property | Value |
-|----------|-------|
-| Latest version | `2.15.4` |
-| TypeScript support | Built-in types included |
-| Node.js requirement | 6+ |
-| Verified from | npm registry (2025-10) |
-| Confidence | HIGH |
-
-The project already has `COS_*` env vars defined in `.env.example` (`COS_SECRET_ID`, `COS_SECRET_KEY`, `COS_BUCKET`, `COS_REGION`). The COS SDK is the only new production dependency for the NestJS backend.
-
----
-
-## Packages NOT to Install
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| `tesseract.js` | Low accuracy on Chinese PDFs; requires image pre-processing | Claude API native PDF |
-| `pdf-parse` / `pdfjs-dist` | Text-only; loses table structure, stamps, and layout | Claude API native PDF |
-| `typeorm-polymorphic` | Requires TypeORM; project uses Prisma | Prisma MTI (native) |
-| `zenstack` | Adds schema DSL complexity for a feature Prisma 6 handles natively | Prisma MTI (native) |
-| `sonarqube` | Docker operational overhead not justified for 2-5 person team | ESLint + tsc (existing) |
-| `snyk` | Adds CI pipeline complexity; not blocking for MVP | helmet + class-validator (existing) |
-| `@nestjs/cqrs` | CQRS is over-engineered for OrderService refactoring | Strategy + sub-service extraction |
+**Confidence:** HIGH for eslint-plugin-jsx-a11y, MEDIUM for vitest-axe (low release frequency, but the API is simple and stable).
 
 ---
 
 ## Alternatives Considered
 
-| Recommended | Alternative | Why Not |
-|-------------|-------------|---------|
-| Prisma MTI (no new lib) | Single Table Inheritance | 40+ nullable columns, no DB-level validation |
-| Claude API PDF (base64) | Tesseract.js + pdf.js | Chinese document accuracy issues, maintenance burden |
-| Claude API PDF (base64) | Google Cloud Vision OCR | Adds external dependency, GCP billing, setup time |
-| ExcelJS multi-sheet | New import library (xlsx, SheetJS) | ExcelJS already in production; SheetJS Community has restrictive license |
-| ESLint `--fix` (targeted) | Automated any→unknown bulk replace | `unknown` breaks test assertions; manual replacement safer |
-| NestJS Strategy Pattern | CQRS (`@nestjs/cqrs`) | CQRS overhead not justified; strategy achieves same decomposition |
+| Category | Recommended | Alternative | Why Not |
+|----------|-------------|-------------|---------|
+| Docker base image | node:22-slim | node:22-alpine | Alpine uses musl libc -- risk of native module issues with Prisma |
+| Compression | Nginx built-in | `compression` npm | Nginx handles compression with C performance, frees Node.js CPU |
+| Error tracking | @sentry/nestjs | @ntegral/nestjs-sentry | Official SDK has first-class support since 2024, third-party wrapper unnecessary |
+| Log aggregation | Loki + pino-loki | ELK stack | ELK needs GB of RAM; Loki runs in ~64MB. Overkill for 2-5 users |
+| Log aggregation | Loki + pino-loki | File-based (pino-file) | No search, no dashboards, no alerting. Useless for debugging production |
+| Correlation ID | nestjs-cls | Custom AsyncLocalStorage | nestjs-cls handles edge cases (WS, microservices) and has plugin API |
+| DB backup | CDB auto-backup | Custom mysqldump cron | CDB already does this. Only add supplementary COS dump for offsite |
+| Redis caching | Extend RedisService | @nestjs/cache-manager | Project already has tested RedisService. Adding cache-manager creates dual Redis abstraction |
+| Load testing | k6 | Artillery | k6 is Go binary (lighter), JS scripts (team knows it), Grafana integration |
+| Load testing | k6 | autocannon | autocannon is Node.js (event loop contention risk when testing Node.js server) |
+| Dep scanning | Dependabot + npm audit | Snyk | Snyk adds cost and complexity; Dependabot is free and built into GitHub |
+| Web Vitals | Sentry built-in (verify) | web-vitals standalone | Sentry v10+ captures Web Vitals automatically; avoid duplicate telemetry |
+| PWA | vite-plugin-pwa | Manual SW | Manual SWs are error-prone; vite-plugin-pwa uses battle-tested Workbox |
+| a11y testing | eslint-plugin-jsx-a11y + vitest-axe | @axe-core/react | @axe-core/react does NOT support React 18 |
 
 ---
 
-## Version Compatibility Notes
+## What to REMOVE (Dead Dependencies)
 
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| `@anthropic-ai/sdk@0.79.0` | Node.js 18+ | Skill runs locally; NestJS backend is Node 18+, compatible |
-| `cos-nodejs-sdk-v5@2.15.4` | Node.js 6+ | No conflicts with existing deps |
-| `exceljs@4.4.0` | Node.js 12+ | Already in use; no change needed |
-| Prisma MTI schema changes | Prisma 6.19.2 | Fully supported since Prisma 5.0 |
+| Package | Current Version | Reason to Remove |
+|---------|----------------|-----------------|
+| `@nestjs/cache-manager` | ^3.1.0 | Installed in package.json but NEVER imported in any source file |
+| `cache-manager` | ^7.2.8 | Installed in package.json but NEVER imported in any source file |
+
+These were likely installed during initial setup but never used. The custom `RedisService` replaced their intended purpose. Removing them reduces attack surface and dependency count.
+
+---
+
+## What Already Exists (DO NOT Add)
+
+| Capability | Existing Solution | Status |
+|------------|-------------------|--------|
+| Health checks | @nestjs/terminus + /health + /ready | Already implemented |
+| Rate limiting | @nestjs/throttler (60 req/min) | Already implemented |
+| Security headers | Helmet (CSP, HSTS, X-Frame-Options) | Already implemented |
+| CORS | NestJS enableCors() | Already implemented |
+| Cookie auth | cookie-parser + HttpOnly JWT | Already implemented |
+| Structured logging | nestjs-pino + pino-http | Already implemented |
+| ErrorBoundary | React ErrorBoundary component | Already implemented |
+| Validation | class-validator + ValidationPipe | Already implemented |
+| Exception filter | AllExceptionsFilter | Already implemented |
+
+---
+
+## Installation Plan
+
+### Backend Additions
+
+```bash
+cd backend
+
+# Sentry
+pnpm add @sentry/nestjs
+
+# Correlation IDs
+pnpm add nestjs-cls
+
+# Log aggregation (pino transport)
+pnpm add pino-loki
+
+# Remove dead dependencies
+pnpm remove @nestjs/cache-manager cache-manager
+```
+
+### Frontend Additions
+
+```bash
+cd frontend
+
+# Sentry
+pnpm add @sentry/react
+
+# PWA
+pnpm add -D vite-plugin-pwa
+
+# Web Vitals (only if Sentry built-in is insufficient)
+# pnpm add web-vitals
+
+# Accessibility
+pnpm add -D eslint-plugin-jsx-a11y vitest-axe
+```
+
+### Infrastructure (No npm -- Docker/System)
+
+```bash
+# k6 (macOS dev)
+brew install k6
+
+# Docker images (in compose)
+# - nginx:1.28-alpine
+# - node:22-slim (for Dockerfile)
+# - grafana/loki:3.4
+# - grafana/grafana:11.5
+# - fradelg/mysql-cron-backup (supplementary backup)
+```
+
+### CI/CD Additions
+
+```yaml
+# .github/workflows/ci.yml additions
+# - pnpm audit --audit-level=high
+# - Docker build + push
+# - SSH deploy step
+```
+
+---
+
+## Version Summary Table
+
+| Package | Pinned Version | Category | Install Target |
+|---------|---------------|----------|---------------|
+| @sentry/nestjs | ^10.44 | Error tracking | backend |
+| @sentry/react | ^10.46 | Error tracking | frontend |
+| nestjs-cls | ^6.2 | Request context | backend |
+| pino-loki | ^2.3 | Log transport | backend |
+| vite-plugin-pwa | ^1.2 | PWA | frontend (dev) |
+| eslint-plugin-jsx-a11y | ^6.10 | Accessibility | frontend (dev) |
+| vitest-axe | ^0.1 | Accessibility testing | frontend (dev) |
+| web-vitals | ^5.2 | Performance (conditional) | frontend |
+| nginx | 1.28-alpine | Reverse proxy | Docker |
+| node | 22-slim | Runtime | Docker |
+| grafana/loki | 3.4 | Log storage | Docker |
+| grafana/grafana | 11.5 | Dashboards | Docker |
+| k6 | latest | Load testing | System binary |
+
+**Total new npm dependencies: 5 production + 3 dev = 8 packages** (plus 2 removed).
 
 ---
 
 ## Sources
 
-- [Prisma Table Inheritance Docs](https://www.prisma.io/docs/orm/prisma-schema/data-model/table-inheritance) — MTI/STI patterns — HIGH confidence
-- [Anthropic PDF Support Docs](https://platform.claude.com/docs/en/build-with-claude/pdf-support) — PDF API capabilities, token costs, TypeScript examples — HIGH confidence
-- [anthropics/anthropic-sdk-typescript GitHub](https://github.com/anthropics/anthropic-sdk-typescript) — version 0.79.0 confirmed — HIGH confidence
-- [cos-nodejs-sdk-v5 npm](https://www.npmjs.com/package/cos-nodejs-sdk-v5) — version 2.15.4 confirmed — HIGH confidence
-- [typescript-eslint no-explicit-any](https://typescript-eslint.io/rules/no-explicit-any/) — fixToUnknown option documented — HIGH confidence
-- [ExcelJS GitHub](https://github.com/exceljs/exceljs) — multi-sheet API — HIGH confidence (already in production use)
-- WebSearch: NestJS Strategy Pattern / service decomposition 2025 — MEDIUM confidence (community sources, consistent with official NestJS docs)
-
----
-
-*Stack research for: Borealis Fabrics — M1 Code Remediation + M2 Multi-Category Expansion*
-*Researched: 2026-03-17*
+- [Sentry NestJS Official Guide](https://docs.sentry.io/platforms/javascript/guides/nestjs/)
+- [Sentry Pino Integration](https://docs.sentry.io/platforms/javascript/guides/nestjs/configuration/integrations/pino/)
+- [NestJS Sentry Recipe](https://docs.nestjs.com/recipes/sentry)
+- [NestJS Async Local Storage Recipe](https://docs.nestjs.com/recipes/async-local-storage)
+- [NestJS Compression Docs](https://docs.nestjs.com/techniques/compression)
+- [nestjs-cls Documentation](https://papooch.github.io/nestjs-cls/)
+- [vite-plugin-pwa Documentation](https://vite-pwa-org.netlify.app/)
+- [Grafana k6 Documentation](https://grafana.com/docs/k6/latest/)
+- [pino-loki npm](https://www.npmjs.com/package/pino-loki)
+- [web-vitals npm](https://www.npmjs.com/package/web-vitals)
+- [eslint-plugin-jsx-a11y npm](https://www.npmjs.com/package/eslint-plugin-jsx-a11y)
+- [Node.js Docker Image Best Practices](https://snyk.io/blog/choosing-the-best-node-js-docker-image/)
+- [Tencent Cloud CDB Backup](https://www.tencentcloud.com/product/cdb)
+- [Docker Nginx Official Image](https://hub.docker.com/_/nginx)
+- [@sentry/nestjs npm](https://www.npmjs.com/package/@sentry/nestjs)
+- [@sentry/react npm](https://www.npmjs.com/package/@sentry/react)
+- [GitHub Dependabot Documentation](https://docs.github.com/en/code-security/dependabot)
+- [fradelg/mysql-cron-backup](https://github.com/fradelg/docker-mysql-cron-backup)
