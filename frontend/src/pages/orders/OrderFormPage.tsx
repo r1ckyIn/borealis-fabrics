@@ -5,7 +5,7 @@
 
 import { useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Spin, message, Result, Button } from 'antd';
+import { Card, Form, Spin, message, Result, Button } from 'antd';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { OrderForm } from '@/components/forms/OrderForm';
@@ -16,7 +16,7 @@ import {
 } from '@/hooks/queries/useOrders';
 import type { CreateOrderData, UpdateOrderData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
-import { getErrorMessage, parseFieldError } from '@/utils/errorMessages';
+import { getErrorMessage, mapApiErrorsToFormFields } from '@/utils/errorMessages';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -28,6 +28,7 @@ const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
 export default function OrderFormPage(): React.ReactElement {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [form] = Form.useForm();
 
   const isEditMode = !!id;
   const orderId = parseEntityId(id);
@@ -64,17 +65,18 @@ export default function OrderFormPage(): React.ReactElement {
       } catch (error) {
         console.error('Submit error:', error);
         const apiError = error as ApiError;
-        if ((apiError.code === 400 || apiError.code === 422) && apiError.message) {
-          const fieldMatch = parseFieldError(apiError.message);
-          if (fieldMatch) {
-            message.error(fieldMatch.message);
+        if (apiError.code === 400 || apiError.code === 422) {
+          const fieldErrors = mapApiErrorsToFormFields(apiError);
+          if (fieldErrors.length > 0) {
+            form.setFields(fieldErrors);
+            message.error('请检查表单中的错误字段');
             return;
           }
         }
         message.error(getErrorMessage(apiError));
       }
     },
-    [isEditMode, orderId, createMutation, updateMutation, navigate]
+    [isEditMode, orderId, createMutation, updateMutation, navigate, form]
   );
 
   /** Navigate back to order list. */
@@ -146,6 +148,7 @@ export default function OrderFormPage(): React.ReactElement {
     >
       <Card>
         <OrderForm
+          form={form}
           initialValues={order}
           onSubmit={handleSubmit}
           onCancel={goToList}

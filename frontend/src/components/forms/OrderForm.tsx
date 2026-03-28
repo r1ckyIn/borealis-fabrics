@@ -16,6 +16,7 @@ import {
   Alert,
   Typography,
 } from 'antd';
+import type { FormInstance } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { Dayjs } from 'dayjs';
 
@@ -55,6 +56,8 @@ export interface OrderFormProps {
   onCancel: () => void;
   loading?: boolean;
   mode: 'create' | 'edit';
+  /** Optional external form instance for parent-controlled field errors. */
+  form?: FormInstance;
 }
 
 /** Search customers for selector. */
@@ -69,8 +72,10 @@ export function OrderForm({
   onCancel,
   loading = false,
   mode,
+  form: externalForm,
 }: OrderFormProps): React.ReactElement {
-  const [form] = Form.useForm<OrderFormValues>();
+  const [internalForm] = Form.useForm<OrderFormValues>();
+  const form = externalForm ?? internalForm;
   const isEditMode = mode === 'edit';
 
   // Watch items for total calculation
