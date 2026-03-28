@@ -86,3 +86,27 @@ export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
 }
+
+/**
+ * Normalize a cell value for header matching.
+ * - Extract plain text from RichText objects
+ * - Trim whitespace
+ * - Lowercase for case-insensitive matching
+ */
+export function normalizeHeaderValue(cell: ExcelJS.Cell): string {
+  const value = cell.value;
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object' && 'richText' in value) {
+    return (value.richText as Array<{ text: string }>)
+      .map((rt) => rt.text)
+      .join('')
+      .trim()
+      .toLowerCase();
+  }
+  if (typeof value === 'string') return value.trim().toLowerCase();
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return value.toString().trim().toLowerCase();
+  }
+  // Fallback for Date and other object types
+  return '';
+}

@@ -170,14 +170,22 @@ export class SalesContractImportStrategy implements ImportStrategy {
 
   /**
    * Match when headers contain '面料名称' or '品名' combined with '数量' and ('单价' or '金额').
-   * RichText-safe: uses getCellValue-style string extraction.
+   * Normalizes headers (trim whitespace, lowercase) for resilient matching.
    */
   matchesHeaders(headers: string[]): boolean {
-    const joined = headers.join(' ');
+    const normalized = headers.map((h) => h.trim().toLowerCase());
+    const joined = normalized.join(' ');
     const hasFabricName = joined.includes('面料名称');
     const hasProductName = joined.includes('品名');
-    const hasQuantity = joined.includes('数量');
-    const hasPrice = joined.includes('单价') || joined.includes('金额');
+    const hasQuantity =
+      joined.includes('数量') ||
+      joined.includes('qty') ||
+      joined.includes('quantity');
+    const hasPrice =
+      joined.includes('单价') ||
+      joined.includes('金额') ||
+      joined.includes('price') ||
+      joined.includes('amount');
 
     return (hasFabricName || hasProductName) && hasQuantity && hasPrice;
   }

@@ -25,6 +25,7 @@ import { SystemModule } from './system/system.module';
 import { ProductModule } from './product/product.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { UserClsInterceptor } from './common/interceptors/user-cls.interceptor';
 import { HealthController } from './common/health/health.controller';
 import configuration from './config/configuration';
 
@@ -104,6 +105,11 @@ import configuration from './config/configuration';
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
+    },
+    // Store authenticated user in CLS for service-layer access
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UserClsInterceptor,
     },
     // Global validation pipe
     {

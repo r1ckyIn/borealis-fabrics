@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileService } from '../file/file.service';
+import { RequestUser } from '../auth/interfaces';
 import { UpdateCustomerPaymentDto, UpdateSupplierPaymentDto } from './dto';
 import { CustomerPayStatus } from './enums/order-status.enum';
 import {
@@ -21,6 +23,7 @@ export class OrderPaymentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fileService: FileService,
+    private readonly cls: ClsService,
   ) {}
 
   /**
@@ -44,7 +47,7 @@ export class OrderPaymentService {
           amount: dto.customerPaid ?? 0,
           payMethod: dto.customerPayMethod,
           remark: dto.notes,
-          operatorId: undefined,
+          operatorId: this.getOperatorId(),
         },
       });
 
@@ -127,7 +130,7 @@ export class OrderPaymentService {
           amount: dto.paid ?? 0,
           payMethod: dto.payMethod,
           remark: dto.notes,
-          operatorId: undefined,
+          operatorId: this.getOperatorId(),
         },
       });
 
@@ -229,5 +232,14 @@ export class OrderPaymentService {
     }
 
     return updateData;
+  }
+
+  /**
+   * Get the current operator ID from CLS-stored authenticated user.
+   * Returns null if no user is available (e.g. system/cron context).
+   */
+  private getOperatorId(): number | null {
+    const user = this.cls.get<RequestUser | undefined>('user');
+    return user?.id ?? null;
   }
 }
