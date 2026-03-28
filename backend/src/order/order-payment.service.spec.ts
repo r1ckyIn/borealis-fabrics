@@ -252,7 +252,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         upsertedPayment,
@@ -288,7 +288,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(newPayment);
       mockPrismaService.paymentRecord.create.mockResolvedValue({ id: 1 });
@@ -344,7 +344,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 2,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         upsertedPayment,
@@ -389,7 +389,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         upsertedPayment,
@@ -429,7 +429,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         upsertedPayment,

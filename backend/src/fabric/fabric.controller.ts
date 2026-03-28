@@ -14,7 +14,11 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -403,5 +407,20 @@ export class FabricController {
     @Param('pricingId', ParseIntPipe) pricingId: number,
   ) {
     return this.fabricService.removePricing(id, pricingId);
+  }
+
+  @Patch(':id/restore')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('boss')
+  @ApiOperation({ summary: 'Restore a soft-deleted fabric (boss only)' })
+  @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Fabric restored' })
+  @ApiResponse({ status: 403, description: 'Boss role required' })
+  @ApiResponse({
+    status: 404,
+    description: 'Fabric not found in deleted records',
+  })
+  restore(@Param('id', ParseIntPipe) id: number) {
+    return this.fabricService.restore(id);
   }
 }

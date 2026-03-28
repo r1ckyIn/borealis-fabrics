@@ -275,6 +275,31 @@ export class ProductService {
     await this.prisma.product.delete({ where: { id } });
   }
 
+  /**
+   * Restore a soft-deleted product.
+   * Uses raw SQL to bypass soft-delete auto-filtering.
+   * @throws NotFoundException if product not found in deleted records
+   */
+  async restore(id: number): Promise<Product> {
+    const deleted = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      'SELECT id FROM products WHERE id = ? AND deleted_at IS NOT NULL',
+      id,
+    );
+
+    if (!deleted || deleted.length === 0) {
+      throw new NotFoundException(
+        `Product with ID ${id} not found in deleted records`,
+      );
+    }
+
+    await this.prisma.$executeRawUnsafe(
+      'UPDATE products SET deleted_at = NULL WHERE id = ?',
+      id,
+    );
+
+    return this.prisma.product.findFirst({ where: { id } }) as Promise<Product>;
+  }
+
   // ========================================
   // Product Supplier Methods
   // ========================================

@@ -217,6 +217,35 @@ export class SupplierService {
   }
 
   /**
+   * Restore a soft-deleted supplier.
+   * Uses raw SQL to bypass soft-delete auto-filtering.
+   * @throws NotFoundException if supplier not found in deleted records
+   */
+  async restore(id: number): Promise<Supplier> {
+    // Query deleted records using raw SQL (bypasses soft-delete extension filter)
+    const deleted = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      'SELECT id FROM suppliers WHERE id = ? AND deleted_at IS NOT NULL',
+      id,
+    );
+
+    if (!deleted || deleted.length === 0) {
+      throw new NotFoundException(
+        `Supplier with ID ${id} not found in deleted records`,
+      );
+    }
+
+    // Restore by setting deleted_at to null
+    await this.prisma.$executeRawUnsafe(
+      'UPDATE suppliers SET deleted_at = NULL WHERE id = ?',
+      id,
+    );
+
+    return this.prisma.supplier.findFirst({
+      where: { id },
+    }) as Promise<Supplier>;
+  }
+
+  /**
    * Find all fabrics associated with a supplier.
    * Returns paginated list with fabric details and supplier-specific pricing/lead time.
    * Throws NotFoundException if supplier not found or soft-deleted.

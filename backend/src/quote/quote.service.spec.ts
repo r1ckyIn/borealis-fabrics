@@ -68,13 +68,13 @@ describe('QuoteService', () => {
   const mockCustomer = {
     id: 1,
     companyName: 'Test Customer',
-    isActive: true,
+    deletedAt: null,
   };
   const mockFabric = {
     id: 1,
     fabricCode: 'BF-2601-0001',
     name: 'Cotton',
-    isActive: true,
+    deletedAt: null,
     defaultPrice: new Prisma.Decimal(25),
   };
   const mockProduct = {
@@ -82,7 +82,7 @@ describe('QuoteService', () => {
     productCode: 'PD-2601-0001',
     name: 'Iron Frame A',
     subCategory: 'IRON_FRAME',
-    isActive: true,
+    deletedAt: null,
   };
 
   const mockQuoteItem = {

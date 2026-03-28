@@ -99,7 +99,6 @@ export class OrderService {
             'Quote',
             quoteIds,
             this.prisma.quote.findMany.bind(this.prisma.quote),
-            false,
           )
         : Promise.resolve(new Set<number>()),
     ]);
@@ -108,7 +107,7 @@ export class OrderService {
     const productSubCategoryMap = new Map<number, string>();
     if (productIds.length > 0) {
       const products = await this.prisma.product.findMany({
-        where: { id: { in: productIds }, isActive: true },
+        where: { id: { in: productIds } },
         select: { id: true, subCategory: true },
       });
       for (const p of products) {

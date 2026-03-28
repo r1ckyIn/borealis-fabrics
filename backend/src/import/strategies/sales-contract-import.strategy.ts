@@ -192,21 +192,21 @@ export class SalesContractImportStrategy implements ImportStrategy {
   async getExistingKeys(): Promise<Set<string>> {
     // Load customers
     const customers = await this.prisma.customer.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, companyName: true },
     });
     this.customerMap = new Map(customers.map((c) => [c.companyName, c.id]));
 
     // Load fabrics
     const fabrics = await this.prisma.fabric.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, name: true },
     });
     this.fabricMap = new Map(fabrics.map((f) => [f.name, f.id]));
 
     // Load products
     const products = await this.prisma.product.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, name: true, modelNumber: true },
     });
     this.productMap = new Map(products.map((p) => [p.name, p.id]));

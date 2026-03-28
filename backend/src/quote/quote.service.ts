@@ -121,7 +121,7 @@ export class QuoteService {
   async create(createDto: CreateQuoteDto): Promise<Quote> {
     // Validate customer
     const customer = await this.prisma.customer.findFirst({
-      where: { id: createDto.customerId, isActive: true },
+      where: { id: createDto.customerId },
     });
     if (!customer) {
       throw new NotFoundException(
@@ -150,13 +150,13 @@ export class QuoteService {
     const [fabrics, products] = await Promise.all([
       fabricIds.length > 0
         ? this.prisma.fabric.findMany({
-            where: { id: { in: fabricIds }, isActive: true },
+            where: { id: { in: fabricIds } },
             select: { id: true },
           })
         : Promise.resolve([]),
       productIds.length > 0
         ? this.prisma.product.findMany({
-            where: { id: { in: productIds }, isActive: true },
+            where: { id: { in: productIds } },
             select: { id: true, subCategory: true },
           })
         : Promise.resolve([]),
@@ -938,7 +938,7 @@ export class QuoteService {
   ): Promise<void> {
     if (fabricIds.length > 0) {
       const fabrics = await prismaClient.fabric.findMany({
-        where: { id: { in: fabricIds }, isActive: true },
+        where: { id: { in: fabricIds } },
         select: { id: true },
       });
       if (fabrics.length !== fabricIds.length) {
@@ -950,7 +950,7 @@ export class QuoteService {
 
     if (productIds.length > 0) {
       const products = await prismaClient.product.findMany({
-        where: { id: { in: productIds }, isActive: true },
+        where: { id: { in: productIds } },
         select: { id: true },
       });
       if (products.length !== productIds.length) {

@@ -66,18 +66,18 @@ describe('OrderService', () => {
     id: 1,
     companyName: 'Test Customer',
     contactName: 'John Doe',
-    isActive: true,
+    deletedAt: null,
   };
   const mockFabric = {
     id: 1,
     fabricCode: 'BF-2601-0001',
     name: 'Cotton',
-    isActive: true,
+    deletedAt: null,
   };
   const mockSupplier = {
     id: 1,
     companyName: 'Test Supplier',
-    isActive: true,
+    deletedAt: null,
   };
   const mockQuote = {
     id: 1,
@@ -340,7 +340,7 @@ describe('OrderService', () => {
 
       expect(result).toEqual(mockOrder);
       expect(mockPrismaService.supplier.findMany).toHaveBeenCalledWith({
-        where: { id: { in: [1] }, isActive: true },
+        where: { id: { in: [1] } },
         select: { id: true },
       });
       expect(mockPrismaService.quote.findMany).toHaveBeenCalledWith({
@@ -701,7 +701,7 @@ describe('OrderService', () => {
     it('should update order basic information', async () => {
       const existingOrder = {
         ...mockOrder,
-        isActive: true,
+        deletedAt: null,
       };
       const updatedOrder = {
         ...mockOrder,
@@ -738,7 +738,7 @@ describe('OrderService', () => {
     it('should update customerId when provided', async () => {
       const existingOrder = {
         ...mockOrder,
-        isActive: true,
+        deletedAt: null,
       };
       mockPrismaService.order.findUnique.mockResolvedValue(existingOrder);
       mockPrismaService.customer.findFirst.mockResolvedValue(mockCustomer);
@@ -747,7 +747,7 @@ describe('OrderService', () => {
       await service.update(1, { customerId: 2 });
 
       expect(mockPrismaService.customer.findFirst).toHaveBeenCalledWith({
-        where: { id: 2, isActive: true },
+        where: { id: 2 },
         select: { id: true },
       });
       expect(mockPrismaService.order.update).toHaveBeenCalledWith(
@@ -762,7 +762,7 @@ describe('OrderService', () => {
     it('should throw NotFoundException when new customer not found', async () => {
       const existingOrder = {
         ...mockOrder,
-        isActive: true,
+        deletedAt: null,
       };
       mockPrismaService.order.findUnique.mockResolvedValue(existingOrder);
       mockPrismaService.customer.findFirst.mockResolvedValue(null);

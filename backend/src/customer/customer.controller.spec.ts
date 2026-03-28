@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { CustomerController } from './customer.controller';
 import { CustomerService } from './customer.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import {
   CreateCustomerDto,
   CreateCustomerPricingDto,
@@ -25,6 +27,7 @@ describe('CustomerController', () => {
     removePricing: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    restore: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -36,7 +39,12 @@ describe('CustomerController', () => {
           useValue: mockCustomerService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<CustomerController>(CustomerController);
     service = module.get<CustomerService>(CustomerService);

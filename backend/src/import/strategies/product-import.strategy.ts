@@ -158,13 +158,13 @@ export class ProductImportStrategy implements ImportStrategy {
   async getExistingKeys(): Promise<Set<string>> {
     // Load existing product keys
     const products = await this.prisma.product.findMany({
-      where: { isActive: true },
+      where: {},
       select: { modelNumber: true, name: true },
     });
 
     // Pre-load supplier name-to-id map
     const suppliers = await this.prisma.supplier.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, companyName: true },
     });
     this.supplierMap = new Map(suppliers.map((s) => [s.companyName, s.id]));

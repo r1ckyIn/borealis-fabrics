@@ -166,7 +166,7 @@ describe('OrderItemService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.fabric.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.orderItem.create.mockResolvedValue(mockOrderItem);
       mockPrismaService.orderTimeline.create.mockResolvedValue({});
@@ -214,7 +214,7 @@ describe('OrderItemService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.fabric.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplier.findFirst.mockResolvedValue(null);
 
@@ -266,7 +266,7 @@ describe('OrderItemService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.product.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.productSupplier.findFirst.mockResolvedValue({
         supplierId: 1,
@@ -318,7 +318,7 @@ describe('OrderItemService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.product.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.productSupplier.findFirst.mockResolvedValue(null);
       mockPrismaService.product.findUnique.mockResolvedValue({

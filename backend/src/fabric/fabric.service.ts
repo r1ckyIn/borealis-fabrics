@@ -293,6 +293,31 @@ export class FabricService {
   }
 
   /**
+   * Restore a soft-deleted fabric.
+   * Uses raw SQL to bypass soft-delete auto-filtering.
+   * @throws NotFoundException if fabric not found in deleted records
+   */
+  async restore(id: number): Promise<Fabric> {
+    const deleted = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      'SELECT id FROM fabrics WHERE id = ? AND deleted_at IS NOT NULL',
+      id,
+    );
+
+    if (!deleted || deleted.length === 0) {
+      throw new NotFoundException(
+        `Fabric with ID ${id} not found in deleted records`,
+      );
+    }
+
+    await this.prisma.$executeRawUnsafe(
+      'UPDATE fabrics SET deleted_at = NULL WHERE id = ?',
+      id,
+    );
+
+    return this.prisma.fabric.findFirst({ where: { id } }) as Promise<Fabric>;
+  }
+
+  /**
    * Resolve image URLs from key-only storage to full URLs.
    * Delegates to FileService.getFileUrl which handles legacy full URLs gracefully.
    */

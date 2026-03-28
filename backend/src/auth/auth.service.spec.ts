@@ -192,7 +192,7 @@ describe('AuthService', () => {
         name: 'Test User',
         avatar: null,
         mobile: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
@@ -241,7 +241,7 @@ describe('AuthService', () => {
         name: 'Test User',
         avatar: 'https://avatar.com/img.png',
         mobile: '13800138000',
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -282,7 +282,7 @@ describe('AuthService', () => {
         name: 'Dev User',
         avatar: null,
         mobile: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -325,7 +325,7 @@ describe('AuthService', () => {
         name: 'Test User',
         avatar: null,
         mobile: '13800138000',
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

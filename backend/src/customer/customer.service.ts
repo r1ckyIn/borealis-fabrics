@@ -246,6 +246,33 @@ export class CustomerService {
   }
 
   /**
+   * Restore a soft-deleted customer.
+   * Uses raw SQL to bypass soft-delete auto-filtering.
+   * @throws NotFoundException if customer not found in deleted records
+   */
+  async restore(id: number): Promise<Customer> {
+    const deleted = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      'SELECT id FROM customers WHERE id = ? AND deleted_at IS NOT NULL',
+      id,
+    );
+
+    if (!deleted || deleted.length === 0) {
+      throw new NotFoundException(
+        `Customer with ID ${id} not found in deleted records`,
+      );
+    }
+
+    await this.prisma.$executeRawUnsafe(
+      'UPDATE customers SET deleted_at = NULL WHERE id = ?',
+      id,
+    );
+
+    return this.prisma.customer.findFirst({
+      where: { id },
+    }) as Promise<Customer>;
+  }
+
+  /**
    * Create a special pricing record for a customer-fabric pair.
    * Uses transaction to ensure atomic validation and creation.
    * Throws NotFoundException if customer or fabric not found.
