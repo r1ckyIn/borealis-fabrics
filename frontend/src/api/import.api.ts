@@ -103,11 +103,26 @@ export function importSalesContracts(
   return uploadImportFile('/import/sales-contracts', file, onProgress);
 }
 
+/** Download the product import Excel template. */
+export function downloadProductTemplate(): Promise<void> {
+  return downloadTemplate('/import/templates/products', 'product_import_template.xlsx');
+}
+
+/** Import products from an Excel file. */
+export function importProducts(
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<ImportResult> {
+  return uploadImportFile('/import/products', file, onProgress);
+}
+
 export const importApi = {
   downloadFabricTemplate,
   downloadSupplierTemplate,
+  downloadProductTemplate,
   importFabrics,
   importSuppliers,
   importPurchaseOrders,
   importSalesContracts,
+  importProducts,
 };
