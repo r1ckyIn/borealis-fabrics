@@ -54,7 +54,7 @@ export class OrderService {
    * - Generates order code (ORD-YYMM-NNNN)
    * - Creates order and items in transaction
    * - Calculates totalAmount from items
-   * - Initial status: INQUIRY
+   * - Initial status: PENDING
    */
   async create(createDto: CreateOrderDto): Promise<Order> {
     this.logger.debug(`Create order called with: ${JSON.stringify(createDto)}`);
