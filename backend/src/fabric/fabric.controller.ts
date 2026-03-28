@@ -78,7 +78,6 @@ export class FabricController {
   @ApiQuery({ name: 'fabricCode', required: false, type: String })
   @ApiQuery({ name: 'name', required: false, type: String })
   @ApiQuery({ name: 'color', required: false, type: String })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Paginated fabric list' })
   findAll(@Query() query: QueryFabricDto) {
     return this.fabricService.findAll(query);

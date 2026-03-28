@@ -127,7 +127,6 @@ export class ProductController {
   @ApiQuery({ name: 'keyword', required: false, type: String })
   @ApiQuery({ name: 'subCategory', required: false, type: String })
   @ApiQuery({ name: 'category', required: false, type: String })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Paginated product list' })
   findAll(@Query() query: QueryProductDto) {
     return this.productService.findAll(query);

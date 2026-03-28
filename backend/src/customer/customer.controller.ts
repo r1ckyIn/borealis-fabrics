@@ -67,7 +67,6 @@ export class CustomerController {
     required: false,
     enum: ['prepay', 'credit'],
   })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Paginated customer list' })
   findAll(@Query() query: QueryCustomerDto) {
     return this.customerService.findAll(query);

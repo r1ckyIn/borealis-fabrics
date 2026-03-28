@@ -116,7 +116,7 @@ describe('SupplierService', () => {
       settleType: 'prepay',
       creditDays: 30,
       notes: 'Premium supplier',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -164,7 +164,7 @@ describe('SupplierService', () => {
         settleType: 'prepay',
         creditDays: null,
         notes: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -195,7 +195,7 @@ describe('SupplierService', () => {
       settleType: 'prepay',
       creditDays: 30,
       notes: 'Premium supplier',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -206,7 +206,7 @@ describe('SupplierService', () => {
       const result = await service.findOne(1);
 
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(result).toEqual(mockSupplier);
     });
@@ -225,7 +225,7 @@ describe('SupplierService', () => {
 
       await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
   });
@@ -240,7 +240,7 @@ describe('SupplierService', () => {
         companyName: 'ABC Textiles',
         status: 'active',
         settleType: 'prepay',
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -249,7 +249,7 @@ describe('SupplierService', () => {
         companyName: 'XYZ Fabrics',
         status: 'active',
         settleType: 'credit',
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -352,36 +352,15 @@ describe('SupplierService', () => {
       );
     });
 
-    it('should include soft-deleted suppliers when isActive is false', async () => {
-      const query: QuerySupplierDto = { isActive: false };
-      supplierMock.findMany.mockResolvedValue([]);
-      supplierMock.count.mockResolvedValue(0);
-
-      await service.findAll(query);
-
-      expect(supplierMock.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            isActive: false,
-          }),
-        }),
-      );
-    });
-
-    it('should default to isActive=true', async () => {
+    it('should auto-filter soft-deleted suppliers via extension', async () => {
       const query: QuerySupplierDto = {};
       supplierMock.findMany.mockResolvedValue(mockSuppliers);
       supplierMock.count.mockResolvedValue(2);
 
       await service.findAll(query);
 
-      expect(supplierMock.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            isActive: true,
-          }),
-        }),
-      );
+      // Soft-delete auto-filtering is handled by Prisma extension
+      expect(supplierMock.findMany).toHaveBeenCalled();
     });
   });
 
@@ -395,7 +374,7 @@ describe('SupplierService', () => {
       contactName: 'John Doe',
       phone: '13800138000',
       status: 'active',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -404,14 +383,14 @@ describe('SupplierService', () => {
       const updateDto: UpdateSupplierDto = { contactName: 'Jane Doe' };
       const updatedSupplier = { ...existingSupplier, contactName: 'Jane Doe' };
 
-      // First findFirst for existence check (with isActive: true)
+      // First findFirst for existence check
       supplierMock.findFirst.mockResolvedValueOnce(existingSupplier);
       supplierMock.update.mockResolvedValue(updatedSupplier);
 
       const result = await service.update(1, updateDto);
 
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(supplierMock.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -490,21 +469,21 @@ describe('SupplierService', () => {
     const existingSupplier = {
       id: 1,
       companyName: 'ABC Textiles',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     it('should throw NotFoundException if supplier not found', async () => {
-      supplierMock.findUnique.mockResolvedValue(null);
+      supplierMock.findFirst.mockResolvedValue(null);
 
       await expect(service.remove(999, false)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it('should physically delete supplier with no relations', async () => {
-      supplierMock.findUnique.mockResolvedValue(existingSupplier);
+    it('should soft delete supplier with no relations', async () => {
+      supplierMock.findFirst.mockResolvedValue(existingSupplier);
       fabricSupplierMock.count.mockResolvedValue(0);
       orderItemMock.count.mockResolvedValue(0);
       supplierPaymentMock.count.mockResolvedValue(0);
@@ -513,13 +492,14 @@ describe('SupplierService', () => {
 
       await service.remove(1, false);
 
+      // Extension intercepts delete() and sets deletedAt
       expect(supplierMock.delete).toHaveBeenCalledWith({
         where: { id: 1 },
       });
     });
 
     it('should throw ConflictException when relations exist and force=false', async () => {
-      supplierMock.findUnique.mockResolvedValue(existingSupplier);
+      supplierMock.findFirst.mockResolvedValue(existingSupplier);
       fabricSupplierMock.count.mockResolvedValue(2);
       orderItemMock.count.mockResolvedValue(0);
       supplierPaymentMock.count.mockResolvedValue(0);
@@ -532,27 +512,23 @@ describe('SupplierService', () => {
     });
 
     it('should soft delete when relations exist and force=true', async () => {
-      supplierMock.findUnique.mockResolvedValue(existingSupplier);
+      supplierMock.findFirst.mockResolvedValue(existingSupplier);
       fabricSupplierMock.count.mockResolvedValue(1);
       orderItemMock.count.mockResolvedValue(0);
       supplierPaymentMock.count.mockResolvedValue(0);
       paymentRecordMock.count.mockResolvedValue(0);
-      supplierMock.update.mockResolvedValue({
-        ...existingSupplier,
-        isActive: false,
-      });
+      supplierMock.delete.mockResolvedValue(existingSupplier);
 
       await service.remove(1, true);
 
-      expect(supplierMock.update).toHaveBeenCalledWith({
+      // Extension intercepts delete() and sets deletedAt
+      expect(supplierMock.delete).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { isActive: false },
       });
-      expect(supplierMock.delete).not.toHaveBeenCalled();
     });
 
     it('should list all relation types in conflict message', async () => {
-      supplierMock.findUnique.mockResolvedValue(existingSupplier);
+      supplierMock.findFirst.mockResolvedValue(existingSupplier);
       fabricSupplierMock.count.mockResolvedValue(1);
       orderItemMock.count.mockResolvedValue(2);
       supplierPaymentMock.count.mockResolvedValue(3);
@@ -575,7 +551,7 @@ describe('SupplierService', () => {
         const mockSupplier = {
           id: 1,
           companyName: maxLengthName,
-          isActive: true,
+          deletedAt: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -599,7 +575,7 @@ describe('SupplierService', () => {
           id: 1,
           companyName: 'Test',
           notes: maxLengthNotes,
-          isActive: true,
+          deletedAt: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -622,7 +598,7 @@ describe('SupplierService', () => {
           id: 1,
           companyName: 'Test',
           creditDays: 0,
-          isActive: true,
+          deletedAt: null,
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -668,7 +644,7 @@ describe('SupplierService', () => {
     const mockSupplier = {
       id: 1,
       companyName: 'ABC Textiles',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -736,7 +712,7 @@ describe('SupplierService', () => {
       const result = await service.findSupplierFabrics(1, query);
 
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(result.items).toHaveLength(2);
       expect(result.pagination.total).toBe(2);
@@ -762,7 +738,7 @@ describe('SupplierService', () => {
         NotFoundException,
       );
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 

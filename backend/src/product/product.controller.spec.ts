@@ -27,7 +27,7 @@ describe('ProductController', () => {
     defaultPrice: new Decimal(1200.5),
     specs: null,
     notes: null,
-    isActive: true,
+    deletedAt: null,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
   };

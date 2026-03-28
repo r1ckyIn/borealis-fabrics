@@ -71,7 +71,7 @@ describe('SupplierController', () => {
     const mockSupplier = {
       id: 1,
       ...createDto,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -115,7 +115,7 @@ describe('SupplierController', () => {
       settleType: 'prepay',
       creditDays: 30,
       notes: 'Premium supplier',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -156,7 +156,7 @@ describe('SupplierController', () => {
         settleType: 'prepay',
         creditDays: null,
         notes: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -217,7 +217,7 @@ describe('SupplierController', () => {
       settleType: 'prepay',
       creditDays: null,
       notes: null,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

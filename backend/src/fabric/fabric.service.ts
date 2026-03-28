@@ -63,7 +63,7 @@ export class FabricService {
   ) {
     // Verify fabric exists and is active
     const fabric = await tx.fabric.findFirst({
-      where: { id: fabricId, isActive: true },
+      where: { id: fabricId },
     });
 
     if (!fabric) {
@@ -72,7 +72,7 @@ export class FabricService {
 
     // Verify supplier exists and is active
     const supplier = await tx.supplier.findFirst({
-      where: { id: supplierId, isActive: true },
+      where: { id: supplierId },
     });
 
     if (!supplier) {
@@ -124,7 +124,7 @@ export class FabricService {
    */
   async findOne(id: number): Promise<Fabric & { images: FabricImage[] }> {
     const fabric = await this.prisma.fabric.findFirst({
-      where: { id, isActive: true },
+      where: { id },
       include: { images: { orderBy: { sortOrder: 'asc' } } },
     });
 
@@ -140,10 +140,8 @@ export class FabricService {
    * Find all fabrics with optional filtering and pagination.
    */
   async findAll(query: QueryFabricDto): Promise<PaginatedResult<Fabric>> {
-    // Build where clause
-    const where: Prisma.FabricWhereInput = {
-      isActive: query.isActive ?? true,
-    };
+    // Build where clause (soft-delete auto-filtered by extension)
+    const where: Prisma.FabricWhereInput = {};
 
     // Unified keyword search across fabricCode, name, and color
     if (query.keyword) {
@@ -195,9 +193,9 @@ export class FabricService {
    */
   async update(id: number, updateFabricDto: UpdateFabricDto): Promise<Fabric> {
     return this.prisma.$transaction(async (tx) => {
-      // Check if fabric exists and is active
+      // Check if fabric exists (soft-deleted records auto-filtered)
       const existing = await tx.fabric.findFirst({
-        where: { id, isActive: true },
+        where: { id },
       });
 
       if (!existing) {
@@ -226,14 +224,13 @@ export class FabricService {
   }
 
   /**
-   * Remove a fabric by ID.
-   * - If no relations exist: physical delete
+   * Remove a fabric by ID (soft delete via Prisma extension).
    * - If relations exist and force=false: throw ConflictException with relation details
-   * - If relations exist and force=true: soft delete (set isActive=false)
+   * - Otherwise: soft delete (sets deletedAt timestamp via extension)
    */
   async remove(id: number, force: boolean): Promise<void> {
-    // Check if fabric exists
-    const fabric = await this.prisma.fabric.findUnique({
+    // Check if fabric exists (soft-deleted records auto-filtered)
+    const fabric = await this.prisma.fabric.findFirst({
       where: { id },
     });
 
@@ -263,14 +260,7 @@ export class FabricService {
       orderItemCount > 0 ||
       quoteCount > 0;
 
-    if (!hasRelations) {
-      // No relations, safe to physically delete
-      await this.prisma.fabric.delete({ where: { id } });
-      return;
-    }
-
-    // Has relations
-    if (!force) {
+    if (hasRelations && !force) {
       // Build relation details message
       const relations: string[] = [];
       if (fabricImageCount > 0)
@@ -298,11 +288,8 @@ export class FabricService {
       );
     }
 
-    // Force=true with relations: soft delete
-    await this.prisma.fabric.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    // Soft delete (extension intercepts delete and sets deletedAt)
+    await this.prisma.fabric.delete({ where: { id } });
   }
 
   /**
@@ -336,7 +323,7 @@ export class FabricService {
   ): Promise<FabricImage> {
     // Validate fabric exists and is active
     const fabric = await this.prisma.fabric.findFirst({
-      where: { id: fabricId, isActive: true },
+      where: { id: fabricId },
     });
 
     if (!fabric) {
@@ -385,7 +372,7 @@ export class FabricService {
     const deletedImage = await this.prisma.$transaction(async (tx) => {
       // Validate fabric exists and is active
       const fabric = await tx.fabric.findFirst({
-        where: { id: fabricId, isActive: true },
+        where: { id: fabricId },
       });
 
       if (!fabric) {
@@ -442,19 +429,17 @@ export class FabricService {
     fabricId: number,
     query: QueryFabricSuppliersDto,
   ): Promise<PaginatedResult<FabricSupplierItem>> {
-    // Verify fabric exists and is active
+    // Verify fabric exists (soft-deleted records auto-filtered)
     const fabric = await this.prisma.fabric.findFirst({
-      where: { id: fabricId, isActive: true },
+      where: { id: fabricId },
     });
 
     if (!fabric) {
       throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
     }
 
-    // Build supplier filter conditions
-    const supplierWhere: Prisma.SupplierWhereInput = {
-      isActive: true,
-    };
+    // Build supplier filter conditions (soft-delete auto-filtered by extension)
+    const supplierWhere: Prisma.SupplierWhereInput = {};
 
     // Add supplier filters if provided
     if (query.supplierName) {
@@ -535,7 +520,7 @@ export class FabricService {
     return this.prisma.$transaction(async (tx) => {
       // Verify fabric exists and is active
       const fabric = await tx.fabric.findFirst({
-        where: { id: fabricId, isActive: true },
+        where: { id: fabricId },
       });
 
       if (!fabric) {
@@ -544,7 +529,7 @@ export class FabricService {
 
       // Verify supplier exists and is active
       const supplier = await tx.supplier.findFirst({
-        where: { id: createDto.supplierId, isActive: true },
+        where: { id: createDto.supplierId },
       });
 
       if (!supplier) {
@@ -639,17 +624,15 @@ export class FabricService {
   ): Promise<PaginatedResult<FabricPricingItem>> {
     // Verify fabric exists and is active
     const fabric = await this.prisma.fabric.findFirst({
-      where: { id: fabricId, isActive: true },
+      where: { id: fabricId },
     });
 
     if (!fabric) {
       throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
     }
 
-    // Build customer filter conditions
-    const customerWhere: Prisma.CustomerWhereInput = {
-      isActive: true,
-    };
+    // Build customer filter conditions (soft-delete auto-filtered by extension)
+    const customerWhere: Prisma.CustomerWhereInput = {};
 
     // Add customer name filter if provided
     if (query.customerName) {
@@ -728,7 +711,7 @@ export class FabricService {
     return this.prisma.$transaction(async (tx) => {
       // Verify fabric exists and is active
       const fabric = await tx.fabric.findFirst({
-        where: { id: fabricId, isActive: true },
+        where: { id: fabricId },
       });
       if (!fabric) {
         throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
@@ -736,7 +719,7 @@ export class FabricService {
 
       // Verify customer exists and is active
       const customer = await tx.customer.findFirst({
-        where: { id: createDto.customerId, isActive: true },
+        where: { id: createDto.customerId },
       });
       if (!customer) {
         throw new NotFoundException(
@@ -783,7 +766,7 @@ export class FabricService {
     return this.prisma.$transaction(async (tx) => {
       // Verify fabric exists and is active
       const fabric = await tx.fabric.findFirst({
-        where: { id: fabricId, isActive: true },
+        where: { id: fabricId },
       });
       if (!fabric) {
         throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
@@ -801,7 +784,7 @@ export class FabricService {
 
       // Verify customer is still active
       const customer = await tx.customer.findFirst({
-        where: { id: pricing.customerId, isActive: true },
+        where: { id: pricing.customerId },
       });
       if (!customer) {
         throw new NotFoundException(
@@ -828,7 +811,7 @@ export class FabricService {
     await this.prisma.$transaction(async (tx) => {
       // Verify fabric exists and is active
       const fabric = await tx.fabric.findFirst({
-        where: { id: fabricId, isActive: true },
+        where: { id: fabricId },
       });
       if (!fabric) {
         throw new NotFoundException(`Fabric with ID ${fabricId} not found`);
@@ -846,7 +829,7 @@ export class FabricService {
 
       // Verify customer is still active
       const customer = await tx.customer.findFirst({
-        where: { id: pricing.customerId, isActive: true },
+        where: { id: pricing.customerId },
       });
       if (!customer) {
         throw new NotFoundException(

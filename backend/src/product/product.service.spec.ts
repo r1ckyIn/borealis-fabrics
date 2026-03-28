@@ -32,7 +32,7 @@ describe('ProductService', () => {
     defaultPrice: new Decimal(1200.5),
     specs: null,
     notes: null,
-    isActive: true,
+    deletedAt: null,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
   };
@@ -294,7 +294,7 @@ describe('ProductService', () => {
 
       expect(result).toEqual(productWithRelations);
       expect(productMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
         include: {
           productSuppliers: { include: { supplier: true } },
           bundleItems: true,
@@ -330,8 +330,8 @@ describe('ProductService', () => {
   });
 
   describe('remove', () => {
-    it('should physically delete product with no relations', async () => {
-      productMock.findUnique.mockResolvedValue(mockProduct);
+    it('should soft delete product with no relations', async () => {
+      productMock.findFirst.mockResolvedValue(mockProduct);
       productSupplierMock.count.mockResolvedValue(0);
       productBundleItemMock.count.mockResolvedValue(0);
       customerPricingMock.count.mockResolvedValue(0);
@@ -343,7 +343,7 @@ describe('ProductService', () => {
     });
 
     it('should throw ConflictException when relations exist and force=false', async () => {
-      productMock.findUnique.mockResolvedValue(mockProduct);
+      productMock.findFirst.mockResolvedValue(mockProduct);
       productSupplierMock.count.mockResolvedValue(2);
       productBundleItemMock.count.mockResolvedValue(0);
       customerPricingMock.count.mockResolvedValue(0);
@@ -352,22 +352,22 @@ describe('ProductService', () => {
     });
 
     it('should soft delete when relations exist and force=true', async () => {
-      productMock.findUnique.mockResolvedValue(mockProduct);
+      productMock.findFirst.mockResolvedValue(mockProduct);
       productSupplierMock.count.mockResolvedValue(1);
       productBundleItemMock.count.mockResolvedValue(0);
       customerPricingMock.count.mockResolvedValue(0);
-      productMock.update.mockResolvedValue({ ...mockProduct, isActive: false });
+      productMock.delete.mockResolvedValue(mockProduct);
 
       await service.remove(1, true);
 
-      expect(productMock.update).toHaveBeenCalledWith({
+      // Extension intercepts delete() and sets deletedAt
+      expect(productMock.delete).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { isActive: false },
       });
     });
 
     it('should throw NotFoundException for non-existent product', async () => {
-      productMock.findUnique.mockResolvedValue(null);
+      productMock.findFirst.mockResolvedValue(null);
 
       await expect(service.remove(999, false)).rejects.toThrow(
         NotFoundException,
@@ -382,7 +382,7 @@ describe('ProductService', () => {
     const mockSupplier = {
       id: 1,
       companyName: 'Test Supplier',
-      isActive: true,
+      deletedAt: null,
     };
 
     it('should add supplier association successfully', async () => {
@@ -441,7 +441,7 @@ describe('ProductService', () => {
         updatedAt: new Date(),
       };
       productMock.findFirst.mockResolvedValue(mockProduct);
-      supplierMock.findFirst.mockResolvedValue({ id: 1, isActive: true });
+      supplierMock.findFirst.mockResolvedValue({ id: 1, deletedAt: null });
       productSupplierMock.findFirst.mockResolvedValue(mockAssociation);
       productSupplierMock.update.mockResolvedValue({
         ...mockAssociation,
@@ -460,7 +460,7 @@ describe('ProductService', () => {
     it('should remove supplier association', async () => {
       const mockAssociation = { id: 1, productId: 1, supplierId: 1 };
       productMock.findFirst.mockResolvedValue(mockProduct);
-      supplierMock.findFirst.mockResolvedValue({ id: 1, isActive: true });
+      supplierMock.findFirst.mockResolvedValue({ id: 1, deletedAt: null });
       productSupplierMock.findFirst.mockResolvedValue(mockAssociation);
       productSupplierMock.delete.mockResolvedValue(mockAssociation);
 
@@ -520,7 +520,7 @@ describe('ProductService', () => {
         updatedAt: new Date(),
       };
       productMock.findFirst.mockResolvedValue(mockProduct);
-      customerMock.findFirst.mockResolvedValue({ id: 5, isActive: true });
+      customerMock.findFirst.mockResolvedValue({ id: 5, deletedAt: null });
       customerPricingMock.create.mockResolvedValue(mockPricing);
 
       const result = await service.createPricing(1, {
@@ -542,7 +542,7 @@ describe('ProductService', () => {
 
     it('should throw ConflictException for duplicate pricing', async () => {
       productMock.findFirst.mockResolvedValue(mockProduct);
-      customerMock.findFirst.mockResolvedValue({ id: 5, isActive: true });
+      customerMock.findFirst.mockResolvedValue({ id: 5, deletedAt: null });
       customerPricingMock.create.mockRejectedValue({ code: 'P2002' });
 
       await expect(
@@ -620,7 +620,7 @@ describe('ProductService', () => {
         name: 'Standard Bed Set',
         description: null,
         totalPrice: new Decimal(3500),
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
         items: [],
@@ -664,7 +664,7 @@ describe('ProductService', () => {
         id: 1,
         bundleCode: 'BD-2603-0001',
         name: 'Standard Bed Set',
-        isActive: true,
+        deletedAt: null,
         _count: { items: 3 },
       };
       productBundleMock.findMany.mockResolvedValue([mockBundle]);
@@ -686,7 +686,7 @@ describe('ProductService', () => {
         id: 1,
         bundleCode: 'BD-2603-0001',
         name: 'Standard Bed Set',
-        isActive: true,
+        deletedAt: null,
         items: [{ id: 1, productId: 1, quantity: 1, product: mockProduct }],
       };
       productBundleMock.findFirst.mockResolvedValue(mockBundle);
@@ -709,7 +709,7 @@ describe('ProductService', () => {
         id: 1,
         bundleCode: 'BD-2603-0001',
         name: 'Updated Bundle',
-        isActive: true,
+        deletedAt: null,
         items: [],
       };
       productBundleMock.findFirst.mockResolvedValue(mockBundle);

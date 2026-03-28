@@ -82,7 +82,7 @@ describe('CustomerController', () => {
     const mockCustomer = {
       id: 1,
       ...createDto,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -123,7 +123,7 @@ describe('CustomerController', () => {
       creditType: 'prepay',
       creditDays: 30,
       notes: 'VIP customer',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -374,7 +374,7 @@ describe('CustomerController', () => {
         creditType: 'prepay',
         creditDays: null,
         notes: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -433,7 +433,7 @@ describe('CustomerController', () => {
       creditType: 'prepay',
       creditDays: null,
       notes: null,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

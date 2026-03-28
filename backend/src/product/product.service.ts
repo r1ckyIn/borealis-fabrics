@@ -121,9 +121,7 @@ export class ProductService {
    */
   async findAll(query: QueryProductDto): Promise<PaginatedResult<Product>> {
     // Build where clause
-    const where: Prisma.ProductWhereInput = {
-      isActive: query.isActive ?? true,
-    };
+    const where: Prisma.ProductWhereInput = {};
 
     // Unified keyword search across name, productCode, and modelNumber
     if (query.keyword) {
@@ -175,7 +173,7 @@ export class ProductService {
     }
   > {
     const product = await this.prisma.product.findFirst({
-      where: { id, isActive: true },
+      where: { id },
       include: {
         productSuppliers: {
           include: { supplier: true },
@@ -198,9 +196,9 @@ export class ProductService {
    */
   async update(id: number, dto: UpdateProductDto): Promise<Product> {
     return this.prisma.$transaction(async (tx) => {
-      // Check if product exists and is active
+      // Check if product exists (soft-deleted records auto-filtered)
       const existing = await tx.product.findFirst({
-        where: { id, isActive: true },
+        where: { id },
       });
 
       if (!existing) {
@@ -224,14 +222,13 @@ export class ProductService {
   }
 
   /**
-   * Remove a product by ID.
-   * - If no relations exist: physical delete
+   * Remove a product by ID (soft delete via Prisma extension).
    * - If relations exist and force=false: throw ConflictException with relation details
-   * - If relations exist and force=true: soft delete (set isActive=false)
+   * - Otherwise: soft delete (sets deletedAt timestamp via extension)
    */
   async remove(id: number, force: boolean): Promise<void> {
-    // Check if product exists
-    const product = await this.prisma.product.findUnique({
+    // Check if product exists (soft-deleted records auto-filtered)
+    const product = await this.prisma.product.findFirst({
       where: { id },
     });
 
@@ -252,14 +249,7 @@ export class ProductService {
       bundleItemCount > 0 ||
       customerPricingCount > 0;
 
-    if (!hasRelations) {
-      // No relations, safe to physically delete
-      await this.prisma.product.delete({ where: { id } });
-      return;
-    }
-
-    // Has relations
-    if (!force) {
+    if (hasRelations && !force) {
       // Build relation details message
       const relations: string[] = [];
       if (productSupplierCount > 0)
@@ -281,11 +271,8 @@ export class ProductService {
       );
     }
 
-    // Force=true with relations: soft delete
-    await this.prisma.product.update({
-      where: { id },
-      data: { isActive: false },
-    });
+    // Soft delete (extension intercepts delete and sets deletedAt)
+    await this.prisma.product.delete({ where: { id } });
   }
 
   // ========================================
@@ -303,7 +290,7 @@ export class ProductService {
   ) {
     // Verify product exists and is active
     const product = await tx.product.findFirst({
-      where: { id: productId, isActive: true },
+      where: { id: productId },
     });
 
     if (!product) {
@@ -312,7 +299,7 @@ export class ProductService {
 
     // Verify supplier exists and is active
     const supplier = await tx.supplier.findFirst({
-      where: { id: supplierId, isActive: true },
+      where: { id: supplierId },
     });
 
     if (!supplier) {
@@ -344,17 +331,15 @@ export class ProductService {
   ): Promise<PaginatedResult<ProductSupplierItem>> {
     // Verify product exists and is active
     const product = await this.prisma.product.findFirst({
-      where: { id: productId, isActive: true },
+      where: { id: productId },
     });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${productId} not found`);
     }
 
-    // Build supplier filter conditions
-    const supplierWhere: Prisma.SupplierWhereInput = {
-      isActive: true,
-    };
+    // Build supplier filter conditions (soft-delete auto-filtered by extension)
+    const supplierWhere: Prisma.SupplierWhereInput = {};
 
     if (query.supplierName) {
       supplierWhere.companyName = { contains: query.supplierName };
@@ -434,7 +419,7 @@ export class ProductService {
     return this.prisma.$transaction(async (tx) => {
       // Verify product exists and is active
       const product = await tx.product.findFirst({
-        where: { id: productId, isActive: true },
+        where: { id: productId },
       });
 
       if (!product) {
@@ -443,7 +428,7 @@ export class ProductService {
 
       // Verify supplier exists and is active
       const supplier = await tx.supplier.findFirst({
-        where: { id: dto.supplierId, isActive: true },
+        where: { id: dto.supplierId },
       });
 
       if (!supplier) {
@@ -536,17 +521,15 @@ export class ProductService {
   ): Promise<PaginatedResult<ProductPricingItem>> {
     // Verify product exists and is active
     const product = await this.prisma.product.findFirst({
-      where: { id: productId, isActive: true },
+      where: { id: productId },
     });
 
     if (!product) {
       throw new NotFoundException(`Product with ID ${productId} not found`);
     }
 
-    // Build customer filter conditions
-    const customerWhere: Prisma.CustomerWhereInput = {
-      isActive: true,
-    };
+    // Build customer filter conditions (soft-delete auto-filtered by extension)
+    const customerWhere: Prisma.CustomerWhereInput = {};
 
     if (query.customerName) {
       customerWhere.companyName = { contains: query.customerName };
@@ -623,7 +606,7 @@ export class ProductService {
     return this.prisma.$transaction(async (tx) => {
       // Verify product exists and is active
       const product = await tx.product.findFirst({
-        where: { id: productId, isActive: true },
+        where: { id: productId },
       });
       if (!product) {
         throw new NotFoundException(`Product with ID ${productId} not found`);
@@ -631,7 +614,7 @@ export class ProductService {
 
       // Verify customer exists and is active
       const customer = await tx.customer.findFirst({
-        where: { id: dto.customerId, isActive: true },
+        where: { id: dto.customerId },
       });
       if (!customer) {
         throw new NotFoundException(
@@ -677,7 +660,7 @@ export class ProductService {
     return this.prisma.$transaction(async (tx) => {
       // Verify product exists and is active
       const product = await tx.product.findFirst({
-        where: { id: productId, isActive: true },
+        where: { id: productId },
       });
       if (!product) {
         throw new NotFoundException(`Product with ID ${productId} not found`);
@@ -710,7 +693,7 @@ export class ProductService {
     await this.prisma.$transaction(async (tx) => {
       // Verify product exists and is active
       const product = await tx.product.findFirst({
-        where: { id: productId, isActive: true },
+        where: { id: productId },
       });
       if (!product) {
         throw new NotFoundException(`Product with ID ${productId} not found`);
@@ -743,9 +726,7 @@ export class ProductService {
     query: QueryProductBundleDto,
   ): Promise<PaginatedResult<ProductBundle>> {
     // Build where clause
-    const where: Prisma.ProductBundleWhereInput = {
-      isActive: true,
-    };
+    const where: Prisma.ProductBundleWhereInput = {};
 
     // Keyword search across bundleCode and name
     if (query.keyword) {
@@ -791,7 +772,7 @@ export class ProductService {
       // Validate all product IDs exist
       const productIds = dto.items.map((item) => item.productId);
       const products = await tx.product.findMany({
-        where: { id: { in: productIds }, isActive: true },
+        where: { id: { in: productIds } },
         select: { id: true },
       });
 
@@ -834,7 +815,7 @@ export class ProductService {
    */
   async findBundle(id: number): Promise<ProductBundle> {
     const bundle = await this.prisma.productBundle.findFirst({
-      where: { id, isActive: true },
+      where: { id },
       include: {
         items: { include: { product: true } },
       },
@@ -859,7 +840,7 @@ export class ProductService {
     return this.prisma.$transaction(async (tx) => {
       // Check if bundle exists
       const existing = await tx.productBundle.findFirst({
-        where: { id, isActive: true },
+        where: { id },
       });
 
       if (!existing) {
@@ -870,7 +851,7 @@ export class ProductService {
       if (dto.items && dto.items.length > 0) {
         const productIds = dto.items.map((item) => item.productId);
         const products = await tx.product.findMany({
-          where: { id: { in: productIds }, isActive: true },
+          where: { id: { in: productIds } },
           select: { id: true },
         });
 

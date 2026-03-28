@@ -35,7 +35,7 @@ describe('FabricController', () => {
     description: 'High-quality cotton twill fabric',
     tags: null,
     notes: null,
-    isActive: true,
+    deletedAt: null,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
   };

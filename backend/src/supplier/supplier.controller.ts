@@ -62,7 +62,6 @@ export class SupplierController {
     enum: ['active', 'suspended', 'eliminated'],
   })
   @ApiQuery({ name: 'settleType', required: false, enum: ['prepay', 'credit'] })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Paginated supplier list' })
   findAll(@Query() query: QuerySupplierDto) {
     return this.supplierService.findAll(query);
