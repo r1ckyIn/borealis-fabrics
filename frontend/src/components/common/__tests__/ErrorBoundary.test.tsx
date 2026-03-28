@@ -6,6 +6,13 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from '../ErrorBoundary';
 
+// Mock Sentry
+vi.mock('@sentry/react', () => ({
+  captureException: vi.fn(),
+}));
+
+import * as Sentry from '@sentry/react';
+
 // Component that throws an error
 function ThrowError({ shouldThrow }: { shouldThrow: boolean }): React.ReactElement {
   if (shouldThrow) {
@@ -18,6 +25,7 @@ function ThrowError({ shouldThrow }: { shouldThrow: boolean }): React.ReactEleme
 const originalError = console.error;
 beforeEach(() => {
   console.error = vi.fn();
+  vi.mocked(Sentry.captureException).mockClear();
 });
 
 afterEach(() => {
@@ -97,6 +105,24 @@ describe('ErrorBoundary', () => {
       expect(screen.getByText('出错了')).toBeInTheDocument();
       // Empty message means empty subtitle (not the fallback text)
       expect(screen.queryByText('页面发生了一些错误，请稍后重试')).not.toBeInTheDocument();
+    });
+
+    it('calls Sentry.captureException when error is caught', () => {
+      render(
+        <ErrorBoundary>
+          <ThrowError shouldThrow />
+        </ErrorBoundary>
+      );
+
+      expect(Sentry.captureException).toHaveBeenCalledTimes(1);
+      expect(Sentry.captureException).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Test error message' }),
+        expect.objectContaining({
+          contexts: {
+            react: { componentStack: expect.any(String) },
+          },
+        })
+      );
     });
 
     it('shows retry button in default fallback', () => {
