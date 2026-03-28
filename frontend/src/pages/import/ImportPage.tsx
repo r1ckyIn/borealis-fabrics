@@ -25,10 +25,10 @@ const MAX_FILE_SIZE_MB = 10;
 const ACCEPTED_MIME =
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-type ImportTab = 'fabric' | 'supplier' | 'purchaseOrder' | 'salesContract';
+type ImportTab = 'fabric' | 'supplier' | 'purchaseOrder' | 'salesContract' | 'product';
 
 /** Tabs that use template-based import (have downloadable templates) */
-const TEMPLATE_TABS: ImportTab[] = ['fabric', 'supplier'];
+const TEMPLATE_TABS: ImportTab[] = ['fabric', 'supplier', 'product'];
 
 interface TabConfig {
   download: () => Promise<void>;
@@ -55,6 +55,10 @@ const TAB_CONFIG: Record<ImportTab, TabConfig> = {
       message.info('购销合同无需模板，直接上传原始文件');
     },
     import: importApi.importSalesContracts,
+  },
+  product: {
+    download: importApi.downloadProductTemplate,
+    import: importApi.importProducts,
   },
 };
 
@@ -253,6 +257,11 @@ export default function ImportPage() {
       key: 'salesContract' as const,
       label: '购销合同/客户订单',
       children: renderUploadPanel('购销合同'),
+    },
+    {
+      key: 'product' as const,
+      label: '产品导入',
+      children: renderUploadPanel('产品'),
     },
   ];
 
