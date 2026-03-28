@@ -17,7 +17,7 @@ import {
   useDeleteCustomer,
 } from '@/hooks/queries/useCustomers';
 import { fabricApi } from '@/api';
-import { getDeleteErrorMessage } from '@/utils/errorMessages';
+import { getDeleteErrorMessage, getErrorMessage } from '@/utils/errorMessages';
 import type { ApiError, CustomerPricing, Fabric } from '@/types';
 
 /** Pricing form values type. */
@@ -213,7 +213,7 @@ export function useCustomerDetail(customerId: number | undefined) {
       closePricingModal();
     } catch (error) {
       console.error('Pricing submit error:', error);
-      message.error(editingPricing ? '更新失败，请重试' : '创建失败，请重试');
+      message.error(getErrorMessage(error as ApiError));
     }
   }, [
     customerId,
@@ -250,7 +250,7 @@ export function useCustomerDetail(customerId: number | undefined) {
       closeDeleteModal();
     } catch (error) {
       console.error('Delete pricing error:', error);
-      message.error('删除失败，请重试');
+      message.error(getDeleteErrorMessage(error as ApiError, '定价'));
     }
   }, [customerId, pricingToDelete, deletePricingMutation, closeDeleteModal]);
 
