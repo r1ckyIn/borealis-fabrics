@@ -96,13 +96,50 @@ Deferred to future release. Tracked but not in current roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated during roadmap creation) | | |
+| INFRA-01 | Phase 15 | Pending |
+| INFRA-02 | Phase 15 | Pending |
+| INFRA-03 | Phase 15 | Pending |
+| INFRA-04 | Phase 15 | Pending |
+| INFRA-05 | Phase 15 | Pending |
+| INFRA-06 | Phase 15 | Pending |
+| DATA-01 | Phase 12 | Pending |
+| DATA-02 | Phase 12 | Pending |
+| DATA-03 | Phase 12 | Pending |
+| DATA-04 | Phase 13 | Pending |
+| DATA-05 | Phase 13 | Pending |
+| DATA-06 | Phase 13 | Pending |
+| DATA-07 | Phase 13 | Pending |
+| DATA-08 | Phase 13 | Pending |
+| DATA-09 | Phase 13 | Pending |
+| OBS-01 | Phase 12 | Pending |
+| OBS-02 | Phase 12 | Pending |
+| OBS-03 | Phase 12 | Pending |
+| OBS-04 | Phase 12 | Pending |
+| OBS-05 | Phase 12 | Pending |
+| OBS-06 | Phase 14 | Pending |
+| OBS-07 | Phase 14 | Pending |
+| PERF-01 | Phase 14 | Pending |
+| PERF-02 | Phase 14 | Pending |
+| PERF-03 | Phase 14 | Pending |
+| PERF-04 | Phase 14 | Pending |
+| QUAL-01 | Phase 14 | Pending |
+| QUAL-02 | Phase 15 | Pending |
+| QUAL-03 | Phase 15 | Pending |
+| DEPLOY-01 | Phase 16 | Pending |
+| DEPLOY-02 | Phase 16 | Pending |
+| DEPLOY-03 | Phase 16 | Pending |
+| DEPLOY-04 | Phase 16 | Pending |
+| DEPLOY-05 | Phase 16 | Pending |
+| DEPLOY-06 | Phase 16 | Pending |
+| DEBT-01 | Phase 12 | Pending |
+| DEBT-02 | Phase 12 | Pending |
+| DEBT-03 | Phase 12 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 30 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 30
+- v1.1 requirements: 38 total (6 INFRA + 9 DATA + 7 OBS + 4 PERF + 3 QUAL + 6 DEPLOY + 3 DEBT)
+- Mapped to phases: 38/38 (100%)
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after initial definition*
+*Last updated: 2026-03-28 — traceability populated after roadmap creation*
