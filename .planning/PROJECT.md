@@ -38,8 +38,43 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 
 ### Active
 
-- [ ] Deploy to Tencent Cloud (lightweight server + CDB + Redis + COS)
-- [ ] Migrate existing file URLs from localhost to COS (FEAT-04)
+#### Current Milestone: v1.1 Production Readiness
+
+**Goal:** Close all engineering gaps and deploy to Tencent Cloud production.
+
+**Infrastructure & Containerization:**
+- [ ] Backend + frontend Dockerfiles with production compose
+- [ ] Nginx reverse proxy with SSL termination
+- [ ] Gzip/Brotli response compression
+- [ ] CI/CD deploy stage with automated database migrations
+
+**Data Safety & Integrity:**
+- [ ] Database backup/restore automation with retention policy
+- [ ] Soft delete (deletedAt) on all business entities
+- [ ] Full operation audit logging (who/what/when)
+- [ ] Data export to Excel for all entities (fabric, product, supplier, customer, order, quote)
+
+**Observability & Error Handling:**
+- [ ] Sentry error tracking integration (backend + frontend)
+- [ ] Centralized log aggregation
+- [ ] Request correlation ID (tracing across requests)
+- [ ] React ErrorBoundary with graceful degradation
+- [ ] Slow query logging and profiling
+
+**Performance & Quality:**
+- [ ] Redis query result caching with cache-aside pattern
+- [ ] Load testing (k6) with baseline benchmarks
+- [ ] Dependency security scanning (CI/CD integrated)
+- [ ] Web Vitals performance monitoring
+- [ ] PWA manifest + Service Worker for basic offline support
+- [ ] Accessibility (a11y) baseline improvements
+
+**Production Deployment:**
+- [ ] Tencent Cloud deployment (lightweight server + CDB + Redis + COS)
+- [ ] COS file migration from localhost URLs
+- [ ] Production UAT validation
+
+**Carried from v1.0 (tech debt):**
 - [ ] OrderFormPage inline field validation for 400/422 (DEBT-01)
 - [ ] Fix operatorId: undefined in OrderPaymentService (DEBT-02)
 - [ ] Tune SalesContractImportStrategy for real file formats (DEBT-03)
@@ -108,5 +143,22 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 | Quote multi-item restructure | Header + QuoteItem[] with item-level partial conversion | ✓ Good — flexible conversion workflow |
 | Config-driven form fields per product subCategory | Adding new product category only requires new config entry | ✓ Good — extensible |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-03-28 after v1.0 milestone completion*
+*Last updated: 2026-03-28 after v1.1 milestone started*

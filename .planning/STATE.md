@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Borealis Supply Chain Management
-status: Milestone complete
-last_updated: "2026-03-28T08:30:00Z"
+milestone: v1.1
+milestone_name: Production Readiness
+status: Defining requirements
+last_updated: "2026-03-28T12:00:00Z"
 progress:
-  total_phases: 12
-  completed_phases: 12
-  total_plans: 40
-  completed_plans: 40
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State: Borealis Supply Chain Management
@@ -18,15 +18,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** v1.0 shipped — planning next milestone
+**Current focus:** v1.1 Production Readiness — close engineering gaps, deploy to production
 
 ## Current Phase
 
 | Field | Value |
 |-------|-------|
 | Phase | — |
-| Name | v1.0 Complete |
-| Status | Milestone shipped |
+| Name | Not started (defining requirements) |
+| Status | Defining requirements |
 | Current Plan | — |
 | Branch | main |
 
@@ -34,25 +34,21 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 | Phase | Status | Plans |
 |-------|--------|-------|
-| 1 — Frontend Bug Fixes | ● Complete | 4/4 |
-| 2 — Core Feature Implementation | ● Complete | 3/3 |
-| 3 — Backend Service Decomposition | ● Complete | 4/4 |
-| 4 — Frontend Component Decomposition | ● Complete | 4/4 |
-| 04.1 — Payment Voucher Upload | ● Complete | 3/3 |
-| 5 — Multi-Category Schema + Product CRUD | ● Complete | 2/2 |
-| 6 — Import Strategy Refactor | ● Complete | 2/2 |
-| 7 — Order/Quote Multi-Category Extension | ● Complete | 3/3 |
-| 8 — Frontend Multi-Category Pages | ● Complete | 5/5 |
-| 9 — Real Data Testing | ● Complete | 5/5 |
-| 10 — UAT Bug Fixes | ● Complete | 3/3 |
-| 11 — v1.0 Final Gap Closure | ● Complete | 2/2 |
+| (v1.1 phases pending roadmap creation) | | |
 
 ## Milestone Tracking
 
 | Milestone | Phases | Status |
 |-----------|--------|--------|
 | v1.0: Supply Chain MVP | 1-11 | ● Complete (12/12 phases) — shipped 2026-03-28 |
+| v1.1: Production Readiness | — | ○ Defining requirements |
+
+## Accumulated Context
+
+- v1.0 shipped with 73,271 LOC, 12 phases, 40 plans, 306 commits
+- Tech debt carried: DEBT-01 (OrderFormPage validation), DEBT-02 (operatorId), DEBT-03 (SalesContract import)
+- Engineering gaps identified: containerization, backup, observability, audit, export, caching, a11y, PWA
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-28 (v1.0 milestone complete)*
+*Last updated: 2026-03-28 — Milestone v1.1 started*
