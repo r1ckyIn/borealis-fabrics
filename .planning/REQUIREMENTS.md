@@ -18,9 +18,9 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 
 ### Data Safety
 
-- [ ] **DATA-01**: Soft delete (deletedAt) on all business entities via Prisma Client Extensions
-- [ ] **DATA-02**: Existing unique constraints updated to handle soft-deleted records (MySQL NULL != NULL pattern)
-- [ ] **DATA-03**: All existing queries automatically filter deleted records; explicit includeDeleted option available
+- [x] **DATA-01**: Soft delete (deletedAt) on all business entities via Prisma Client Extensions
+- [x] **DATA-02**: Existing unique constraints updated to handle soft-deleted records (MySQL NULL != NULL pattern)
+- [x] **DATA-03**: All existing queries automatically filter deleted records; explicit includeDeleted option available
 - [ ] **DATA-04**: Audit log records all CUD operations with userId, action, entityType, entityId, changes, IP, timestamp
 - [ ] **DATA-05**: Audit log consumes correlation ID from request context
 - [ ] **DATA-06**: Audit log frontend page in sidebar with list, filtering (by operator/action/entity/time), and detail view
@@ -102,9 +102,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | INFRA-04 | Phase 15 | Pending |
 | INFRA-05 | Phase 15 | Pending |
 | INFRA-06 | Phase 15 | Pending |
-| DATA-01 | Phase 12 | Pending |
-| DATA-02 | Phase 12 | Pending |
-| DATA-03 | Phase 12 | Pending |
+| DATA-01 | Phase 12 | Complete |
+| DATA-02 | Phase 12 | Complete |
+| DATA-03 | Phase 12 | Complete |
 | DATA-04 | Phase 13 | Pending |
 | DATA-05 | Phase 13 | Pending |
 | DATA-06 | Phase 13 | Pending |

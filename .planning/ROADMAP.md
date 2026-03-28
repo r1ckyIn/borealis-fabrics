@@ -54,8 +54,8 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — Correlation ID (nestjs-cls) + Sentry backend/frontend + ErrorBoundary enhancement
-- [ ] 12-02-PLAN.md — Soft delete schema migration (isActive -> deletedAt) + Prisma extension + isActive cleanup
+- [x] 12-01-PLAN.md — Correlation ID (nestjs-cls) + Sentry backend/frontend + ErrorBoundary enhancement
+- [x] 12-02-PLAN.md — Soft delete schema migration (isActive -> deletedAt) + Prisma extension + isActive cleanup
 - [ ] 12-03-PLAN.md — Tech debt fixes (operatorId, OrderFormPage validation, SalesContract hardening)
 
 ### Phase 13: Data Safety & Audit
@@ -131,7 +131,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 12. Foundation & Observability Quick Wins | v1.1 | 0/3 | Not started | - |
+| 12. Foundation & Observability Quick Wins | v1.1 | 2/3 | In Progress|  |
 | 13. Data Safety & Audit | v1.1 | 0/2 | Not started | - |
 | 14. Observability & Performance | v1.1 | 0/3 | Not started | - |
 | 15. Containerization & Quality | v1.1 | 0/3 | Not started | - |
