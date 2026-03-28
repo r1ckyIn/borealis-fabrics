@@ -1,12 +1,15 @@
 import {
   ExceptionFilter,
   Catch,
-  ArgumentsHost,
   HttpException,
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { Request, Response } from 'express';
+import type { ArgumentsHost } from '@nestjs/common';
+import type { Request, Response } from 'express';
+import * as Sentry from '@sentry/nestjs';
+import { SentryExceptionCaptured } from '@sentry/nestjs';
+import { ClsService } from 'nestjs-cls';
 
 // Check if running in production
 const isProduction = process.env.NODE_ENV === 'production';
@@ -22,10 +25,22 @@ const PRISMA_ERROR_CODES = new Set([
 export class AllExceptionsFilter implements ExceptionFilter {
   private readonly logger = new Logger(AllExceptionsFilter.name);
 
+  constructor(private readonly cls: ClsService) {}
+
+  @SentryExceptionCaptured()
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+
+    // Get correlation ID from CLS
+    const correlationId = this.cls.getId();
+
+    // Set correlation ID on Sentry scope for error tracking
+    Sentry.getCurrentScope().setTag('correlation_id', correlationId);
+
+    // Set correlation ID response header
+    response.setHeader('X-Correlation-ID', correlationId);
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Internal server error';
@@ -64,6 +79,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       code: status,
       message,
       ...(errors ? { errors } : {}),
+      correlationId,
       path: request.url,
       timestamp: new Date().toISOString(),
     });

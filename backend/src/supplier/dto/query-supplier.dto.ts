@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsEnum, IsBoolean, IsInt } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsBoolean,
+  IsInt,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
@@ -76,7 +82,8 @@ export class QuerySupplierDto extends PaginationDto {
   isActive?: boolean = true;
 
   @ApiPropertyOptional({
-    description: 'Filter by fabric ID — only return suppliers linked via FabricSupplier',
+    description:
+      'Filter by fabric ID — only return suppliers linked via FabricSupplier',
     example: 10,
   })
   @IsOptional()
