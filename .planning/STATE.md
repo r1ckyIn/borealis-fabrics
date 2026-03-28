@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Readiness
 status: executing
-stopped_at: Completed 12-01 and 12-02 (Wave 1)
-last_updated: "2026-03-28T09:25:00.000Z"
+stopped_at: Completed 12-03-PLAN.md (Phase 12 complete)
+last_updated: "2026-03-28T09:47:22.768Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 0
 ---
 
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 ## Current Position
 
 Phase: 12 (foundation-observability-quick-wins) — EXECUTING
-Plan: 2 of 3 (Wave 1 complete, Wave 2 pending)
-Status: Ready to execute Wave 2
+Plan: 3 of 3 (Wave 1 complete, Wave 2 pending)
+Status: Ready to execute
 Last activity: 2026-03-28
 
 Progress: [░░░░░░░░░░] 0% (0/12 plans)
@@ -50,6 +50,7 @@ Progress: [░░░░░░░░░░] 0% (0/12 plans)
 | v1.1: Production Readiness | 12-16 | In progress (0/5 phases) |
 | Phase 12 P01 | 14min | 2 tasks | 16 files |
 | Phase 12 P02 | 34m | 3 tasks | 47 files |
+| Phase 12 P03 | 14min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,8 @@ Recent decisions affecting current work:
 - [Phase 12]: Sentry disabled gracefully when DSN env var is not set (enabled: !!DSN)
 - [Phase 12]: Soft delete via Prisma extension model delegate patching (not property delegation) to preserve PrismaClient type compatibility
 - [Phase 12]: Boss role via BOSS_WEWORK_IDS env var (MVP, no User.role field needed)
+- [Phase 12]: CLS operator pattern: services use cls.get<RequestUser>('user')?.id for operator audit trail (typed generic avoids any)
+- [Phase 12]: Inline validation pattern: mapApiErrorsToFormFields + form.setFields for 400/422 form errors (reusable across all form pages)
 
 ### Pending Todos
 
@@ -79,8 +82,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T09:25:00.000Z
-Stopped at: Completed Wave 1 (12-01 + 12-02)
+Last session: 2026-03-28T09:47:22.763Z
+Stopped at: Completed 12-03-PLAN.md (Phase 12 complete)
 Resume file: None
 
 ---

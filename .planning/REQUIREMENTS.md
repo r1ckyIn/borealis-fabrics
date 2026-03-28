@@ -62,9 +62,9 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 
 ### Tech Debt (carried from v1.0)
 
-- [ ] **DEBT-01**: OrderFormPage inline field validation for 400/422 responses (currently toast-only)
-- [ ] **DEBT-02**: Fix operatorId: undefined in OrderPaymentService
-- [ ] **DEBT-03**: Tune SalesContractImportStrategy for real file formats
+- [x] **DEBT-01**: OrderFormPage inline field validation for 400/422 responses (currently toast-only)
+- [x] **DEBT-02**: Fix operatorId: undefined in OrderPaymentService
+- [x] **DEBT-03**: Tune SalesContractImportStrategy for real file formats
 
 ## v2 Requirements
 
@@ -131,9 +131,9 @@ Deferred to future release. Tracked but not in current roadmap.
 | DEPLOY-04 | Phase 16 | Pending |
 | DEPLOY-05 | Phase 16 | Pending |
 | DEPLOY-06 | Phase 16 | Pending |
-| DEBT-01 | Phase 12 | Pending |
-| DEBT-02 | Phase 12 | Pending |
-| DEBT-03 | Phase 12 | Pending |
+| DEBT-01 | Phase 12 | Complete |
+| DEBT-02 | Phase 12 | Complete |
+| DEBT-03 | Phase 12 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 38 total (6 INFRA + 9 DATA + 7 OBS + 4 PERF + 3 QUAL + 6 DEPLOY + 3 DEBT)

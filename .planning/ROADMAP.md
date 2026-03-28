@@ -33,7 +33,7 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 
 **Milestone Goal:** Close all engineering gaps and deploy to Tencent Cloud production.
 
-- [ ] **Phase 12: Foundation & Observability Quick Wins** - Correlation ID, soft delete, Sentry integration, ErrorBoundary, tech debt cleanup
+- [x] **Phase 12: Foundation & Observability Quick Wins** - Correlation ID, soft delete, Sentry integration, ErrorBoundary, tech debt cleanup (completed 2026-03-28)
 - [ ] **Phase 13: Data Safety & Audit** - Audit logging (backend + frontend), RBAC, data export, DB backup
 - [ ] **Phase 14: Observability & Performance** - Log aggregation, Redis caching, load testing, Web Vitals, dependency scanning
 - [ ] **Phase 15: Containerization & Quality** - Docker, Nginx, CI/CD, PWA, accessibility
@@ -56,7 +56,7 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 Plans:
 - [x] 12-01-PLAN.md — Correlation ID (nestjs-cls) + Sentry backend/frontend + ErrorBoundary enhancement
 - [x] 12-02-PLAN.md — Soft delete schema migration (isActive -> deletedAt) + Prisma extension + isActive cleanup
-- [ ] 12-03-PLAN.md — Tech debt fixes (operatorId, OrderFormPage validation, SalesContract hardening)
+- [x] 12-03-PLAN.md — Tech debt fixes (operatorId, OrderFormPage validation, SalesContract hardening)
 
 ### Phase 13: Data Safety & Audit
 **Goal**: All data mutations are auditable, exportable, and backed up — operators know who changed what and when
@@ -131,7 +131,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 12. Foundation & Observability Quick Wins | v1.1 | 2/3 | In Progress|  |
+| 12. Foundation & Observability Quick Wins | v1.1 | 3/3 | Complete   | 2026-03-28 |
 | 13. Data Safety & Audit | v1.1 | 0/2 | Not started | - |
 | 14. Observability & Performance | v1.1 | 0/3 | Not started | - |
 | 15. Containerization & Quality | v1.1 | 0/3 | Not started | - |
