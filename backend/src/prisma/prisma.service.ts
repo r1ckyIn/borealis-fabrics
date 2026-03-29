@@ -27,8 +27,15 @@ export class PrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
+  /**
+   * Unfiltered PrismaClient — bypasses soft-delete extension.
+   * Use for admin queries that need to include soft-deleted records.
+   */
+  readonly $raw: PrismaClient;
+
   constructor() {
     super();
+    this.$raw = new PrismaClient();
 
     // Apply soft-delete extension.
     // $extends returns a new client instance with intercepted query behavior.
@@ -85,9 +92,11 @@ export class PrismaService
 
   async onModuleInit() {
     await this.$connect();
+    await this.$raw.$connect();
   }
 
   async onModuleDestroy() {
+    await this.$raw.$disconnect();
     await this.$disconnect();
   }
 }

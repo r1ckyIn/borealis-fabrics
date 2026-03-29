@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-return */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { SupplierService } from './supplier.service';
@@ -40,6 +40,12 @@ describe('SupplierService', () => {
   };
   const paymentRecordMock = { count: jest.fn() };
 
+  // Raw client mock for includeDeleted queries (bypasses soft-delete extension)
+  const rawSupplierMock = {
+    findMany: jest.fn(),
+    count: jest.fn(),
+  };
+
   // Build the mock service with proper transaction support
   const mockPrismaService = {
     supplier: supplierMock,
@@ -47,6 +53,11 @@ describe('SupplierService', () => {
     supplierPayment: supplierPaymentMock,
     fabricSupplier: fabricSupplierMock,
     paymentRecord: paymentRecordMock,
+    $raw: {
+      supplier: rawSupplierMock,
+      $connect: jest.fn(),
+      $disconnect: jest.fn(),
+    },
     // Transaction mock - callback receives the same mock with proper typing
 
     $transaction: jest.fn().mockImplementation((callback: CallableFunction) =>
@@ -364,56 +375,40 @@ describe('SupplierService', () => {
       expect(supplierMock.findMany).toHaveBeenCalled();
     });
 
-    it('should NOT set deletedAt in where clause when includeDeleted is not set', async () => {
-      const query: QuerySupplierDto = {};
-      supplierMock.findMany.mockResolvedValue(mockSuppliers);
-      supplierMock.count.mockResolvedValue(2);
-
-      await service.findAll(query);
-
-      // Default behavior: no deletedAt in where, extension auto-adds deletedAt: null
-      const findManyCall = supplierMock.findMany.mock.calls[0][0] as {
-        where: Record<string, unknown>;
-      };
-      expect(findManyCall.where).not.toHaveProperty('deletedAt');
-    });
-
-    it('should set deletedAt bypass in where clause when includeDeleted=true', async () => {
+    it('should use raw client when includeDeleted=true to bypass soft-delete extension', async () => {
       const deletedSupplier = {
         ...mockSuppliers[0],
         deletedAt: new Date('2026-03-01'),
       };
       const allSuppliers = [...mockSuppliers, deletedSupplier];
       const query: QuerySupplierDto = { includeDeleted: true };
-      supplierMock.findMany.mockResolvedValue(allSuppliers);
-      supplierMock.count.mockResolvedValue(3);
+      rawSupplierMock.findMany.mockResolvedValue(allSuppliers);
+      rawSupplierMock.count.mockResolvedValue(3);
 
       const result = await service.findAll(query);
 
-      // Should set deletedAt to empty object to bypass extension filter
-      const findManyCall = supplierMock.findMany.mock.calls[0][0] as {
-        where: Record<string, unknown>;
-      };
-      expect(findManyCall.where).toHaveProperty('deletedAt');
-      expect(findManyCall.where.deletedAt).toEqual({});
+      // Should use $raw client instead of regular prisma client
+      expect(rawSupplierMock.findMany).toHaveBeenCalled();
+      expect(rawSupplierMock.count).toHaveBeenCalled();
+      expect(supplierMock.findMany).not.toHaveBeenCalled();
+      expect(supplierMock.count).not.toHaveBeenCalled();
       // Deleted records should be included in results
       expect(result.items).toHaveLength(3);
       expect(result.items[2].deletedAt).toBeTruthy();
     });
 
-    it('should also set deletedAt bypass in count query when includeDeleted=true', async () => {
-      const query: QuerySupplierDto = { includeDeleted: true };
+    it('should use regular client when includeDeleted is not set', async () => {
+      const query: QuerySupplierDto = {};
       supplierMock.findMany.mockResolvedValue(mockSuppliers);
       supplierMock.count.mockResolvedValue(2);
 
       await service.findAll(query);
 
-      // Count should also have the deletedAt bypass
-      const countCall = supplierMock.count.mock.calls[0][0] as {
-        where: Record<string, unknown>;
-      };
-      expect(countCall.where).toHaveProperty('deletedAt');
-      expect(countCall.where.deletedAt).toEqual({});
+      // Should use regular prisma client (with soft-delete extension)
+      expect(supplierMock.findMany).toHaveBeenCalled();
+      expect(supplierMock.count).toHaveBeenCalled();
+      expect(rawSupplierMock.findMany).not.toHaveBeenCalled();
+      expect(rawSupplierMock.count).not.toHaveBeenCalled();
     });
   });
 
