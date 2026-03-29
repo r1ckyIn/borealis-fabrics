@@ -72,7 +72,7 @@ Plans:
 
 Plans:
 - [ ] 13-01: Audit logging backend (interceptor, decorator, model, correlation ID consumption)
-- [ ] 13-02: Audit log frontend page + RBAC + data export module + DB backup verification
+- [x] 13-02: Export module + isAdmin auth response + DB backup script
 
 ### Phase 14: Observability & Performance
 **Goal**: System performance is measured, cached where appropriate, and observable through centralized logs and dashboards
