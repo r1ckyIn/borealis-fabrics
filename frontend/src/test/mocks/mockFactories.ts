@@ -160,6 +160,7 @@ export function createMockAuthUser(overrides?: Partial<AuthUser>): AuthUser {
     name: `测试用户 ${id}`,
     avatar: undefined,
     mobile: `1380000${String(id).padStart(4, '0')}`,
+    isAdmin: false,
     createdAt: '2025-01-01T00:00:00.000Z',
     updatedAt: '2025-01-01T00:00:00.000Z',
     ...overrides,

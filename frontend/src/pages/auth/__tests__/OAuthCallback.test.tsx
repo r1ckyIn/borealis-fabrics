@@ -36,6 +36,7 @@ const mockUser: AuthUser = {
   id: 1,
   weworkId: 'wework-123',
   name: 'Test User',
+  isAdmin: false,
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
 };

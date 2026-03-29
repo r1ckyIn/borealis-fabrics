@@ -21,6 +21,8 @@ export interface BaseEntity {
 
 export interface SoftDeletableEntity extends BaseEntity {
   isActive: boolean;
+  /** Non-null when the record has been soft-deleted. Included when includeDeleted=true. */
+  deletedAt?: string | null;
 }
 
 export interface User extends SoftDeletableEntity {

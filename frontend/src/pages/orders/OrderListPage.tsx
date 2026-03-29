@@ -1,17 +1,19 @@
 /**
  * Order list page with search, filter, and pagination.
  * Displays order data in a table with view operation.
+ * Admin users see a soft-delete toggle for API consistency (orders lack soft delete).
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Empty, Typography } from 'antd';
+import { Card, Table, Button, Empty, Typography, Space } from 'antd';
 import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchForm, type SearchField } from '@/components/common/SearchForm';
+import { SoftDeleteToggle } from '@/components/common/SoftDeleteToggle';
 import { StatusTag } from '@/components/common/StatusTag';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
@@ -86,13 +88,17 @@ export default function OrderListPage(): React.ReactElement {
   // Search state
   const [searchParams, setSearchParams] = useState<QueryOrderParams>({});
 
+  // Soft-delete toggle state (for API consistency; orders lack soft delete)
+  const [showDeleted, setShowDeleted] = useState(false);
+
   // Combined query params
   const combinedParams: QueryOrderParams = useMemo(
     () => ({
       ...searchParams,
       ...queryParams,
+      ...(showDeleted ? { includeDeleted: true } : {}),
     }),
-    [searchParams, queryParams]
+    [searchParams, queryParams, showDeleted]
   );
 
   // Fetch orders with pagination
@@ -212,9 +218,12 @@ export default function OrderListPage(): React.ReactElement {
       title="订单管理"
       breadcrumbs={breadcrumbs}
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
-          新建订单
-        </Button>
+        <Space>
+          <SoftDeleteToggle showDeleted={showDeleted} onChange={setShowDeleted} />
+          <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
+            新建订单
+          </Button>
+        </Space>
       }
     >
       {/* Search Form */}
