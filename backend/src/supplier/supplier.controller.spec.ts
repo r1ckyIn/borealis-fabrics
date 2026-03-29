@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import { SupplierController } from './supplier.controller';
 import { SupplierService } from './supplier.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -35,6 +36,10 @@ describe('SupplierController', () => {
         {
           provide: SupplierService,
           useValue: mockSupplierService,
+        },
+        {
+          provide: ClsService,
+          useValue: { get: () => ({ id: 1, weworkId: 'test', name: 'Test' }) },
         },
       ],
     })

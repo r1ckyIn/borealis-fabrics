@@ -84,7 +84,7 @@ export class AuditService {
         where.createdAt.gte = new Date(query.startDate);
       }
       if (query.endDate) {
-        where.createdAt.lte = new Date(query.endDate);
+        where.createdAt.lte = new Date(query.endDate + 'T23:59:59.999Z');
       }
     }
 

@@ -13,10 +13,13 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Audited } from '../audit/decorators/audited.decorator';
+import { isAdminWeworkId } from '../common/utils/admin';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 import {
   ApiTags,
   ApiOperation,
@@ -43,7 +46,10 @@ import {
 @ApiTags('customers')
 @Controller('customers')
 export class CustomerController {
-  constructor(private readonly customerService: CustomerService) {}
+  constructor(
+    private readonly customerService: CustomerService,
+    private readonly cls: ClsService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -75,6 +81,13 @@ export class CustomerController {
   })
   @ApiResponse({ status: 200, description: 'Paginated customer list' })
   findAll(@Query() query: QueryCustomerDto) {
+    // Server-side RBAC: strip includeDeleted for non-admin users
+    if (query.includeDeleted) {
+      const user = this.cls.get<RequestUser>('user');
+      if (!user || !isAdminWeworkId(user.weworkId)) {
+        query.includeDeleted = false;
+      }
+    }
     return this.customerService.findAll(query);
   }
 

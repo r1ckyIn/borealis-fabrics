@@ -21,11 +21,14 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { ClsService } from 'nestjs-cls';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Audited } from '../audit/decorators/audited.decorator';
+import { isAdminWeworkId } from '../common/utils/admin';
 import { SupplierService } from './supplier.service';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 import {
   CreateSupplierDto,
   QuerySupplierDto,
@@ -36,7 +39,10 @@ import {
 @ApiTags('suppliers')
 @Controller('suppliers')
 export class SupplierController {
-  constructor(private readonly supplierService: SupplierService) {}
+  constructor(
+    private readonly supplierService: SupplierService,
+    private readonly cls: ClsService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -70,6 +76,13 @@ export class SupplierController {
   @ApiQuery({ name: 'settleType', required: false, enum: ['prepay', 'credit'] })
   @ApiResponse({ status: 200, description: 'Paginated supplier list' })
   findAll(@Query() query: QuerySupplierDto) {
+    // Server-side RBAC: strip includeDeleted for non-admin users
+    if (query.includeDeleted) {
+      const user = this.cls.get<RequestUser>('user');
+      if (!user || !isAdminWeworkId(user.weworkId)) {
+        query.includeDeleted = false;
+      }
+    }
     return this.supplierService.findAll(query);
   }
 

@@ -13,10 +13,13 @@ import {
   HttpStatus,
   UseGuards,
 } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Audited } from '../audit/decorators/audited.decorator';
+import { isAdminWeworkId } from '../common/utils/admin';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 import {
   ApiTags,
   ApiOperation,
@@ -44,7 +47,10 @@ import {
 @ApiTags('products')
 @Controller('products')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(
+    private readonly productService: ProductService,
+    private readonly cls: ClsService,
+  ) {}
 
   // ========================================
   // Bundle Endpoints (MUST be before :id routes)
@@ -135,6 +141,13 @@ export class ProductController {
   @ApiQuery({ name: 'category', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Paginated product list' })
   findAll(@Query() query: QueryProductDto) {
+    // Server-side RBAC: strip includeDeleted for non-admin users
+    if (query.includeDeleted) {
+      const user = this.cls.get<RequestUser>('user');
+      if (!user || !isAdminWeworkId(user.weworkId)) {
+        query.includeDeleted = false;
+      }
+    }
     return this.productService.findAll(query);
   }
 

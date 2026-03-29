@@ -16,10 +16,13 @@ import {
   BadRequestException,
   UseGuards,
 } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Audited } from '../audit/decorators/audited.decorator';
+import { isAdminWeworkId } from '../common/utils/admin';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -56,7 +59,10 @@ const ALLOWED_IMAGE_TYPES = [
 @ApiTags('fabrics')
 @Controller('fabrics')
 export class FabricController {
-  constructor(private readonly fabricService: FabricService) {}
+  constructor(
+    private readonly fabricService: FabricService,
+    private readonly cls: ClsService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -86,6 +92,13 @@ export class FabricController {
   @ApiQuery({ name: 'color', required: false, type: String })
   @ApiResponse({ status: 200, description: 'Paginated fabric list' })
   findAll(@Query() query: QueryFabricDto) {
+    // Server-side RBAC: strip includeDeleted for non-admin users
+    if (query.includeDeleted) {
+      const user = this.cls.get<RequestUser>('user');
+      if (!user || !isAdminWeworkId(user.weworkId)) {
+        query.includeDeleted = false;
+      }
+    }
     return this.fabricService.findAll(query);
   }
 

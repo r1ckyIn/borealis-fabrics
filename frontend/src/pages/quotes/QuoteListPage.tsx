@@ -1,19 +1,18 @@
 /**
  * Quote list page with search, filter, and pagination.
  * Displays quote data with expandable rows showing QuoteItem details.
- * Admin users see a soft-delete toggle for API consistency (quotes lack soft delete).
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Typography, Tag, Empty, Space } from 'antd';
+import { Card, Table, Button, Typography, Tag, Empty } from 'antd';
 import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { Dayjs } from 'dayjs';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchForm, type SearchField } from '@/components/common/SearchForm';
-import { SoftDeleteToggle } from '@/components/common/SoftDeleteToggle';
+
 import { StatusTag } from '@/components/common/StatusTag';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
@@ -140,17 +139,13 @@ export default function QuoteListPage(): React.ReactElement {
   // Search state
   const [searchParams, setSearchParams] = useState<QueryQuoteParams>({});
 
-  // Soft-delete toggle state (for API consistency; quotes lack soft delete)
-  const [showDeleted, setShowDeleted] = useState(false);
-
   // Combined query params
   const combinedParams: QueryQuoteParams = useMemo(
     () => ({
       ...searchParams,
       ...queryParams,
-      ...(showDeleted ? { includeDeleted: true } : {}),
     }),
-    [searchParams, queryParams, showDeleted]
+    [searchParams, queryParams]
   );
 
   // Fetch quotes with pagination
@@ -264,12 +259,9 @@ export default function QuoteListPage(): React.ReactElement {
       title="报价管理"
       breadcrumbs={breadcrumbs}
       extra={
-        <Space>
-          <SoftDeleteToggle showDeleted={showDeleted} onChange={setShowDeleted} />
-          <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
-            新建报价
-          </Button>
-        </Space>
+        <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
+          新建报价
+        </Button>
       }
     >
       {/* Search Form */}

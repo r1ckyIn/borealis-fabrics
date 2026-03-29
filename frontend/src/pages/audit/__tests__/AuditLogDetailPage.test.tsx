@@ -113,7 +113,7 @@ describe('AuditLogDetailPage', () => {
     currentMockLog = mockUpdateLog;
     renderPage();
 
-    // Should show "变更对比" section
+    // Should show "Change comparison" section
     expect(screen.getByText('变更对比')).toBeInTheDocument();
 
     // Should show field names
@@ -129,7 +129,7 @@ describe('AuditLogDetailPage', () => {
     currentMockLog = mockCreateLog;
     renderPage('2');
 
-    // Should show "创建数据" section
+    // Should show "Created data" section
     expect(screen.getByText('创建数据')).toBeInTheDocument();
 
     // Should show field names and values

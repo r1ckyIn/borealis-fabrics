@@ -79,10 +79,10 @@ describe('SoftDeleteToggle', () => {
       <SoftDeleteToggle showDeleted={false} onChange={vi.fn()} />,
     );
 
-    // When unchecked, should show "仅显示活跃"
+    // When unchecked, should show "Active only" label
     expect(screen.getByText('仅显示活跃')).toBeInTheDocument();
 
-    // When checked, should show "显示已删除"
+    // When checked, should show "Show deleted" label
     rerender(<SoftDeleteToggle showDeleted={true} onChange={vi.fn()} />);
     expect(screen.getByText('显示已删除')).toBeInTheDocument();
   });

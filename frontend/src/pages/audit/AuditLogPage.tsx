@@ -81,8 +81,9 @@ export default function AuditLogPage(): React.ReactElement {
     const params: AuditLogQuery = { page, pageSize };
     if (action) params.action = action;
     if (entityType) params.entityType = entityType;
-    if (keyword) params.keyword = keyword;
-    if (operatorKeyword) params.keyword = operatorKeyword;
+    // Operator name filter takes priority over general keyword (both map to backend keyword param)
+    const effectiveKeyword = operatorKeyword || keyword;
+    if (effectiveKeyword) params.keyword = effectiveKeyword;
     if (dateRange) {
       params.startDate = dateRange[0].format('YYYY-MM-DD');
       params.endDate = dateRange[1].format('YYYY-MM-DD');

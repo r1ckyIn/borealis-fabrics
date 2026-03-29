@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import { Readable } from 'stream';
 import { FabricController } from './fabric.controller';
 import { FabricService } from './fabric.service';
@@ -70,6 +71,10 @@ describe('FabricController', () => {
         {
           provide: FabricService,
           useValue: mockFabricService,
+        },
+        {
+          provide: ClsService,
+          useValue: { get: () => ({ id: 1, weworkId: 'test', name: 'Test' }) },
         },
       ],
     })

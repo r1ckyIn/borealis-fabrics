@@ -73,7 +73,7 @@ describe('ExportPage', () => {
     const user = userEvent.setup();
     renderPage();
 
-    // Select "供应商" entity type
+    // Select "Supplier" entity type
     await user.click(screen.getByText('供应商'));
 
     // Should show field checkboxes with Chinese labels
@@ -95,7 +95,7 @@ describe('ExportPage', () => {
     // All checkboxes should be checked
     await waitFor(() => {
       const checkboxes = screen.getAllByRole('checkbox');
-      // Filter out the "全选" checkbox (first one)
+      // Filter out the "Select all" checkbox (first one)
       const fieldCheckboxes = checkboxes.slice(1);
       fieldCheckboxes.forEach((checkbox) => {
         expect(checkbox).toBeChecked();

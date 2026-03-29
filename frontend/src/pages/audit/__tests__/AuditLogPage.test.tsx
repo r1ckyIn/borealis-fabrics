@@ -109,7 +109,7 @@ describe('AuditLogPage', () => {
     expect(screen.getAllByText('实体类型').length).toBeGreaterThanOrEqual(1);
     // Keyword search
     expect(screen.getByPlaceholderText('关键字搜索')).toBeInTheDocument();
-    // Reset button (2-char Chinese buttons get spaces in jsdom: "重 置")
+    // Reset button (2-char Chinese buttons get spaces inserted in jsdom)
     expect(screen.getByText(/重\s*置/)).toBeInTheDocument();
   });
 
