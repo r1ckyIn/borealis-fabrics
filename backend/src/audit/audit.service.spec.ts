@@ -31,10 +31,7 @@ describe('AuditService', () => {
     };
 
     const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        AuditService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [AuditService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = module.get<AuditService>(AuditService);
@@ -106,14 +103,18 @@ describe('AuditService', () => {
       expect(result.pagination.page).toBe(1);
     });
 
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment */
     it('should filter by entityType', async () => {
       prisma.auditLog.findMany.mockResolvedValue([]);
       prisma.auditLog.count.mockResolvedValue(0);
 
       await service.findAll({ entityType: 'Supplier' });
 
-      const findManyCall = prisma.auditLog.findMany.mock.calls[0][0];
-      expect(findManyCall.where.entityType).toBe('Supplier');
+      expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ entityType: 'Supplier' }),
+        }),
+      );
     });
 
     it('should filter by action', async () => {
@@ -122,8 +123,11 @@ describe('AuditService', () => {
 
       await service.findAll({ action: 'create' });
 
-      const findManyCall = prisma.auditLog.findMany.mock.calls[0][0];
-      expect(findManyCall.where.action).toBe('create');
+      expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ action: 'create' }),
+        }),
+      );
     });
 
     it('should filter by userId', async () => {
@@ -132,8 +136,11 @@ describe('AuditService', () => {
 
       await service.findAll({ userId: 5 });
 
-      const findManyCall = prisma.auditLog.findMany.mock.calls[0][0];
-      expect(findManyCall.where.userId).toBe(5);
+      expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ userId: 5 }),
+        }),
+      );
     });
 
     it('should filter by date range', async () => {
@@ -145,10 +152,14 @@ describe('AuditService', () => {
         endDate: '2026-01-31',
       });
 
-      const findManyCall = prisma.auditLog.findMany.mock.calls[0][0];
-      expect(findManyCall.where.createdAt).toBeDefined();
-      expect(findManyCall.where.createdAt.gte).toEqual(
-        new Date('2026-01-01'),
+      expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            createdAt: expect.objectContaining({
+              gte: new Date('2026-01-01'),
+            }),
+          }),
+        }),
       );
     });
 
@@ -158,9 +169,19 @@ describe('AuditService', () => {
 
       await service.findAll({ keyword: 'Alice' });
 
-      const findManyCall = prisma.auditLog.findMany.mock.calls[0][0];
-      expect(findManyCall.where.OR).toBeDefined();
+      expect(prisma.auditLog.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            OR: expect.arrayContaining([
+              expect.objectContaining({
+                userName: { contains: 'Alice' },
+              }),
+            ]),
+          }),
+        }),
+      );
     });
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment */
   });
 
   describe('findOne', () => {

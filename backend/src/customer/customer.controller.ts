@@ -16,6 +16,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Audited } from '../audit/decorators/audited.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -46,6 +47,7 @@ export class CustomerController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Audited({ entityType: 'Customer', action: 'create' })
   @ApiOperation({ summary: 'Create a new customer' })
   @ApiBody({ type: CreateCustomerDto })
   @ApiResponse({ status: 201, description: 'Customer created successfully' })
@@ -193,6 +195,7 @@ export class CustomerController {
   }
 
   @Patch(':id')
+  @Audited({ entityType: 'Customer', action: 'update' })
   @ApiOperation({ summary: 'Update a customer by ID' })
   @ApiParam({ name: 'id', description: 'Customer ID', type: Number })
   @ApiBody({ type: UpdateCustomerDto })
@@ -208,6 +211,7 @@ export class CustomerController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audited({ entityType: 'Customer', action: 'delete' })
   @ApiOperation({
     summary: 'Delete a customer by ID',
     description:
@@ -237,6 +241,7 @@ export class CustomerController {
   @Patch(':id/restore')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('boss')
+  @Audited({ entityType: 'Customer', action: 'restore' })
   @ApiOperation({ summary: 'Restore a soft-deleted customer (boss only)' })
   @ApiParam({ name: 'id', description: 'Customer ID', type: Number })
   @ApiResponse({ status: 200, description: 'Customer restored' })

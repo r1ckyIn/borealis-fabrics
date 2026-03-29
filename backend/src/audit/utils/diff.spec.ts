@@ -93,11 +93,7 @@ describe('buildChangesDiff', () => {
 
   describe('delete action', () => {
     it('should return all non-excluded fields from before state', () => {
-      const result = buildChangesDiff(
-        'delete',
-        { name: 'Del', id: 1 },
-        null,
-      );
+      const result = buildChangesDiff('delete', { name: 'Del', id: 1 }, null);
       expect(result).toEqual({ name: 'Del' });
     });
 

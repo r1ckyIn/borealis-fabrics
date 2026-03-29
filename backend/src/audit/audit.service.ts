@@ -62,9 +62,7 @@ export class AuditService {
   /**
    * Find all audit logs with pagination and optional filters.
    */
-  async findAll(
-    query: QueryAuditLogDto,
-  ): Promise<PaginatedResult<AuditLog>> {
+  async findAll(query: QueryAuditLogDto): Promise<PaginatedResult<AuditLog>> {
     const where: Prisma.AuditLogWhereInput = {};
 
     if (query.entityType) {

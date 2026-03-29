@@ -16,6 +16,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Audited } from '../audit/decorators/audited.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -108,6 +109,7 @@ export class ProductController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Audited({ entityType: 'Product', action: 'create' })
   @ApiOperation({ summary: 'Create a new product' })
   @ApiBody({ type: CreateProductDto })
   @ApiResponse({ status: 201, description: 'Product created successfully' })
@@ -146,6 +148,7 @@ export class ProductController {
   }
 
   @Patch(':id')
+  @Audited({ entityType: 'Product', action: 'update' })
   @ApiOperation({ summary: 'Update a product by ID' })
   @ApiParam({ name: 'id', description: 'Product ID', type: Number })
   @ApiBody({ type: UpdateProductDto })
@@ -158,6 +161,7 @@ export class ProductController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audited({ entityType: 'Product', action: 'delete' })
   @ApiOperation({
     summary: 'Delete a product by ID',
     description:
@@ -353,6 +357,7 @@ export class ProductController {
   @Patch(':id/restore')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('boss')
+  @Audited({ entityType: 'Product', action: 'restore' })
   @ApiOperation({ summary: 'Restore a soft-deleted product (boss only)' })
   @ApiParam({ name: 'id', description: 'Product ID', type: Number })
   @ApiResponse({ status: 200, description: 'Product restored' })

@@ -10,12 +10,7 @@ export interface FieldDiff {
 }
 
 /** Fields excluded from change diffs (system-managed) */
-const EXCLUDED_FIELDS = new Set([
-  'id',
-  'createdAt',
-  'updatedAt',
-  'deletedAt',
-]);
+const EXCLUDED_FIELDS = new Set(['id', 'createdAt', 'updatedAt', 'deletedAt']);
 
 /**
  * Build a changes diff between before and after entity states.
@@ -75,10 +70,7 @@ function computeUpdateDiff(
   after: Record<string, unknown>,
 ): Record<string, FieldDiff> {
   const diff: Record<string, FieldDiff> = {};
-  const allKeys = new Set([
-    ...Object.keys(before),
-    ...Object.keys(after),
-  ]);
+  const allKeys = new Set([...Object.keys(before), ...Object.keys(after)]);
 
   for (const key of allKeys) {
     if (EXCLUDED_FIELDS.has(key)) continue;

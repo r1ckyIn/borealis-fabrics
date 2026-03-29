@@ -19,6 +19,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Audited } from '../audit/decorators/audited.decorator';
 import { QuoteService } from './quote.service';
 import {
   CreateQuoteDto,
@@ -37,6 +38,7 @@ export class QuoteController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Audited({ entityType: 'Quote', action: 'create' })
   @ApiOperation({ summary: 'Create a new quote with items' })
   @ApiBody({ type: CreateQuoteDto })
   @ApiResponse({ status: 201, description: 'Quote created successfully' })
@@ -131,6 +133,7 @@ export class QuoteController {
   }
 
   @Patch(':id')
+  @Audited({ entityType: 'Quote', action: 'update' })
   @ApiOperation({
     summary: 'Update quote header fields',
     description:
@@ -213,6 +216,7 @@ export class QuoteController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audited({ entityType: 'Quote', action: 'delete' })
   @ApiOperation({
     summary: 'Delete a quote by ID',
     description:

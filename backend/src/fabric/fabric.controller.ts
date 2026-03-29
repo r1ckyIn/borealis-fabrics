@@ -19,6 +19,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Audited } from '../audit/decorators/audited.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -59,6 +60,7 @@ export class FabricController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Audited({ entityType: 'Fabric', action: 'create' })
   @ApiOperation({ summary: 'Create a new fabric' })
   @ApiBody({ type: CreateFabricDto })
   @ApiResponse({ status: 201, description: 'Fabric created successfully' })
@@ -97,6 +99,7 @@ export class FabricController {
   }
 
   @Patch(':id')
+  @Audited({ entityType: 'Fabric', action: 'update' })
   @ApiOperation({ summary: 'Update a fabric by ID' })
   @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
   @ApiBody({ type: UpdateFabricDto })
@@ -113,6 +116,7 @@ export class FabricController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audited({ entityType: 'Fabric', action: 'delete' })
   @ApiOperation({
     summary: 'Delete a fabric by ID',
     description:
@@ -412,6 +416,7 @@ export class FabricController {
   @Patch(':id/restore')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('boss')
+  @Audited({ entityType: 'Fabric', action: 'restore' })
   @ApiOperation({ summary: 'Restore a soft-deleted fabric (boss only)' })
   @ApiParam({ name: 'id', description: 'Fabric ID', type: Number })
   @ApiResponse({ status: 200, description: 'Fabric restored' })

@@ -102,9 +102,7 @@ describe('AuditController', () => {
         new NotFoundException('Audit log with ID 999 not found'),
       );
 
-      await expect(controller.findOne(999)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(controller.findOne(999)).rejects.toThrow(NotFoundException);
     });
   });
 });

@@ -40,9 +40,7 @@ export class AuditController {
    * Returns a single audit log entry by ID.
    */
   @Get(':id')
-  async findOne(
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<AuditLog> {
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<AuditLog> {
     return this.auditService.findOne(id);
   }
 }

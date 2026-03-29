@@ -24,6 +24,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Audited } from '../audit/decorators/audited.decorator';
 import { SupplierService } from './supplier.service';
 import {
   CreateSupplierDto,
@@ -39,6 +40,7 @@ export class SupplierController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Audited({ entityType: 'Supplier', action: 'create' })
   @ApiOperation({ summary: 'Create a new supplier' })
   @ApiBody({ type: CreateSupplierDto })
   @ApiResponse({ status: 201, description: 'Supplier created successfully' })
@@ -134,6 +136,7 @@ export class SupplierController {
   }
 
   @Patch(':id')
+  @Audited({ entityType: 'Supplier', action: 'update' })
   @ApiOperation({ summary: 'Update a supplier by ID' })
   @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
   @ApiBody({ type: UpdateSupplierDto })
@@ -150,6 +153,7 @@ export class SupplierController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audited({ entityType: 'Supplier', action: 'delete' })
   @ApiOperation({
     summary: 'Delete a supplier by ID',
     description:
@@ -179,6 +183,7 @@ export class SupplierController {
   @Patch(':id/restore')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('boss')
+  @Audited({ entityType: 'Supplier', action: 'restore' })
   @ApiOperation({ summary: 'Restore a soft-deleted supplier (boss only)' })
   @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
   @ApiResponse({ status: 200, description: 'Supplier restored' })

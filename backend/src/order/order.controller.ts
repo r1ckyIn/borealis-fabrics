@@ -19,6 +19,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { Audited } from '../audit/decorators/audited.decorator';
 import { OrderService } from './order.service';
 import { OrderItemService } from './order-item.service';
 import { OrderPaymentService } from './order-payment.service';
@@ -48,6 +49,7 @@ export class OrderController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Audited({ entityType: 'Order', action: 'create' })
   @ApiOperation({
     summary: 'Create a new order',
     description:
@@ -122,6 +124,7 @@ export class OrderController {
   }
 
   @Patch(':id')
+  @Audited({ entityType: 'Order', action: 'update' })
   @ApiOperation({
     summary: 'Update an order by ID',
     description:
@@ -141,6 +144,7 @@ export class OrderController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audited({ entityType: 'Order', action: 'delete' })
   @ApiOperation({
     summary: 'Delete an order by ID',
     description:

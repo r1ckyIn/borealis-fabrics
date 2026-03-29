@@ -1,15 +1,12 @@
 import { RolesGuard } from './roles.guard';
 import { Reflector } from '@nestjs/core';
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
-import { ROLES_KEY } from '../decorators/roles.decorator';
 
 describe('RolesGuard', () => {
   let guard: RolesGuard;
   let reflector: Reflector;
 
-  const createMockContext = (
-    weworkId?: string,
-  ): ExecutionContext =>
+  const createMockContext = (weworkId?: string): ExecutionContext =>
     ({
       getHandler: () => jest.fn(),
       getClass: () => jest.fn(),
@@ -46,41 +43,31 @@ describe('RolesGuard', () => {
   });
 
   it('should allow access when user weworkId is in BOSS_WEWORK_IDS', () => {
-    jest
-      .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue(['boss']);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['boss']);
     const context = createMockContext('boss001');
     expect(guard.canActivate(context)).toBe(true);
   });
 
   it('should allow access when user weworkId is in DEV_WEWORK_IDS', () => {
-    jest
-      .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue(['boss']);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['boss']);
     const context = createMockContext('dev001');
     expect(guard.canActivate(context)).toBe(true);
   });
 
   it('should allow developer role when weworkId is in DEV_WEWORK_IDS', () => {
-    jest
-      .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue(['developer']);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['developer']);
     const context = createMockContext('dev002');
     expect(guard.canActivate(context)).toBe(true);
   });
 
   it('should deny access when user weworkId is in neither set', () => {
-    jest
-      .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue(['boss']);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['boss']);
     const context = createMockContext('random123');
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
 
   it('should deny access when user has no weworkId', () => {
-    jest
-      .spyOn(reflector, 'getAllAndOverride')
-      .mockReturnValue(['boss']);
+    jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(['boss']);
     const context = createMockContext(undefined);
     expect(() => guard.canActivate(context)).toThrow(ForbiddenException);
   });
