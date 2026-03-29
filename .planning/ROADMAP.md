@@ -34,7 +34,7 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 **Milestone Goal:** Close all engineering gaps and deploy to Tencent Cloud production.
 
 - [x] **Phase 12: Foundation & Observability Quick Wins** - Correlation ID, soft delete, Sentry integration, ErrorBoundary, tech debt cleanup (completed 2026-03-28)
-- [ ] **Phase 13: Data Safety & Audit** - Audit logging (backend + frontend), RBAC, data export, DB backup, soft-delete recovery UI
+- [ ] **Phase 13: Data Safety & Audit** - Audit logging (backend + frontend), RBAC, data export, DB backup
 - [ ] **Phase 14: Observability & Performance** - Log aggregation, Redis caching, load testing, Web Vitals, dependency scanning
 - [ ] **Phase 15: Containerization & Quality** - Docker, Nginx, CI/CD, PWA, accessibility
 - [ ] **Phase 16: Production Deployment** - Tencent Cloud setup, COS migration, SSL, OAuth, UAT
@@ -67,14 +67,12 @@ Plans:
   2. Boss and developer roles can view the audit log page in the sidebar with filtering by operator, action, entity type, and date range; other roles cannot see the page
   3. Users can export any entity type (fabric, product, supplier, customer, order, quote) to Excel from the list pages
   4. CDB automatic backup is verified working; supplementary mysqldump-to-COS script runs on schedule with retention policy
-**Plans**: 4 plans
+**Plans**: TBD
 **UI hint**: yes
 
 Plans:
-- [x] 13-01-PLAN.md — Audit logging backend (AuditLog model, interceptor, @Audited decorator, RolesGuard dev extension, audit API)
-- [ ] 13-02-PLAN.md — Data export backend (ExportModule, field-configurable Excel) + isAdmin on /auth/me + DB backup script
-- [ ] 13-03-PLAN.md — Audit log frontend page + export page + sidebar RBAC + routes
-- [ ] 13-04-PLAN.md — Soft-delete recovery UI (backend includeDeleted + frontend toggle + restore on all 6 entity list pages)
+- [ ] 13-01: Audit logging backend (interceptor, decorator, model, correlation ID consumption)
+- [x] 13-02: Export module + isAdmin auth response + DB backup script
 
 ### Phase 14: Observability & Performance
 **Goal**: System performance is measured, cached where appropriate, and observable through centralized logs and dashboards
@@ -134,11 +132,11 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 12. Foundation & Observability Quick Wins | v1.1 | 3/3 | Complete    | 2026-03-28 |
-| 13. Data Safety & Audit | v1.1 | 1/4 | In Progress|  |
+| 13. Data Safety & Audit | v1.1 | 0/2 | Not started | - |
 | 14. Observability & Performance | v1.1 | 0/3 | Not started | - |
 | 15. Containerization & Quality | v1.1 | 0/3 | Not started | - |
 | 16. Production Deployment | v1.1 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-29 (Phase 13 revised — 4 plans, 10 tasks)*
+*Last updated: 2026-03-28 (Phase 12 planned — 3 plans, 6 tasks)*

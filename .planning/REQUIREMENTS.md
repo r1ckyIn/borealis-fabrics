@@ -21,12 +21,12 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 - [x] **DATA-01**: Soft delete (deletedAt) on all business entities via Prisma Client Extensions
 - [x] **DATA-02**: Existing unique constraints updated to handle soft-deleted records (MySQL NULL != NULL pattern)
 - [x] **DATA-03**: All existing queries automatically filter deleted records; explicit includeDeleted option available
-- [x] **DATA-04**: Audit log records all CUD operations with userId, action, entityType, entityId, changes, IP, timestamp
-- [x] **DATA-05**: Audit log consumes correlation ID from request context
+- [ ] **DATA-04**: Audit log records all CUD operations with userId, action, entityType, entityId, changes, IP, timestamp
+- [ ] **DATA-05**: Audit log consumes correlation ID from request context
 - [ ] **DATA-06**: Audit log frontend page in sidebar with list, filtering (by operator/action/entity/time), and detail view
 - [x] **DATA-07**: RBAC via WeChat Work roles — audit log page accessible only to boss and developer roles
-- [ ] **DATA-08**: Data export to Excel for all entities (fabric, product, supplier, customer, order, quote) via centralized ExportModule
-- [ ] **DATA-09**: CDB automatic backup verified + supplementary mysqldump-to-COS script for extended retention
+- [x] **DATA-08**: Data export to Excel for all entities (fabric, product, supplier, customer, order, quote) via centralized ExportModule
+- [x] **DATA-09**: CDB automatic backup verified + supplementary mysqldump-to-COS script for extended retention
 
 ### Observability
 
@@ -105,12 +105,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | DATA-01 | Phase 12 | Complete |
 | DATA-02 | Phase 12 | Complete |
 | DATA-03 | Phase 12 | Complete |
-| DATA-04 | Phase 13 | Complete |
-| DATA-05 | Phase 13 | Complete |
+| DATA-04 | Phase 13 | Pending |
+| DATA-05 | Phase 13 | Pending |
 | DATA-06 | Phase 13 | Pending |
 | DATA-07 | Phase 13 | Complete |
-| DATA-08 | Phase 13 | Pending |
-| DATA-09 | Phase 13 | Pending |
+| DATA-08 | Phase 13 | Complete |
+| DATA-09 | Phase 13 | Complete |
 | OBS-01 | Phase 12 | Complete |
 | OBS-02 | Phase 12 | Complete |
 | OBS-03 | Phase 12 | Complete |
