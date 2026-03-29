@@ -4,6 +4,7 @@ import {
   IsInt,
   IsString,
   IsDateString,
+  IsBoolean,
   Min,
   MaxLength,
 } from 'class-validator';
@@ -95,4 +96,16 @@ export class QueryOrderDto extends PaginationDto {
   @IsOptional()
   @IsDateString()
   createdTo?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Include soft-deleted records in results (admin only). Accepted for API consistency; orders do not use soft delete.',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(
+    ({ value }: { value: unknown }) => value === 'true' || value === true,
+  )
+  includeDeleted?: boolean;
 }

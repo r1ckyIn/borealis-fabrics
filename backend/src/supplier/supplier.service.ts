@@ -65,11 +65,19 @@ export class SupplierService {
 
   /**
    * Find all suppliers with optional filtering and pagination.
-   * Soft-deleted records are auto-filtered by Prisma extension.
+   * Soft-deleted records are auto-filtered by Prisma extension unless includeDeleted=true.
+   * When includeDeleted is true, bypasses the soft-delete extension filter by setting
+   * deletedAt to an empty object (truthy, so the extension does not override it;
+   * empty filter matches all records regardless of deletedAt value).
    */
   async findAll(query: QuerySupplierDto): Promise<PaginatedResult<Supplier>> {
     // Build where clause (soft-delete auto-filtered by extension)
     const where: Prisma.SupplierWhereInput = {};
+
+    // Bypass soft-delete filter when includeDeleted is true
+    if (query.includeDeleted) {
+      where.deletedAt = {} as Prisma.DateTimeNullableFilter;
+    }
 
     // Unified keyword search across companyName, contactName, phone
     if (query.keyword) {

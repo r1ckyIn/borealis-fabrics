@@ -1,4 +1,10 @@
-import { IsOptional, IsString, IsEnum, IsInt } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsInt,
+  IsBoolean,
+} from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
@@ -71,4 +77,16 @@ export class QuerySupplierDto extends PaginationDto {
   @IsInt()
   @Type(() => Number)
   fabricId?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Include soft-deleted records in results (admin only). Query params arrive as strings so "true" is transformed.',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(
+    ({ value }: { value: unknown }) => value === 'true' || value === true,
+  )
+  includeDeleted?: boolean;
 }
