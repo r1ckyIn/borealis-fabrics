@@ -15,6 +15,9 @@ export type {
   EnumDefinition,
   SystemEnumsResponse,
   HealthResponse,
+  AuditLog,
+  AuditLogQuery,
+  ExportFieldConfig,
   ImportResult,
   ImportFailure,
 } from './api.types';

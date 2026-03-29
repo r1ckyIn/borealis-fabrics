@@ -45,6 +45,7 @@ export interface AuthUser {
   name: string;
   avatar?: string;
   mobile?: string;
+  isAdmin: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -81,6 +82,37 @@ export interface HealthResponse {
   status: string;
   timestamp: string;
   uptime: number;
+}
+
+/** Audit log entry from GET /audit-logs. */
+export interface AuditLog {
+  id: number;
+  userId: number | null;
+  userName: string;
+  action: string;
+  entityType: string;
+  entityId: number;
+  changes: Record<string, unknown>;
+  ip: string;
+  correlationId: string;
+  createdAt: string;
+}
+
+/** Audit log query parameters. */
+export interface AuditLogQuery extends PaginationParams {
+  userId?: number;
+  action?: string;
+  entityType?: string;
+  startDate?: string;
+  endDate?: string;
+  keyword?: string;
+}
+
+/** Export field configuration from GET /export/fields/:entityType. */
+export interface ExportFieldConfig {
+  field: string;
+  label: string;
+  type: 'string' | 'number' | 'date' | 'boolean' | 'json';
 }
 
 /** Import result for Excel import operations. */

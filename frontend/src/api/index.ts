@@ -22,3 +22,5 @@ export * from './quote.api';
 export * from './order.api';
 export * from './logistics.api';
 export * from './import.api';
+export * as auditApi from './audit';
+export * as exportApi from './export';
