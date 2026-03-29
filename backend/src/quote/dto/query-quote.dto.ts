@@ -4,8 +4,10 @@ import {
   IsInt,
   IsString,
   IsDateString,
+  IsBoolean,
   Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
 import { QuoteStatus } from './create-quote.dto';
@@ -87,4 +89,16 @@ export class QueryQuoteDto extends PaginationDto {
   @IsOptional()
   @IsDateString()
   createdTo?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Include soft-deleted records in results (admin only). Accepted for API consistency; quotes do not use soft delete.',
+    example: true,
+  })
+  @IsOptional()
+  @IsBoolean()
+  @Transform(
+    ({ value }: { value: unknown }) => value === 'true' || value === true,
+  )
+  includeDeleted?: boolean;
 }

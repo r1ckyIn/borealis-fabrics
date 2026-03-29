@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 ## Current Position
 
 Phase: 13 (data-safety-audit) — EXECUTING
-Plan: 3 of 4
-Status: Executing Phase 13 (Plan 03 complete)
+Plan: 4 of 4
+Status: Executing Phase 13 (Plan 04 Tasks 1-2 complete, Task 3 pending human-verify)
 Last activity: 2026-03-29
 
 Progress: [██░░░░░░░░] 0% (0/12 plans)
@@ -72,10 +72,8 @@ Recent decisions affecting current work:
 - [Phase 12]: Inline validation pattern: mapApiErrorsToFormFields + form.setFields for 400/422 form errors (reusable across all form pages)
 - [Phase 13-02]: isAdmin computed server-side via standalone private helper (BOSS/DEV_WEWORK_IDS env vars, no guard injection into service)
 - [Phase 13-02]: ExportModule uses @Res() to bypass TransformInterceptor for binary xlsx responses
-- [Phase 13-02]: Date formatting in export uses native Date methods (no dayjs added to backend)
-- [Phase 13-03]: Null-state pattern for default field selection in ExportPage (useState<T[]|null> avoids useEffect+setState lint issue)
-- [Phase 13-03]: Sidebar role-based visibility via useMemo keyed on user?.isAdmin
-- [Phase 13-03]: RBAC enforced server-side only; frontend hides sidebar link but does not block route navigation
+- [Phase 13-04]: Bypass soft-delete extension via empty object trick (where.deletedAt={}) instead of raw SQL
+- [Phase 13-04]: Order/Quote DTOs accept includeDeleted for API consistency but services ignore it (no soft delete)
 
 ### Pending Todos
 
@@ -86,14 +84,12 @@ None yet.
 - [Phase 13]: Audit log RBAC — confirm WeChat Work role field name/values in JWT user object
 - [Phase 15]: Tencent Cloud Container Registry vs Docker Hub decision needed during planning
 
-| Phase 13 P03 | 25min | 2 tasks | 22 files |
-
 ## Session Continuity
 
-Last session: 2026-03-29T05:10:18Z
-Stopped at: Completed 13-03-PLAN.md
-Resume file: .planning/phases/13-data-safety-audit/13-03-SUMMARY.md
+Last session: 2026-03-29T05:08:25Z
+Stopped at: Completed 13-04-PLAN.md Tasks 1-2 (Task 3 pending human-verify)
+Resume file: .planning/phases/13-data-safety-audit/13-04-SUMMARY.md
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-29 — Phase 13 Plan 03 complete*
+*Last updated: 2026-03-29 — Phase 13 Plan 04 Tasks 1-2 complete*

@@ -118,10 +118,16 @@ export class ProductService {
 
   /**
    * Find all products with optional filtering and pagination.
+   * When includeDeleted is true, bypasses the soft-delete extension filter.
    */
   async findAll(query: QueryProductDto): Promise<PaginatedResult<Product>> {
     // Build where clause
     const where: Prisma.ProductWhereInput = {};
+
+    // Bypass soft-delete filter when includeDeleted is true
+    if (query.includeDeleted) {
+      where.deletedAt = {} as Prisma.DateTimeNullableFilter;
+    }
 
     // Unified keyword search across name, productCode, and modelNumber
     if (query.keyword) {

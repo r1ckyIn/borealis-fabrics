@@ -1,20 +1,25 @@
 /**
  * Fabric list page with search, filter, and pagination.
  * Displays fabric data in a table with view operation.
+ * Admin users can toggle visibility of soft-deleted records and restore them.
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Space, Typography, Tag, Empty } from 'antd';
-import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Typography, Tag, Empty, message } from 'antd';
+import { PlusOutlined, EyeOutlined, UndoOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchForm, type SearchField } from '@/components/common/SearchForm';
+import { SoftDeleteToggle } from '@/components/common/SoftDeleteToggle';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
-import { useFabrics } from '@/hooks/queries/useFabrics';
+import { useFabrics, fabricKeys } from '@/hooks/queries/useFabrics';
+import { patch } from '@/api/client';
 import type { Fabric, QueryFabricParams } from '@/types';
+import '@/styles/deleted-row.css';
 
 const { Text } = Typography;
 
@@ -34,6 +39,7 @@ const SEARCH_FIELDS: SearchField[] = [
  */
 export default function FabricListPage(): React.ReactElement {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Pagination state with URL sync
   const {
@@ -46,13 +52,17 @@ export default function FabricListPage(): React.ReactElement {
   // Search state
   const [searchParams, setSearchParams] = useState<QueryFabricParams>({});
 
+  // Soft-delete toggle state
+  const [showDeleted, setShowDeleted] = useState(false);
+
   // Combined query params
   const combinedParams: QueryFabricParams = useMemo(
     () => ({
       ...searchParams,
       ...queryParams,
+      ...(showDeleted ? { includeDeleted: true } : {}),
     }),
-    [searchParams, queryParams]
+    [searchParams, queryParams, showDeleted]
   );
 
   // Fetch fabrics with pagination
@@ -72,6 +82,20 @@ export default function FabricListPage(): React.ReactElement {
     setSearchParams({});
     setPage(1);
   }, [setPage]);
+
+  /** Restore a soft-deleted fabric. */
+  const handleRestore = useCallback(
+    async (id: number) => {
+      try {
+        await patch(`/fabrics/${id}/restore`);
+        void message.success('面料已恢复');
+        void queryClient.invalidateQueries({ queryKey: fabricKeys.all });
+      } catch {
+        void message.error('恢复失败，请重试');
+      }
+    },
+    [queryClient]
+  );
 
   /** Navigate to fabric pages. */
   const goToDetail = useCallback((f: Fabric) => navigate(`/products/fabrics/${f.id}`), [navigate]);
@@ -96,7 +120,7 @@ export default function FabricListPage(): React.ReactElement {
         ellipsis: true,
       },
       {
-        title: '克重 (g/m²)',
+        title: '克重 (g/m\u00B2)',
         dataIndex: 'weight',
         key: 'weight',
         width: 110,
@@ -153,21 +177,33 @@ export default function FabricListPage(): React.ReactElement {
       {
         title: '操作',
         key: 'actions',
-        width: 80,
+        width: showDeleted ? 140 : 80,
         fixed: 'right',
         render: (_, record) => (
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => goToDetail(record)}
-          >
-            查看
-          </Button>
+          <Space>
+            <Button
+              type="link"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => goToDetail(record)}
+            >
+              查看
+            </Button>
+            {record.deletedAt && (
+              <Button
+                type="link"
+                size="small"
+                icon={<UndoOutlined />}
+                onClick={() => void handleRestore(record.id)}
+              >
+                恢复
+              </Button>
+            )}
+          </Space>
         ),
       },
     ],
-    [goToDetail]
+    [goToDetail, handleRestore, showDeleted]
   );
 
   // Breadcrumb configuration
@@ -181,9 +217,12 @@ export default function FabricListPage(): React.ReactElement {
       title="面料管理"
       breadcrumbs={breadcrumbs}
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
-          新建面料
-        </Button>
+        <Space>
+          <SoftDeleteToggle showDeleted={showDeleted} onChange={setShowDeleted} />
+          <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
+            新建面料
+          </Button>
+        </Space>
       }
     >
       {/* Search Form */}
@@ -217,7 +256,7 @@ export default function FabricListPage(): React.ReactElement {
             ),
           }}
           onChange={handleTableChange as Parameters<typeof Table<Fabric>>['0']['onChange']}
-
+          rowClassName={(record) => (record.deletedAt ? 'deleted-row' : '')}
           scroll={{ x: 1200 }}
           size="middle"
         />

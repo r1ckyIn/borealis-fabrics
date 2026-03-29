@@ -45,6 +45,7 @@ export interface AuthUser {
   name: string;
   avatar?: string;
   mobile?: string;
+  /** Whether the user is an admin (boss or developer). Set by backend from env vars. */
   isAdmin: boolean;
   createdAt: string;
   updatedAt: string;

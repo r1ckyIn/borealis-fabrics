@@ -1,20 +1,25 @@
 /**
  * Customer list page with search, filter, and pagination.
  * Displays customer data in a table with view operation.
+ * Admin users can toggle visibility of soft-deleted records and restore them.
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Typography, Empty } from 'antd';
-import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Typography, Empty, Space, message } from 'antd';
+import { PlusOutlined, EyeOutlined, UndoOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchForm, type SearchField } from '@/components/common/SearchForm';
+import { SoftDeleteToggle } from '@/components/common/SoftDeleteToggle';
 import { usePagination } from '@/hooks/usePagination';
-import { useCustomers } from '@/hooks/queries/useCustomers';
+import { useCustomers, customerKeys } from '@/hooks/queries/useCustomers';
+import { patch } from '@/api/client';
 import { CreditType, CREDIT_TYPE_LABELS } from '@/types';
 import type { Customer, QueryCustomerParams } from '@/types';
+import '@/styles/deleted-row.css';
 
 const { Text } = Typography;
 
@@ -34,6 +39,7 @@ const SEARCH_FIELDS: SearchField[] = [
  */
 export default function CustomerListPage(): React.ReactElement {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Pagination state with URL sync
   const {
@@ -46,13 +52,17 @@ export default function CustomerListPage(): React.ReactElement {
   // Search state
   const [searchParams, setSearchParams] = useState<QueryCustomerParams>({});
 
+  // Soft-delete toggle state
+  const [showDeleted, setShowDeleted] = useState(false);
+
   // Combined query params
   const combinedParams: QueryCustomerParams = useMemo(
     () => ({
       ...searchParams,
       ...queryParams,
+      ...(showDeleted ? { includeDeleted: true } : {}),
     }),
-    [searchParams, queryParams]
+    [searchParams, queryParams, showDeleted]
   );
 
   // Fetch customers with pagination
@@ -72,6 +82,20 @@ export default function CustomerListPage(): React.ReactElement {
     setSearchParams({});
     setPage(1);
   }, [setPage]);
+
+  /** Restore a soft-deleted customer. */
+  const handleRestore = useCallback(
+    async (id: number) => {
+      try {
+        await patch(`/customers/${id}/restore`);
+        void message.success('客户已恢复');
+        void queryClient.invalidateQueries({ queryKey: customerKeys.all });
+      } catch {
+        void message.error('恢复失败，请重试');
+      }
+    },
+    [queryClient]
+  );
 
   /** Navigate to customer pages. */
   const goToDetail = useCallback((c: Customer) => navigate(`/customers/${c.id}`), [navigate]);
@@ -130,21 +154,33 @@ export default function CustomerListPage(): React.ReactElement {
       {
         title: '操作',
         key: 'actions',
-        width: 80,
+        width: showDeleted ? 140 : 80,
         fixed: 'right',
         render: (_, record) => (
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => goToDetail(record)}
-          >
-            查看
-          </Button>
+          <Space>
+            <Button
+              type="link"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => goToDetail(record)}
+            >
+              查看
+            </Button>
+            {record.deletedAt && (
+              <Button
+                type="link"
+                size="small"
+                icon={<UndoOutlined />}
+                onClick={() => void handleRestore(record.id)}
+              >
+                恢复
+              </Button>
+            )}
+          </Space>
         ),
       },
     ],
-    [goToDetail]
+    [goToDetail, handleRestore, showDeleted]
   );
 
   // Breadcrumb configuration
@@ -158,9 +194,12 @@ export default function CustomerListPage(): React.ReactElement {
       title="客户管理"
       breadcrumbs={breadcrumbs}
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
-          新建客户
-        </Button>
+        <Space>
+          <SoftDeleteToggle showDeleted={showDeleted} onChange={setShowDeleted} />
+          <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
+            新建客户
+          </Button>
+        </Space>
       }
     >
       {/* Search Form */}
@@ -185,7 +224,7 @@ export default function CustomerListPage(): React.ReactElement {
             total: data?.pagination.total ?? 0,
           }}
           onChange={handleTableChange as Parameters<typeof Table<Customer>>['0']['onChange']}
-
+          rowClassName={(record) => (record.deletedAt ? 'deleted-row' : '')}
           scroll={{ x: 1000 }}
           size="middle"
           locale={{

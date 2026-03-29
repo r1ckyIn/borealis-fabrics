@@ -1,0 +1,8 @@
+/* Visual distinction for soft-deleted table rows */
+.deleted-row {
+  background-color: #fff2f0 !important;
+  opacity: 0.7;
+}
+.deleted-row:hover > td {
+  background-color: #ffccc7 !important;
+}

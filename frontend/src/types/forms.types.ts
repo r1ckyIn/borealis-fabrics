@@ -35,6 +35,8 @@ export interface QuerySupplierParams extends PaginationParams {
   status?: SupplierStatus;
   /** Filter suppliers by fabric relationship (only suppliers linked via FabricSupplier) */
   fabricId?: number;
+  /** Include soft-deleted records in results (admin only) */
+  includeDeleted?: boolean;
 }
 
 export interface AddressFormData {
@@ -64,6 +66,8 @@ export type UpdateCustomerData = Partial<CreateCustomerData>;
 
 export interface QueryCustomerParams extends PaginationParams {
   keyword?: string;
+  /** Include soft-deleted records in results (admin only) */
+  includeDeleted?: boolean;
 }
 
 export interface MaterialFormData {
@@ -96,6 +100,8 @@ export type UpdateFabricData = Partial<CreateFabricData>;
 export interface QueryFabricParams extends PaginationParams {
   keyword?: string;
   supplierId?: number;
+  /** Include soft-deleted records in results (admin only) */
+  includeDeleted?: boolean;
 }
 
 export interface CreateFabricSupplierData {
@@ -167,6 +173,8 @@ export interface QueryQuoteParams extends PaginationParams {
   validTo?: string;
   createdFrom?: string;
   createdTo?: string;
+  /** Include soft-deleted records in results (admin only, no-op for quotes) */
+  includeDeleted?: boolean;
 }
 
 export interface AddOrderItemData {
@@ -220,6 +228,8 @@ export interface QueryOrderParams extends PaginationParams {
   keyword?: string;
   createdFrom?: string;
   createdTo?: string;
+  /** Include soft-deleted records in results (admin only, no-op for orders) */
+  includeDeleted?: boolean;
 }
 
 export interface RestoreOrderItemData {
@@ -324,6 +334,8 @@ export interface QueryProductParams extends PaginationParams {
   keyword?: string;
   subCategory?: string;
   category?: string;
+  /** Include soft-deleted records in results (admin only) */
+  includeDeleted?: boolean;
 }
 
 export interface CreateProductSupplierData {

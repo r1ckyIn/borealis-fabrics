@@ -123,10 +123,16 @@ export class CustomerService {
 
   /**
    * Find all customers with optional filtering and pagination.
+   * When includeDeleted is true, bypasses the soft-delete extension filter.
    */
   async findAll(query: QueryCustomerDto): Promise<PaginatedResult<Customer>> {
     // Build where clause (soft-delete auto-filtered by extension)
     const where: Prisma.CustomerWhereInput = {};
+
+    // Bypass soft-delete filter when includeDeleted is true
+    if (query.includeDeleted) {
+      where.deletedAt = {} as Prisma.DateTimeNullableFilter;
+    }
 
     // Unified keyword search across companyName, contactName, phone
     if (query.keyword) {
