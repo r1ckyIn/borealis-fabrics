@@ -123,16 +123,11 @@ export class CustomerService {
 
   /**
    * Find all customers with optional filtering and pagination.
-   * When includeDeleted is true, bypasses the soft-delete extension filter.
+   * When includeDeleted is true, uses raw PrismaClient to bypass the soft-delete extension.
    */
   async findAll(query: QueryCustomerDto): Promise<PaginatedResult<Customer>> {
     // Build where clause (soft-delete auto-filtered by extension)
     const where: Prisma.CustomerWhereInput = {};
-
-    // Bypass soft-delete filter when includeDeleted is true
-    if (query.includeDeleted) {
-      where.deletedAt = {} as Prisma.DateTimeNullableFilter;
-    }
 
     // Unified keyword search across companyName, contactName, phone
     if (query.keyword) {
@@ -159,14 +154,14 @@ export class CustomerService {
     const sortOrder = query.sortOrder ?? 'desc';
     const orderBy = { [sortBy]: sortOrder };
 
-    // Execute queries
+    const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
     const [items, total] = await Promise.all([
-      this.prisma.customer.findMany({
+      client.customer.findMany({
         where,
         ...paginationArgs,
         orderBy,
       }),
-      this.prisma.customer.count({ where }),
+      client.customer.count({ where }),
     ]);
 
     return buildPaginatedResult(items, total, query);

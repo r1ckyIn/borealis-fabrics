@@ -34,7 +34,7 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 **Milestone Goal:** Close all engineering gaps and deploy to Tencent Cloud production.
 
 - [x] **Phase 12: Foundation & Observability Quick Wins** - Correlation ID, soft delete, Sentry integration, ErrorBoundary, tech debt cleanup (completed 2026-03-28)
-- [ ] **Phase 13: Data Safety & Audit** - Audit logging (backend + frontend), RBAC, data export, DB backup
+- [x] **Phase 13: Data Safety & Audit** - Audit logging (backend + frontend), RBAC, data export, DB backup (completed 2026-03-29)
 - [ ] **Phase 14: Observability & Performance** - Log aggregation, Redis caching, load testing, Web Vitals, dependency scanning
 - [ ] **Phase 15: Containerization & Quality** - Docker, Nginx, CI/CD, PWA, accessibility
 - [ ] **Phase 16: Production Deployment** - Tencent Cloud setup, COS migration, SSL, OAuth, UAT
@@ -71,10 +71,10 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 13-01: Audit logging backend (interceptor, decorator, model, correlation ID consumption)
-- [ ] 13-02: Export module + isAdmin + backup script
-- [ ] 13-03: Audit log frontend page + RBAC
-- [ ] 13-04: Soft-delete recovery UI (includeDeleted + SoftDeleteToggle + restore)
+- [x] 13-01: Audit logging backend (interceptor, decorator, model, correlation ID consumption)
+- [x] 13-02: Export module + isAdmin + backup script
+- [x] 13-03: Audit log frontend page + RBAC
+- [x] 13-04: Soft-delete recovery UI (includeDeleted + SoftDeleteToggle + restore)
 
 ### Phase 14: Observability & Performance
 **Goal**: System performance is measured, cached where appropriate, and observable through centralized logs and dashboards
@@ -134,7 +134,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 12. Foundation & Observability Quick Wins | v1.1 | 3/3 | Complete    | 2026-03-28 |
-| 13. Data Safety & Audit | v1.1 | 0/4 | In progress | - |
+| 13. Data Safety & Audit | v1.1 | 5/5 | Complete   | 2026-03-29 |
 | 14. Observability & Performance | v1.1 | 0/3 | Not started | - |
 | 15. Containerization & Quality | v1.1 | 0/3 | Not started | - |
 | 16. Production Deployment | v1.1 | 0/2 | Not started | - |

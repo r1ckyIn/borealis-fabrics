@@ -66,18 +66,11 @@ export class SupplierService {
   /**
    * Find all suppliers with optional filtering and pagination.
    * Soft-deleted records are auto-filtered by Prisma extension unless includeDeleted=true.
-   * When includeDeleted is true, bypasses the soft-delete extension filter by setting
-   * deletedAt to an empty object (truthy, so the extension does not override it;
-   * empty filter matches all records regardless of deletedAt value).
+   * When includeDeleted is true, uses the raw PrismaClient to bypass the soft-delete extension.
    */
   async findAll(query: QuerySupplierDto): Promise<PaginatedResult<Supplier>> {
     // Build where clause (soft-delete auto-filtered by extension)
     const where: Prisma.SupplierWhereInput = {};
-
-    // Bypass soft-delete filter when includeDeleted is true
-    if (query.includeDeleted) {
-      where.deletedAt = {} as Prisma.DateTimeNullableFilter;
-    }
 
     // Unified keyword search across companyName, contactName, phone
     if (query.keyword) {
@@ -115,14 +108,14 @@ export class SupplierService {
     const sortOrder = query.sortOrder ?? 'desc';
     const orderBy = { [sortBy]: sortOrder };
 
-    // Execute queries
+    const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
     const [items, total] = await Promise.all([
-      this.prisma.supplier.findMany({
+      client.supplier.findMany({
         where,
         ...paginationArgs,
         orderBy,
       }),
-      this.prisma.supplier.count({ where }),
+      client.supplier.count({ where }),
     ]);
 
     return buildPaginatedResult(items, total, query);

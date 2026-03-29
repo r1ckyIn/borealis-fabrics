@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 ## Current Position
 
-Phase: 13 (data-safety-audit) — EXECUTING
-Plan: 4 of 4
-Status: Executing Phase 13 (Plan 04 Tasks 1-2 complete, Task 3 pending human-verify)
+Phase: 13 (data-safety-audit) — EXECUTING (gap closure complete)
+Plan: 5 of 5
+Status: All plans complete, pending verification and PR cycle
 Last activity: 2026-03-29
 
 Progress: [██░░░░░░░░] 0% (0/12 plans)
@@ -72,8 +72,8 @@ Recent decisions affecting current work:
 - [Phase 12]: Inline validation pattern: mapApiErrorsToFormFields + form.setFields for 400/422 form errors (reusable across all form pages)
 - [Phase 13-02]: isAdmin computed server-side via standalone private helper (BOSS/DEV_WEWORK_IDS env vars, no guard injection into service)
 - [Phase 13-02]: ExportModule uses @Res() to bypass TransformInterceptor for binary xlsx responses
-- [Phase 13-04]: Bypass soft-delete extension via empty object trick (where.deletedAt={}) instead of raw SQL
 - [Phase 13-04]: Order/Quote DTOs accept includeDeleted for API consistency but services ignore it (no soft delete)
+- [Phase 13-05]: Bypass soft-delete via raw PrismaClient ($raw), NOT empty object trick (broken with prisma-extension-soft-delete)
 
 ### Pending Todos
 
@@ -86,10 +86,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T05:08:25Z
-Stopped at: Completed 13-04-PLAN.md Tasks 1-2 (Task 3 pending human-verify)
-Resume file: .planning/phases/13-data-safety-audit/13-04-SUMMARY.md
+Last session: 2026-03-29T08:45:00Z
+Stopped at: Completed 13-05-PLAN.md (gap closure — all Phase 13 plans done)
+Resume file: .planning/phases/13-data-safety-audit/13-05-SUMMARY.md
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-29 — Phase 13 Plan 04 Tasks 1-2 complete*
+*Last updated: 2026-03-29 — Phase 13 Plan 05 gap closure complete, pending PR cycle*

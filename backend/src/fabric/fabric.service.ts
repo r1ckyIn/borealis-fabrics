@@ -138,16 +138,11 @@ export class FabricService {
 
   /**
    * Find all fabrics with optional filtering and pagination.
-   * When includeDeleted is true, bypasses the soft-delete extension filter.
+   * When includeDeleted is true, uses raw PrismaClient to bypass the soft-delete extension.
    */
   async findAll(query: QueryFabricDto): Promise<PaginatedResult<Fabric>> {
     // Build where clause (soft-delete auto-filtered by extension)
     const where: Prisma.FabricWhereInput = {};
-
-    // Bypass soft-delete filter when includeDeleted is true
-    if (query.includeDeleted) {
-      where.deletedAt = {} as Prisma.DateTimeNullableFilter;
-    }
 
     // Unified keyword search across fabricCode, name, and color
     if (query.keyword) {
@@ -178,14 +173,14 @@ export class FabricService {
     const sortOrder = query.sortOrder ?? 'desc';
     const orderBy = { [sortBy]: sortOrder };
 
-    // Execute queries in parallel
+    const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
     const [items, total] = await Promise.all([
-      this.prisma.fabric.findMany({
+      client.fabric.findMany({
         where,
         ...paginationArgs,
         orderBy,
       }),
-      this.prisma.fabric.count({ where }),
+      client.fabric.count({ where }),
     ]);
 
     return buildPaginatedResult(items, total, query);
