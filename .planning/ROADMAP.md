@@ -71,7 +71,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 13-01-PLAN.md — Audit logging backend (AuditLog model, interceptor, @Audited decorator, RolesGuard dev extension, audit API)
+- [x] 13-01-PLAN.md — Audit logging backend (AuditLog model, interceptor, @Audited decorator, RolesGuard dev extension, audit API)
 - [ ] 13-02-PLAN.md — Data export backend (ExportModule, field-configurable Excel) + isAdmin on /auth/me + DB backup script
 - [ ] 13-03-PLAN.md — Audit log frontend page + export page + sidebar RBAC + routes
 - [ ] 13-04-PLAN.md — Soft-delete recovery UI (backend includeDeleted + frontend toggle + restore on all 6 entity list pages)
@@ -134,7 +134,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 12. Foundation & Observability Quick Wins | v1.1 | 3/3 | Complete    | 2026-03-28 |
-| 13. Data Safety & Audit | v1.1 | 0/4 | Not started | - |
+| 13. Data Safety & Audit | v1.1 | 1/4 | In Progress|  |
 | 14. Observability & Performance | v1.1 | 0/3 | Not started | - |
 | 15. Containerization & Quality | v1.1 | 0/3 | Not started | - |
 | 16. Production Deployment | v1.1 | 0/2 | Not started | - |
