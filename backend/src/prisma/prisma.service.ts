@@ -63,6 +63,7 @@ export class PrismaService
       'paymentRecord',
       'paymentVoucher',
       'file',
+      'auditLog',
     ] as const) {
       Object.defineProperty(this, model, {
         get: () => (extended as Record<string, unknown>)[model],
