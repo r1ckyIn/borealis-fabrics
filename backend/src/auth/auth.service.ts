@@ -294,6 +294,29 @@ export class AuthService {
   }
 
   /**
+   * Check if a weworkId belongs to an admin user.
+   * Reads BOSS_WEWORK_IDS and DEV_WEWORK_IDS env vars directly.
+   * Intentionally duplicates env-parsing logic from RolesGuard --
+   * injecting a guard into a service is an anti-pattern, and the
+   * logic is trivial (2 Set lookups).
+   */
+  private isAdminUser(weworkId: string): boolean {
+    const bossIds = new Set(
+      (process.env.BOSS_WEWORK_IDS || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
+    const devIds = new Set(
+      (process.env.DEV_WEWORK_IDS || '')
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean),
+    );
+    return bossIds.has(weworkId) || devIds.has(weworkId);
+  }
+
+  /**
    * Convert database user to response DTO.
    */
   private toUserResponseDto(user: {
@@ -311,6 +334,7 @@ export class AuthService {
     dto.name = user.name;
     dto.avatar = user.avatar ?? undefined;
     dto.mobile = user.mobile ?? undefined;
+    dto.isAdmin = this.isAdminUser(user.weworkId);
     dto.createdAt = user.createdAt;
     dto.updatedAt = user.updatedAt;
     return dto;

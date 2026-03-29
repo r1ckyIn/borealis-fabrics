@@ -7,6 +7,7 @@ export class UserResponseDto {
   name!: string;
   avatar?: string;
   mobile?: string;
+  isAdmin!: boolean;
   createdAt!: Date;
   updatedAt!: Date;
 }

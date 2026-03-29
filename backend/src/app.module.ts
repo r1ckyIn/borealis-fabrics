@@ -23,6 +23,7 @@ import { LogisticsModule } from './logistics/logistics.module';
 import { ImportModule } from './import/import.module';
 import { SystemModule } from './system/system.module';
 import { ProductModule } from './product/product.module';
+import { ExportModule } from './export/export.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { UserClsInterceptor } from './common/interceptors/user-cls.interceptor';
@@ -93,6 +94,7 @@ import configuration from './config/configuration';
     ImportModule,
     SystemModule,
     ProductModule,
+    ExportModule,
   ],
   controllers: [HealthController],
   providers: [
