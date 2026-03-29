@@ -27,6 +27,7 @@ describe('authStore', () => {
     name: 'Test User',
     avatar: 'https://example.com/avatar.png',
     mobile: '13800138000',
+    isAdmin: false,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
   };

@@ -1,22 +1,27 @@
 /**
  * Product list page with dynamic columns based on URL :category parameter.
  * Follows FabricListPage pattern with search, filter, and pagination.
+ * Admin users can toggle visibility of soft-deleted records and restore them.
  */
 
 import { useState, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Card, Table, Button, Empty, Result } from 'antd';
-import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Empty, Result, Space, message } from 'antd';
+import { PlusOutlined, EyeOutlined, UndoOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchForm, type SearchField } from '@/components/common/SearchForm';
+import { SoftDeleteToggle } from '@/components/common/SoftDeleteToggle';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
-import { useProducts } from '@/hooks/queries/useProducts';
+import { useProducts, productKeys } from '@/hooks/queries/useProducts';
+import { patch } from '@/api/client';
 import { CATEGORY_ROUTE_MAP } from '@/utils/product-constants';
 import { PRODUCT_SUB_CATEGORY_LABELS } from '@/types';
 import type { Product, QueryProductParams } from '@/types';
+import '@/styles/deleted-row.css';
 
 /** Search form fields configuration. */
 const SEARCH_FIELDS: SearchField[] = [
@@ -72,6 +77,7 @@ const CATEGORY_COLUMNS: Record<string, ColumnsType<Product>> = {
 export default function ProductListPage(): React.ReactElement {
   const { category: categoryParam } = useParams<{ category: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Resolve subCategory from URL param
   const subCategory = categoryParam ? CATEGORY_ROUTE_MAP[categoryParam] : undefined;
@@ -90,14 +96,18 @@ export default function ProductListPage(): React.ReactElement {
   // Search state
   const [searchParams, setSearchParams] = useState<QueryProductParams>({});
 
+  // Soft-delete toggle state
+  const [showDeleted, setShowDeleted] = useState(false);
+
   // Combined query params
   const combinedParams: QueryProductParams = useMemo(
     () => ({
       ...searchParams,
       ...queryParams,
       subCategory,
+      ...(showDeleted ? { includeDeleted: true } : {}),
     }),
-    [searchParams, queryParams, subCategory]
+    [searchParams, queryParams, subCategory, showDeleted]
   );
 
   // Fetch products with pagination
@@ -117,6 +127,20 @@ export default function ProductListPage(): React.ReactElement {
     setSearchParams({});
     setPage(1);
   }, [setPage]);
+
+  /** Restore a soft-deleted product. */
+  const handleRestore = useCallback(
+    async (id: number) => {
+      try {
+        await patch(`/products/${id}/restore`);
+        void message.success(`${categoryLabel ?? '产品'}已恢复`);
+        void queryClient.invalidateQueries({ queryKey: productKeys.all });
+      } catch {
+        void message.error('恢复失败，请重试');
+      }
+    },
+    [queryClient, categoryLabel]
+  );
 
   /** Navigate to product pages. */
   const goToDetail = useCallback(
@@ -144,21 +168,33 @@ export default function ProductListPage(): React.ReactElement {
       {
         title: '操作',
         key: 'actions',
-        width: 80,
+        width: showDeleted ? 140 : 80,
         fixed: 'right',
         render: (_, record) => (
-          <Button
-            type="link"
-            size="small"
-            icon={<EyeOutlined />}
-            onClick={() => goToDetail(record)}
-          >
-            查看
-          </Button>
+          <Space>
+            <Button
+              type="link"
+              size="small"
+              icon={<EyeOutlined />}
+              onClick={() => goToDetail(record)}
+            >
+              查看
+            </Button>
+            {record.deletedAt && (
+              <Button
+                type="link"
+                size="small"
+                icon={<UndoOutlined />}
+                onClick={() => void handleRestore(record.id)}
+              >
+                恢复
+              </Button>
+            )}
+          </Space>
         ),
       },
     ],
-    [goToDetail]
+    [goToDetail, handleRestore, showDeleted]
   );
 
   // Compose final columns dynamically
@@ -200,9 +236,12 @@ export default function ProductListPage(): React.ReactElement {
       title={`${categoryLabel}管理`}
       breadcrumbs={breadcrumbs}
       extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
-          新增{categoryLabel}
-        </Button>
+        <Space>
+          <SoftDeleteToggle showDeleted={showDeleted} onChange={setShowDeleted} />
+          <Button type="primary" icon={<PlusOutlined />} onClick={goToCreate}>
+            新增{categoryLabel}
+          </Button>
+        </Space>
       }
     >
       {/* Search Form */}
@@ -236,6 +275,7 @@ export default function ProductListPage(): React.ReactElement {
             ),
           }}
           onChange={handleTableChange as Parameters<typeof Table<Product>>['0']['onChange']}
+          rowClassName={(record) => (record.deletedAt ? 'deleted-row' : '')}
           scroll={{ x: 900 }}
           size="middle"
         />

@@ -12,6 +12,7 @@ import type { Dayjs } from 'dayjs';
 
 import { PageContainer } from '@/components/layout/PageContainer';
 import { SearchForm, type SearchField } from '@/components/common/SearchForm';
+
 import { StatusTag } from '@/components/common/StatusTag';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { usePagination } from '@/hooks/usePagination';
@@ -98,14 +99,14 @@ const ITEM_COLUMNS: ColumnsType<QuoteItem> = [
     dataIndex: 'unitPrice',
     key: 'unitPrice',
     width: 100,
-    render: (v: number) => `¥${Number(v).toFixed(2)}`,
+    render: (v: number) => `\u00A5${Number(v).toFixed(2)}`,
   },
   {
     title: '小计',
     dataIndex: 'subtotal',
     key: 'subtotal',
     width: 100,
-    render: (v: number) => `¥${Number(v).toFixed(2)}`,
+    render: (v: number) => `\u00A5${Number(v).toFixed(2)}`,
   },
   {
     title: '状态',

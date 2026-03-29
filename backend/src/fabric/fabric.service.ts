@@ -138,10 +138,16 @@ export class FabricService {
 
   /**
    * Find all fabrics with optional filtering and pagination.
+   * When includeDeleted is true, bypasses the soft-delete extension filter.
    */
   async findAll(query: QueryFabricDto): Promise<PaginatedResult<Fabric>> {
     // Build where clause (soft-delete auto-filtered by extension)
     const where: Prisma.FabricWhereInput = {};
+
+    // Bypass soft-delete filter when includeDeleted is true
+    if (query.includeDeleted) {
+      where.deletedAt = {} as Prisma.DateTimeNullableFilter;
+    }
 
     // Unified keyword search across fabricCode, name, and color
     if (query.keyword) {

@@ -21,10 +21,14 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { ClsService } from 'nestjs-cls';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Audited } from '../audit/decorators/audited.decorator';
+import { isAdminWeworkId } from '../common/utils/admin';
 import { SupplierService } from './supplier.service';
+import type { RequestUser } from '../auth/interfaces/jwt-payload.interface';
 import {
   CreateSupplierDto,
   QuerySupplierDto,
@@ -35,10 +39,14 @@ import {
 @ApiTags('suppliers')
 @Controller('suppliers')
 export class SupplierController {
-  constructor(private readonly supplierService: SupplierService) {}
+  constructor(
+    private readonly supplierService: SupplierService,
+    private readonly cls: ClsService,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
+  @Audited({ entityType: 'Supplier', action: 'create' })
   @ApiOperation({ summary: 'Create a new supplier' })
   @ApiBody({ type: CreateSupplierDto })
   @ApiResponse({ status: 201, description: 'Supplier created successfully' })
@@ -68,6 +76,13 @@ export class SupplierController {
   @ApiQuery({ name: 'settleType', required: false, enum: ['prepay', 'credit'] })
   @ApiResponse({ status: 200, description: 'Paginated supplier list' })
   findAll(@Query() query: QuerySupplierDto) {
+    // Server-side RBAC: strip includeDeleted for non-admin users
+    if (query.includeDeleted) {
+      const user = this.cls.get<RequestUser>('user');
+      if (!user || !isAdminWeworkId(user.weworkId)) {
+        query.includeDeleted = false;
+      }
+    }
     return this.supplierService.findAll(query);
   }
 
@@ -134,6 +149,7 @@ export class SupplierController {
   }
 
   @Patch(':id')
+  @Audited({ entityType: 'Supplier', action: 'update' })
   @ApiOperation({ summary: 'Update a supplier by ID' })
   @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
   @ApiBody({ type: UpdateSupplierDto })
@@ -150,6 +166,7 @@ export class SupplierController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @Audited({ entityType: 'Supplier', action: 'delete' })
   @ApiOperation({
     summary: 'Delete a supplier by ID',
     description:
@@ -179,6 +196,7 @@ export class SupplierController {
   @Patch(':id/restore')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('boss')
+  @Audited({ entityType: 'Supplier', action: 'restore' })
   @ApiOperation({ summary: 'Restore a soft-deleted supplier (boss only)' })
   @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
   @ApiResponse({ status: 200, description: 'Supplier restored' })

@@ -346,6 +346,78 @@ describe('AuthService', () => {
       await expect(service.getUserInfo(999)).rejects.toThrow(NotFoundException);
       await expect(service.getUserInfo(999)).rejects.toThrow('User not found');
     });
+
+    it('should return isAdmin=true when weworkId is in BOSS_WEWORK_IDS', async () => {
+      const originalEnv = process.env.BOSS_WEWORK_IDS;
+      process.env.BOSS_WEWORK_IDS = 'boss-001, boss-002';
+
+      const mockUser = {
+        id: 1,
+        weworkId: 'boss-001',
+        name: 'Boss User',
+        avatar: null,
+        mobile: null,
+        deletedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prismaService.user.findUnique.mockResolvedValue(mockUser);
+
+      const result = await service.getUserInfo(1);
+      expect(result.isAdmin).toBe(true);
+
+      process.env.BOSS_WEWORK_IDS = originalEnv;
+    });
+
+    it('should return isAdmin=true when weworkId is in DEV_WEWORK_IDS', async () => {
+      const originalBoss = process.env.BOSS_WEWORK_IDS;
+      const originalDev = process.env.DEV_WEWORK_IDS;
+      process.env.BOSS_WEWORK_IDS = '';
+      process.env.DEV_WEWORK_IDS = 'dev-001';
+
+      const mockUser = {
+        id: 1,
+        weworkId: 'dev-001',
+        name: 'Dev User',
+        avatar: null,
+        mobile: null,
+        deletedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prismaService.user.findUnique.mockResolvedValue(mockUser);
+
+      const result = await service.getUserInfo(1);
+      expect(result.isAdmin).toBe(true);
+
+      process.env.BOSS_WEWORK_IDS = originalBoss;
+      process.env.DEV_WEWORK_IDS = originalDev;
+    });
+
+    it('should return isAdmin=false when weworkId is not admin', async () => {
+      const originalBoss = process.env.BOSS_WEWORK_IDS;
+      const originalDev = process.env.DEV_WEWORK_IDS;
+      process.env.BOSS_WEWORK_IDS = 'boss-001';
+      process.env.DEV_WEWORK_IDS = 'dev-001';
+
+      const mockUser = {
+        id: 1,
+        weworkId: 'regular-user',
+        name: 'Regular User',
+        avatar: null,
+        mobile: null,
+        deletedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prismaService.user.findUnique.mockResolvedValue(mockUser);
+
+      const result = await service.getUserInfo(1);
+      expect(result.isAdmin).toBe(false);
+
+      process.env.BOSS_WEWORK_IDS = originalBoss;
+      process.env.DEV_WEWORK_IDS = originalDev;
+    });
   });
 
   describe('logout', () => {

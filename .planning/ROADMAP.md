@@ -72,7 +72,9 @@ Plans:
 
 Plans:
 - [ ] 13-01: Audit logging backend (interceptor, decorator, model, correlation ID consumption)
-- [ ] 13-02: Audit log frontend page + RBAC + data export module + DB backup verification
+- [ ] 13-02: Export module + isAdmin + backup script
+- [ ] 13-03: Audit log frontend page + RBAC
+- [ ] 13-04: Soft-delete recovery UI (includeDeleted + SoftDeleteToggle + restore)
 
 ### Phase 14: Observability & Performance
 **Goal**: System performance is measured, cached where appropriate, and observable through centralized logs and dashboards
@@ -132,11 +134,11 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 12. Foundation & Observability Quick Wins | v1.1 | 3/3 | Complete    | 2026-03-28 |
-| 13. Data Safety & Audit | v1.1 | 0/2 | Not started | - |
+| 13. Data Safety & Audit | v1.1 | 0/4 | In progress | - |
 | 14. Observability & Performance | v1.1 | 0/3 | Not started | - |
 | 15. Containerization & Quality | v1.1 | 0/3 | Not started | - |
 | 16. Production Deployment | v1.1 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-28 (Phase 12 planned — 3 plans, 6 tasks)*
+*Last updated: 2026-03-29 (Phase 13 Plan 04 Tasks 1-2 complete)*

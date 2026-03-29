@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ClsService } from 'nestjs-cls';
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -73,6 +74,10 @@ describe('ProductController', () => {
         {
           provide: ProductService,
           useValue: mockProductService,
+        },
+        {
+          provide: ClsService,
+          useValue: { get: () => ({ id: 1, weworkId: 'test', name: 'Test' }) },
         },
       ],
     })

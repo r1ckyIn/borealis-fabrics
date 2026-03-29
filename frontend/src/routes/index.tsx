@@ -45,6 +45,9 @@ const OrderListPage = lazy(() => import('@/pages/orders/OrderListPage'));
 const OrderDetailPage = lazy(() => import('@/pages/orders/OrderDetailPage'));
 const OrderFormPage = lazy(() => import('@/pages/orders/OrderFormPage'));
 const ImportPage = lazy(() => import('@/pages/import/ImportPage'));
+const AuditLogPage = lazy(() => import('@/pages/audit/AuditLogPage'));
+const AuditLogDetailPage = lazy(() => import('@/pages/audit/AuditLogDetailPage'));
+const ExportPage = lazy(() => import('@/pages/export/ExportPage'));
 const NotFoundPage = lazy(() => import('@/pages/errors/NotFoundPage'));
 
 /**
@@ -228,6 +231,22 @@ const router = createBrowserRouter([
           {
             path: '/import',
             element: withSuspense(ImportPage),
+          },
+
+          // Audit log routes (admin-only enforced server-side)
+          {
+            path: '/audit',
+            element: withSuspense(AuditLogPage),
+          },
+          {
+            path: '/audit/:id',
+            element: withSuspense(AuditLogDetailPage),
+          },
+
+          // Export route
+          {
+            path: '/export',
+            element: withSuspense(ExportPage),
           },
         ],
       },
