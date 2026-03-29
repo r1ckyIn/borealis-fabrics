@@ -23,8 +23,8 @@ async function main() {
   await wb.xlsx.readFile(INPUT_FILE);
   const ws = wb.getWorksheet('DAVIS')!;
   
-  // Show all columns for rows that have empty Col 9 (销售价)
-  console.log('DAVIS rows with empty 销售价 (Col 9):');
+  // Show all columns for rows that have empty Col 9 (selling price)
+  console.log('DAVIS rows with empty selling price (Col 9):');
   console.log('');
   let idx = 0;
   ws.eachRow((row, rowNumber) => {

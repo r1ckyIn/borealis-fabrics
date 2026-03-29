@@ -69,6 +69,17 @@ export class PrismaService
         configurable: true,
       });
     }
+
+    // Route $transaction through extended client so that interactive
+    // transaction callbacks (tx) also apply soft-delete filtering.
+    // Without this, tx.<model> inside $transaction would bypass soft-delete.
+    const boundTransaction = (
+      extended.$transaction as PrismaClient['$transaction']
+    ).bind(extended);
+    Object.defineProperty(this, '$transaction', {
+      value: boundTransaction,
+      configurable: true,
+    });
   }
 
   async onModuleInit() {
