@@ -154,7 +154,6 @@ export class CustomerService {
     const sortOrder = query.sortOrder ?? 'desc';
     const orderBy = { [sortBy]: sortOrder };
 
-    // Use raw client to bypass soft-delete extension when includeDeleted is true
     const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
     const [items, total] = await Promise.all([
       client.customer.findMany({
