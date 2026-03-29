@@ -74,7 +74,7 @@ Plans:
 - [ ] 13-01-PLAN.md — Audit logging backend (AuditLog model, interceptor, @Audited decorator, RolesGuard dev extension, audit API)
 - [ ] 13-02-PLAN.md — Data export backend (ExportModule, field-configurable Excel) + isAdmin on /auth/me + DB backup script
 - [ ] 13-03-PLAN.md — Audit log frontend page + export page + sidebar RBAC + routes
-- [ ] 13-04-PLAN.md — Soft-delete recovery UI (toggle + restore on all 6 entity list pages)
+- [ ] 13-04-PLAN.md — Soft-delete recovery UI (backend includeDeleted + frontend toggle + restore on all 6 entity list pages)
 
 ### Phase 14: Observability & Performance
 **Goal**: System performance is measured, cached where appropriate, and observable through centralized logs and dashboards
@@ -141,4 +141,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-29 (Phase 13 planned — 4 plans, 8 tasks)*
+*Last updated: 2026-03-29 (Phase 13 revised — 4 plans, 10 tasks)*
