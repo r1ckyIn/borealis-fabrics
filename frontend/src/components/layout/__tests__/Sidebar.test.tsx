@@ -20,9 +20,29 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+// Default mock user (non-admin)
+const mockUser = {
+  id: 1,
+  weworkId: 'test-001',
+  name: 'Test User',
+  isAdmin: false,
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
+};
+
+// Mock authStore
+vi.mock('@/store/authStore', () => ({
+  useUser: vi.fn(() => mockUser),
+}));
+
+// Import after mock setup to allow overriding
+import { useUser } from '@/store/authStore';
+
 describe('Sidebar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset to default non-admin user
+    vi.mocked(useUser).mockReturnValue(mockUser);
   });
 
   it('should render top-level menu items and product SubMenu', () => {
@@ -124,5 +144,54 @@ describe('Sidebar', () => {
     await user.click(ironFramesItem);
 
     expect(mockNavigate).toHaveBeenCalledWith('/products/iron-frames');
+  });
+
+  // Admin role-based visibility tests
+  it('should show "审计日志" menu item for admin users', () => {
+    vi.mocked(useUser).mockReturnValue({ ...mockUser, isAdmin: true });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Sidebar collapsed={false} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('审计日志')).toBeInTheDocument();
+  });
+
+  it('should NOT show "审计日志" menu item for non-admin users', () => {
+    vi.mocked(useUser).mockReturnValue({ ...mockUser, isAdmin: false });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Sidebar collapsed={false} />
+      </MemoryRouter>
+    );
+
+    expect(screen.queryByText('审计日志')).not.toBeInTheDocument();
+  });
+
+  it('should show "数据导出" menu item for all users', () => {
+    vi.mocked(useUser).mockReturnValue({ ...mockUser, isAdmin: false });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Sidebar collapsed={false} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('数据导出')).toBeInTheDocument();
+  });
+
+  it('should show "数据导出" menu item for admin users', () => {
+    vi.mocked(useUser).mockReturnValue({ ...mockUser, isAdmin: true });
+
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Sidebar collapsed={false} />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('数据导出')).toBeInTheDocument();
   });
 });
