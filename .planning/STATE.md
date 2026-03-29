@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 12 — foundation-observability-quick-wins
+**Current focus:** Phase 13 — data-safety-audit
 
 ## Current Position
 
-Phase: 13
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-03-28
+Phase: 13 (data-safety-audit) — EXECUTING
+Plan: 4 of 4
+Status: Executing Phase 13 (Plan 04 Tasks 1-2 complete, Task 3 pending human-verify)
+Last activity: 2026-03-29
 
-Progress: [░░░░░░░░░░] 0% (0/12 plans)
+Progress: [██░░░░░░░░] 0% (0/12 plans)
 
 ## Performance Metrics
 
@@ -70,6 +70,10 @@ Recent decisions affecting current work:
 - [Phase 12]: Boss role via BOSS_WEWORK_IDS env var (MVP, no User.role field needed)
 - [Phase 12]: CLS operator pattern: services use cls.get<RequestUser>('user')?.id for operator audit trail (typed generic avoids any)
 - [Phase 12]: Inline validation pattern: mapApiErrorsToFormFields + form.setFields for 400/422 form errors (reusable across all form pages)
+- [Phase 13-02]: isAdmin computed server-side via standalone private helper (BOSS/DEV_WEWORK_IDS env vars, no guard injection into service)
+- [Phase 13-02]: ExportModule uses @Res() to bypass TransformInterceptor for binary xlsx responses
+- [Phase 13-04]: Bypass soft-delete extension via empty object trick (where.deletedAt={}) instead of raw SQL
+- [Phase 13-04]: Order/Quote DTOs accept includeDeleted for API consistency but services ignore it (no soft delete)
 
 ### Pending Todos
 
@@ -82,10 +86,10 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T09:47:22.763Z
-Stopped at: Completed 12-03-PLAN.md (Phase 12 complete)
-Resume file: None
+Last session: 2026-03-29T05:08:25Z
+Stopped at: Completed 13-04-PLAN.md Tasks 1-2 (Task 3 pending human-verify)
+Resume file: .planning/phases/13-data-safety-audit/13-04-SUMMARY.md
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-28 — Phase 12 Wave 1 complete*
+*Last updated: 2026-03-29 — Phase 13 Plan 04 Tasks 1-2 complete*
