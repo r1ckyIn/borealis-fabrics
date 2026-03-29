@@ -33,7 +33,7 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 
 **Milestone Goal:** Close all engineering gaps and deploy to Tencent Cloud production.
 
-- [ ] **Phase 12: Foundation & Observability Quick Wins** - Correlation ID, soft delete, Sentry integration, ErrorBoundary, tech debt cleanup
+- [x] **Phase 12: Foundation & Observability Quick Wins** - Correlation ID, soft delete, Sentry integration, ErrorBoundary, tech debt cleanup (completed 2026-03-28)
 - [ ] **Phase 13: Data Safety & Audit** - Audit logging (backend + frontend), RBAC, data export, DB backup
 - [ ] **Phase 14: Observability & Performance** - Log aggregation, Redis caching, load testing, Web Vitals, dependency scanning
 - [ ] **Phase 15: Containerization & Quality** - Docker, Nginx, CI/CD, PWA, accessibility
@@ -51,11 +51,12 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
   3. Backend unhandled exceptions (500) appear in Sentry dashboard within seconds; 4xx errors are filtered out
   4. Frontend React crashes render a graceful fallback UI and report to Sentry
   5. OrderFormPage shows inline field validation errors for 400/422 responses; operatorId is populated correctly in payment operations; SalesContract import handles real file formats
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 12-01: Correlation ID middleware + soft delete schema migration
-- [ ] 12-02: Sentry integration (backend + frontend) + ErrorBoundary + tech debt fixes
+- [x] 12-01-PLAN.md — Correlation ID (nestjs-cls) + Sentry backend/frontend + ErrorBoundary enhancement
+- [x] 12-02-PLAN.md — Soft delete schema migration (isActive -> deletedAt) + Prisma extension + isActive cleanup
+- [x] 12-03-PLAN.md — Tech debt fixes (operatorId, OrderFormPage validation, SalesContract hardening)
 
 ### Phase 13: Data Safety & Audit
 **Goal**: All data mutations are auditable, exportable, and backed up — operators know who changed what and when
@@ -126,11 +127,11 @@ Plans:
 
 ## Progress
 
-**Execution Order:** Phases execute sequentially: 12 → 13 → 14 → 15 → 16
+**Execution Order:** Phases execute sequentially: 12 -> 13 -> 14 -> 15 -> 16
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 12. Foundation & Observability Quick Wins | v1.1 | 0/2 | Not started | - |
+| 12. Foundation & Observability Quick Wins | v1.1 | 3/3 | Complete    | 2026-03-28 |
 | 13. Data Safety & Audit | v1.1 | 0/2 | Not started | - |
 | 14. Observability & Performance | v1.1 | 0/3 | Not started | - |
 | 15. Containerization & Quality | v1.1 | 0/3 | Not started | - |
@@ -138,4 +139,4 @@ Plans:
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-28 (v1.1 roadmap added — 5 phases, 12 plans, 38 requirements)*
+*Last updated: 2026-03-28 (Phase 12 planned — 3 plans, 6 tasks)*

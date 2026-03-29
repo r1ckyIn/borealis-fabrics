@@ -9,6 +9,7 @@ import type { ApiError } from '@/types/api.types';
 import {
   getErrorMessage,
   getDeleteErrorMessage,
+  mapApiErrorsToFormFields,
   ERROR_CODE_MESSAGES,
   HTTP_STATUS_MESSAGES,
 } from '../errorMessages';
@@ -167,6 +168,71 @@ describe('getErrorMessage', () => {
       data: null,
     };
     expect(getErrorMessage(error)).toBe('操作过于频繁，请稍后重试');
+  });
+});
+
+describe('mapApiErrorsToFormFields', () => {
+  it('should map single field error string to FieldData array', () => {
+    const error = {
+      code: 400,
+      message: 'companyName should not be empty',
+      data: null,
+    } as ApiError;
+    const result = mapApiErrorsToFormFields(error);
+    expect(result).toEqual([
+      { name: 'companyName', errors: ['companyName should not be empty'] },
+    ]);
+  });
+
+  it('should map array of field errors to multiple FieldData entries', () => {
+    const error = {
+      code: 400,
+      message: ['companyName should not be empty', 'email must be an email'],
+      data: null,
+    } as unknown as ApiError;
+    const result = mapApiErrorsToFormFields(error);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      name: 'companyName',
+      errors: ['companyName should not be empty'],
+    });
+    expect(result[1]).toEqual({
+      name: 'email',
+      errors: ['email must be an email'],
+    });
+  });
+
+  it('should return empty array for non-field error message', () => {
+    const error: ApiError = {
+      code: 500,
+      message: 'Internal server error',
+      data: null,
+    };
+    const result = mapApiErrorsToFormFields(error);
+    expect(result).toEqual([]);
+  });
+
+  it('should return empty array for undefined/null message', () => {
+    const error = { code: 400, message: undefined, data: null } as unknown as ApiError;
+    const result = mapApiErrorsToFormFields(error);
+    expect(result).toEqual([]);
+  });
+
+  it('should return empty array for null error', () => {
+    const result = mapApiErrorsToFormFields(null as unknown as ApiError);
+    expect(result).toEqual([]);
+  });
+
+  it('should handle order-specific field names', () => {
+    const error = {
+      code: 400,
+      message: 'customerId should not be empty',
+      data: null,
+    } as ApiError;
+    const result = mapApiErrorsToFormFields(error);
+    expect(result).toEqual([
+      { name: 'customerId', errors: ['customerId should not be empty'] },
+    ]);
   });
 });
 

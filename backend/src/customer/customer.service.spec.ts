@@ -143,7 +143,7 @@ describe('CustomerService', () => {
       creditType: 'prepay',
       creditDays: 30,
       notes: 'VIP customer',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -175,7 +175,7 @@ describe('CustomerService', () => {
         creditType: 'prepay',
         creditDays: null,
         notes: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -225,7 +225,7 @@ describe('CustomerService', () => {
       creditType: 'prepay',
       creditDays: 30,
       notes: 'VIP customer',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -236,7 +236,7 @@ describe('CustomerService', () => {
       const result = await service.findOne(1);
 
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(result).toEqual(mockCustomer);
     });
@@ -273,7 +273,7 @@ describe('CustomerService', () => {
         creditType: 'prepay',
         creditDays: null,
         notes: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -288,13 +288,13 @@ describe('CustomerService', () => {
         creditType: 'credit',
         creditDays: 30,
         notes: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
     ];
 
-    it('should return paginated customers with default isActive=true', async () => {
+    it('should return paginated customers', async () => {
       const query: QueryCustomerDto = {};
       customerMock.findMany.mockResolvedValue(mockCustomers);
       customerMock.count.mockResolvedValue(2);
@@ -302,7 +302,7 @@ describe('CustomerService', () => {
       const result = await service.findAll(query);
 
       expect(customerMock.findMany).toHaveBeenCalledWith({
-        where: { isActive: true },
+        where: {},
         skip: 0,
         take: 20,
         orderBy: { createdAt: 'desc' },
@@ -325,7 +325,6 @@ describe('CustomerService', () => {
 
       expect(customerMock.findMany).toHaveBeenCalledWith({
         where: {
-          isActive: true,
           companyName: { contains: 'XYZ' },
         },
         skip: 0,
@@ -344,7 +343,6 @@ describe('CustomerService', () => {
 
       expect(customerMock.findMany).toHaveBeenCalledWith({
         where: {
-          isActive: true,
           creditType: 'credit',
         },
         skip: 0,
@@ -352,23 +350,6 @@ describe('CustomerService', () => {
         orderBy: { createdAt: 'desc' },
       });
       expect(result.items).toHaveLength(1);
-    });
-
-    it('should filter soft-deleted records with isActive=false', async () => {
-      const deletedCustomer = { ...mockCustomers[0], isActive: false };
-      const query: QueryCustomerDto = { isActive: false };
-      customerMock.findMany.mockResolvedValue([deletedCustomer]);
-      customerMock.count.mockResolvedValue(1);
-
-      const result = await service.findAll(query);
-
-      expect(customerMock.findMany).toHaveBeenCalledWith({
-        where: { isActive: false },
-        skip: 0,
-        take: 20,
-        orderBy: { createdAt: 'desc' },
-      });
-      expect(result.items[0].isActive).toBe(false);
     });
 
     it('should support custom pagination and sorting', async () => {
@@ -384,7 +365,7 @@ describe('CustomerService', () => {
       const result = await service.findAll(query);
 
       expect(customerMock.findMany).toHaveBeenCalledWith({
-        where: { isActive: true },
+        where: {},
         skip: 10,
         take: 10,
         orderBy: { companyName: 'asc' },
@@ -425,7 +406,7 @@ describe('CustomerService', () => {
       creditType: 'prepay',
       creditDays: null,
       notes: null,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -440,7 +421,7 @@ describe('CustomerService', () => {
 
       // New implementation uses compound where clause directly in update
       expect(customerMock.update).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
         data: { ...updateDto, addresses: undefined },
       });
       expect(result.contactName).toBe('Wang Wei');
@@ -494,7 +475,7 @@ describe('CustomerService', () => {
 
     it('should throw NotFoundException when customer is soft deleted', async () => {
       const updateDto: UpdateCustomerDto = { contactName: 'Wang Wei' };
-      // New implementation catches P2025 error (isActive=false fails the where clause)
+      // Catches P2025 error when record not found
       const prismaError = new Prisma.PrismaClientKnownRequestError(
         'Record to update not found',
         { code: 'P2025', clientVersion: '5.0.0' },
@@ -547,13 +528,13 @@ describe('CustomerService', () => {
       creditType: 'prepay',
       creditDays: null,
       notes: null,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     it('should physically delete a customer with no relations', async () => {
-      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.findFirst.mockResolvedValue(existingCustomer);
       customerPricingMock.count.mockResolvedValue(0);
       orderMock.count.mockResolvedValue(0);
       quoteMock.count.mockResolvedValue(0);
@@ -567,7 +548,7 @@ describe('CustomerService', () => {
     });
 
     it('should throw NotFoundException when customer not found', async () => {
-      customerMock.findUnique.mockResolvedValue(null);
+      customerMock.findFirst.mockResolvedValue(null);
 
       await expect(service.remove(999, false)).rejects.toThrow(
         NotFoundException,
@@ -577,35 +558,32 @@ describe('CustomerService', () => {
     });
 
     it('should throw ConflictException when customer has relations and force=false', async () => {
-      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.findFirst.mockResolvedValue(existingCustomer);
       customerPricingMock.count.mockResolvedValue(3);
       orderMock.count.mockResolvedValue(5);
       quoteMock.count.mockResolvedValue(2);
 
       await expect(service.remove(1, false)).rejects.toThrow(ConflictException);
       expect(customerMock.delete).not.toHaveBeenCalled();
-      expect(customerMock.update).not.toHaveBeenCalled();
     });
 
     it('should soft delete a customer with relations when force=true', async () => {
-      const softDeletedCustomer = { ...existingCustomer, isActive: false };
-      customerMock.findUnique.mockResolvedValue(existingCustomer);
+      customerMock.findFirst.mockResolvedValue(existingCustomer);
       customerPricingMock.count.mockResolvedValue(3);
       orderMock.count.mockResolvedValue(5);
       quoteMock.count.mockResolvedValue(2);
-      customerMock.update.mockResolvedValue(softDeletedCustomer);
+      customerMock.delete.mockResolvedValue(existingCustomer);
 
       await service.remove(1, true);
 
-      expect(customerMock.update).toHaveBeenCalledWith({
+      // Extension intercepts delete() and sets deletedAt
+      expect(customerMock.delete).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { isActive: false },
       });
-      expect(customerMock.delete).not.toHaveBeenCalled();
     });
 
-    it('should physically delete even with force=true when no relations exist', async () => {
-      customerMock.findUnique.mockResolvedValue(existingCustomer);
+    it('should soft delete even with no relations', async () => {
+      customerMock.findFirst.mockResolvedValue(existingCustomer);
       customerPricingMock.count.mockResolvedValue(0);
       orderMock.count.mockResolvedValue(0);
       quoteMock.count.mockResolvedValue(0);
@@ -613,6 +591,7 @@ describe('CustomerService', () => {
 
       await service.remove(1, true);
 
+      // Extension intercepts delete() and sets deletedAt
       expect(customerMock.delete).toHaveBeenCalledWith({
         where: { id: 1 },
       });
@@ -634,7 +613,7 @@ describe('CustomerService', () => {
       creditType: 'prepay',
       creditDays: null,
       notes: null,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -677,7 +656,7 @@ describe('CustomerService', () => {
       const result = await service.findPricing(1);
 
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(customerPricingMock.findMany).toHaveBeenCalledWith({
         where: { customerId: 1 },
@@ -740,7 +719,7 @@ describe('CustomerService', () => {
       creditType: 'prepay',
       creditDays: null,
       notes: null,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -750,7 +729,7 @@ describe('CustomerService', () => {
       fabricCode: 'BF-2501-0001',
       name: 'Premium Cotton',
       defaultPrice: 99.99,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -777,10 +756,10 @@ describe('CustomerService', () => {
       const result = await service.createPricing(1, createDto);
 
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 10, isActive: true },
+        where: { id: 10 },
       });
       expect(customerPricingMock.create).toHaveBeenCalledWith({
         data: {
@@ -820,7 +799,7 @@ describe('CustomerService', () => {
 
     it('should throw NotFoundException when fabric is soft-deleted', async () => {
       customerMock.findFirst.mockResolvedValue(mockCustomer);
-      fabricMock.findFirst.mockResolvedValue(null); // isActive: false won't match
+      fabricMock.findFirst.mockResolvedValue(null); // Soft-deleted fabric won't match
 
       await expect(service.createPricing(1, createDto)).rejects.toThrow(
         NotFoundException,
@@ -869,7 +848,7 @@ describe('CustomerService', () => {
     const mockCustomer = {
       id: 1,
       companyName: 'XYZ Furniture Co.',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -896,7 +875,7 @@ describe('CustomerService', () => {
       const result = await service.updatePricing(1, 1, updateDto);
 
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(customerPricingMock.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -955,7 +934,7 @@ describe('CustomerService', () => {
     const mockCustomer = {
       id: 1,
       companyName: 'XYZ Furniture Co.',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -977,7 +956,7 @@ describe('CustomerService', () => {
       await service.removePricing(1, 1);
 
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(customerPricingMock.findUnique).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -1036,7 +1015,7 @@ describe('CustomerService', () => {
       companyName: 'XYZ Furniture Co.',
       contactName: 'Li Ming',
       phone: '13800138000',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -1105,7 +1084,7 @@ describe('CustomerService', () => {
       const result = await service.findOrders(1, query);
 
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(orderMock.findMany).toHaveBeenCalledWith(
         expect.objectContaining({

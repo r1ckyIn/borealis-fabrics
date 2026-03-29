@@ -143,6 +143,46 @@ export function parseFieldError(
 }
 
 /**
+ * Ant Design FieldData type for form.setFields().
+ * Defined locally to avoid antd internal import path dependency.
+ */
+interface FieldData {
+  name: string | number | (string | number)[];
+  errors?: string[];
+}
+
+/**
+ * Map backend validation error response to Ant Design Form field errors.
+ * Handles both single-message and array-message formats from class-validator.
+ *
+ * Backend error.message can be:
+ * - string: "companyName should not be empty"
+ * - string[]: ["companyName should not be empty", "email must be an email"]
+ *
+ * @param apiError - The ApiError object
+ * @returns FieldData[] for use with form.setFields()
+ */
+export function mapApiErrorsToFormFields(
+  apiError: ApiError | null | undefined,
+): FieldData[] {
+  if (!apiError?.message) return [];
+
+  const messages = Array.isArray(apiError.message)
+    ? (apiError.message as string[])
+    : [apiError.message];
+
+  const fields: FieldData[] = [];
+  for (const msg of messages) {
+    if (typeof msg !== 'string') continue;
+    const parsed = parseFieldError(msg);
+    if (parsed) {
+      fields.push({ name: parsed.field, errors: [parsed.message] });
+    }
+  }
+  return fields;
+}
+
+/**
  * Get a user-friendly Chinese error message for delete operations.
  *
  * Provides entity-specific 404 messages and delegates to getErrorMessage

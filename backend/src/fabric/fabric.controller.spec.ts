@@ -3,6 +3,8 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Readable } from 'stream';
 import { FabricController } from './fabric.controller';
 import { FabricService } from './fabric.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import {
   CreateFabricDto,
   QueryFabricDto,
@@ -35,7 +37,7 @@ describe('FabricController', () => {
     description: 'High-quality cotton twill fabric',
     tags: null,
     notes: null,
-    isActive: true,
+    deletedAt: null,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
   };
@@ -58,6 +60,7 @@ describe('FabricController', () => {
     remove: jest.fn(),
     uploadImage: jest.fn(),
     deleteImage: jest.fn(),
+    restore: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -69,7 +72,12 @@ describe('FabricController', () => {
           useValue: mockFabricService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<FabricController>(FabricController);
     jest.clearAllMocks();

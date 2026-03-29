@@ -42,7 +42,7 @@ describe('FabricService', () => {
     description: 'High-quality cotton twill fabric',
     tags: null,
     notes: null,
-    isActive: true,
+    deletedAt: null,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
   };
@@ -105,7 +105,7 @@ describe('FabricService', () => {
   const mockSupplier = {
     id: 1,
     companyName: 'Test Supplier',
-    isActive: true,
+    deletedAt: null,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
   };
@@ -223,7 +223,7 @@ describe('FabricService', () => {
       const result = await service.findOne(1);
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
         include: { images: { orderBy: { sortOrder: 'asc' } } },
       });
       expect(result).toEqual(fabricWithImages);
@@ -243,7 +243,7 @@ describe('FabricService', () => {
 
       await expect(service.findOne(1)).rejects.toThrow(NotFoundException);
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
         include: { images: { orderBy: { sortOrder: 'asc' } } },
       });
     });
@@ -262,7 +262,7 @@ describe('FabricService', () => {
       const result = await service.findAll(query);
 
       expect(fabricMock.findMany).toHaveBeenCalledWith({
-        where: { isActive: true },
+        where: {},
         skip: 0,
         take: 20,
         orderBy: { createdAt: 'desc' },
@@ -338,22 +338,6 @@ describe('FabricService', () => {
       );
     });
 
-    it('should include soft-deleted fabrics when isActive=false', async () => {
-      fabricMock.findMany.mockResolvedValue([]);
-      fabricMock.count.mockResolvedValue(0);
-
-      const query: QueryFabricDto = { isActive: false };
-      await service.findAll(query);
-
-      expect(fabricMock.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            isActive: false,
-          }),
-        }),
-      );
-    });
-
     it('should handle pagination correctly', async () => {
       fabricMock.findMany.mockResolvedValue([mockFabric]);
       fabricMock.count.mockResolvedValue(50);
@@ -381,14 +365,14 @@ describe('FabricService', () => {
       const updateDto = { name: 'Updated Fabric Name' };
       const updatedFabric = { ...mockFabric, ...updateDto };
 
-      // First findFirst for existence check (with isActive: true)
+      // First findFirst for existence check (soft-deleted records auto-filtered)
       fabricMock.findFirst.mockResolvedValueOnce(mockFabric);
       fabricMock.update.mockResolvedValue(updatedFabric);
 
       const result = await service.update(1, updateDto);
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(fabricMock.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -454,15 +438,15 @@ describe('FabricService', () => {
     });
 
     it('should throw NotFoundException if fabric not found', async () => {
-      fabricMock.findUnique.mockResolvedValue(null);
+      fabricMock.findFirst.mockResolvedValue(null);
 
       await expect(service.remove(999, false)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    it('should physically delete fabric when no relations exist', async () => {
-      fabricMock.findUnique.mockResolvedValue(mockFabric);
+    it('should soft delete fabric when no relations exist', async () => {
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
       fabricMock.delete.mockResolvedValue(mockFabric);
 
       await service.remove(1, false);
@@ -471,7 +455,7 @@ describe('FabricService', () => {
     });
 
     it('should throw ConflictException when relations exist and force=false', async () => {
-      fabricMock.findUnique.mockResolvedValue(mockFabric);
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
       fabricSupplierMock.count.mockResolvedValue(3);
       orderItemMock.count.mockResolvedValue(5);
 
@@ -482,21 +466,20 @@ describe('FabricService', () => {
     });
 
     it('should soft delete fabric when relations exist and force=true', async () => {
-      fabricMock.findUnique.mockResolvedValue(mockFabric);
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
       fabricSupplierMock.count.mockResolvedValue(3);
-      fabricMock.update.mockResolvedValue({ ...mockFabric, isActive: false });
+      fabricMock.delete.mockResolvedValue(mockFabric);
 
       await service.remove(1, true);
 
-      expect(fabricMock.update).toHaveBeenCalledWith({
+      // Extension intercepts delete() and sets deletedAt
+      expect(fabricMock.delete).toHaveBeenCalledWith({
         where: { id: 1 },
-        data: { isActive: false },
       });
-      expect(fabricMock.delete).not.toHaveBeenCalled();
     });
 
     it('should check all 5 relation types', async () => {
-      fabricMock.findUnique.mockResolvedValue(mockFabric);
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
       fabricMock.delete.mockResolvedValue(mockFabric);
 
       await service.remove(1, false);
@@ -519,7 +502,7 @@ describe('FabricService', () => {
     });
 
     it('should include relation details in error message', async () => {
-      fabricMock.findUnique.mockResolvedValue(mockFabric);
+      fabricMock.findFirst.mockResolvedValue(mockFabric);
       fabricImageMock.count.mockResolvedValue(2);
       fabricSupplierMock.count.mockResolvedValue(3);
       customerPricingMock.count.mockResolvedValue(1);
@@ -578,7 +561,7 @@ describe('FabricService', () => {
       const result = await service.uploadImage(1, mockFile);
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(mockFileService.upload).toHaveBeenCalledWith(mockFile);
       expect(fabricImageMock.create).toHaveBeenCalledWith({
@@ -631,7 +614,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -795,7 +778,7 @@ describe('FabricService', () => {
       await service.deleteImage(1, 10);
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(fabricImageMock.findFirst).toHaveBeenCalledWith({
         where: { id: 10, fabricId: 1 },
@@ -826,7 +809,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -921,7 +904,7 @@ describe('FabricService', () => {
       contactName: 'John Doe',
       phone: '123456789',
       status: 'active',
-      isActive: true,
+      deletedAt: null,
     };
 
     const mockFabricSupplier = {
@@ -948,7 +931,7 @@ describe('FabricService', () => {
       const result = await service.findSuppliers(1, {});
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(result.items).toHaveLength(1);
       expect(result.items[0].supplier.companyName).toBe('Textile Corp');
@@ -985,7 +968,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1099,7 +1082,7 @@ describe('FabricService', () => {
       contactName: 'John Doe',
       phone: '123456789',
       status: 'active',
-      isActive: true,
+      deletedAt: null,
     };
 
     const mockCreatedFabricSupplier = {
@@ -1128,10 +1111,10 @@ describe('FabricService', () => {
       const result = await service.addSupplier(1, createDto);
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(fabricSupplierMock.create).toHaveBeenCalledWith({
         data: {
@@ -1193,7 +1176,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1217,7 +1200,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1277,10 +1260,10 @@ describe('FabricService', () => {
       });
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(fabricSupplierMock.findFirst).toHaveBeenCalledWith({
         where: { fabricId: 1, supplierId: 1 },
@@ -1338,7 +1321,7 @@ describe('FabricService', () => {
         service.updateSupplier(1, 1, { purchasePrice: 50.0 }),
       ).rejects.toThrow(NotFoundException);
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1362,7 +1345,7 @@ describe('FabricService', () => {
         service.updateSupplier(1, 1, { purchasePrice: 50.0 }),
       ).rejects.toThrow(NotFoundException);
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1410,10 +1393,10 @@ describe('FabricService', () => {
       await service.removeSupplier(1, 10);
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 10, isActive: true },
+        where: { id: 10 },
       });
       expect(fabricSupplierMock.findFirst).toHaveBeenCalledWith({
         where: { fabricId: 1, supplierId: 10 },
@@ -1441,7 +1424,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1465,7 +1448,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(supplierMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 10, isActive: true },
+        where: { id: 10 },
       });
     });
 
@@ -1502,7 +1485,7 @@ describe('FabricService', () => {
       id: 5,
       companyName: 'ABC Furniture',
       contactName: 'John Doe',
-      isActive: true,
+      deletedAt: null,
     };
 
     const mockCustomerPricing = {
@@ -1529,7 +1512,7 @@ describe('FabricService', () => {
       const result = await service.findPricing(1, {});
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(result.items).toHaveLength(1);
       expect(result.items[0].customer.companyName).toBe('ABC Furniture');
@@ -1566,7 +1549,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1658,7 +1641,7 @@ describe('FabricService', () => {
     const mockCustomerEntity = {
       id: 5,
       companyName: 'ABC Furniture',
-      isActive: true,
+      deletedAt: null,
     };
 
     const mockCreatedPricing = {
@@ -1700,10 +1683,10 @@ describe('FabricService', () => {
       });
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 5, isActive: true },
+        where: { id: 5 },
       });
       expect(customerPricingMock.create).toHaveBeenCalledWith({
         data: {
@@ -1733,7 +1716,7 @@ describe('FabricService', () => {
         service.createPricing(1, { customerId: 5, specialPrice: 39.99 }),
       ).rejects.toThrow(NotFoundException);
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1757,7 +1740,7 @@ describe('FabricService', () => {
         service.createPricing(1, { customerId: 5, specialPrice: 39.99 }),
       ).rejects.toThrow(NotFoundException);
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 5, isActive: true },
+        where: { id: 5 },
       });
     });
 
@@ -1796,7 +1779,7 @@ describe('FabricService', () => {
     const mockCustomerEntity = {
       id: 5,
       companyName: 'ABC Furniture',
-      isActive: true,
+      deletedAt: null,
     };
 
     beforeEach(() => {
@@ -1834,13 +1817,13 @@ describe('FabricService', () => {
       });
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(customerPricingMock.findUnique).toHaveBeenCalledWith({
         where: { id: 10 },
       });
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 5, isActive: true },
+        where: { id: 5 },
       });
       expect(customerPricingMock.update).toHaveBeenCalledWith({
         where: { id: 10 },
@@ -1867,7 +1850,7 @@ describe('FabricService', () => {
         service.updatePricing(1, 10, { specialPrice: 49.99 }),
       ).rejects.toThrow(NotFoundException);
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -1911,7 +1894,7 @@ describe('FabricService', () => {
         service.updatePricing(1, 10, { specialPrice: 49.99 }),
       ).rejects.toThrow('Customer with ID 5 not found');
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 5, isActive: true },
+        where: { id: 5 },
       });
     });
   });
@@ -1932,7 +1915,7 @@ describe('FabricService', () => {
     const mockCustomerEntity = {
       id: 5,
       companyName: 'ABC Furniture',
-      isActive: true,
+      deletedAt: null,
     };
 
     beforeEach(() => {
@@ -1964,13 +1947,13 @@ describe('FabricService', () => {
       await service.removePricing(1, 10);
 
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
       expect(customerPricingMock.findUnique).toHaveBeenCalledWith({
         where: { id: 10 },
       });
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 5, isActive: true },
+        where: { id: 5 },
       });
       expect(customerPricingMock.delete).toHaveBeenCalledWith({
         where: { id: 10 },
@@ -1995,7 +1978,7 @@ describe('FabricService', () => {
         NotFoundException,
       );
       expect(fabricMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 1, isActive: true },
+        where: { id: 1 },
       });
     });
 
@@ -2039,7 +2022,7 @@ describe('FabricService', () => {
         'Customer with ID 5 not found',
       );
       expect(customerMock.findFirst).toHaveBeenCalledWith({
-        where: { id: 5, isActive: true },
+        where: { id: 5 },
       });
     });
 

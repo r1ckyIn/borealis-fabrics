@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import {
   CreateProductDto,
   QueryProductDto,
@@ -27,7 +29,7 @@ describe('ProductController', () => {
     defaultPrice: new Decimal(1200.5),
     specs: null,
     notes: null,
-    isActive: true,
+    deletedAt: null,
     createdAt: new Date('2024-01-15T10:00:00Z'),
     updatedAt: new Date('2024-01-15T10:00:00Z'),
   };
@@ -61,6 +63,7 @@ describe('ProductController', () => {
     findBundle: jest.fn(),
     updateBundle: jest.fn(),
     removeBundle: jest.fn(),
+    restore: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -72,7 +75,12 @@ describe('ProductController', () => {
           useValue: mockProductService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<ProductController>(ProductController);
     jest.clearAllMocks();

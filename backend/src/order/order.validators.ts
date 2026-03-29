@@ -21,21 +21,18 @@ export async function validateEntityIds<T extends { id: number }>(
   entityType: 'Customer' | 'Fabric' | 'Supplier' | 'Quote' | 'Product',
   ids: number[],
   findMany: (args: {
-    where: { id: { in: number[] }; isActive?: boolean };
+    where: { id: { in: number[] } };
     select: { id: true };
   }) => Promise<T[]>,
-  requireActive = true,
 ): Promise<Set<number>> {
   if (ids.length === 0) {
     return new Set();
   }
 
-  const where: { id: { in: number[] }; isActive?: boolean } = {
+  // Soft-delete auto-filtering is handled by Prisma extension
+  const where: { id: { in: number[] } } = {
     id: { in: ids },
   };
-  if (requireActive && entityType !== 'Quote') {
-    where.isActive = true;
-  }
 
   const entities = await findMany({ where, select: { id: true } });
   const foundIds = new Set(entities.map((e) => e.id));
@@ -128,7 +125,7 @@ export async function validateCustomerExists(
   customerId: number,
 ): Promise<void> {
   const customer = await prisma.customer.findFirst({
-    where: { id: customerId, isActive: true },
+    where: { id: customerId },
     select: { id: true },
   });
   validateEntityExists(customer, 'Customer', customerId);
@@ -142,7 +139,7 @@ export async function validateFabricExists(
   fabricId: number,
 ): Promise<void> {
   const fabric = await prisma.fabric.findFirst({
-    where: { id: fabricId, isActive: true },
+    where: { id: fabricId },
     select: { id: true },
   });
   validateEntityExists(fabric, 'Fabric', fabricId);
@@ -156,7 +153,7 @@ export async function validateSupplierExists(
   supplierId: number,
 ): Promise<void> {
   const supplier = await prisma.supplier.findFirst({
-    where: { id: supplierId, isActive: true },
+    where: { id: supplierId },
     select: { id: true },
   });
   validateEntityExists(supplier, 'Supplier', supplierId);
@@ -184,7 +181,7 @@ export async function validateProductExists(
   productId: number,
 ): Promise<void> {
   const product = await prisma.product.findFirst({
-    where: { id: productId, isActive: true },
+    where: { id: productId },
     select: { id: true },
   });
   validateEntityExists(product, 'Product', productId);
@@ -259,7 +256,6 @@ export async function validateOrderItemReferences(
           'Quote',
           quoteIds,
           prisma.quote.findMany.bind(prisma.quote),
-          false,
         )
       : Promise.resolve(new Set<number>()),
   ]);

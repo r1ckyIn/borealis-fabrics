@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsEnum, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, IsEnum } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { PaginationDto } from '../../common/utils/pagination';
@@ -56,17 +56,4 @@ export class QueryProductDto extends PaginationDto {
   @IsOptional()
   @IsEnum(ProductCategory)
   category?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter by active status (soft delete filter)',
-    default: true,
-  })
-  @IsOptional()
-  @IsBoolean()
-  @Transform(({ value }): boolean | undefined => {
-    if (value === 'true') return true;
-    if (value === 'false') return false;
-    return value as boolean | undefined;
-  })
-  isActive?: boolean = true;
 }

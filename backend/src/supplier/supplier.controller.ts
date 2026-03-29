@@ -11,6 +11,7 @@ import {
   ParseBoolPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +21,9 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { SupplierService } from './supplier.service';
 import {
   CreateSupplierDto,
@@ -62,7 +66,6 @@ export class SupplierController {
     enum: ['active', 'suspended', 'eliminated'],
   })
   @ApiQuery({ name: 'settleType', required: false, enum: ['prepay', 'credit'] })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Paginated supplier list' })
   findAll(@Query() query: QuerySupplierDto) {
     return this.supplierService.findAll(query);
@@ -171,5 +174,20 @@ export class SupplierController {
     @Query('force', new ParseBoolPipe({ optional: true })) force?: boolean,
   ) {
     return this.supplierService.remove(id, force ?? false);
+  }
+
+  @Patch(':id/restore')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('boss')
+  @ApiOperation({ summary: 'Restore a soft-deleted supplier (boss only)' })
+  @ApiParam({ name: 'id', description: 'Supplier ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Supplier restored' })
+  @ApiResponse({ status: 403, description: 'Boss role required' })
+  @ApiResponse({
+    status: 404,
+    description: 'Supplier not found in deleted records',
+  })
+  restore(@Param('id', ParseIntPipe) id: number) {
+    return this.supplierService.restore(id);
   }
 }

@@ -11,19 +11,20 @@ datasource db {
 // User (Enterprise WeChat OAuth)
 // ============================================================
 model User {
-  id        Int      @id @default(autoincrement())
-  weworkId  String   @unique @map("wework_id")
+  id        Int       @id @default(autoincrement())
+  weworkId  String    @unique @map("wework_id")
   name      String
   avatar    String?
   mobile    String?
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
 
   orderTimelines OrderTimeline[]
   createdOrders  Order[]          @relation("OrderCreator")
   paymentRecords PaymentRecord[]  @relation("PaymentOperator")
 
+  @@index([deletedAt])
   @@map("users")
 }
 
@@ -31,26 +32,26 @@ model User {
 // Fabric
 // ============================================================
 model Fabric {
-  id              Int      @id @default(autoincrement())
-  fabricCode      String   @unique @map("fabric_code")
+  id              Int       @id @default(autoincrement())
+  fabricCode      String    @map("fabric_code")
   name            String
-  material        Json?    @db.Json
+  material        Json?     @db.Json
   composition     String?
   color           String?
-  weight          Decimal? @db.Decimal(8, 2)
-  width           Decimal? @db.Decimal(8, 2)
+  weight          Decimal?  @db.Decimal(8, 2)
+  width           Decimal?  @db.Decimal(8, 2)
   thickness       String?
-  handFeel        String?  @map("hand_feel")
-  glossLevel      String?  @map("gloss_level")
-  application     Json?    @db.Json
-  defaultPrice    Decimal? @map("default_price") @db.Decimal(10, 2)
-  defaultLeadTime Int?     @map("default_lead_time")
-  description     String?  @db.Text
-  tags            Json?    @db.Json
-  notes           String?  @db.Text
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  handFeel        String?   @map("hand_feel")
+  glossLevel      String?   @map("gloss_level")
+  application     Json?     @db.Json
+  defaultPrice    Decimal?  @map("default_price") @db.Decimal(10, 2)
+  defaultLeadTime Int?      @map("default_lead_time")
+  description     String?   @db.Text
+  tags            Json?     @db.Json
+  notes           String?   @db.Text
+  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   images          FabricImage[]
   fabricSuppliers FabricSupplier[]
@@ -61,6 +62,7 @@ model Fabric {
   @@index([fabricCode])
   @@index([name])
   @@index([color])
+  @@index([deletedAt])
   @@map("fabrics")
 }
 
@@ -103,21 +105,21 @@ model File {
 // Supplier
 // ============================================================
 model Supplier {
-  id              Int      @id @default(autoincrement())
-  companyName     String   @unique @map("company_name")
-  contactName     String?  @map("contact_name")
+  id              Int       @id @default(autoincrement())
+  companyName     String    @map("company_name")
+  contactName     String?   @map("contact_name")
   phone           String?
   wechat          String?
   email           String?
   address         String?
-  status          String   @default("active")
-  billReceiveType String?  @map("bill_receive_type")
-  settleType      String   @default("prepay") @map("settle_type")
-  creditDays      Int?     @map("credit_days")
-  notes           String?  @db.Text
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  status          String    @default("active")
+  billReceiveType String?   @map("bill_receive_type")
+  settleType      String    @default("prepay") @map("settle_type")
+  creditDays      Int?      @map("credit_days")
+  notes           String?   @db.Text
+  deletedAt       DateTime? @map("deleted_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   fabricSuppliers   FabricSupplier[]
   productSuppliers  ProductSupplier[]
@@ -126,6 +128,7 @@ model Supplier {
   paymentRecords    PaymentRecord[]
 
   @@index([status])
+  @@index([deletedAt])
   @@map("suppliers")
 }
 
@@ -155,25 +158,26 @@ model FabricSupplier {
 // Customer
 // ============================================================
 model Customer {
-  id          Int      @id @default(autoincrement())
-  companyName String   @map("company_name")
-  contactName String?  @map("contact_name")
+  id          Int       @id @default(autoincrement())
+  companyName String    @map("company_name")
+  contactName String?   @map("contact_name")
   phone       String?
   wechat      String?
   email       String?
-  addresses   Json?    @db.Json
-  creditType  String   @default("prepay") @map("credit_type")
-  creditDays  Int?     @map("credit_days")
-  notes       String?  @db.Text
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  addresses   Json?     @db.Json
+  creditType  String    @default("prepay") @map("credit_type")
+  creditDays  Int?      @map("credit_days")
+  notes       String?   @db.Text
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   customerPricing CustomerPricing[]
   orders          Order[]
   quotes          Quote[]
 
   @@index([companyName])
+  @@index([deletedAt])
   @@map("customers")
 }
 
@@ -205,19 +209,19 @@ model CustomerPricing {
 // Product
 // ============================================================
 model Product {
-  id            Int      @id @default(autoincrement())
-  productCode   String   @unique @map("product_code")
+  id            Int       @id @default(autoincrement())
+  productCode   String    @map("product_code")
   name          String
-  category      String   // "IRON_FRAME_MOTOR" (extensible for future "HARDWARE")
-  subCategory   String   @map("sub_category") // "IRON_FRAME" | "MOTOR" | "MATTRESS" | "ACCESSORY"
-  modelNumber   String?  @map("model_number")
+  category      String    // "IRON_FRAME_MOTOR" (extensible for future "HARDWARE")
+  subCategory   String    @map("sub_category") // "IRON_FRAME" | "MOTOR" | "MATTRESS" | "ACCESSORY"
+  modelNumber   String?   @map("model_number")
   specification String?
-  defaultPrice  Decimal? @map("default_price") @db.Decimal(10, 2)
-  specs         Json?    @db.Json
-  notes         String?  @db.Text
-  isActive      Boolean  @default(true) @map("is_active")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  defaultPrice  Decimal?  @map("default_price") @db.Decimal(10, 2)
+  specs         Json?     @db.Json
+  notes         String?   @db.Text
+  deletedAt     DateTime? @map("deleted_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   productSuppliers  ProductSupplier[]
   bundleItems       ProductBundleItem[]
@@ -229,6 +233,7 @@ model Product {
   @@index([name])
   @@index([category])
   @@index([subCategory])
+  @@index([deletedAt])
   @@map("products")
 }
 
@@ -258,18 +263,19 @@ model ProductSupplier {
 // Product Bundle
 // ============================================================
 model ProductBundle {
-  id          Int      @id @default(autoincrement())
-  bundleCode  String   @unique @map("bundle_code")
+  id          Int       @id @default(autoincrement())
+  bundleCode  String    @map("bundle_code")
   name        String
-  description String?  @db.Text
-  totalPrice  Decimal? @map("total_price") @db.Decimal(12, 2)
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  description String?   @db.Text
+  totalPrice  Decimal?  @map("total_price") @db.Decimal(12, 2)
+  deletedAt   DateTime? @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   items ProductBundleItem[]
 
   @@index([bundleCode])
+  @@index([deletedAt])
   @@map("product_bundles")
 }
 

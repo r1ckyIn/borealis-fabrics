@@ -35,6 +35,6 @@ import { CommonModule } from '../common/common.module';
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtAuthGuard, JwtStrategy],
-  exports: [JwtAuthGuard, AuthService],
+  exports: [JwtAuthGuard, AuthService, JwtModule],
 })
 export class AuthModule {}

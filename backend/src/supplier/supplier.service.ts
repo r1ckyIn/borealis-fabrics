@@ -53,7 +53,7 @@ export class SupplierService {
    */
   async findOne(id: number): Promise<Supplier> {
     const supplier = await this.prisma.supplier.findFirst({
-      where: { id, isActive: true },
+      where: { id },
     });
 
     if (!supplier) {
@@ -65,12 +65,11 @@ export class SupplierService {
 
   /**
    * Find all suppliers with optional filtering and pagination.
+   * Soft-deleted records are auto-filtered by Prisma extension.
    */
   async findAll(query: QuerySupplierDto): Promise<PaginatedResult<Supplier>> {
-    // Build where clause
-    const where: Prisma.SupplierWhereInput = {
-      isActive: query.isActive ?? true,
-    };
+    // Build where clause (soft-delete auto-filtered by extension)
+    const where: Prisma.SupplierWhereInput = {};
 
     // Unified keyword search across companyName, contactName, phone
     if (query.keyword) {
@@ -132,9 +131,9 @@ export class SupplierService {
     updateSupplierDto: UpdateSupplierDto,
   ): Promise<Supplier> {
     return this.prisma.$transaction(async (tx) => {
-      // Check if supplier exists and is active
+      // Check if supplier exists (soft-deleted records auto-filtered)
       const existing = await tx.supplier.findFirst({
-        where: { id, isActive: true },
+        where: { id },
       });
 
       if (!existing) {
@@ -163,14 +162,13 @@ export class SupplierService {
   }
 
   /**
-   * Remove a supplier by ID.
-   * - If no relations exist: physical delete
-   * - If relations exist and force=false: throw ConflictException with relation details
-   * - If relations exist and force=true: soft delete (set isActive=false)
+   * Remove a supplier by ID (soft delete via Prisma extension).
+   * - If no relations exist and force=false: throw ConflictException with relation details
+   * - Otherwise: soft delete (sets deletedAt timestamp via extension)
    */
   async remove(id: number, force: boolean): Promise<void> {
-    // Check if supplier exists
-    const supplier = await this.prisma.supplier.findUnique({
+    // Check if supplier exists (soft-deleted records auto-filtered)
+    const supplier = await this.prisma.supplier.findFirst({
       where: { id },
     });
 
@@ -197,14 +195,7 @@ export class SupplierService {
       supplierPaymentCount > 0 ||
       paymentRecordCount > 0;
 
-    if (!hasRelations) {
-      // No relations, safe to physically delete
-      await this.prisma.supplier.delete({ where: { id } });
-      return;
-    }
-
-    // Has relations
-    if (!force) {
+    if (hasRelations && !force) {
       // Build relation details message
       const relations: string[] = [];
       if (fabricSupplierCount > 0)
@@ -221,11 +212,37 @@ export class SupplierService {
       );
     }
 
-    // Force=true with relations: soft delete
-    await this.prisma.supplier.update({
+    // Soft delete (extension intercepts delete and sets deletedAt)
+    await this.prisma.supplier.delete({ where: { id } });
+  }
+
+  /**
+   * Restore a soft-deleted supplier.
+   * Uses raw SQL to bypass soft-delete auto-filtering.
+   * @throws NotFoundException if supplier not found in deleted records
+   */
+  async restore(id: number): Promise<Supplier> {
+    // Query deleted records using raw SQL (bypasses soft-delete extension filter)
+    const deleted = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      'SELECT id FROM suppliers WHERE id = ? AND deleted_at IS NOT NULL',
+      id,
+    );
+
+    if (!deleted || deleted.length === 0) {
+      throw new NotFoundException(
+        `Supplier with ID ${id} not found in deleted records`,
+      );
+    }
+
+    // Restore by setting deleted_at to null
+    await this.prisma.$executeRawUnsafe(
+      'UPDATE suppliers SET deleted_at = NULL WHERE id = ?',
+      id,
+    );
+
+    return this.prisma.supplier.findFirst({
       where: { id },
-      data: { isActive: false },
-    });
+    }) as Promise<Supplier>;
   }
 
   /**
@@ -237,19 +254,17 @@ export class SupplierService {
     supplierId: number,
     query: QuerySupplierFabricsDto,
   ): Promise<PaginatedResult<SupplierFabricItem>> {
-    // Verify supplier exists and is active
+    // Verify supplier exists (soft-deleted records auto-filtered)
     const supplier = await this.prisma.supplier.findFirst({
-      where: { id: supplierId, isActive: true },
+      where: { id: supplierId },
     });
 
     if (!supplier) {
       throw new NotFoundException(`Supplier with ID ${supplierId} not found`);
     }
 
-    // Build fabric filter conditions
-    const fabricWhere: Prisma.FabricWhereInput = {
-      isActive: true,
-    };
+    // Build fabric filter conditions (soft-delete auto-filtered by extension)
+    const fabricWhere: Prisma.FabricWhereInput = {};
 
     // Add fabric filters if provided
     if (query.fabricCode) {

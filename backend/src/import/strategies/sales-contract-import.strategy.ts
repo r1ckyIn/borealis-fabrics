@@ -170,14 +170,22 @@ export class SalesContractImportStrategy implements ImportStrategy {
 
   /**
    * Match when headers contain '面料名称' or '品名' combined with '数量' and ('单价' or '金额').
-   * RichText-safe: uses getCellValue-style string extraction.
+   * Normalizes headers (trim whitespace, lowercase) for resilient matching.
    */
   matchesHeaders(headers: string[]): boolean {
-    const joined = headers.join(' ');
+    const normalized = headers.map((h) => h.trim().toLowerCase());
+    const joined = normalized.join(' ');
     const hasFabricName = joined.includes('面料名称');
     const hasProductName = joined.includes('品名');
-    const hasQuantity = joined.includes('数量');
-    const hasPrice = joined.includes('单价') || joined.includes('金额');
+    const hasQuantity =
+      joined.includes('数量') ||
+      joined.includes('qty') ||
+      joined.includes('quantity');
+    const hasPrice =
+      joined.includes('单价') ||
+      joined.includes('金额') ||
+      joined.includes('price') ||
+      joined.includes('amount');
 
     return (hasFabricName || hasProductName) && hasQuantity && hasPrice;
   }
@@ -192,21 +200,21 @@ export class SalesContractImportStrategy implements ImportStrategy {
   async getExistingKeys(): Promise<Set<string>> {
     // Load customers
     const customers = await this.prisma.customer.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, companyName: true },
     });
     this.customerMap = new Map(customers.map((c) => [c.companyName, c.id]));
 
     // Load fabrics
     const fabrics = await this.prisma.fabric.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, name: true },
     });
     this.fabricMap = new Map(fabrics.map((f) => [f.name, f.id]));
 
     // Load products
     const products = await this.prisma.product.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, name: true, modelNumber: true },
     });
     this.productMap = new Map(products.map((p) => [p.name, p.id]));

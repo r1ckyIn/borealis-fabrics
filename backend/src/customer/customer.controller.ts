@@ -11,7 +11,11 @@ import {
   ParseBoolPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -67,7 +71,6 @@ export class CustomerController {
     required: false,
     enum: ['prepay', 'credit'],
   })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Paginated customer list' })
   findAll(@Query() query: QueryCustomerDto) {
     return this.customerService.findAll(query);
@@ -229,5 +232,20 @@ export class CustomerController {
     @Query('force', new ParseBoolPipe({ optional: true })) force?: boolean,
   ) {
     return this.customerService.remove(id, force ?? false);
+  }
+
+  @Patch(':id/restore')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('boss')
+  @ApiOperation({ summary: 'Restore a soft-deleted customer (boss only)' })
+  @ApiParam({ name: 'id', description: 'Customer ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Customer restored' })
+  @ApiResponse({ status: 403, description: 'Boss role required' })
+  @ApiResponse({
+    status: 404,
+    description: 'Customer not found in deleted records',
+  })
+  restore(@Param('id', ParseIntPipe) id: number) {
+    return this.customerService.restore(id);
   }
 }

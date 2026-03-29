@@ -11,7 +11,11 @@ import {
   ParseBoolPipe,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import {
   ApiTags,
   ApiOperation,
@@ -127,7 +131,6 @@ export class ProductController {
   @ApiQuery({ name: 'keyword', required: false, type: String })
   @ApiQuery({ name: 'subCategory', required: false, type: String })
   @ApiQuery({ name: 'category', required: false, type: String })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean })
   @ApiResponse({ status: 200, description: 'Paginated product list' })
   findAll(@Query() query: QueryProductDto) {
     return this.productService.findAll(query);
@@ -345,5 +348,20 @@ export class ProductController {
     @Param('pricingId', ParseIntPipe) pricingId: number,
   ) {
     return this.productService.removePricing(id, pricingId);
+  }
+
+  @Patch(':id/restore')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('boss')
+  @ApiOperation({ summary: 'Restore a soft-deleted product (boss only)' })
+  @ApiParam({ name: 'id', description: 'Product ID', type: Number })
+  @ApiResponse({ status: 200, description: 'Product restored' })
+  @ApiResponse({ status: 403, description: 'Boss role required' })
+  @ApiResponse({
+    status: 404,
+    description: 'Product not found in deleted records',
+  })
+  restore(@Param('id', ParseIntPipe) id: number) {
+    return this.productService.restore(id);
   }
 }

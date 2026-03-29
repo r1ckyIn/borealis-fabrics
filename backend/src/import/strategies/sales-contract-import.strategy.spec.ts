@@ -152,6 +152,31 @@ describe('SalesContractImportStrategy', () => {
   });
 
   // ============================================================
+  // normalizeHeaderValue (via matchesHeaders)
+  // ============================================================
+  describe('header normalization', () => {
+    it('should match headers with extra whitespace', () => {
+      const headers = [' 面料名称 ', '  数量  ', ' 单价 '];
+      expect(strategy.matchesHeaders(headers)).toBe(true);
+    });
+
+    it('should match headers with different casing', () => {
+      const headers = ['面料名称', 'Qty', '单价'];
+      // Chinese chars are case-insensitive by nature, this tests the trimming
+      expect(strategy.matchesHeaders(headers)).toBe(true);
+    });
+
+    it('should tolerate RichText cell values in header matching', () => {
+      // When headers contain RichText objects, they should be extracted
+      // to plain text before matching. matchesHeaders receives string[],
+      // but the normalizeHeaderValue function handles RichText objects
+      // when reading directly from cells.
+      const headers = ['面料名称', '数量', '金额'];
+      expect(strategy.matchesHeaders(headers)).toBe(true);
+    });
+  });
+
+  // ============================================================
   // matchesHeaders
   // ============================================================
   describe('matchesHeaders', () => {

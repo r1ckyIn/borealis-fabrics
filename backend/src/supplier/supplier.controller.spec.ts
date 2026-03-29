@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { SupplierController } from './supplier.controller';
 import { SupplierService } from './supplier.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
 import {
   CreateSupplierDto,
   QuerySupplierDto,
@@ -23,6 +25,7 @@ describe('SupplierController', () => {
     findSupplierFabrics: jest.fn(),
     update: jest.fn(),
     remove: jest.fn(),
+    restore: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -34,7 +37,12 @@ describe('SupplierController', () => {
           useValue: mockSupplierService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<SupplierController>(SupplierController);
     service = module.get<SupplierService>(SupplierService);
@@ -71,7 +79,7 @@ describe('SupplierController', () => {
     const mockSupplier = {
       id: 1,
       ...createDto,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -115,7 +123,7 @@ describe('SupplierController', () => {
       settleType: 'prepay',
       creditDays: 30,
       notes: 'Premium supplier',
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -156,7 +164,7 @@ describe('SupplierController', () => {
         settleType: 'prepay',
         creditDays: null,
         notes: null,
-        isActive: true,
+        deletedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -217,7 +225,7 @@ describe('SupplierController', () => {
       settleType: 'prepay',
       creditDays: null,
       notes: null,
-      isActive: true,
+      deletedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     };

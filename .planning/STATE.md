@@ -1,3 +1,19 @@
+---
+gsd_state_version: 1.0
+milestone: v1.1
+milestone_name: Production Readiness
+status: executing
+stopped_at: Completed 12-03-PLAN.md (Phase 12 complete)
+last_updated: "2026-03-28T09:52:26.513Z"
+last_activity: 2026-03-28
+progress:
+  total_phases: 5
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
+  percent: 0
+---
+
 # Project State: Borealis Supply Chain Management
 
 ## Project Reference
@@ -5,20 +21,21 @@
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** v1.1 Production Readiness — Phase 12: Foundation & Observability Quick Wins
+**Current focus:** Phase 12 — foundation-observability-quick-wins
 
 ## Current Position
 
-Phase: 12 (first of 5 in v1.1) — Foundation & Observability Quick Wins
-Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-03-28 — v1.1 roadmap created
+Phase: 13
+Plan: Not started
+Status: Ready to execute
+Last activity: 2026-03-28
 
 Progress: [░░░░░░░░░░] 0% (0/12 plans)
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0 (v1.1)
 - Average duration: —
 - Total execution time: —
@@ -31,6 +48,9 @@ Progress: [░░░░░░░░░░] 0% (0/12 plans)
 |-----------|--------|--------|
 | v1.0: Supply Chain MVP | 1-11 | Complete (12/12 phases) — shipped 2026-03-28 |
 | v1.1: Production Readiness | 12-16 | In progress (0/5 phases) |
+| Phase 12 P01 | 14min | 2 tasks | 16 files |
+| Phase 12 P02 | 34m | 3 tasks | 47 files |
+| Phase 12 P03 | 14min | 2 tasks | 11 files |
 
 ## Accumulated Context
 
@@ -43,6 +63,13 @@ Recent decisions affecting current work:
 - [v1.1 research]: Nginx handles compression (not Express middleware)
 - [v1.1 research]: Loki + Grafana for logs (not ELK — too heavy for lightweight server)
 - [v1.1 research]: node:22-slim for Docker (not Alpine — Prisma binary incompatibility)
+- [Phase 12]: Use nestjs-cls middleware mode with generateId for automatic correlation ID per request
+- [Phase 12]: Enhance existing AllExceptionsFilter with @SentryExceptionCaptured instead of adding SentryGlobalFilter
+- [Phase 12]: Sentry disabled gracefully when DSN env var is not set (enabled: !!DSN)
+- [Phase 12]: Soft delete via Prisma extension model delegate patching (not property delegation) to preserve PrismaClient type compatibility
+- [Phase 12]: Boss role via BOSS_WEWORK_IDS env var (MVP, no User.role field needed)
+- [Phase 12]: CLS operator pattern: services use cls.get<RequestUser>('user')?.id for operator audit trail (typed generic avoids any)
+- [Phase 12]: Inline validation pattern: mapApiErrorsToFormFields + form.setFields for 400/422 form errors (reusable across all form pages)
 
 ### Pending Todos
 
@@ -50,16 +77,15 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 12]: isActive semantic audit needed — 205 occurrences across 24 files must be classified before planning
 - [Phase 13]: Audit log RBAC — confirm WeChat Work role field name/values in JWT user object
 - [Phase 15]: Tencent Cloud Container Registry vs Docker Hub decision needed during planning
 
 ## Session Continuity
 
-Last session: 2026-03-28
-Stopped at: v1.1 roadmap created, ready to plan Phase 12
+Last session: 2026-03-28T09:47:22.763Z
+Stopped at: Completed 12-03-PLAN.md (Phase 12 complete)
 Resume file: None
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-28 — v1.1 roadmap created*
+*Last updated: 2026-03-28 — Phase 12 Wave 1 complete*

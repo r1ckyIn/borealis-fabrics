@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import zhCN from 'antd/locale/zh_CN';
 
 import { AppRouter } from '@/routes';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 /**
  * TanStack Query client configuration.
@@ -28,13 +29,15 @@ const queryClient = new QueryClient({
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <ConfigProvider locale={zhCN}>
-        <AntdApp>
-          <AppRouter />
-        </AntdApp>
-      </ConfigProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ConfigProvider locale={zhCN}>
+          <AntdApp>
+            <AppRouter />
+          </AntdApp>
+        </ConfigProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

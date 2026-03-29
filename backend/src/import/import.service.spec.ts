@@ -722,7 +722,7 @@ describe('ImportService', () => {
 
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Test Supplier', isActive: true },
+        { id: 1, companyName: 'Test Supplier', deletedAt: null },
       ]);
       productMock.create.mockResolvedValue({
         id: 1,
@@ -751,7 +751,7 @@ describe('ImportService', () => {
 
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Test Supplier', isActive: true },
+        { id: 1, companyName: 'Test Supplier', deletedAt: null },
       ]);
 
       const result = await service.importProducts(file);
@@ -775,7 +775,7 @@ describe('ImportService', () => {
 
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Test Supplier', isActive: true },
+        { id: 1, companyName: 'Test Supplier', deletedAt: null },
       ]);
       productMock.create.mockResolvedValue({
         id: 1,
@@ -802,7 +802,7 @@ describe('ImportService', () => {
 
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Other Supplier', isActive: true },
+        { id: 1, companyName: 'Other Supplier', deletedAt: null },
       ]);
 
       const result = await service.importProducts(file);
@@ -825,7 +825,7 @@ describe('ImportService', () => {
 
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Test Supplier', isActive: true },
+        { id: 1, companyName: 'Test Supplier', deletedAt: null },
       ]);
 
       const result = await service.importProducts(file);
@@ -855,7 +855,7 @@ describe('ImportService', () => {
 
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Test Supplier', isActive: true },
+        { id: 1, companyName: 'Test Supplier', deletedAt: null },
       ]);
       productMock.create.mockResolvedValue({
         id: 1,
@@ -911,7 +911,7 @@ describe('ImportService', () => {
       ]);
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Test Supplier', isActive: true },
+        { id: 1, companyName: 'Test Supplier', deletedAt: null },
       ]);
 
       const result = await service.importProducts(file, true);
@@ -969,7 +969,7 @@ describe('ImportService', () => {
       ]);
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Test Supplier', isActive: true },
+        { id: 1, companyName: 'Test Supplier', deletedAt: null },
       ]);
 
       const result = await service.importProducts(file, true);
@@ -1058,7 +1058,7 @@ describe('ImportService', () => {
 
       productMock.findMany.mockResolvedValue([]);
       supplierMock.findMany.mockResolvedValue([
-        { id: 1, companyName: 'Detect Supplier', isActive: true },
+        { id: 1, companyName: 'Detect Supplier', deletedAt: null },
       ]);
       productMock.create.mockResolvedValue({
         id: 1,

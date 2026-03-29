@@ -203,13 +203,13 @@ export class PurchaseOrderImportStrategy implements ImportStrategy {
   async getExistingKeys(): Promise<Set<string>> {
     // Load existing product keys (specification::name)
     const products = await this.prisma.product.findMany({
-      where: { isActive: true },
+      where: {},
       select: { modelNumber: true, name: true },
     });
 
     // Load supplier 海宁优途
     const suppliers = await this.prisma.supplier.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, companyName: true },
     });
     const supplierEntry = suppliers.find(
@@ -219,7 +219,7 @@ export class PurchaseOrderImportStrategy implements ImportStrategy {
 
     // Load or create self-customer 铂润面料
     const customers = await this.prisma.customer.findMany({
-      where: { isActive: true },
+      where: {},
       select: { id: true, companyName: true },
     });
     const selfCustomer = customers.find((c) => c.companyName.includes('铂润'));

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import { OrderPaymentService } from './order-payment.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileService } from '../file/file.service';
@@ -12,6 +13,7 @@ import {
 describe('OrderPaymentService', () => {
   let service: OrderPaymentService;
   let mockFileService: { getFileUrl: jest.Mock };
+  let mockClsService: { get: jest.Mock };
   let mockPrismaService: {
     order: {
       findUnique: jest.Mock;
@@ -70,11 +72,16 @@ describe('OrderPaymentService', () => {
       ),
     };
 
+    mockClsService = {
+      get: jest.fn().mockReturnValue({ id: 1, name: 'Test User' }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrderPaymentService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: FileService, useValue: mockFileService },
+        { provide: ClsService, useValue: mockClsService },
       ],
     }).compile();
 
@@ -141,8 +148,50 @@ describe('OrderPaymentService', () => {
           amount: 2000,
           payMethod: 'bank',
           remark: undefined,
-          operatorId: undefined,
+          operatorId: 1,
         },
+      });
+    });
+
+    it('should populate operatorId from CLS authenticated user', async () => {
+      mockClsService.get.mockReturnValue({ id: 42, name: 'Admin' });
+      const updatedOrder = { ...mockOrder, customerPaid: 500 };
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+      mockPrismaService.order.update.mockResolvedValue(updatedOrder);
+      mockPrismaService.paymentRecord.create.mockResolvedValue({ id: 10 });
+      mockPrismaService.paymentVoucher.createMany.mockResolvedValue({
+        count: 1,
+      });
+
+      await service.updateCustomerPayment(1, {
+        customerPaid: 500,
+        voucherFileIds: [1],
+      });
+
+      expect(mockPrismaService.paymentRecord.create).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({ operatorId: 42 }),
+      });
+    });
+
+    it('should fall back to null operatorId when CLS has no user', async () => {
+      mockClsService.get.mockReturnValue(undefined);
+      const updatedOrder = { ...mockOrder, customerPaid: 500 };
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+      mockPrismaService.order.update.mockResolvedValue(updatedOrder);
+      mockPrismaService.paymentRecord.create.mockResolvedValue({ id: 11 });
+      mockPrismaService.paymentVoucher.createMany.mockResolvedValue({
+        count: 1,
+      });
+
+      await service.updateCustomerPayment(1, {
+        customerPaid: 500,
+        voucherFileIds: [1],
+      });
+
+      expect(mockPrismaService.paymentRecord.create).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({ operatorId: null }),
       });
     });
 
@@ -252,7 +301,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         upsertedPayment,
@@ -288,7 +337,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(newPayment);
       mockPrismaService.paymentRecord.create.mockResolvedValue({ id: 1 });
@@ -344,7 +393,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 2,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         upsertedPayment,
@@ -367,8 +416,47 @@ describe('OrderPaymentService', () => {
           amount: 3000,
           payMethod: undefined,
           remark: undefined,
-          operatorId: undefined,
+          operatorId: 1,
         },
+      });
+    });
+
+    it('should populate supplier payment operatorId from CLS authenticated user', async () => {
+      mockClsService.get.mockReturnValue({ id: 99, name: 'Manager' });
+      const upsertedPayment = {
+        id: 1,
+        orderId: 1,
+        supplierId: 1,
+        payable: 0,
+        paid: 500,
+        supplier: {
+          id: 1,
+          companyName: 'Test',
+          contactName: 'Contact',
+          phone: '123',
+        },
+      };
+      mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
+      mockPrismaService.supplier.findFirst.mockResolvedValue({
+        id: 1,
+        deletedAt: null,
+      });
+      mockPrismaService.supplierPayment.upsert.mockResolvedValue(
+        upsertedPayment,
+      );
+      mockPrismaService.paymentRecord.create.mockResolvedValue({ id: 20 });
+      mockPrismaService.paymentVoucher.createMany.mockResolvedValue({
+        count: 1,
+      });
+
+      await service.updateSupplierPayment(1, 1, {
+        paid: 500,
+        voucherFileIds: [10],
+      });
+
+      expect(mockPrismaService.paymentRecord.create).toHaveBeenCalledWith({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        data: expect.objectContaining({ operatorId: 99 }),
       });
     });
 
@@ -389,7 +477,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         upsertedPayment,
@@ -429,7 +517,7 @@ describe('OrderPaymentService', () => {
       mockPrismaService.order.findUnique.mockResolvedValue(mockOrder);
       mockPrismaService.supplier.findFirst.mockResolvedValue({
         id: 1,
-        isActive: true,
+        deletedAt: null,
       });
       mockPrismaService.supplierPayment.upsert.mockResolvedValue(
         upsertedPayment,

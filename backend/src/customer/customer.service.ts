@@ -30,7 +30,7 @@ export class CustomerService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Validate customer exists and is active within a transaction.
+   * Validate customer exists within a transaction (soft-deleted records auto-filtered).
    * @throws NotFoundException if customer not found or soft-deleted
    */
   private async validateCustomerExists(
@@ -38,7 +38,7 @@ export class CustomerService {
     customerId: number,
   ): Promise<void> {
     const customer = await tx.customer.findFirst({
-      where: { id: customerId, isActive: true },
+      where: { id: customerId },
     });
     if (!customer) {
       throw new NotFoundException(`Customer with ID ${customerId} not found`);
@@ -86,7 +86,7 @@ export class CustomerService {
    */
   async findOne(id: number): Promise<Customer> {
     const customer = await this.prisma.customer.findFirst({
-      where: { id, isActive: true },
+      where: { id },
     });
 
     if (!customer) {
@@ -125,10 +125,8 @@ export class CustomerService {
    * Find all customers with optional filtering and pagination.
    */
   async findAll(query: QueryCustomerDto): Promise<PaginatedResult<Customer>> {
-    // Build where clause
-    const where: Prisma.CustomerWhereInput = {
-      isActive: query.isActive ?? true,
-    };
+    // Build where clause (soft-delete auto-filtered by extension)
+    const where: Prisma.CustomerWhereInput = {};
 
     // Unified keyword search across companyName, contactName, phone
     if (query.keyword) {
@@ -187,13 +185,13 @@ export class CustomerService {
     };
 
     try {
-      // Use compound where to atomically check existence and active status
+      // Update customer (soft-deleted records auto-filtered by extension)
       return await this.prisma.customer.update({
-        where: { id, isActive: true },
+        where: { id },
         data,
       });
     } catch (error) {
-      // P2025: Record not found (either doesn't exist or isActive=false)
+      // P2025: Record not found (either doesn't exist or soft-deleted)
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2025'
@@ -205,14 +203,13 @@ export class CustomerService {
   }
 
   /**
-   * Remove a customer by ID.
-   * - If no relations exist: physical delete
+   * Remove a customer by ID (soft delete via Prisma extension).
    * - If relations exist and force=false: throw ConflictException with relation details
-   * - If relations exist and force=true: soft delete (set isActive=false)
+   * - Otherwise: soft delete (sets deletedAt timestamp via extension)
    */
   async remove(id: number, force: boolean): Promise<void> {
-    // Check if customer exists
-    const customer = await this.prisma.customer.findUnique({
+    // Check if customer exists (soft-deleted records auto-filtered)
+    const customer = await this.prisma.customer.findFirst({
       where: { id },
     });
 
@@ -230,14 +227,7 @@ export class CustomerService {
     const hasRelations =
       customerPricingCount > 0 || orderCount > 0 || quoteCount > 0;
 
-    if (!hasRelations) {
-      // No relations, safe to physically delete
-      await this.prisma.customer.delete({ where: { id } });
-      return;
-    }
-
-    // Has relations
-    if (!force) {
+    if (hasRelations && !force) {
       // Build relation details message
       const relations: string[] = [];
       if (customerPricingCount > 0)
@@ -251,11 +241,35 @@ export class CustomerService {
       );
     }
 
-    // Force=true with relations: soft delete
-    await this.prisma.customer.update({
+    // Soft delete (extension intercepts delete and sets deletedAt)
+    await this.prisma.customer.delete({ where: { id } });
+  }
+
+  /**
+   * Restore a soft-deleted customer.
+   * Uses raw SQL to bypass soft-delete auto-filtering.
+   * @throws NotFoundException if customer not found in deleted records
+   */
+  async restore(id: number): Promise<Customer> {
+    const deleted = await this.prisma.$queryRawUnsafe<{ id: number }[]>(
+      'SELECT id FROM customers WHERE id = ? AND deleted_at IS NOT NULL',
+      id,
+    );
+
+    if (!deleted || deleted.length === 0) {
+      throw new NotFoundException(
+        `Customer with ID ${id} not found in deleted records`,
+      );
+    }
+
+    await this.prisma.$executeRawUnsafe(
+      'UPDATE customers SET deleted_at = NULL WHERE id = ?',
+      id,
+    );
+
+    return this.prisma.customer.findFirst({
       where: { id },
-      data: { isActive: false },
-    });
+    }) as Promise<Customer>;
   }
 
   /**
@@ -271,9 +285,9 @@ export class CustomerService {
     return this.prisma.$transaction(async (tx) => {
       await this.validateCustomerExists(tx, customerId);
 
-      // Verify fabric exists and is active
+      // Verify fabric exists (soft-deleted records auto-filtered)
       const fabric = await tx.fabric.findFirst({
-        where: { id: createDto.fabricId, isActive: true },
+        where: { id: createDto.fabricId },
       });
       if (!fabric) {
         throw new NotFoundException(

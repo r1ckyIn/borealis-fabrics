@@ -6,6 +6,9 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TerminusModule } from '@nestjs/terminus';
 import { APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { ClsModule, ClsService } from 'nestjs-cls';
+import { SentryModule } from '@sentry/nestjs/setup';
+import { randomUUID } from 'node:crypto';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { CommonModule } from './common/common.module';
@@ -22,6 +25,7 @@ import { SystemModule } from './system/system.module';
 import { ProductModule } from './product/product.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { UserClsInterceptor } from './common/interceptors/user-cls.interceptor';
 import { HealthController } from './common/health/health.controller';
 import configuration from './config/configuration';
 
@@ -33,15 +37,33 @@ import configuration from './config/configuration';
       load: [configuration],
     }),
 
-    // Logging
-    LoggerModule.forRoot({
-      pinoHttp: {
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { colorize: true } }
-            : undefined,
-        level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    // Request-scoped correlation ID via CLS
+    ClsModule.forRoot({
+      middleware: {
+        mount: true,
+        generateId: true,
+        idGenerator: (req: Record<string, Record<string, unknown>>) =>
+          (req.headers['x-correlation-id'] as string) ?? randomUUID(),
       },
+    }),
+
+    // Sentry error tracking
+    SentryModule.forRoot(),
+
+    // Logging (bound to CLS correlation ID)
+    LoggerModule.forRootAsync({
+      imports: [ClsModule],
+      inject: [ClsService],
+      useFactory: (cls: ClsService) => ({
+        pinoHttp: {
+          genReqId: () => cls.getId(),
+          transport:
+            process.env.NODE_ENV !== 'production'
+              ? { target: 'pino-pretty', options: { colorize: true } }
+              : undefined,
+          level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+        },
+      }),
     }),
 
     // Rate limiting
@@ -83,6 +105,11 @@ import configuration from './config/configuration';
     {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
+    },
+    // Store authenticated user in CLS for service-layer access
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: UserClsInterceptor,
     },
     // Global validation pipe
     {
