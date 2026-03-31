@@ -4,6 +4,7 @@ import { ClsService } from 'nestjs-cls';
 import { SupplierController } from './supplier.controller';
 import { SupplierService } from './supplier.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import {
   CreateSupplierDto,
@@ -44,6 +45,8 @@ describe('SupplierController', () => {
       ],
     })
       .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(OptionalJwtAuthGuard)
       .useValue({ canActivate: () => true })
       .overrideGuard(RolesGuard)
       .useValue({ canActivate: () => true })

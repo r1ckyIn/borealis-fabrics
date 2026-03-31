@@ -90,6 +90,7 @@ describe('ExportService', () => {
 
       // Verify it's valid xlsx by reading it back
       const workbook = new ExcelJS.Workbook();
+      // @ts-expect-error Node 22 Buffer<ArrayBufferLike> vs ExcelJS Buffer type mismatch
       await workbook.xlsx.load(result);
       const worksheet = workbook.getWorksheet('supplier');
       expect(worksheet).toBeDefined();
@@ -110,6 +111,7 @@ describe('ExportService', () => {
       ]);
 
       const workbook = new ExcelJS.Workbook();
+      // @ts-expect-error Node 22 Buffer<ArrayBufferLike> vs ExcelJS Buffer type mismatch
       await workbook.xlsx.load(result);
       const worksheet = workbook.getWorksheet('supplier')!;
 
@@ -135,6 +137,7 @@ describe('ExportService', () => {
       ]);
 
       const workbook = new ExcelJS.Workbook();
+      // @ts-expect-error Node 22 Buffer<ArrayBufferLike> vs ExcelJS Buffer type mismatch
       await workbook.xlsx.load(result);
       const worksheet = workbook.getWorksheet('supplier')!;
 
@@ -158,6 +161,7 @@ describe('ExportService', () => {
       const result = await service.export('order', ['orderCode', 'status']);
 
       const workbook = new ExcelJS.Workbook();
+      // @ts-expect-error Node 22 Buffer<ArrayBufferLike> vs ExcelJS Buffer type mismatch
       await workbook.xlsx.load(result);
       const worksheet = workbook.getWorksheet('order')!;
       expect(worksheet).toBeDefined();
@@ -183,6 +187,7 @@ describe('ExportService', () => {
       expect(result).toBeInstanceOf(Buffer);
 
       const workbook = new ExcelJS.Workbook();
+      // @ts-expect-error Node 22 Buffer<ArrayBufferLike> vs ExcelJS Buffer type mismatch
       await workbook.xlsx.load(result);
       const worksheet = workbook.getWorksheet('supplier')!;
       expect(worksheet.rowCount).toBe(1); // Header row only
@@ -202,6 +207,7 @@ describe('ExportService', () => {
       const result = await service.export('fabric', ['fabricCode', 'name']);
 
       const workbook = new ExcelJS.Workbook();
+      // @ts-expect-error Node 22 Buffer<ArrayBufferLike> vs ExcelJS Buffer type mismatch
       await workbook.xlsx.load(result);
       const worksheet = workbook.getWorksheet('fabric')!;
       const dataRow = worksheet.getRow(2);
@@ -214,6 +220,7 @@ describe('ExportService', () => {
       const result = await service.export('supplier', ['companyName']);
 
       const workbook = new ExcelJS.Workbook();
+      // @ts-expect-error Node 22 Buffer<ArrayBufferLike> vs ExcelJS Buffer type mismatch
       await workbook.xlsx.load(result);
       const worksheet = workbook.getWorksheet('supplier')!;
       const headerRow = worksheet.getRow(1);

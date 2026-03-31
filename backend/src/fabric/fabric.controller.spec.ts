@@ -5,6 +5,7 @@ import { Readable } from 'stream';
 import { FabricController } from './fabric.controller';
 import { FabricService } from './fabric.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import {
   CreateFabricDto,
@@ -79,6 +80,8 @@ describe('FabricController', () => {
       ],
     })
       .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(OptionalJwtAuthGuard)
       .useValue({ canActivate: () => true })
       .overrideGuard(RolesGuard)
       .useValue({ canActivate: () => true })

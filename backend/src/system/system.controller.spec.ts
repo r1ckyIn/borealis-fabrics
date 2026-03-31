@@ -40,6 +40,19 @@ describe('SystemController', () => {
       values: ['prepay', 'credit'],
       labels: { prepay: '预付', credit: '账期' },
     },
+    productCategory: {
+      values: ['IRON_FRAME_MOTOR'],
+      labels: { IRON_FRAME_MOTOR: '铁架电机' },
+    },
+    productSubCategory: {
+      values: ['IRON_FRAME', 'MOTOR', 'MATTRESS', 'ACCESSORY'],
+      labels: {
+        IRON_FRAME: '铁架',
+        MOTOR: '电机',
+        MATTRESS: '床垫',
+        ACCESSORY: '配件',
+      },
+    },
   };
 
   const mockSystemService = {
