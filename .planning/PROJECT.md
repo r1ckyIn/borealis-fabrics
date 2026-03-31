@@ -48,17 +48,17 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - [ ] Gzip/Brotli response compression
 - [ ] CI/CD deploy stage with automated database migrations
 
-**Data Safety & Integrity:**
-- [ ] Database backup/restore automation with retention policy
-- [ ] Soft delete (deletedAt) on all business entities
-- [ ] Full operation audit logging (who/what/when)
-- [ ] Data export to Excel for all entities (fabric, product, supplier, customer, order, quote)
+**Data Safety & Integrity:** *(Validated in Phase 12-13)*
+- [x] Database backup/restore automation with retention policy
+- [x] Soft delete (deletedAt) on all business entities
+- [x] Full operation audit logging (who/what/when)
+- [x] Data export to Excel for all entities (fabric, product, supplier, customer, order, quote)
 
-**Observability & Error Handling:**
-- [ ] Sentry error tracking integration (backend + frontend)
+**Observability & Error Handling:** *(Sentry/correlation/ErrorBoundary validated in Phase 12)*
+- [x] Sentry error tracking integration (backend + frontend)
 - [ ] Centralized log aggregation
-- [ ] Request correlation ID (tracing across requests)
-- [ ] React ErrorBoundary with graceful degradation
+- [x] Request correlation ID (tracing across requests)
+- [x] React ErrorBoundary with graceful degradation
 - [ ] Slow query logging and profiling
 
 **Performance & Quality:**
@@ -74,10 +74,10 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - [ ] COS file migration from localhost URLs
 - [ ] Production UAT validation
 
-**Carried from v1.0 (tech debt):**
-- [ ] OrderFormPage inline field validation for 400/422 (DEBT-01)
-- [ ] Fix operatorId: undefined in OrderPaymentService (DEBT-02)
-- [ ] Tune SalesContractImportStrategy for real file formats (DEBT-03)
+**Carried from v1.0 (tech debt):** *(Validated in Phase 12)*
+- [x] OrderFormPage inline field validation for 400/422 (DEBT-01)
+- [x] Fix operatorId: undefined in OrderPaymentService (DEBT-02)
+- [x] Tune SalesContractImportStrategy for real file formats (DEBT-03)
 
 ### Out of Scope
 
@@ -108,7 +108,7 @@ All business documents (PO, PI, contracts, delivery notes) can be imported, trac
 - Mattresses/pads are sub-items under iron frames
 
 **Test Coverage:**
-- Backend: 27+ unit test suites, 11 E2E test suites (434 tests)
+- Backend: 41 unit test suites, 905 tests, 11 E2E test suites
 - Frontend: 78+ test files, 1000+ tests
 - All build / lint / typecheck passing
 
@@ -161,4 +161,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after v1.1 milestone started*
+*Last updated: 2026-03-31 after Phase 13 (Data Safety & Audit) complete*
