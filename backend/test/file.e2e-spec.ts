@@ -5,6 +5,7 @@ import { App } from 'supertest/types';
 import { FileModule } from '../src/file/file.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { ClsService } from 'nestjs-cls';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
@@ -96,7 +97,10 @@ describe('FileController (e2e)', () => {
         transformOptions: { enableImplicitConversion: true },
       }),
     );
-    app.useGlobalFilters(new AllExceptionsFilter());
+    const mockCls = {
+      getId: () => 'test-correlation-id',
+    } as unknown as ClsService;
+    app.useGlobalFilters(new AllExceptionsFilter(mockCls));
     app.useGlobalInterceptors(new TransformInterceptor());
 
     await app.init();
