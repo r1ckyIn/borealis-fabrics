@@ -23,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { ClsService } from 'nestjs-cls';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Audited } from '../audit/decorators/audited.decorator';
@@ -57,6 +58,7 @@ export class SupplierController {
   }
 
   @Get()
+  @UseGuards(OptionalJwtAuthGuard)
   @ApiOperation({ summary: 'List all suppliers with pagination and filtering' })
   @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
   @ApiQuery({ name: 'pageSize', required: false, type: Number, example: 20 })
