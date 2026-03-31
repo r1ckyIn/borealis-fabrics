@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Readiness
 status: executing
-stopped_at: Completed 12-03-PLAN.md (Phase 12 complete)
-last_updated: "2026-03-28T09:52:26.513Z"
-last_activity: 2026-03-28
+stopped_at: Completed 13-06-PLAN.md (gap closure complete, all Phase 13 plans done)
+last_updated: "2026-03-31T11:06:50.206Z"
+last_activity: 2026-03-31
 progress:
   total_phases: 5
-  completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  completed_phases: 2
+  total_plans: 9
+  completed_plans: 9
   percent: 0
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 ## Current Position
 
-Phase: 13 (data-safety-audit) — EXECUTING (gap closure complete)
-Plan: 5 of 5
-Status: All plans complete, pending verification and PR cycle
-Last activity: 2026-03-29
+Phase: 13 (data-safety-audit) — EXECUTING
+Plan: 2 of 6
+Status: Ready to execute
+Last activity: 2026-03-31
 
 Progress: [██░░░░░░░░] 0% (0/12 plans)
 
@@ -51,6 +51,7 @@ Progress: [██░░░░░░░░] 0% (0/12 plans)
 | Phase 12 P01 | 14min | 2 tasks | 16 files |
 | Phase 12 P02 | 34m | 3 tasks | 47 files |
 | Phase 12 P03 | 14min | 2 tasks | 11 files |
+| Phase 13 P06 | 15min | 4 tasks | 24 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,8 @@ Recent decisions affecting current work:
 - [Phase 13-02]: ExportModule uses @Res() to bypass TransformInterceptor for binary xlsx responses
 - [Phase 13-04]: Order/Quote DTOs accept includeDeleted for API consistency but services ignore it (no soft delete)
 - [Phase 13-05]: Bypass soft-delete via raw PrismaClient ($raw), NOT empty object trick (broken with prisma-extension-soft-delete)
+- [Phase 13]: OptionalJwtAuthGuard as separate class for clean public endpoint auth (not extending JwtAuthGuard)
+- [Phase 13]: @ts-expect-error is the idiomatic fix for Node 22 Buffer<ArrayBufferLike> vs library Buffer type mismatch (as-casts fail)
 
 ### Pending Todos
 
@@ -86,9 +89,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-29T08:45:00Z
-Stopped at: Completed 13-05-PLAN.md (gap closure — all Phase 13 plans done)
-Resume file: .planning/phases/13-data-safety-audit/13-05-SUMMARY.md
+Last session: 2026-03-31T11:06:50.201Z
+Stopped at: Completed 13-06-PLAN.md (gap closure complete, all Phase 13 plans done)
+Resume file: None
 
 ---
 *State initialized: 2026-03-17*
