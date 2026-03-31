@@ -6,7 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '../src/auth/auth.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { RedisService } from '../src/common/services/redis.service';
-import { ClsService } from 'nestjs-cls';
+import { createMockCls } from './helpers/mock-builders';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
@@ -113,10 +113,7 @@ describe('AuthController (e2e)', () => {
         transformOptions: { enableImplicitConversion: true },
       }),
     );
-    const mockCls = {
-      getId: () => 'test-correlation-id',
-    } as unknown as ClsService;
-    app.useGlobalFilters(new AllExceptionsFilter(mockCls));
+    app.useGlobalFilters(new AllExceptionsFilter(createMockCls()));
     app.useGlobalInterceptors(new TransformInterceptor());
 
     await app.init();

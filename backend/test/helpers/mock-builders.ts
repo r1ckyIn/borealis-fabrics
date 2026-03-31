@@ -1,5 +1,6 @@
 import type { Request } from 'express';
 import * as ExcelJS from 'exceljs';
+import { ClsService } from 'nestjs-cls';
 import { RequestUser } from '../../src/auth/interfaces';
 
 /**
@@ -28,6 +29,14 @@ export function createMockAuthRequest(
       authorization: options?.authorization ?? 'Bearer test-token',
     },
   } as unknown as AuthenticatedRequest;
+}
+
+/**
+ * Create a minimal ClsService mock for E2E tests.
+ * AllExceptionsFilter requires ClsService for correlation ID in error responses.
+ */
+export function createMockCls(): ClsService {
+  return { getId: () => 'test-correlation-id' } as unknown as ClsService;
 }
 
 /**
