@@ -9,6 +9,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { OrderModule } from '../src/order/order.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { createMockCls } from './helpers/mock-builders';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 import { CodeGeneratorService, RedisService } from '../src/common/services';
@@ -390,7 +391,7 @@ describe('OrderController (e2e)', () => {
         transformOptions: { enableImplicitConversion: true },
       }),
     );
-    app.useGlobalFilters(new AllExceptionsFilter());
+    app.useGlobalFilters(new AllExceptionsFilter(createMockCls()));
     app.useGlobalInterceptors(new TransformInterceptor());
     await app.init();
   });

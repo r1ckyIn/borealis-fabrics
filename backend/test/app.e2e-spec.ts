@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import { PrismaModule } from '../src/prisma/prisma.module';
 import { CommonModule } from '../src/common/common.module';
 import { HealthController } from '../src/common/health/health.controller';
+import { createMockCls } from './helpers/mock-builders';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -80,7 +81,7 @@ describe('AppController (e2e)', () => {
         transformOptions: { enableImplicitConversion: true },
       }),
     );
-    app.useGlobalFilters(new AllExceptionsFilter());
+    app.useGlobalFilters(new AllExceptionsFilter(createMockCls()));
     app.useGlobalInterceptors(new TransformInterceptor());
 
     await app.init();

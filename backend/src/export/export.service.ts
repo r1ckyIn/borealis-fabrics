@@ -90,9 +90,9 @@ export class ExportService {
       worksheet.addRow(rowData);
     }
 
-    // Write to buffer
+    // Write to buffer (cast needed for Node 22 strict typing compatibility)
     const arrayBuffer = await workbook.xlsx.writeBuffer();
-    return Buffer.from(arrayBuffer);
+    return Buffer.from(arrayBuffer) as Buffer;
   }
 
   /**

@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CommonModule } from '../common/common.module';
@@ -34,7 +35,7 @@ import { CommonModule } from '../common/common.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtAuthGuard, JwtStrategy],
-  exports: [JwtAuthGuard, AuthService, JwtModule],
+  providers: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard, JwtStrategy],
+  exports: [JwtAuthGuard, OptionalJwtAuthGuard, AuthService, JwtModule],
 })
 export class AuthModule {}

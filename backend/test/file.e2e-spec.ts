@@ -5,6 +5,7 @@ import { App } from 'supertest/types';
 import { FileModule } from '../src/file/file.module';
 import { PrismaService } from '../src/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
+import { createMockCls } from './helpers/mock-builders';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
@@ -96,7 +97,7 @@ describe('FileController (e2e)', () => {
         transformOptions: { enableImplicitConversion: true },
       }),
     );
-    app.useGlobalFilters(new AllExceptionsFilter());
+    app.useGlobalFilters(new AllExceptionsFilter(createMockCls()));
     app.useGlobalInterceptors(new TransformInterceptor());
 
     await app.init();

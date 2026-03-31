@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
 import { ExportService } from './export.service';
 import { PrismaService } from '../prisma/prisma.service';
-import * as ExcelJS from 'exceljs';
+import { loadTestWorkbook } from '../../test/helpers/mock-builders';
 
 describe('ExportService', () => {
   let service: ExportService;
@@ -89,8 +89,7 @@ describe('ExportService', () => {
       expect(result.length).toBeGreaterThan(0);
 
       // Verify it's valid xlsx by reading it back
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(result);
+      const workbook = await loadTestWorkbook(result);
       const worksheet = workbook.getWorksheet('supplier');
       expect(worksheet).toBeDefined();
     });
@@ -109,8 +108,7 @@ describe('ExportService', () => {
         'contactName',
       ]);
 
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(result);
+      const workbook = await loadTestWorkbook(result);
       const worksheet = workbook.getWorksheet('supplier')!;
 
       // Check header row has the correct labels
@@ -134,8 +132,7 @@ describe('ExportService', () => {
         'createdAt',
       ]);
 
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(result);
+      const workbook = await loadTestWorkbook(result);
       const worksheet = workbook.getWorksheet('supplier')!;
 
       const dataRow = worksheet.getRow(2);
@@ -157,8 +154,7 @@ describe('ExportService', () => {
 
       const result = await service.export('order', ['orderCode', 'status']);
 
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(result);
+      const workbook = await loadTestWorkbook(result);
       const worksheet = workbook.getWorksheet('order')!;
       expect(worksheet).toBeDefined();
     });
@@ -182,8 +178,7 @@ describe('ExportService', () => {
 
       expect(result).toBeInstanceOf(Buffer);
 
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(result);
+      const workbook = await loadTestWorkbook(result);
       const worksheet = workbook.getWorksheet('supplier')!;
       expect(worksheet.rowCount).toBe(1); // Header row only
     });
@@ -201,8 +196,7 @@ describe('ExportService', () => {
 
       const result = await service.export('fabric', ['fabricCode', 'name']);
 
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(result);
+      const workbook = await loadTestWorkbook(result);
       const worksheet = workbook.getWorksheet('fabric')!;
       const dataRow = worksheet.getRow(2);
       expect(dataRow.getCell(1).value).toBe('FB-001');
@@ -213,8 +207,7 @@ describe('ExportService', () => {
 
       const result = await service.export('supplier', ['companyName']);
 
-      const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(result);
+      const workbook = await loadTestWorkbook(result);
       const worksheet = workbook.getWorksheet('supplier')!;
       const headerRow = worksheet.getRow(1);
       const headerCell = headerRow.getCell(1);

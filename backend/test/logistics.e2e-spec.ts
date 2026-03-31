@@ -5,6 +5,7 @@ import { App } from 'supertest/types';
 import { Prisma } from '@prisma/client';
 import { LogisticsModule } from '../src/logistics/logistics.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { createMockCls } from './helpers/mock-builders';
 import { AllExceptionsFilter } from '../src/common/filters/http-exception.filter';
 import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 
@@ -144,7 +145,7 @@ describe('LogisticsController (e2e)', () => {
         transformOptions: { enableImplicitConversion: true },
       }),
     );
-    app.useGlobalFilters(new AllExceptionsFilter());
+    app.useGlobalFilters(new AllExceptionsFilter(createMockCls()));
     app.useGlobalInterceptors(new TransformInterceptor());
 
     await app.init();

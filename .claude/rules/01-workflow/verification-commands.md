@@ -18,9 +18,10 @@ cd backend
 pnpm build
 pnpm test
 pnpm lint
+npx tsc --noEmit   # CI 严格类型检查（必须！本地 build 通过 ≠ CI 通过）
 
 # All-in-one
-pnpm build && pnpm test && pnpm lint
+pnpm build && pnpm test && pnpm lint && npx tsc --noEmit
 ```
 
 ---
