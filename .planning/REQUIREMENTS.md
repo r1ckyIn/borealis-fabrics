@@ -42,8 +42,8 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 
 - [ ] **PERF-01**: Redis query caching with cache-aside pattern on reference data (fabric, product, supplier, customer)
 - [ ] **PERF-02**: Cache invalidation on CUD operations for cached entities
-- [ ] **PERF-03**: k6 load testing scripts for critical API endpoints with baseline benchmarks documented
-- [ ] **PERF-04**: Web Vitals monitoring (LCP, FID, CLS) with reporting to console/Sentry
+- [x] **PERF-03**: k6 load testing scripts for critical API endpoints with baseline benchmarks documented
+- [x] **PERF-04**: Web Vitals monitoring (LCP, FID, CLS) with reporting to console/Sentry
 
 ### Quality
 
@@ -120,8 +120,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | OBS-07 | Phase 14 | Pending |
 | PERF-01 | Phase 14 | Pending |
 | PERF-02 | Phase 14 | Pending |
-| PERF-03 | Phase 14 | Pending |
-| PERF-04 | Phase 14 | Pending |
+| PERF-03 | Phase 14 | Complete |
+| PERF-04 | Phase 14 | Complete |
 | QUAL-01 | Phase 14 | Pending |
 | QUAL-02 | Phase 15 | Pending |
 | QUAL-03 | Phase 15 | Pending |
