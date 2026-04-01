@@ -6,6 +6,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { SupplierService } from './supplier.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 import {
   CreateSupplierDto,
   QuerySupplierDto,
@@ -71,6 +72,17 @@ describe('SupplierService', () => {
     ),
   };
 
+  // Mock CacheService: passthrough to factory (no actual caching in tests)
+  const mockCacheService = {
+    getOrSet: jest
+      .fn()
+      .mockImplementation(
+        async (_key: string, _ttl: number, factory: () => Promise<unknown>) =>
+          factory(),
+      ),
+    invalidateByPrefix: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -78,6 +90,10 @@ describe('SupplierService', () => {
         {
           provide: PrismaService,
           useValue: mockPrismaService,
+        },
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
         },
       ],
     }).compile();

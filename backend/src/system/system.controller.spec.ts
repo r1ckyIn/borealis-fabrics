@@ -56,7 +56,7 @@ describe('SystemController', () => {
   };
 
   const mockSystemService = {
-    getAllEnums: jest.fn().mockReturnValue(mockEnumsResponse),
+    getAllEnums: jest.fn().mockResolvedValue(mockEnumsResponse),
   };
 
   beforeEach(async () => {
@@ -80,69 +80,69 @@ describe('SystemController', () => {
   });
 
   describe('getEnums', () => {
-    it('should return all enums', () => {
-      mockSystemService.getAllEnums.mockReturnValue(mockEnumsResponse);
+    it('should return all enums', async () => {
+      mockSystemService.getAllEnums.mockResolvedValue(mockEnumsResponse);
 
-      const result = controller.getEnums();
+      const result = await controller.getEnums();
 
       expect(mockSystemService.getAllEnums).toHaveBeenCalled();
       expect(result).toEqual(mockEnumsResponse);
     });
 
-    it('should contain orderItemStatus', () => {
-      mockSystemService.getAllEnums.mockReturnValue(mockEnumsResponse);
+    it('should contain orderItemStatus', async () => {
+      mockSystemService.getAllEnums.mockResolvedValue(mockEnumsResponse);
 
-      const result = controller.getEnums();
+      const result = await controller.getEnums();
 
       expect(result.orderItemStatus).toBeDefined();
       expect(result.orderItemStatus.values).toBeDefined();
       expect(result.orderItemStatus.labels).toBeDefined();
     });
 
-    it('should contain customerPayStatus', () => {
-      mockSystemService.getAllEnums.mockReturnValue(mockEnumsResponse);
+    it('should contain customerPayStatus', async () => {
+      mockSystemService.getAllEnums.mockResolvedValue(mockEnumsResponse);
 
-      const result = controller.getEnums();
+      const result = await controller.getEnums();
 
       expect(result.customerPayStatus).toBeDefined();
       expect(result.customerPayStatus.values).toBeDefined();
       expect(result.customerPayStatus.labels).toBeDefined();
     });
 
-    it('should contain paymentMethod', () => {
-      mockSystemService.getAllEnums.mockReturnValue(mockEnumsResponse);
+    it('should contain paymentMethod', async () => {
+      mockSystemService.getAllEnums.mockResolvedValue(mockEnumsResponse);
 
-      const result = controller.getEnums();
+      const result = await controller.getEnums();
 
       expect(result.paymentMethod).toBeDefined();
       expect(result.paymentMethod.values).toBeDefined();
       expect(result.paymentMethod.labels).toBeDefined();
     });
 
-    it('should contain quoteStatus', () => {
-      mockSystemService.getAllEnums.mockReturnValue(mockEnumsResponse);
+    it('should contain quoteStatus', async () => {
+      mockSystemService.getAllEnums.mockResolvedValue(mockEnumsResponse);
 
-      const result = controller.getEnums();
+      const result = await controller.getEnums();
 
       expect(result.quoteStatus).toBeDefined();
       expect(result.quoteStatus.values).toBeDefined();
       expect(result.quoteStatus.labels).toBeDefined();
     });
 
-    it('should contain supplierStatus', () => {
-      mockSystemService.getAllEnums.mockReturnValue(mockEnumsResponse);
+    it('should contain supplierStatus', async () => {
+      mockSystemService.getAllEnums.mockResolvedValue(mockEnumsResponse);
 
-      const result = controller.getEnums();
+      const result = await controller.getEnums();
 
       expect(result.supplierStatus).toBeDefined();
       expect(result.supplierStatus.values).toBeDefined();
       expect(result.supplierStatus.labels).toBeDefined();
     });
 
-    it('should contain settleType', () => {
-      mockSystemService.getAllEnums.mockReturnValue(mockEnumsResponse);
+    it('should contain settleType', async () => {
+      mockSystemService.getAllEnums.mockResolvedValue(mockEnumsResponse);
 
-      const result = controller.getEnums();
+      const result = await controller.getEnums();
 
       expect(result.settleType).toBeDefined();
       expect(result.settleType.values).toBeDefined();

@@ -13,6 +13,7 @@ import {
 import { ProductService } from './product.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CodeGeneratorService } from '../common/services/code-generator.service';
+import { CacheService } from '../common/services/cache.service';
 import { CreateProductDto, QueryProductDto } from './dto';
 import { Product } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
@@ -118,6 +119,17 @@ describe('ProductService', () => {
     generateCode: jest.fn(),
   };
 
+  // Mock CacheService: passthrough to factory (no actual caching in tests)
+  const mockCacheService = {
+    getOrSet: jest
+      .fn()
+      .mockImplementation(
+        async (_key: string, _ttl: number, factory: () => Promise<unknown>) =>
+          factory(),
+      ),
+    invalidateByPrefix: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -129,6 +141,10 @@ describe('ProductService', () => {
         {
           provide: CodeGeneratorService,
           useValue: mockCodeGenerator,
+        },
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
         },
       ],
     }).compile();
