@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Readiness
 status: executing
-stopped_at: Completed 13-06-PLAN.md (gap closure complete, all Phase 13 plans done)
-last_updated: "2026-03-31T11:17:33.308Z"
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-04-01T11:20:56.002Z"
 last_activity: 2026-03-31
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 9
-  completed_plans: 9
+  completed_plans: 10
   percent: 0
 ---
 
@@ -52,6 +52,7 @@ Progress: [██░░░░░░░░] 0% (0/12 plans)
 | Phase 12 P02 | 34m | 3 tasks | 47 files |
 | Phase 12 P03 | 14min | 2 tasks | 11 files |
 | Phase 13 P06 | 15min | 4 tasks | 24 files |
+| Phase 15 P02 | 13m | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,7 @@ Recent decisions affecting current work:
 - [Phase 13-05]: Bypass soft-delete via raw PrismaClient ($raw), NOT empty object trick (broken with prisma-extension-soft-delete)
 - [Phase 13]: OptionalJwtAuthGuard as separate class for clean public endpoint auth (not extending JwtAuthGuard)
 - [Phase 13]: @ts-expect-error is the idiomatic fix for Node 22 Buffer<ArrayBufferLike> vs library Buffer type mismatch (as-casts fail)
+- [Phase 15]: Cache-aside pattern: 5min TTL for entity lists, 24h for system enums, SCAN-based invalidation
 
 ### Pending Todos
 
@@ -89,8 +91,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-31T11:06:50.201Z
-Stopped at: Completed 13-06-PLAN.md (gap closure complete, all Phase 13 plans done)
+Last session: 2026-04-01T11:20:55.997Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
 
 ---
