@@ -127,7 +127,10 @@ describe('CacheService', () => {
 
       // First scan returns 2 keys and a cursor, second returns cursor '0'
       mockClient.scan
-        .mockResolvedValueOnce(['5', ['cache:fabric:list:1', 'cache:fabric:list:2']])
+        .mockResolvedValueOnce([
+          '5',
+          ['cache:fabric:list:1', 'cache:fabric:list:2'],
+        ])
         .mockResolvedValueOnce(['0', []]);
 
       mockRedisService.getClient.mockReturnValue(mockClient);
@@ -151,7 +154,9 @@ describe('CacheService', () => {
       mockRedisService.getClient.mockReturnValue(null);
 
       // Should not throw
-      await expect(service.invalidateByPrefix('fabric:')).resolves.toBeUndefined();
+      await expect(
+        service.invalidateByPrefix('fabric:'),
+      ).resolves.toBeUndefined();
     });
 
     it('should handle multiple SCAN iterations', async () => {

@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 import {
   CreateSupplierDto,
   QuerySupplierDto,
@@ -21,7 +22,10 @@ import { toNumber, toNumberRequired } from '../common/utils/decimal';
 
 @Injectable()
 export class SupplierService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   /**
    * Create a new supplier.
@@ -29,7 +33,7 @@ export class SupplierService {
    * Throws ConflictException if companyName already exists.
    */
   async create(createSupplierDto: CreateSupplierDto): Promise<Supplier> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Check for duplicate companyName
       const existing = await tx.supplier.findFirst({
         where: { companyName: createSupplierDto.companyName },
@@ -45,6 +49,8 @@ export class SupplierService {
         data: createSupplierDto,
       });
     });
+    await this.cacheService.invalidateByPrefix('supplier:');
+    return result;
   }
 
   /**
@@ -69,56 +75,59 @@ export class SupplierService {
    * When includeDeleted is true, uses the raw PrismaClient to bypass the soft-delete extension.
    */
   async findAll(query: QuerySupplierDto): Promise<PaginatedResult<Supplier>> {
-    // Build where clause (soft-delete auto-filtered by extension)
-    const where: Prisma.SupplierWhereInput = {};
+    const cacheKey = `supplier:list:${JSON.stringify(query)}`;
+    return this.cacheService.getOrSet(cacheKey, 300, async () => {
+      // Build where clause (soft-delete auto-filtered by extension)
+      const where: Prisma.SupplierWhereInput = {};
 
-    // Unified keyword search across companyName, contactName, phone
-    if (query.keyword) {
-      where.OR = [
-        { companyName: { contains: query.keyword } },
-        { contactName: { contains: query.keyword } },
-        { phone: { contains: query.keyword } },
-      ];
-    }
+      // Unified keyword search across companyName, contactName, phone
+      if (query.keyword) {
+        where.OR = [
+          { companyName: { contains: query.keyword } },
+          { contactName: { contains: query.keyword } },
+          { phone: { contains: query.keyword } },
+        ];
+      }
 
-    if (query.companyName) {
-      where.companyName = { contains: query.companyName };
-    }
+      if (query.companyName) {
+        where.companyName = { contains: query.companyName };
+      }
 
-    if (query.status) {
-      where.status = query.status;
-    }
+      if (query.status) {
+        where.status = query.status;
+      }
 
-    if (query.settleType) {
-      where.settleType = query.settleType;
-    }
+      if (query.settleType) {
+        where.settleType = query.settleType;
+      }
 
-    // Filter by fabric relationship (only suppliers that supply the given fabric)
-    if (query.fabricId) {
-      where.fabricSuppliers = {
-        some: { fabricId: query.fabricId },
-      };
-    }
+      // Filter by fabric relationship (only suppliers that supply the given fabric)
+      if (query.fabricId) {
+        where.fabricSuppliers = {
+          some: { fabricId: query.fabricId },
+        };
+      }
 
-    // Build pagination args
-    const paginationArgs = buildPaginationArgs(query);
+      // Build pagination args
+      const paginationArgs = buildPaginationArgs(query);
 
-    // Build sort order
-    const sortBy = query.sortBy ?? 'createdAt';
-    const sortOrder = query.sortOrder ?? 'desc';
-    const orderBy = { [sortBy]: sortOrder };
+      // Build sort order
+      const sortBy = query.sortBy ?? 'createdAt';
+      const sortOrder = query.sortOrder ?? 'desc';
+      const orderBy = { [sortBy]: sortOrder };
 
-    const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
-    const [items, total] = await Promise.all([
-      client.supplier.findMany({
-        where,
-        ...paginationArgs,
-        orderBy,
-      }),
-      client.supplier.count({ where }),
-    ]);
+      const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
+      const [items, total] = await Promise.all([
+        client.supplier.findMany({
+          where,
+          ...paginationArgs,
+          orderBy,
+        }),
+        client.supplier.count({ where }),
+      ]);
 
-    return buildPaginatedResult(items, total, query);
+      return buildPaginatedResult(items, total, query);
+    });
   }
 
   /**
@@ -131,7 +140,7 @@ export class SupplierService {
     id: number,
     updateSupplierDto: UpdateSupplierDto,
   ): Promise<Supplier> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Check if supplier exists (soft-deleted records auto-filtered)
       const existing = await tx.supplier.findFirst({
         where: { id },
@@ -160,6 +169,8 @@ export class SupplierService {
         data: updateSupplierDto,
       });
     });
+    await this.cacheService.invalidateByPrefix('supplier:');
+    return result;
   }
 
   /**
@@ -215,6 +226,7 @@ export class SupplierService {
 
     // Soft delete (extension intercepts delete and sets deletedAt)
     await this.prisma.supplier.delete({ where: { id } });
+    await this.cacheService.invalidateByPrefix('supplier:');
   }
 
   /**
@@ -241,9 +253,11 @@ export class SupplierService {
       id,
     );
 
-    return this.prisma.supplier.findFirst({
+    const restored = (await this.prisma.supplier.findFirst({
       where: { id },
-    }) as Promise<Supplier>;
+    })) as Supplier;
+    await this.cacheService.invalidateByPrefix('supplier:');
+    return restored;
   }
 
   /**

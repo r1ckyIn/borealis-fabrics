@@ -47,7 +47,7 @@ export class SystemController {
     description: 'Successfully retrieved all enums',
     type: EnumsResponseDto,
   })
-  getEnums(): EnumsResponseDto {
+  async getEnums(): Promise<EnumsResponseDto> {
     return this.systemService.getAllEnums();
   }
 }

@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../common/services/redis.service';
+import { CacheService } from '../common/services/cache.service';
 import { EnumsResponseDto, EnumDefinitionDto } from './dto/enums-response.dto';
 import { HealthResponseDto, ReadyResponseDto } from './dto/health-response.dto';
 import {
@@ -29,39 +30,43 @@ export class SystemService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly cacheService: CacheService,
   ) {}
   /**
    * Get all system enums with their values and Chinese labels.
+   * Cached in Redis for 24 hours since enum values rarely change.
    */
-  getAllEnums(): EnumsResponseDto {
-    return {
-      orderItemStatus: this.buildEnumDefinition(
-        OrderItemStatus,
-        ORDER_ITEM_STATUS_LABELS,
-      ),
-      customerPayStatus: this.buildEnumDefinition(
-        CustomerPayStatus,
-        CUSTOMER_PAY_STATUS_LABELS,
-      ),
-      paymentMethod: this.buildEnumDefinition(
-        PaymentMethod,
-        PAYMENT_METHOD_LABELS,
-      ),
-      quoteStatus: this.buildEnumDefinition(QuoteStatus, QUOTE_STATUS_LABELS),
-      supplierStatus: this.buildEnumDefinition(
-        SupplierStatus,
-        SUPPLIER_STATUS_LABELS,
-      ),
-      settleType: this.buildEnumDefinition(SettleType, SETTLE_TYPE_LABELS),
-      productCategory: this.buildEnumDefinition(
-        ProductCategory,
-        PRODUCT_CATEGORY_LABELS,
-      ),
-      productSubCategory: this.buildEnumDefinition(
-        ProductSubCategory,
-        PRODUCT_SUB_CATEGORY_LABELS,
-      ),
-    };
+  async getAllEnums(): Promise<EnumsResponseDto> {
+    return this.cacheService.getOrSet('system:enums', 86400, () =>
+      Promise.resolve({
+        orderItemStatus: this.buildEnumDefinition(
+          OrderItemStatus,
+          ORDER_ITEM_STATUS_LABELS,
+        ),
+        customerPayStatus: this.buildEnumDefinition(
+          CustomerPayStatus,
+          CUSTOMER_PAY_STATUS_LABELS,
+        ),
+        paymentMethod: this.buildEnumDefinition(
+          PaymentMethod,
+          PAYMENT_METHOD_LABELS,
+        ),
+        quoteStatus: this.buildEnumDefinition(QuoteStatus, QUOTE_STATUS_LABELS),
+        supplierStatus: this.buildEnumDefinition(
+          SupplierStatus,
+          SUPPLIER_STATUS_LABELS,
+        ),
+        settleType: this.buildEnumDefinition(SettleType, SETTLE_TYPE_LABELS),
+        productCategory: this.buildEnumDefinition(
+          ProductCategory,
+          PRODUCT_CATEGORY_LABELS,
+        ),
+        productSubCategory: this.buildEnumDefinition(
+          ProductSubCategory,
+          PRODUCT_SUB_CATEGORY_LABELS,
+        ),
+      }),
+    );
   }
 
   /**

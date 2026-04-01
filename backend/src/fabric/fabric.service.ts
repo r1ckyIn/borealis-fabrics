@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileService, UploadedFile } from '../file/file.service';
+import { CacheService } from '../common/services/cache.service';
 import {
   CreateFabricDto,
   QueryFabricDto,
@@ -47,6 +48,7 @@ export class FabricService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly fileService: FileService,
+    private readonly cacheService: CacheService,
   ) {}
 
   /**
@@ -99,7 +101,7 @@ export class FabricService {
    * Throws ConflictException if fabricCode already exists.
    */
   async create(createFabricDto: CreateFabricDto): Promise<Fabric> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Check for duplicate fabricCode
       const existing = await tx.fabric.findFirst({
         where: { fabricCode: createFabricDto.fabricCode },
@@ -115,6 +117,8 @@ export class FabricService {
         data: createFabricDto,
       });
     });
+    await this.cacheService.invalidateByPrefix('fabric:');
+    return result;
   }
 
   /**
@@ -141,49 +145,52 @@ export class FabricService {
    * When includeDeleted is true, uses raw PrismaClient to bypass the soft-delete extension.
    */
   async findAll(query: QueryFabricDto): Promise<PaginatedResult<Fabric>> {
-    // Build where clause (soft-delete auto-filtered by extension)
-    const where: Prisma.FabricWhereInput = {};
+    const cacheKey = `fabric:list:${JSON.stringify(query)}`;
+    return this.cacheService.getOrSet(cacheKey, 300, async () => {
+      // Build where clause (soft-delete auto-filtered by extension)
+      const where: Prisma.FabricWhereInput = {};
 
-    // Unified keyword search across fabricCode, name, and color
-    if (query.keyword) {
-      where.OR = [
-        { fabricCode: { contains: query.keyword } },
-        { name: { contains: query.keyword } },
-        { color: { contains: query.keyword } },
-      ];
-    }
+      // Unified keyword search across fabricCode, name, and color
+      if (query.keyword) {
+        where.OR = [
+          { fabricCode: { contains: query.keyword } },
+          { name: { contains: query.keyword } },
+          { color: { contains: query.keyword } },
+        ];
+      }
 
-    if (query.fabricCode) {
-      where.fabricCode = { contains: query.fabricCode };
-    }
+      if (query.fabricCode) {
+        where.fabricCode = { contains: query.fabricCode };
+      }
 
-    if (query.name) {
-      where.name = { contains: query.name };
-    }
+      if (query.name) {
+        where.name = { contains: query.name };
+      }
 
-    if (query.color) {
-      where.color = query.color;
-    }
+      if (query.color) {
+        where.color = query.color;
+      }
 
-    // Build pagination args
-    const paginationArgs = buildPaginationArgs(query);
+      // Build pagination args
+      const paginationArgs = buildPaginationArgs(query);
 
-    // Build sort order
-    const sortBy = query.sortBy ?? 'createdAt';
-    const sortOrder = query.sortOrder ?? 'desc';
-    const orderBy = { [sortBy]: sortOrder };
+      // Build sort order
+      const sortBy = query.sortBy ?? 'createdAt';
+      const sortOrder = query.sortOrder ?? 'desc';
+      const orderBy = { [sortBy]: sortOrder };
 
-    const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
-    const [items, total] = await Promise.all([
-      client.fabric.findMany({
-        where,
-        ...paginationArgs,
-        orderBy,
-      }),
-      client.fabric.count({ where }),
-    ]);
+      const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
+      const [items, total] = await Promise.all([
+        client.fabric.findMany({
+          where,
+          ...paginationArgs,
+          orderBy,
+        }),
+        client.fabric.count({ where }),
+      ]);
 
-    return buildPaginatedResult(items, total, query);
+      return buildPaginatedResult(items, total, query);
+    });
   }
 
   /**
@@ -193,7 +200,7 @@ export class FabricService {
    * Throws ConflictException if fabricCode conflicts with another fabric.
    */
   async update(id: number, updateFabricDto: UpdateFabricDto): Promise<Fabric> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Check if fabric exists (soft-deleted records auto-filtered)
       const existing = await tx.fabric.findFirst({
         where: { id },
@@ -222,6 +229,8 @@ export class FabricService {
         data: updateFabricDto,
       });
     });
+    await this.cacheService.invalidateByPrefix('fabric:');
+    return result;
   }
 
   /**
@@ -291,6 +300,7 @@ export class FabricService {
 
     // Soft delete (extension intercepts delete and sets deletedAt)
     await this.prisma.fabric.delete({ where: { id } });
+    await this.cacheService.invalidateByPrefix('fabric:');
   }
 
   /**
@@ -315,7 +325,11 @@ export class FabricService {
       id,
     );
 
-    return this.prisma.fabric.findFirst({ where: { id } }) as Promise<Fabric>;
+    const restored = (await this.prisma.fabric.findFirst({
+      where: { id },
+    })) as Fabric;
+    await this.cacheService.invalidateByPrefix('fabric:');
+    return restored;
   }
 
   /**
