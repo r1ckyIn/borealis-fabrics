@@ -7,6 +7,7 @@ import {
 import { Observable, tap } from 'rxjs';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
 import { Histogram } from 'prom-client';
+import type { Request, Response } from 'express';
 
 /**
  * Interceptor that records HTTP request duration as a Prometheus histogram.
@@ -21,16 +22,17 @@ export class MetricsInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const req = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest<Request>();
     const method: string = req.method;
     // Use route pattern, NOT actual URL (avoid cardinality explosion)
-    const route: string = req.route?.path ?? req.url;
+    const route: string =
+      (req.route as { path?: string } | undefined)?.path ?? req.url;
     const end = this.httpDuration.startTimer({ method, route });
 
     return next.handle().pipe(
       tap({
         next: () => {
-          const res = context.switchToHttp().getResponse();
+          const res = context.switchToHttp().getResponse<Response>();
           end({ status: String(res.statusCode) });
         },
         error: () => {

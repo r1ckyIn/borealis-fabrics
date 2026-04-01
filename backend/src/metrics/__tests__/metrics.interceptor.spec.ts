@@ -37,9 +37,7 @@ describe('MetricsInterceptor', () => {
     } as unknown as ExecutionContext;
   };
 
-  const createMockCallHandler = (
-    result: unknown = 'ok',
-  ): CallHandler => ({
+  const createMockCallHandler = (result: unknown = 'ok'): CallHandler => ({
     handle: () => of(result),
   });
 
@@ -48,7 +46,12 @@ describe('MetricsInterceptor', () => {
   });
 
   it('should record histogram with method, route, status labels on success', (done) => {
-    const ctx = createMockContext('GET', '/api/v1/fabrics', '/api/v1/fabrics', 200);
+    const ctx = createMockContext(
+      'GET',
+      '/api/v1/fabrics',
+      '/api/v1/fabrics',
+      200,
+    );
     const handler = createMockCallHandler();
 
     interceptor.intercept(ctx, handler).subscribe({
@@ -99,7 +102,12 @@ describe('MetricsInterceptor', () => {
   });
 
   it('should record status 500 on error path', (done) => {
-    const ctx = createMockContext('DELETE', '/api/v1/fabrics/:id', '/api/v1/fabrics/1', 200);
+    const ctx = createMockContext(
+      'DELETE',
+      '/api/v1/fabrics/:id',
+      '/api/v1/fabrics/1',
+      200,
+    );
     const handler = createErrorCallHandler(new Error('Internal error'));
 
     interceptor.intercept(ctx, handler).subscribe({

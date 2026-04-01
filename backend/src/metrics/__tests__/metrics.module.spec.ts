@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import type { App } from 'supertest/types';
 import { register } from 'prom-client';
 import { MetricsModule } from '../metrics.module';
 import { MetricsInterceptor } from '../metrics.interceptor';
@@ -25,13 +26,13 @@ describe('MetricsModule', () => {
     register.clear();
   });
 
-  it('should register MetricsModule and provide MetricsInterceptor', async () => {
+  it('should register MetricsModule and provide MetricsInterceptor', () => {
     const interceptor = app.get(MetricsInterceptor);
     expect(interceptor).toBeDefined();
   });
 
   it('should respond to GET /metrics with text content-type (not JSON-wrapped)', async () => {
-    const res = await request(app.getHttpServer()).get('/metrics');
+    const res = await request(app.getHttpServer() as App).get('/metrics');
     expect(res.status).toBe(200);
     // Prometheus text format uses text/plain or text/plain; version=0.0.4
     expect(res.headers['content-type']).toContain('text/');

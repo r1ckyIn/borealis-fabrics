@@ -1,5 +1,5 @@
 import { Module, ValidationPipe } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -55,20 +55,49 @@ import configuration from './config/configuration';
     // Sentry error tracking
     SentryModule.forRoot(),
 
-    // Logging (bound to CLS correlation ID)
+    // Logging (bound to CLS correlation ID, with optional Loki transport)
     LoggerModule.forRootAsync({
-      imports: [ClsModule],
-      inject: [ClsService],
-      useFactory: (cls: ClsService) => ({
-        pinoHttp: {
-          genReqId: () => cls.getId(),
-          transport:
-            process.env.NODE_ENV !== 'production'
-              ? { target: 'pino-pretty', options: { colorize: true } }
-              : undefined,
-          level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-        },
-      }),
+      imports: [ClsModule, ConfigModule],
+      inject: [ClsService, ConfigService],
+      useFactory: (cls: ClsService, config: ConfigService) => {
+        const isProduction = config.get<string>('NODE_ENV') === 'production';
+        const lokiHost = config.get<string>('LOKI_HOST');
+
+        const targets: Array<{
+          target: string;
+          options: Record<string, unknown>;
+          level?: string;
+        }> = [];
+
+        // Console transport in non-production
+        if (!isProduction) {
+          targets.push({
+            target: 'pino-pretty',
+            options: { colorize: true },
+          });
+        }
+
+        // Loki transport when configured
+        if (lokiHost) {
+          targets.push({
+            target: 'pino-loki',
+            options: {
+              host: lokiHost,
+              labels: { app: 'borealis-backend' },
+              batching: true,
+              interval: 5,
+            },
+          });
+        }
+
+        return {
+          pinoHttp: {
+            genReqId: () => cls.getId(),
+            level: isProduction ? 'info' : 'debug',
+            transport: targets.length > 0 ? { targets } : undefined,
+          },
+        };
+      },
     }),
 
     // Rate limiting
