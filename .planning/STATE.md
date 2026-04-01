@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Readiness
 status: executing
-stopped_at: Completed 13-06-PLAN.md (gap closure complete, all Phase 13 plans done)
-last_updated: "2026-03-31T11:17:33.308Z"
-last_activity: 2026-03-31
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-04-01T11:16:11Z"
+last_activity: 2026-04-01 -- Phase 15-01 monitoring infrastructure complete
 progress:
-  total_phases: 5
-  completed_phases: 2
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 6
+  completed_phases: 3
+  total_plans: 15
+  completed_plans: 13
   percent: 0
 ---
 
@@ -18,40 +18,29 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-28)
+See: .planning/PROJECT.md (updated 2026-04-01)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 13 — data-safety-audit
+**Current focus:** Phase 15 — observability-performance
 
 ## Current Position
 
-Phase: 14
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-03-31
+Phase: 15 (observability-performance) — EXECUTING
+Plan: 2 of 3
+Status: Executing Phase 15
+Last activity: 2026-04-01 -- Phase 15-01 monitoring infrastructure complete
 
-Progress: [██░░░░░░░░] 0% (0/12 plans)
+Progress: [██░░░░░░░░] 0% (1/3 phase 15 plans)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0 (v1.1)
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 10 (v1.1 Phase 12-15)
+- Average duration: ~15min/plan
+- Total execution time: --
 
 **v1.0 Reference:** 40 plans completed across 12 phases in 58 days
-
-## Milestone Tracking
-
-| Milestone | Phases | Status |
-|-----------|--------|--------|
-| v1.0: Supply Chain MVP | 1-11 | Complete (12/12 phases) — shipped 2026-03-28 |
-| v1.1: Production Readiness | 12-16 | In progress (0/5 phases) |
-| Phase 12 P01 | 14min | 2 tasks | 16 files |
-| Phase 12 P02 | 34m | 3 tasks | 47 files |
-| Phase 12 P03 | 14min | 2 tasks | 11 files |
-| Phase 13 P06 | 15min | 4 tasks | 24 files |
 
 ## Accumulated Context
 
@@ -60,39 +49,35 @@ Progress: [██░░░░░░░░] 0% (0/12 plans)
 Decisions logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [v1.1 research]: Soft delete via Prisma Client Extensions + deletedAt (not isActive reuse)
-- [v1.1 research]: Nginx handles compression (not Express middleware)
-- [v1.1 research]: Loki + Grafana for logs (not ELK — too heavy for lightweight server)
-- [v1.1 research]: node:22-slim for Docker (not Alpine — Prisma binary incompatibility)
-- [Phase 12]: Use nestjs-cls middleware mode with generateId for automatic correlation ID per request
-- [Phase 12]: Enhance existing AllExceptionsFilter with @SentryExceptionCaptured instead of adding SentryGlobalFilter
-- [Phase 12]: Sentry disabled gracefully when DSN env var is not set (enabled: !!DSN)
-- [Phase 12]: Soft delete via Prisma extension model delegate patching (not property delegation) to preserve PrismaClient type compatibility
-- [Phase 12]: Boss role via BOSS_WEWORK_IDS env var (MVP, no User.role field needed)
-- [Phase 12]: CLS operator pattern: services use cls.get<RequestUser>('user')?.id for operator audit trail (typed generic avoids any)
-- [Phase 12]: Inline validation pattern: mapApiErrorsToFormFields + form.setFields for 400/422 form errors (reusable across all form pages)
-- [Phase 13-02]: isAdmin computed server-side via standalone private helper (BOSS/DEV_WEWORK_IDS env vars, no guard injection into service)
-- [Phase 13-02]: ExportModule uses @Res() to bypass TransformInterceptor for binary xlsx responses
-- [Phase 13-04]: Order/Quote DTOs accept includeDeleted for API consistency but services ignore it (no soft delete)
-- [Phase 13-05]: Bypass soft-delete via raw PrismaClient ($raw), NOT empty object trick (broken with prisma-extension-soft-delete)
-- [Phase 13]: OptionalJwtAuthGuard as separate class for clean public endpoint auth (not extending JwtAuthGuard)
-- [Phase 13]: @ts-expect-error is the idiomatic fix for Node 22 Buffer<ArrayBufferLike> vs library Buffer type mismatch (as-casts fail)
+- [2026-04-01]: Codebase audit score 7.3/10 -- critical: @unique missing on business codes, high: 5 unguarded controllers
+- [2026-04-01]: Phase ordering: audit fixes -> observability -> Docker -> CI/CD -> deploy (research-validated)
+- [2026-04-01]: node:22-slim for Docker (not Alpine -- Prisma binary incompatibility)
+- [2026-04-01]: Loki + Grafana for logs (not ELK -- too heavy for lightweight server)
+- [Phase 13]: OptionalJwtAuthGuard as separate class for clean public endpoint auth
+- [Phase 14]: Payment totals derived from PaymentRecord aggregate SUM, not DTO values (race-safe)
+- [Phase 14]: Batch OrderItem creation via createMany replaces N+1 sequential inserts
+- [Phase 15-01]: Custom PrometheusController with @Res({passthrough:true}) bypasses TransformInterceptor for raw text metrics
+- [Phase 15-01]: Pino multi-transport targets array for pino-pretty (dev) + pino-loki (when LOKI_HOST set)
+- [Phase 15-01]: Slow query threshold configurable via SLOW_QUERY_THRESHOLD_MS env var (default 200ms)
 
 ### Pending Todos
 
-None yet.
+- Codebase audit report at docs/project/codebase_audit.md (generated 2026-04-01)
 
 ### Blockers/Concerns
 
-- [Phase 13]: Audit log RBAC — confirm WeChat Work role field name/values in JWT user object
-- [Phase 15]: Tencent Cloud Container Registry vs Docker Hub decision needed during planning
+- [Phase 14]: @unique migration needs duplicate data check FIRST -- data loss risk
+- [Phase 14]: Global JwtAuthGuard will affect 100+ tests -- use @Public() pattern
+- [Phase 15]: prom-client global registry causes Jest conflicts -- RESOLVED: use register.clear() in beforeEach
+- [Phase 16]: Prisma binary target must match Docker OS (node:22-slim = debian)
+- [Phase 17]: Tencent Cloud Container Registry vs Docker Hub decision needed
 
 ## Session Continuity
 
-Last session: 2026-03-31T11:06:50.201Z
-Stopped at: Completed 13-06-PLAN.md (gap closure complete, all Phase 13 plans done)
+Last session: 2026-04-01T11:16:11Z
+Stopped at: Completed 15-01-PLAN.md
 Resume file: None
 
 ---
 *State initialized: 2026-03-17*
-*Last updated: 2026-03-29 — Phase 13 Plan 05 gap closure complete, pending PR cycle*
+*Last updated: 2026-04-01 -- Phase 15-01 monitoring infrastructure complete*

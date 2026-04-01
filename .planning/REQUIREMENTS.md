@@ -35,8 +35,8 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 - [x] **OBS-03**: Sentry beforeSend filters out expected errors (400/401/403/404) and scrubs PII
 - [x] **OBS-04**: Request correlation ID via nestjs-cls, propagated through pino logs, Sentry context, and response headers
 - [x] **OBS-05**: React ErrorBoundary with graceful fallback UI and Sentry error reporting
-- [ ] **OBS-06**: Log aggregation via Loki + Grafana sidecar with pino-loki transport
-- [ ] **OBS-07**: Slow query logging via Prisma query event timing with threshold alerting
+- [x] **OBS-06**: Log aggregation via Loki + Grafana sidecar with pino-loki transport
+- [x] **OBS-07**: Slow query logging via Prisma query event timing with threshold alerting
 
 ### Performance
 
@@ -116,8 +116,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | OBS-03 | Phase 12 | Complete |
 | OBS-04 | Phase 12 | Complete |
 | OBS-05 | Phase 12 | Complete |
-| OBS-06 | Phase 14 | Pending |
-| OBS-07 | Phase 14 | Pending |
+| OBS-06 | Phase 14 | Complete |
+| OBS-07 | Phase 14 | Complete |
 | PERF-01 | Phase 14 | Pending |
 | PERF-02 | Phase 14 | Pending |
 | PERF-03 | Phase 14 | Pending |
