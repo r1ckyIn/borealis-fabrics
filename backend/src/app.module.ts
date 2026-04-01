@@ -30,6 +30,8 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { UserClsInterceptor } from './common/interceptors/user-cls.interceptor';
 import { HealthController } from './common/health/health.controller';
+import { MetricsModule } from './metrics/metrics.module';
+import { MetricsInterceptor } from './metrics/metrics.interceptor';
 import configuration from './config/configuration';
 
 @Module({
@@ -80,6 +82,9 @@ import configuration from './config/configuration';
     // Health checks
     TerminusModule,
 
+    // Prometheus metrics
+    MetricsModule,
+
     // Core modules
     PrismaModule,
     CommonModule,
@@ -105,6 +110,11 @@ import configuration from './config/configuration';
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
+    },
+    // HTTP request duration metrics (before TransformInterceptor to measure full lifecycle)
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: MetricsInterceptor,
     },
     // Global response transformer
     {
