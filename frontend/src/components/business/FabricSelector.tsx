@@ -8,6 +8,7 @@ import { Select, Spin, Empty } from 'antd';
 import type { SelectProps } from 'antd';
 
 import type { Fabric } from '@/types/entities.types';
+import { logger } from '@/utils/logger';
 
 export interface FabricSelectorProps {
   /** Selected fabric ID (controlled mode) */
@@ -70,7 +71,7 @@ export function FabricSelector({
           fabricMapRef.current.set(fabric.id, fabric);
         });
       } catch (error) {
-        console.error('Failed to fetch fabrics:', error);
+        logger.error('Failed to fetch fabrics', error);
         setOptions([]);
       } finally {
         setLoading(false);

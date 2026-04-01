@@ -25,6 +25,7 @@ import { getProductPricing, createProductPricing, updateProductPricing, deletePr
 import { getCustomers } from '@/api/customer.api';
 import { productKeys } from '@/hooks/queries/useProducts';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { ProductPricing, Customer, ApiError } from '@/types';
 
 export interface ProductPricingTabProps {
@@ -111,7 +112,7 @@ export function ProductPricingTab({ productId, defaultPrice }: ProductPricingTab
       }
       closeModal();
     } catch (error: unknown) {
-      console.error('Pricing modal error:', error);
+      logger.error('Pricing modal error', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [form, modal, createMutation, updateMutation, closeModal]);
@@ -122,7 +123,7 @@ export function ProductPricingTab({ productId, defaultPrice }: ProductPricingTab
         await deleteMutation.mutateAsync(pricingId);
         message.success('客户定价已删除');
       } catch (error: unknown) {
-        console.error('Delete pricing error:', error);
+        logger.error('Delete pricing error', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },

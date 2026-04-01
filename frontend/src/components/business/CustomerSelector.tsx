@@ -9,6 +9,7 @@ import type { SelectProps } from 'antd';
 
 import type { Customer } from '@/types/entities.types';
 import { CreditType } from '@/types/enums.types';
+import { logger } from '@/utils/logger';
 
 export interface CustomerSelectorProps {
   /** Selected customer ID (controlled mode) */
@@ -78,7 +79,7 @@ export function CustomerSelector({
           customerMapRef.current.set(customer.id, customer);
         });
       } catch (error) {
-        console.error('Failed to fetch customers:', error);
+        logger.error('Failed to fetch customers', error);
         setOptions([]);
       } finally {
         setLoading(false);

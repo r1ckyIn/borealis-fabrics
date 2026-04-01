@@ -16,6 +16,7 @@ import {
   useUpdateQuote,
 } from '@/hooks/queries/useQuotes';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import { QuoteStatus } from '@/types';
 import type { CreateQuoteData, UpdateQuoteData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
@@ -70,7 +71,7 @@ export default function QuoteFormPage(): React.ReactElement {
         }
         navigate('/quotes');
       } catch (error: unknown) {
-        console.error('Submit error:', error);
+        logger.error('Submit error', error);
         const apiError = error as ApiError;
 
         // For 400/422 validation errors, try to set inline field errors

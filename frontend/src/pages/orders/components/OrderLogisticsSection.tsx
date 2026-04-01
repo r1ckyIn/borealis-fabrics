@@ -21,6 +21,7 @@ import {
 } from '@/hooks/queries/useLogistics';
 import { formatDate } from '@/utils';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type {
   OrderItem,
   Logistics,
@@ -88,7 +89,7 @@ export function OrderLogisticsSection({
         }
         setLogisticsModal(LOGISTICS_MODAL_CLOSED);
       } catch (error) {
-        console.error('Logistics operation failed:', error);
+        logger.error('Logistics operation failed', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },
@@ -101,7 +102,7 @@ export function OrderLogisticsSection({
         await deleteMutation.mutateAsync(logisticsId);
         message.success('物流信息已删除');
       } catch (error) {
-        console.error('Delete logistics failed:', error);
+        logger.error('Delete logistics failed', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },

@@ -6,6 +6,8 @@ import {
   createRoutesFromChildren,
   matchRoutes,
 } from 'react-router-dom';
+import { onCLS, onINP, onLCP } from 'web-vitals';
+import type { Metric } from 'web-vitals';
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -48,3 +50,18 @@ Sentry.init({
     return event;
   },
 });
+
+// Report Web Vitals (LCP, INP, CLS) to Sentry as custom measurements.
+// The reactRouterV7BrowserTracingIntegration captures some vitals,
+// but explicit callbacks provide more reliable capture.
+function reportWebVital(metric: Metric): void {
+  Sentry.setMeasurement(
+    `web_vital.${metric.name}`,
+    metric.value,
+    metric.name === 'CLS' ? '' : 'millisecond'
+  );
+}
+
+onCLS(reportWebVital);
+onINP(reportWebVital);
+onLCP(reportWebVital);

@@ -17,6 +17,7 @@ import {
 import type { CreateCustomerData, UpdateCustomerData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
 import { getErrorMessage, parseFieldError } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -66,7 +67,7 @@ export default function CustomerFormPage(): React.ReactElement {
         }
         navigate('/customers');
       } catch (error) {
-        console.error('Submit error:', error);
+        logger.error('Submit error', error);
         const apiError = error as ApiError;
         // For validation errors, attempt inline field error display
         if ((apiError.code === 400 || apiError.code === 422) && apiError.message) {

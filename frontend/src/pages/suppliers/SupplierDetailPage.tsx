@@ -26,6 +26,7 @@ import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { useSupplier, useSupplierFabrics, useDeleteSupplier } from '@/hooks/queries/useSuppliers';
 import { getDeleteErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { ApiError } from '@/types';
 import { formatDate, SUPPLIER_STATUS_TAG_COLORS, parseEntityId } from '@/utils';
 import {
@@ -63,7 +64,7 @@ export default function SupplierDetailPage(): React.ReactElement {
       message.success('供应商已删除');
       navigate('/suppliers');
     } catch (error) {
-      console.error('Delete supplier failed:', error);
+      logger.error('Delete supplier failed', error);
       message.error(getDeleteErrorMessage(error as ApiError, '供应商'));
     }
   }, [supplierId, deleteMutation, navigate]);

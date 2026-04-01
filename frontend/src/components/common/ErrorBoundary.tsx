@@ -2,6 +2,7 @@ import { Component } from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
 import { Button, Result } from 'antd';
 import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
 
 export interface ErrorBoundaryProps {
   children: ReactNode;
@@ -32,7 +33,7 @@ export class ErrorBoundary extends Component<
     Sentry.captureException(error, {
       contexts: { react: { componentStack: errorInfo.componentStack ?? '' } },
     });
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logger.error('ErrorBoundary caught an error', error, { componentStack: errorInfo.componentStack ?? '' });
     this.props.onError?.(error, errorInfo);
   }
 

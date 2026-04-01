@@ -25,6 +25,7 @@ import { getProductSuppliers, addProductSupplier, updateProductSupplier, removeP
 import { getSuppliers } from '@/api/supplier.api';
 import { productKeys } from '@/hooks/queries/useProducts';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { ProductSupplier, Supplier, ApiError } from '@/types';
 
 export interface ProductSupplierTabProps {
@@ -116,7 +117,7 @@ export function ProductSupplierTab({ productId }: ProductSupplierTabProps): Reac
       }
       closeModal();
     } catch (error: unknown) {
-      console.error('Supplier modal error:', error);
+      logger.error('Supplier modal error', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [form, modal, addMutation, updateMutation, closeModal]);
@@ -127,7 +128,7 @@ export function ProductSupplierTab({ productId }: ProductSupplierTabProps): Reac
         await removeMutation.mutateAsync(supplierId);
         message.success('供应商已移除');
       } catch (error: unknown) {
-        console.error('Remove supplier error:', error);
+        logger.error('Remove supplier error', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },

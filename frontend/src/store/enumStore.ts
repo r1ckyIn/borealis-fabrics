@@ -9,6 +9,7 @@ import type { EnumDefinition, SystemEnumsResponse } from '@/types';
 import { create } from 'zustand';
 
 import { systemApi } from '@/api';
+import { logger } from '@/utils/logger';
 
 export interface EnumState {
   /** Cached enum definitions. */
@@ -60,7 +61,7 @@ async function performFetch(
     const message =
       error instanceof Error ? error.message : 'Failed to fetch enums';
     set({ isLoading: false, error: message });
-    console.error('Failed to fetch enums:', error);
+    logger.error('Failed to fetch enums', error);
   }
 }
 

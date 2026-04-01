@@ -31,6 +31,7 @@ import { StatusTag } from '@/components/common/StatusTag';
 import { AmountDisplay } from '@/components/common/AmountDisplay';
 import { ConfirmModal } from '@/components/common/ConfirmModal';
 import { getDeleteErrorMessage, getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import {
   useQuote,
   useDeleteQuote,
@@ -99,7 +100,7 @@ export default function QuoteDetailPage(): React.ReactElement {
       message.success('报价已删除');
       navigate('/quotes');
     } catch (error: unknown) {
-      console.error('Delete error:', error);
+      logger.error('Delete error', error);
       message.error(getDeleteErrorMessage(error as ApiError, '报价单'));
     }
   }, [quoteId, deleteMutation, navigate]);
@@ -117,7 +118,7 @@ export default function QuoteDetailPage(): React.ReactElement {
       setConvertModalOpen(false);
       navigate(`/orders/${order.id}`);
     } catch (error: unknown) {
-      console.error('Convert error:', error);
+      logger.error('Convert error', error);
       const apiError = error as ApiError;
       if (apiError.code === 409) {
         message.warning('该报价正在被其他请求转换，请稍后重试');

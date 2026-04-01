@@ -16,6 +16,7 @@ import { PageContainer } from '@/components/layout/PageContainer';
 import { ImportResultModal } from '@/components/business';
 import { importApi } from '@/api/import.api';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { ApiError, ImportResult } from '@/types';
 
 const { Dragger } = Upload;
@@ -83,7 +84,7 @@ export default function ImportPage() {
         message.success('模板下载成功');
       }
     } catch (error) {
-      console.error('Template download failed:', error);
+      logger.error('Template download failed', error);
       message.error(getErrorMessage(error as ApiError));
     } finally {
       setDownloadingTemplate(false);
@@ -119,7 +120,7 @@ export default function ImportPage() {
           );
         }
       } catch (error) {
-        console.error('Import failed:', error);
+        logger.error('Import failed', error);
         message.error(getErrorMessage(error as ApiError));
       } finally {
         setUploading(false);

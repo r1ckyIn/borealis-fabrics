@@ -26,6 +26,7 @@ import { CATEGORY_TAG_COLORS, CATEGORY_TAG_LABELS } from '@/utils/product-consta
 import { PRODUCT_SUB_CATEGORY_LABELS } from '@/types';
 import { parseEntityId } from '@/utils';
 import { getDeleteErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { ApiError } from '@/types';
 
 import { ProductBasicInfo } from './components/ProductBasicInfo';
@@ -70,7 +71,7 @@ export default function ProductDetailPage(): React.ReactElement {
       message.success('产品已删除');
       goToList();
     } catch (error) {
-      console.error('Delete product failed:', error);
+      logger.error('Delete product failed', error);
       message.error(getDeleteErrorMessage(error as ApiError, '产品'));
     }
   }, [productId, deleteMutation, goToList]);

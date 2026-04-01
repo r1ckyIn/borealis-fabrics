@@ -17,6 +17,7 @@ import {
 import type { CreateOrderData, UpdateOrderData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
 import { getErrorMessage, mapApiErrorsToFormFields } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 
 /** Centered loading spinner style. */
 const LOADING_STYLE = { textAlign: 'center', padding: '50px 0' } as const;
@@ -63,7 +64,7 @@ export default function OrderFormPage(): React.ReactElement {
         }
         navigate('/orders');
       } catch (error) {
-        console.error('Submit error:', error);
+        logger.error('Submit error', error);
         const apiError = error as ApiError;
         if (apiError.code === 400 || apiError.code === 422) {
           const fieldErrors = mapApiErrorsToFormFields(apiError);

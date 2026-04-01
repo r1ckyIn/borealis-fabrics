@@ -16,6 +16,7 @@ import {
   usePaymentVouchers,
 } from '@/hooks/queries/useOrders';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import {
   CustomerPayStatus,
   PaymentMethod,
@@ -141,7 +142,7 @@ export function CustomerPaymentTab({
       message.success('客户付款信息已更新');
       setModalOpen(false);
     } catch (error) {
-      console.error('Update customer payment failed:', error);
+      logger.error('Update customer payment failed', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, order.totalAmount, form, mutation, voucherFileIds]);
@@ -260,7 +261,7 @@ export function SupplierPaymentsTab({
       message.success('供应商付款信息已更新');
       setModalState({ open: false, payment: null });
     } catch (error) {
-      console.error('Update supplier payment failed:', error);
+      logger.error('Update supplier payment failed', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, modalState, form, mutation, voucherFileIds]);
