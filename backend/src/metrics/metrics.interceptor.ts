@@ -3,6 +3,7 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  HttpException,
 } from '@nestjs/common';
 import { Observable, tap } from 'rxjs';
 import { InjectMetric } from '@willsoto/nestjs-prometheus';
@@ -35,8 +36,10 @@ export class MetricsInterceptor implements NestInterceptor {
           const res = context.switchToHttp().getResponse<Response>();
           end({ status: String(res.statusCode) });
         },
-        error: () => {
-          end({ status: '500' });
+        error: (err: unknown) => {
+          const status =
+            err instanceof HttpException ? String(err.getStatus()) : '500';
+          end({ status });
         },
       }),
     );
