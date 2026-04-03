@@ -143,7 +143,7 @@ import configuration from './config/configuration';
     // HTTP request duration metrics (before TransformInterceptor to measure full lifecycle)
     {
       provide: APP_INTERCEPTOR,
-      useClass: MetricsInterceptor,
+      useExisting: MetricsInterceptor,
     },
     // Global response transformer
     {
