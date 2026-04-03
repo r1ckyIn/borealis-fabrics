@@ -82,7 +82,7 @@ export class CustomerService {
     };
 
     const result = await this.prisma.customer.create({ data });
-    await this.cacheService.invalidateByPrefix('customer:');
+    void this.cacheService.invalidateByPrefix('customer:');
     return result;
   }
 
@@ -200,7 +200,7 @@ export class CustomerService {
         where: { id },
         data,
       });
-      await this.cacheService.invalidateByPrefix('customer:');
+      void this.cacheService.invalidateByPrefix('customer:');
       return result;
     } catch (error) {
       // P2025: Record not found (either doesn't exist or soft-deleted)
@@ -255,7 +255,7 @@ export class CustomerService {
 
     // Soft delete (extension intercepts delete and sets deletedAt)
     await this.prisma.customer.delete({ where: { id } });
-    await this.cacheService.invalidateByPrefix('customer:');
+    void this.cacheService.invalidateByPrefix('customer:');
   }
 
   /**
@@ -283,7 +283,7 @@ export class CustomerService {
     const restored = (await this.prisma.customer.findFirst({
       where: { id },
     })) as Customer;
-    await this.cacheService.invalidateByPrefix('customer:');
+    void this.cacheService.invalidateByPrefix('customer:');
     return restored;
   }
 

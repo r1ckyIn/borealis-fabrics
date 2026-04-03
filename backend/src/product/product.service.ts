@@ -116,7 +116,7 @@ export class ProductService {
         },
       });
     });
-    await this.cacheService.invalidateByPrefix('product:');
+    void this.cacheService.invalidateByPrefix('product:');
     return result;
   }
 
@@ -227,7 +227,7 @@ export class ProductService {
         },
       });
     });
-    await this.cacheService.invalidateByPrefix('product:');
+    void this.cacheService.invalidateByPrefix('product:');
     return result;
   }
 
@@ -283,7 +283,7 @@ export class ProductService {
 
     // Soft delete (extension intercepts delete and sets deletedAt)
     await this.prisma.product.delete({ where: { id } });
-    await this.cacheService.invalidateByPrefix('product:');
+    void this.cacheService.invalidateByPrefix('product:');
   }
 
   /**
@@ -311,7 +311,7 @@ export class ProductService {
     const restored = (await this.prisma.product.findFirst({
       where: { id },
     })) as Product;
-    await this.cacheService.invalidateByPrefix('product:');
+    void this.cacheService.invalidateByPrefix('product:');
     return restored;
   }
 

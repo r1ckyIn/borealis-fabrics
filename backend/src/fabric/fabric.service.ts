@@ -117,7 +117,7 @@ export class FabricService {
         data: createFabricDto,
       });
     });
-    await this.cacheService.invalidateByPrefix('fabric:');
+    void this.cacheService.invalidateByPrefix('fabric:');
     return result;
   }
 
@@ -229,7 +229,7 @@ export class FabricService {
         data: updateFabricDto,
       });
     });
-    await this.cacheService.invalidateByPrefix('fabric:');
+    void this.cacheService.invalidateByPrefix('fabric:');
     return result;
   }
 
@@ -300,7 +300,7 @@ export class FabricService {
 
     // Soft delete (extension intercepts delete and sets deletedAt)
     await this.prisma.fabric.delete({ where: { id } });
-    await this.cacheService.invalidateByPrefix('fabric:');
+    void this.cacheService.invalidateByPrefix('fabric:');
   }
 
   /**
@@ -328,7 +328,7 @@ export class FabricService {
     const restored = (await this.prisma.fabric.findFirst({
       where: { id },
     })) as Fabric;
-    await this.cacheService.invalidateByPrefix('fabric:');
+    void this.cacheService.invalidateByPrefix('fabric:');
     return restored;
   }
 

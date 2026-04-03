@@ -30,32 +30,19 @@ export class CacheService {
   ): Promise<T> {
     const cacheKey = CACHE_PREFIX + key;
 
-    try {
-      const cached = await this.redis.get(cacheKey);
-      if (cached !== null) {
-        try {
-          return JSON.parse(cached) as T;
-        } catch {
-          this.logger.warn(
-            `Cache parse error for key ${cacheKey}, falling through to factory`,
-          );
-        }
+    const cached = await this.redis.get(cacheKey);
+    if (cached !== null) {
+      try {
+        return JSON.parse(cached) as T;
+      } catch {
+        this.logger.warn(
+          `Cache parse error for key ${cacheKey}, falling through to factory`,
+        );
       }
-    } catch (error) {
-      this.logger.warn(
-        `Cache read error for key ${cacheKey}: ${(error as Error).message}`,
-      );
     }
 
     const value = await factory();
-
-    try {
-      await this.redis.setex(cacheKey, ttlSeconds, JSON.stringify(value));
-    } catch (error) {
-      this.logger.warn(
-        `Cache write error for key ${cacheKey}: ${(error as Error).message}`,
-      );
-    }
+    await this.redis.setex(cacheKey, ttlSeconds, JSON.stringify(value));
 
     return value;
   }

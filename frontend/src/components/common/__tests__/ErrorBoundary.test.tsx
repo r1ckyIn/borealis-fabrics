@@ -6,12 +6,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from '../ErrorBoundary';
 
-// Mock Sentry
-vi.mock('@sentry/react', () => ({
-  captureException: vi.fn(),
+// Mock logger
+vi.mock('@/utils/logger', () => ({
+  logger: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+  },
 }));
 
-import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
 
 // Component that throws an error
 function ThrowError({ shouldThrow }: { shouldThrow: boolean }): React.ReactElement {
@@ -25,7 +29,7 @@ function ThrowError({ shouldThrow }: { shouldThrow: boolean }): React.ReactEleme
 const originalError = console.error;
 beforeEach(() => {
   console.error = vi.fn();
-  vi.mocked(Sentry.captureException).mockClear();
+  vi.mocked(logger.error).mockClear();
 });
 
 afterEach(() => {
@@ -107,20 +111,19 @@ describe('ErrorBoundary', () => {
       expect(screen.queryByText('页面发生了一些错误，请稍后重试')).not.toBeInTheDocument();
     });
 
-    it('calls Sentry.captureException when error is caught', () => {
+    it('calls logger.error when error is caught', () => {
       render(
         <ErrorBoundary>
           <ThrowError shouldThrow />
         </ErrorBoundary>
       );
 
-      expect(Sentry.captureException).toHaveBeenCalledTimes(1);
-      expect(Sentry.captureException).toHaveBeenCalledWith(
+      expect(logger.error).toHaveBeenCalledTimes(1);
+      expect(logger.error).toHaveBeenCalledWith(
+        'ErrorBoundary caught an error',
         expect.objectContaining({ message: 'Test error message' }),
         expect.objectContaining({
-          contexts: {
-            react: { componentStack: expect.any(String) },
-          },
+          componentStack: expect.any(String),
         })
       );
     });

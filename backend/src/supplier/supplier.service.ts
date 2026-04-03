@@ -49,7 +49,7 @@ export class SupplierService {
         data: createSupplierDto,
       });
     });
-    await this.cacheService.invalidateByPrefix('supplier:');
+    void this.cacheService.invalidateByPrefix('supplier:');
     return result;
   }
 
@@ -169,7 +169,7 @@ export class SupplierService {
         data: updateSupplierDto,
       });
     });
-    await this.cacheService.invalidateByPrefix('supplier:');
+    void this.cacheService.invalidateByPrefix('supplier:');
     return result;
   }
 
@@ -226,7 +226,7 @@ export class SupplierService {
 
     // Soft delete (extension intercepts delete and sets deletedAt)
     await this.prisma.supplier.delete({ where: { id } });
-    await this.cacheService.invalidateByPrefix('supplier:');
+    void this.cacheService.invalidateByPrefix('supplier:');
   }
 
   /**
@@ -256,7 +256,7 @@ export class SupplierService {
     const restored = (await this.prisma.supplier.findFirst({
       where: { id },
     })) as Supplier;
-    await this.cacheService.invalidateByPrefix('supplier:');
+    void this.cacheService.invalidateByPrefix('supplier:');
     return restored;
   }
 
