@@ -86,12 +86,13 @@ Plans:
   3. Reference data endpoints (fabric list, product list, supplier dropdown, customer dropdown) return cached results from Redis; cache invalidates on CUD operations
   4. k6 load test scripts exist for critical API endpoints with documented baseline benchmarks
   5. Frontend reports Web Vitals (LCP, FID/INP, CLS) to console or Sentry; dependency security scanning runs in CI pipeline
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 14-01: Log aggregation (Loki + Grafana) + slow query logging
-- [ ] 14-02: Redis caching (cache-aside) + cache invalidation
-- [x] 14-03: k6 load testing + Web Vitals + structured logging (completed 2026-04-01, executed as 15-03)
+- [x] 15-01: Log aggregation (Loki + Grafana) + slow query logging
+- [x] 15-02: Redis caching (cache-aside) + cache invalidation
+- [x] 15-03: k6 load testing + Web Vitals + structured logging
+- [ ] 15-04-PLAN.md — Gap closure: CI dependency security scanning (audit-ci + Dependabot)
 
 ### Phase 15: Containerization & Quality
 **Goal**: Application runs in production-grade Docker containers with Nginx, automated CI/CD, and frontend quality baselines
@@ -135,10 +136,10 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 12. Foundation & Observability Quick Wins | v1.1 | 3/3 | Complete    | 2026-03-28 |
 | 13. Data Safety & Audit | v1.1 | 6/6 | Complete    | 2026-03-31 |
-| 14. Observability & Performance | v1.1 | 1/3 | In progress | - |
+| 14. Observability & Performance | v1.1 | 3/4 | In progress | - |
 | 15. Containerization & Quality | v1.1 | 0/3 | Not started | - |
 | 16. Production Deployment | v1.1 | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-03-29 (Phase 13 Plan 04 Tasks 1-2 complete)*
+*Last updated: 2026-04-03 (Phase 14 gap closure plan 15-04 added for QUAL-01)*
