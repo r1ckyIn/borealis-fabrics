@@ -18,6 +18,7 @@ import {
 } from '@/hooks/queries/useCustomers';
 import { fabricApi } from '@/api';
 import { getDeleteErrorMessage, getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { ApiError, CustomerPricing, Fabric } from '@/types';
 
 /** Pricing form values type. */
@@ -142,7 +143,7 @@ export function useCustomerDetail(customerId: number | undefined) {
       message.success('客户已删除');
       navigate('/customers');
     } catch (error) {
-      console.error('Delete customer failed:', error);
+      logger.error('Delete customer failed', error);
       message.error(getDeleteErrorMessage(error as ApiError, '客户'));
     }
   }, [customerId, deleteCustomerMutation, navigate]);
@@ -212,7 +213,7 @@ export function useCustomerDetail(customerId: number | undefined) {
       }
       closePricingModal();
     } catch (error) {
-      console.error('Pricing submit error:', error);
+      logger.error('Pricing submit error', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [
@@ -249,7 +250,7 @@ export function useCustomerDetail(customerId: number | undefined) {
       message.success('特殊定价已删除');
       closeDeleteModal();
     } catch (error) {
-      console.error('Delete pricing error:', error);
+      logger.error('Delete pricing error', error);
       message.error(getDeleteErrorMessage(error as ApiError, '定价'));
     }
   }, [customerId, pricingToDelete, deletePricingMutation, closeDeleteModal]);

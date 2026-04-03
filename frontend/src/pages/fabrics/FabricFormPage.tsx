@@ -15,6 +15,7 @@ import {
   useUpdateFabric,
 } from '@/hooks/queries/useFabrics';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { CreateFabricData, UpdateFabricData, ApiError } from '@/types';
 import { parseEntityId } from '@/utils';
 
@@ -64,7 +65,7 @@ export default function FabricFormPage(): React.ReactElement {
         }
         navigate('/products/fabrics');
       } catch (error: unknown) {
-        console.error('Submit error:', error);
+        logger.error('Submit error', error);
         const apiError = error as ApiError;
 
         // For 400/422 validation errors, try to set inline field errors

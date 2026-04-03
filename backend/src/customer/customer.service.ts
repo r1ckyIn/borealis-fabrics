@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../common/services/cache.service';
 import {
   CreateCustomerDto,
   CreateCustomerPricingDto,
@@ -27,7 +28,10 @@ type TransactionClient = Parameters<
 
 @Injectable()
 export class CustomerService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cacheService: CacheService,
+  ) {}
 
   /**
    * Validate customer exists within a transaction (soft-deleted records auto-filtered).
@@ -77,7 +81,9 @@ export class CustomerService {
         | undefined,
     };
 
-    return this.prisma.customer.create({ data });
+    const result = await this.prisma.customer.create({ data });
+    void this.cacheService.invalidateByPrefix('customer:');
+    return result;
   }
 
   /**
@@ -126,45 +132,48 @@ export class CustomerService {
    * When includeDeleted is true, uses raw PrismaClient to bypass the soft-delete extension.
    */
   async findAll(query: QueryCustomerDto): Promise<PaginatedResult<Customer>> {
-    // Build where clause (soft-delete auto-filtered by extension)
-    const where: Prisma.CustomerWhereInput = {};
+    const cacheKey = `customer:list:${JSON.stringify(query)}`;
+    return this.cacheService.getOrSet(cacheKey, 300, async () => {
+      // Build where clause (soft-delete auto-filtered by extension)
+      const where: Prisma.CustomerWhereInput = {};
 
-    // Unified keyword search across companyName, contactName, phone
-    if (query.keyword) {
-      where.OR = [
-        { companyName: { contains: query.keyword } },
-        { contactName: { contains: query.keyword } },
-        { phone: { contains: query.keyword } },
-      ];
-    }
+      // Unified keyword search across companyName, contactName, phone
+      if (query.keyword) {
+        where.OR = [
+          { companyName: { contains: query.keyword } },
+          { contactName: { contains: query.keyword } },
+          { phone: { contains: query.keyword } },
+        ];
+      }
 
-    if (query.companyName) {
-      where.companyName = { contains: query.companyName };
-    }
+      if (query.companyName) {
+        where.companyName = { contains: query.companyName };
+      }
 
-    if (query.creditType) {
-      where.creditType = query.creditType;
-    }
+      if (query.creditType) {
+        where.creditType = query.creditType;
+      }
 
-    // Build pagination args
-    const paginationArgs = buildPaginationArgs(query);
+      // Build pagination args
+      const paginationArgs = buildPaginationArgs(query);
 
-    // Build sort order
-    const sortBy = query.sortBy ?? 'createdAt';
-    const sortOrder = query.sortOrder ?? 'desc';
-    const orderBy = { [sortBy]: sortOrder };
+      // Build sort order
+      const sortBy = query.sortBy ?? 'createdAt';
+      const sortOrder = query.sortOrder ?? 'desc';
+      const orderBy = { [sortBy]: sortOrder };
 
-    const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
-    const [items, total] = await Promise.all([
-      client.customer.findMany({
-        where,
-        ...paginationArgs,
-        orderBy,
-      }),
-      client.customer.count({ where }),
-    ]);
+      const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
+      const [items, total] = await Promise.all([
+        client.customer.findMany({
+          where,
+          ...paginationArgs,
+          orderBy,
+        }),
+        client.customer.count({ where }),
+      ]);
 
-    return buildPaginatedResult(items, total, query);
+      return buildPaginatedResult(items, total, query);
+    });
   }
 
   /**
@@ -187,10 +196,12 @@ export class CustomerService {
 
     try {
       // Update customer (soft-deleted records auto-filtered by extension)
-      return await this.prisma.customer.update({
+      const result = await this.prisma.customer.update({
         where: { id },
         data,
       });
+      void this.cacheService.invalidateByPrefix('customer:');
+      return result;
     } catch (error) {
       // P2025: Record not found (either doesn't exist or soft-deleted)
       if (
@@ -244,6 +255,7 @@ export class CustomerService {
 
     // Soft delete (extension intercepts delete and sets deletedAt)
     await this.prisma.customer.delete({ where: { id } });
+    void this.cacheService.invalidateByPrefix('customer:');
   }
 
   /**
@@ -268,9 +280,11 @@ export class CustomerService {
       id,
     );
 
-    return this.prisma.customer.findFirst({
+    const restored = (await this.prisma.customer.findFirst({
       where: { id },
-    }) as Promise<Customer>;
+    })) as Customer;
+    void this.cacheService.invalidateByPrefix('customer:');
+    return restored;
   }
 
   /**

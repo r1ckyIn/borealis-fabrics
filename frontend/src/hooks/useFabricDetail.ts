@@ -26,6 +26,7 @@ import {
 import { getSuppliers } from '@/api/supplier.api';
 import { getCustomers } from '@/api/customer.api';
 import { getErrorMessage, getDeleteErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { ApiError } from '@/types';
 import type {
   Fabric,
@@ -187,7 +188,7 @@ export function useFabricDetail(
       message.success('面料已删除');
       navigate('/products/fabrics');
     } catch (error) {
-      console.error('Delete fabric failed:', error);
+      logger.error('Delete fabric failed', error);
       message.error(getDeleteErrorMessage(error as ApiError, '面料'));
     }
   }, [fabricId, deleteFabricMutation, navigate]);
@@ -242,7 +243,7 @@ export function useFabricDetail(
       }
       closeSupplierModal();
     } catch (error: unknown) {
-      console.error('Supplier modal error:', error);
+      logger.error('Supplier modal error', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [fabricId, supplierForm, supplierModal, addSupplierMutation, updateSupplierMutation, closeSupplierModal]);
@@ -254,7 +255,7 @@ export function useFabricDetail(
         await removeSupplierMutation.mutateAsync({ fabricId, supplierId });
         message.success('供应商已移除');
       } catch (error: unknown) {
-        console.error('Remove supplier error:', error);
+        logger.error('Remove supplier error', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },
@@ -308,7 +309,7 @@ export function useFabricDetail(
       }
       closePricingModal();
     } catch (error: unknown) {
-      console.error('Pricing modal error:', error);
+      logger.error('Pricing modal error', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [fabricId, pricingForm, pricingModal, createPricingMutation, updatePricingMutation, closePricingModal]);
@@ -320,7 +321,7 @@ export function useFabricDetail(
         await deletePricingMutation.mutateAsync({ fabricId, pricingId });
         message.success('客户定价已删除');
       } catch (error: unknown) {
-        console.error('Delete pricing error:', error);
+        logger.error('Delete pricing error', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },
@@ -339,7 +340,7 @@ export function useFabricDetail(
         message.success('图片上传成功');
         return false; // Prevent default upload behavior
       } catch (error: unknown) {
-        console.error('Upload error:', error);
+        logger.error('Upload error', error);
         message.error(getErrorMessage(error as ApiError));
         return false;
       }
@@ -354,7 +355,7 @@ export function useFabricDetail(
         await deleteImageMutation.mutateAsync({ fabricId, imageId });
         message.success('图片已删除');
       } catch (error: unknown) {
-        console.error('Delete image error:', error);
+        logger.error('Delete image error', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },

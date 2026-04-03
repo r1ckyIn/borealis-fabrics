@@ -10,6 +10,7 @@ import {
 import { FabricService } from './fabric.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { FileService, UploadedFile } from '../file/file.service';
+import { CacheService } from '../common/services/cache.service';
 import {
   CreateFabricDto,
   QueryFabricDto,
@@ -142,6 +143,17 @@ describe('FabricService', () => {
       ),
   };
 
+  // Mock CacheService: passthrough to factory (no actual caching in tests)
+  const mockCacheService = {
+    getOrSet: jest
+      .fn()
+      .mockImplementation(
+        async (_key: string, _ttl: number, factory: () => Promise<unknown>) =>
+          factory(),
+      ),
+    invalidateByPrefix: jest.fn().mockResolvedValue(undefined),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -153,6 +165,10 @@ describe('FabricService', () => {
         {
           provide: FileService,
           useValue: mockFileService,
+        },
+        {
+          provide: CacheService,
+          useValue: mockCacheService,
         },
       ],
     }).compile();

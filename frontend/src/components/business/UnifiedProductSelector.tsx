@@ -17,6 +17,7 @@ import {
   UNIT_BY_SUB_CATEGORY,
   UNIT_LABEL_FABRIC,
 } from '@/utils/product-constants';
+import { logger } from '@/utils/logger';
 
 /** Result from unified search across fabrics and products. */
 export interface UnifiedSearchResult {
@@ -192,7 +193,7 @@ export function UnifiedProductSelector({
         results.map((r) => [r.compositeValue, r])
       );
     } catch (error) {
-      console.error('Failed to fetch unified search results:', error);
+      logger.error('Failed to fetch unified search results', error);
       setOptions([]);
     } finally {
       setLoading(false);

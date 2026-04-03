@@ -27,6 +27,7 @@ import { CATEGORY_ROUTE_MAP } from '@/utils/product-constants';
 import { PRODUCT_SUB_CATEGORY_LABELS, ProductCategory } from '@/types';
 import { parseEntityId } from '@/utils';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import type { CreateProductData, UpdateProductData, ApiError, Product } from '@/types';
 
 const { TextArea } = Input;
@@ -155,7 +156,7 @@ export default function ProductFormPage(): React.ReactElement {
           navigate(`/products/${categoryParam}`);
         }
       } catch (error: unknown) {
-        console.error('Submit error:', error);
+        logger.error('Submit error', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },

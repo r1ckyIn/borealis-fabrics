@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SystemService } from './system.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../common/services/redis.service';
+import { CacheService } from '../common/services/cache.service';
 import {
   OrderItemStatus,
   CustomerPayStatus,
@@ -25,11 +26,23 @@ describe('SystemService', () => {
       ping: jest.fn(),
     };
 
+    // CacheService mock: passthrough to factory (no actual caching in tests)
+    const cacheService = {
+      getOrSet: jest
+        .fn()
+        .mockImplementation(
+          async (_key: string, _ttl: number, factory: () => Promise<unknown>) =>
+            factory(),
+        ),
+      invalidateByPrefix: jest.fn().mockResolvedValue(undefined),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SystemService,
         { provide: PrismaService, useValue: prismaService },
         { provide: RedisService, useValue: redisService },
+        { provide: CacheService, useValue: cacheService },
       ],
     }).compile();
 
@@ -41,8 +54,8 @@ describe('SystemService', () => {
   });
 
   describe('getAllEnums', () => {
-    it('should return all enums', () => {
-      const result = service.getAllEnums();
+    it('should return all enums', async () => {
+      const result = await service.getAllEnums();
 
       expect(result).toBeDefined();
       expect(result.orderItemStatus).toBeDefined();
@@ -53,8 +66,8 @@ describe('SystemService', () => {
       expect(result.settleType).toBeDefined();
     });
 
-    it('should return correct orderItemStatus values', () => {
-      const result = service.getAllEnums();
+    it('should return correct orderItemStatus values', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.orderItemStatus.values).toEqual(
         Object.values(OrderItemStatus),
@@ -70,8 +83,8 @@ describe('SystemService', () => {
       expect(result.orderItemStatus.values).toContain('CANCELLED');
     });
 
-    it('should return correct orderItemStatus labels', () => {
-      const result = service.getAllEnums();
+    it('should return correct orderItemStatus labels', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.orderItemStatus.labels).toMatchObject({
         INQUIRY: '询价中',
@@ -86,8 +99,8 @@ describe('SystemService', () => {
       });
     });
 
-    it('should return correct customerPayStatus values', () => {
-      const result = service.getAllEnums();
+    it('should return correct customerPayStatus values', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.customerPayStatus.values).toEqual(
         Object.values(CustomerPayStatus),
@@ -97,8 +110,8 @@ describe('SystemService', () => {
       expect(result.customerPayStatus.values).toContain('paid');
     });
 
-    it('should return correct customerPayStatus labels', () => {
-      const result = service.getAllEnums();
+    it('should return correct customerPayStatus labels', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.customerPayStatus.labels).toMatchObject({
         unpaid: '未付款',
@@ -107,8 +120,8 @@ describe('SystemService', () => {
       });
     });
 
-    it('should return correct paymentMethod values', () => {
-      const result = service.getAllEnums();
+    it('should return correct paymentMethod values', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.paymentMethod.values).toEqual(Object.values(PaymentMethod));
       expect(result.paymentMethod.values).toContain('wechat');
@@ -117,8 +130,8 @@ describe('SystemService', () => {
       expect(result.paymentMethod.values).toContain('credit');
     });
 
-    it('should return correct paymentMethod labels', () => {
-      const result = service.getAllEnums();
+    it('should return correct paymentMethod labels', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.paymentMethod.labels).toMatchObject({
         wechat: '微信支付',
@@ -128,8 +141,8 @@ describe('SystemService', () => {
       });
     });
 
-    it('should return correct quoteStatus values', () => {
-      const result = service.getAllEnums();
+    it('should return correct quoteStatus values', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.quoteStatus.values).toEqual(Object.values(QuoteStatus));
       expect(result.quoteStatus.values).toContain('active');
@@ -137,8 +150,8 @@ describe('SystemService', () => {
       expect(result.quoteStatus.values).toContain('converted');
     });
 
-    it('should return correct quoteStatus labels', () => {
-      const result = service.getAllEnums();
+    it('should return correct quoteStatus labels', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.quoteStatus.labels).toMatchObject({
         active: '有效',
@@ -147,8 +160,8 @@ describe('SystemService', () => {
       });
     });
 
-    it('should return correct supplierStatus values', () => {
-      const result = service.getAllEnums();
+    it('should return correct supplierStatus values', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.supplierStatus.values).toEqual(
         Object.values(SupplierStatus),
@@ -158,8 +171,8 @@ describe('SystemService', () => {
       expect(result.supplierStatus.values).toContain('eliminated');
     });
 
-    it('should return correct supplierStatus labels', () => {
-      const result = service.getAllEnums();
+    it('should return correct supplierStatus labels', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.supplierStatus.labels).toMatchObject({
         active: '合作中',
@@ -168,16 +181,16 @@ describe('SystemService', () => {
       });
     });
 
-    it('should return correct settleType values', () => {
-      const result = service.getAllEnums();
+    it('should return correct settleType values', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.settleType.values).toEqual(Object.values(SettleType));
       expect(result.settleType.values).toContain('prepay');
       expect(result.settleType.values).toContain('credit');
     });
 
-    it('should return correct settleType labels', () => {
-      const result = service.getAllEnums();
+    it('should return correct settleType labels', async () => {
+      const result = await service.getAllEnums();
 
       expect(result.settleType.labels).toMatchObject({
         prepay: '预付',

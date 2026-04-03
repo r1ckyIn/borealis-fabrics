@@ -1,5 +1,5 @@
 import { Module, ValidationPipe } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -30,6 +30,8 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { UserClsInterceptor } from './common/interceptors/user-cls.interceptor';
 import { HealthController } from './common/health/health.controller';
+import { MetricsModule } from './metrics/metrics.module';
+import { MetricsInterceptor } from './metrics/metrics.interceptor';
 import configuration from './config/configuration';
 
 @Module({
@@ -53,20 +55,49 @@ import configuration from './config/configuration';
     // Sentry error tracking
     SentryModule.forRoot(),
 
-    // Logging (bound to CLS correlation ID)
+    // Logging (bound to CLS correlation ID, with optional Loki transport)
     LoggerModule.forRootAsync({
-      imports: [ClsModule],
-      inject: [ClsService],
-      useFactory: (cls: ClsService) => ({
-        pinoHttp: {
-          genReqId: () => cls.getId(),
-          transport:
-            process.env.NODE_ENV !== 'production'
-              ? { target: 'pino-pretty', options: { colorize: true } }
-              : undefined,
-          level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-        },
-      }),
+      imports: [ClsModule, ConfigModule],
+      inject: [ClsService, ConfigService],
+      useFactory: (cls: ClsService, config: ConfigService) => {
+        const isProduction = config.get<string>('NODE_ENV') === 'production';
+        const lokiHost = config.get<string>('LOKI_HOST');
+
+        const targets: Array<{
+          target: string;
+          options: Record<string, unknown>;
+          level?: string;
+        }> = [];
+
+        // Console transport in non-production
+        if (!isProduction) {
+          targets.push({
+            target: 'pino-pretty',
+            options: { colorize: true },
+          });
+        }
+
+        // Loki transport when configured
+        if (lokiHost) {
+          targets.push({
+            target: 'pino-loki',
+            options: {
+              host: lokiHost,
+              labels: { app: 'borealis-backend' },
+              batching: true,
+              interval: 5,
+            },
+          });
+        }
+
+        return {
+          pinoHttp: {
+            genReqId: () => cls.getId(),
+            level: isProduction ? 'info' : 'debug',
+            transport: targets.length > 0 ? { targets } : undefined,
+          },
+        };
+      },
     }),
 
     // Rate limiting
@@ -79,6 +110,9 @@ import configuration from './config/configuration';
 
     // Health checks
     TerminusModule,
+
+    // Prometheus metrics
+    MetricsModule,
 
     // Core modules
     PrismaModule,
@@ -105,6 +139,11 @@ import configuration from './config/configuration';
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,
+    },
+    // HTTP request duration metrics (before TransformInterceptor to measure full lifecycle)
+    {
+      provide: APP_INTERCEPTOR,
+      useExisting: MetricsInterceptor,
     },
     // Global response transformer
     {

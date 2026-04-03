@@ -9,6 +9,7 @@ import type { SelectProps } from 'antd';
 
 import type { Supplier } from '@/types/entities.types';
 import { SupplierStatus } from '@/types/enums.types';
+import { logger } from '@/utils/logger';
 
 export interface SupplierSelectorProps {
   /** Selected supplier ID (controlled mode) */
@@ -79,7 +80,7 @@ export function SupplierSelector({
           supplierMapRef.current.set(supplier.id, supplier);
         });
       } catch (error) {
-        console.error('Failed to fetch suppliers:', error);
+        logger.error('Failed to fetch suppliers', error);
         setOptions([]);
       } finally {
         setLoading(false);

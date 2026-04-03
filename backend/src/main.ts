@@ -70,7 +70,7 @@ async function bootstrap() {
 
   // API prefix
   app.setGlobalPrefix('api/v1', {
-    exclude: ['health', 'ready'],
+    exclude: ['health', 'ready', 'metrics'],
   });
 
   // Swagger - only expose in non-production environments

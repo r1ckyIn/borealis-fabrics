@@ -9,6 +9,7 @@ import {
   CodeGeneratorService,
   CodePrefix,
 } from '../common/services/code-generator.service';
+import { CacheService } from '../common/services/cache.service';
 import {
   CreateProductDto,
   QueryProductDto,
@@ -52,6 +53,7 @@ export class ProductService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly codeGenerator: CodeGeneratorService,
+    private readonly cacheService: CacheService,
   ) {}
 
   // ========================================
@@ -88,7 +90,7 @@ export class ProductService {
     const prefix = this.getCodePrefix(dto.subCategory);
     const productCode = await this.codeGenerator.generateCode(prefix);
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Check for duplicate productCode (race condition guard)
       const existing = await tx.product.findFirst({
         where: { productCode },
@@ -114,6 +116,8 @@ export class ProductService {
         },
       });
     });
+    void this.cacheService.invalidateByPrefix('product:');
+    return result;
   }
 
   /**
@@ -121,45 +125,48 @@ export class ProductService {
    * When includeDeleted is true, uses raw PrismaClient to bypass the soft-delete extension.
    */
   async findAll(query: QueryProductDto): Promise<PaginatedResult<Product>> {
-    // Build where clause
-    const where: Prisma.ProductWhereInput = {};
+    const cacheKey = `product:list:${JSON.stringify(query)}`;
+    return this.cacheService.getOrSet(cacheKey, 300, async () => {
+      // Build where clause
+      const where: Prisma.ProductWhereInput = {};
 
-    // Unified keyword search across name, productCode, and modelNumber
-    if (query.keyword) {
-      where.OR = [
-        { name: { contains: query.keyword } },
-        { productCode: { contains: query.keyword } },
-        { modelNumber: { contains: query.keyword } },
-      ];
-    }
+      // Unified keyword search across name, productCode, and modelNumber
+      if (query.keyword) {
+        where.OR = [
+          { name: { contains: query.keyword } },
+          { productCode: { contains: query.keyword } },
+          { modelNumber: { contains: query.keyword } },
+        ];
+      }
 
-    if (query.subCategory) {
-      where.subCategory = query.subCategory;
-    }
+      if (query.subCategory) {
+        where.subCategory = query.subCategory;
+      }
 
-    if (query.category) {
-      where.category = query.category;
-    }
+      if (query.category) {
+        where.category = query.category;
+      }
 
-    // Build pagination args
-    const paginationArgs = buildPaginationArgs(query);
+      // Build pagination args
+      const paginationArgs = buildPaginationArgs(query);
 
-    // Build sort order
-    const sortBy = query.sortBy ?? 'createdAt';
-    const sortOrder = query.sortOrder ?? 'desc';
-    const orderBy = { [sortBy]: sortOrder };
+      // Build sort order
+      const sortBy = query.sortBy ?? 'createdAt';
+      const sortOrder = query.sortOrder ?? 'desc';
+      const orderBy = { [sortBy]: sortOrder };
 
-    const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
-    const [items, total] = await Promise.all([
-      client.product.findMany({
-        where,
-        ...paginationArgs,
-        orderBy,
-      }),
-      client.product.count({ where }),
-    ]);
+      const client = query.includeDeleted ? this.prisma.$raw : this.prisma;
+      const [items, total] = await Promise.all([
+        client.product.findMany({
+          where,
+          ...paginationArgs,
+          orderBy,
+        }),
+        client.product.count({ where }),
+      ]);
 
-    return buildPaginatedResult(items, total, query);
+      return buildPaginatedResult(items, total, query);
+    });
   }
 
   /**
@@ -196,7 +203,7 @@ export class ProductService {
    * @throws NotFoundException if product not found
    */
   async update(id: number, dto: UpdateProductDto): Promise<Product> {
-    return this.prisma.$transaction(async (tx) => {
+    const result = await this.prisma.$transaction(async (tx) => {
       // Check if product exists (soft-deleted records auto-filtered)
       const existing = await tx.product.findFirst({
         where: { id },
@@ -220,6 +227,8 @@ export class ProductService {
         },
       });
     });
+    void this.cacheService.invalidateByPrefix('product:');
+    return result;
   }
 
   /**
@@ -274,6 +283,7 @@ export class ProductService {
 
     // Soft delete (extension intercepts delete and sets deletedAt)
     await this.prisma.product.delete({ where: { id } });
+    void this.cacheService.invalidateByPrefix('product:');
   }
 
   /**
@@ -298,7 +308,11 @@ export class ProductService {
       id,
     );
 
-    return this.prisma.product.findFirst({ where: { id } }) as Promise<Product>;
+    const restored = (await this.prisma.product.findFirst({
+      where: { id },
+    })) as Product;
+    void this.cacheService.invalidateByPrefix('product:');
+    return restored;
   }
 
   // ========================================

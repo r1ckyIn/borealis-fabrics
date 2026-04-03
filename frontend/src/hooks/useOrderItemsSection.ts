@@ -20,6 +20,7 @@ import {
 } from '@/hooks/queries/useOrders';
 import { getStatusLabel } from '@/utils';
 import { getErrorMessage } from '@/utils/errorMessages';
+import { logger } from '@/utils/logger';
 import { OrderItemStatus } from '@/types';
 import type {
   OrderItem,
@@ -150,7 +151,7 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
       message.success('明细已添加');
       setAddItemOpen(false);
     } catch (error) {
-      console.error('Add item failed:', error);
+      logger.error('Add item failed', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, addItemForm, addItemMutation]);
@@ -192,7 +193,7 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
       message.success('明细已更新');
       setEditItemModal({ open: false, item: null });
     } catch (error) {
-      console.error('Edit item failed:', error);
+      logger.error('Edit item failed', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, editItemModal, editItemForm, updateItemMutation]);
@@ -204,7 +205,7 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
         await deleteItemMutation.mutateAsync({ orderId, itemId });
         message.success('明细已删除');
       } catch (error) {
-        console.error('Delete item failed:', error);
+        logger.error('Delete item failed', error);
         message.error(getErrorMessage(error as ApiError));
       }
     },
@@ -231,7 +232,7 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
       message.success(`状态已更新为「${getStatusLabel(statusModal.targetStatus)}」`);
       setStatusModal({ open: false, item: null, targetStatus: null });
     } catch (error) {
-      console.error('Status change failed:', error);
+      logger.error('Status change failed', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, statusModal, updateStatusMutation]);
@@ -257,7 +258,7 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
       message.success('订单明细已取消');
       setCancelModal({ open: false, item: null });
     } catch (error) {
-      console.error('Cancel item failed:', error);
+      logger.error('Cancel item failed', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, cancelModal, cancelForm, cancelItemMutation]);
@@ -277,7 +278,7 @@ export function useOrderItemsSection(orderId: number): UseOrderItemsSectionRetur
       message.success('订单明细已恢复');
       setRestoreModal({ open: false, item: null });
     } catch (error) {
-      console.error('Restore item failed:', error);
+      logger.error('Restore item failed', error);
       message.error(getErrorMessage(error as ApiError));
     }
   }, [orderId, restoreModal, restoreItemMutation]);

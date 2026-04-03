@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 import { createSoftDeleteExtension } from 'prisma-extension-soft-delete';
 
@@ -34,8 +39,25 @@ export class PrismaService
   readonly $raw: PrismaClient;
 
   constructor() {
-    super();
+    super({ log: [{ emit: 'event', level: 'query' }] });
     this.$raw = new PrismaClient();
+
+    // Slow query detection — log queries exceeding threshold
+    const threshold = parseInt(
+      process.env.SLOW_QUERY_THRESHOLD_MS ?? '200',
+      10,
+    );
+    const queryLogger = new Logger('SlowQuery');
+    this.$on(
+      'query' as never,
+      (event: { query: string; params: string; duration: number }) => {
+        if (event.duration > threshold) {
+          queryLogger.warn(
+            `Slow query (${event.duration}ms): ${event.query} | params: ${event.params}`,
+          );
+        }
+      },
+    );
 
     // Apply soft-delete extension.
     // $extends returns a new client instance with intercepted query behavior.

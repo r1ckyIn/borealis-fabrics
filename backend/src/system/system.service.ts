@@ -32,6 +32,7 @@ export class SystemService {
   ) {}
   /**
    * Get all system enums with their values and Chinese labels.
+   * Pure in-memory computation — no caching needed.
    */
   getAllEnums(): EnumsResponseDto {
     return {

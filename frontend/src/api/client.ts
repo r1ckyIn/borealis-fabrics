@@ -10,6 +10,7 @@ import type { AxiosError, AxiosResponse } from 'axios';
 
 import type { ApiError, ApiResponse } from '@/types';
 import { API_BASE_URL, API_TIMEOUT, ROUTES } from '@/utils/constants';
+import { logger } from '@/utils/logger';
 
 /** Flag to prevent multiple 401 redirects. */
 let isRedirecting = false;
@@ -40,7 +41,7 @@ apiClient.interceptors.response.use(
       }
     }
 
-    console.error('[API Error]', {
+    logger.error('API request failed', error, {
       url: error.config?.url,
       status: error.response?.status,
       message: error.response?.data?.message || error.message,

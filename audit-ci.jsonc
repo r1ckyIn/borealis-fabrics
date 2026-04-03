@@ -1,0 +1,61 @@
+{
+  "$schema": "https://github.com/IBM/audit-ci/raw/main/docs/schema.json",
+  "high": true,
+  "allowlist": [
+    // ── cos-nodejs-sdk-v5 transitive chain (unfixable: pins old request@2.x / fast-xml-parser) ──
+    // form-data: unsafe random boundary (cos-nodejs-sdk-v5 > request > form-data)
+    "GHSA-fjxv-7rqg-78g4",
+    // fast-xml-parser: entity encoding bypass (cos-nodejs-sdk-v5 > fast-xml-parser)
+    "GHSA-m7jm-9gc2-mpf2",
+    // fast-xml-parser: additional advisory (cos-nodejs-sdk-v5 > fast-xml-parser)
+    "GHSA-jmr7-xgp7-cmfj",
+    // fast-xml-parser: additional advisory (cos-nodejs-sdk-v5 > fast-xml-parser)
+    "GHSA-8gc5-j5rx-235r",
+
+    // ── ts-jest > handlebars (devDependency only, not in production bundle) ──
+    "GHSA-442j-39wm-28r2",
+    "GHSA-2w6w-674q-4c4q",
+    "GHSA-3mfm-83xf-c92r",
+    "GHSA-xhpv-hc6g-r9c6",
+    "GHSA-xjpj-3mr7-gcpf",
+    "GHSA-9cx6-37pm-9jff",
+
+    // ── minimatch ReDoS (transitive via eslint/exceljs/jest/@nestjs/cli/typescript-eslint, devDeps) ──
+    "GHSA-3ppc-4f35-3m26",
+    "GHSA-7r86-cg39-jmmj",
+    "GHSA-23c5-xmqv-rm74",
+
+    // ── @isaacs/brace-expansion ReDoS (transitive via @nestjs/cli > glob, devDep) ──
+    "GHSA-7h2j-956f-4vf2",
+
+    // ── flatted DoS + prototype pollution (transitive via eslint > file-entry-cache, devDep) ──
+    "GHSA-25h7-pfq9-p65f",
+    "GHSA-rf6f-7fwh-wjgh",
+
+    // ── picomatch ReDoS (transitive via @types/jest/@nestjs/cli/typescript-eslint, devDep) ──
+    "GHSA-c2c7-rcm5-vvqj",
+
+    // ── serialize-javascript (transitive via @nestjs/cli > webpack, devDep) ──
+    "GHSA-5c6j-r48x-rmvq",
+
+    // ── lodash prototype pollution (transitive via @nestjs/cli + @nestjs/config) ──
+    "GHSA-r5fr-rjxr-66jc",
+
+    // ── path-to-regexp ReDoS (transitive via @nestjs/core, awaiting NestJS upstream fix) ──
+    "GHSA-j3q9-mxjg-w52f",
+
+    // ── effect (transitive via prisma > @prisma/config) ──
+    "GHSA-38f7-945m-qr2g",
+
+    // ── multer (direct dep, update 2.0.2 → 2.1.1 tracked as future task) ──
+    "GHSA-xf7r-hgr6-v32p",
+    "GHSA-v52c-386h-88mc",
+    "GHSA-5528-5vmv-3xc2",
+
+    // ── axios DoS via __proto__ (frontend direct dep, update tracked as future task) ──
+    "GHSA-43fc-jf86-j433",
+
+    // ── rollup path traversal (transitive via vite, devDep) ──
+    "GHSA-mw96-cpmx-2vgc"
+  ]
+}
