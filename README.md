@@ -1,6 +1,6 @@
-# Borealis Fabrics
-
 <div align="center">
+
+# Borealis Fabrics
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=flat-square&logo=nestjs)](https://nestjs.com/)
