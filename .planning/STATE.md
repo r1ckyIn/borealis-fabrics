@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Readiness
 status: executing
-stopped_at: Completed 16-01-PLAN.md
-last_updated: "2026-04-04T07:13:16.083Z"
+stopped_at: Completed 16-02-PLAN.md
+last_updated: "2026-04-04T07:16:34.234Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 5
@@ -53,7 +53,7 @@ Progress: [██░░░░░░░░] 0% (0/12 plans)
 | Phase 12 P03 | 14min | 2 tasks | 11 files |
 | Phase 13 P06 | 15min | 4 tasks | 24 files |
 | Phase 15 P02 | 13m | 2 tasks | 15 files |
-| Phase 16 P01 | 2min | 2 tasks | 4 files |
+| Phase 16 P02 | 6min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -80,9 +80,7 @@ Recent decisions affecting current work:
 - [Phase 13]: OptionalJwtAuthGuard as separate class for clean public endpoint auth (not extending JwtAuthGuard)
 - [Phase 13]: @ts-expect-error is the idiomatic fix for Node 22 Buffer<ArrayBufferLike> vs library Buffer type mismatch (as-casts fail)
 - [Phase 15]: Cache-aside pattern: 5min TTL for entity lists, 24h for system enums, SCAN-based invalidation
-- [Phase 16]: node:22-slim for both Docker stages (not Alpine) to avoid Prisma binary musl incompatibility
-- [Phase 16]: HTTP-only Nginx config for Phase A deployment; SSL added in Phase B after domain + ICP
-- [Phase 16]: Non-root container user (nestjs:nodejs) for production security
+- [Phase 16]: ALLOW_DEV_LOGIN env var for Phase A production login bypass; FORCE_HTTPS_COOKIES decouples cookie security from NODE_ENV
 
 ### Pending Todos
 
@@ -95,8 +93,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-04T07:13:16.078Z
-Stopped at: Completed 16-01-PLAN.md
+Last session: 2026-04-04T07:16:34.229Z
+Stopped at: Completed 16-02-PLAN.md
 Resume file: None
 
 ---

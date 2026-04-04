@@ -49,12 +49,13 @@ export class AuthController {
   ) {}
 
   /**
-   * Get cookie options with environment-appropriate secure flag.
+   * Get cookie options with secure flag controlled by FORCE_HTTPS_COOKIES env var.
+   * In Phase A (HTTP + IP access), FORCE_HTTPS_COOKIES is not set, so secure=false.
+   * In Phase B (HTTPS + domain), set FORCE_HTTPS_COOKIES=true.
    */
   private getCookieOptions(): typeof AUTH_COOKIE_OPTIONS & { secure: boolean } {
-    const isProduction =
-      this.configService.get<string>('nodeEnv') === 'production';
-    return { ...AUTH_COOKIE_OPTIONS, secure: isProduction };
+    const forceHttps = process.env.FORCE_HTTPS_COOKIES === 'true';
+    return { ...AUTH_COOKIE_OPTIONS, secure: forceHttps };
   }
 
   /**
@@ -106,7 +107,7 @@ export class AuthController {
 
   /**
    * Dev mode login - bypasses WeWork OAuth for local development.
-   * Only available when NODE_ENV=development.
+   * Available when NODE_ENV=development OR ALLOW_DEV_LOGIN=true (Phase A production).
    */
   @Throttle(AUTH_THROTTLE)
   @Post('dev/login')
@@ -122,9 +123,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDto> {
     const nodeEnv = this.configService.get<string>('nodeEnv');
-    if (nodeEnv !== 'development') {
+    const allowDevLogin = process.env.ALLOW_DEV_LOGIN === 'true';
+    if (nodeEnv !== 'development' && !allowDevLogin) {
       throw new ForbiddenException(
-        'Dev login is only available in development mode',
+        'Dev login is only available in development mode or when ALLOW_DEV_LOGIN=true',
       );
     }
 

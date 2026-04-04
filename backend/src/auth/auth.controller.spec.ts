@@ -73,6 +73,8 @@ describe('AuthController', () => {
 
   describe('weWorkCallback', () => {
     it('should set cookie and redirect to frontend on success', async () => {
+      const savedEnv = { ...process.env };
+      delete process.env.FORCE_HTTPS_COOKIES;
       const mockResult = {
         token: 'jwt-token',
         user: {
@@ -104,13 +106,14 @@ describe('AuthController', () => {
         expect.objectContaining({
           httpOnly: true,
           sameSite: 'lax',
-          secure: false, // development mode
+          secure: false, // no FORCE_HTTPS_COOKIES
         }),
       );
       // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(res.redirect).toHaveBeenCalledWith(
         'http://localhost:5173/auth/callback?success=true',
       );
+      process.env = savedEnv;
     });
 
     it('should use default frontend URL when config is empty', async () => {
@@ -142,7 +145,10 @@ describe('AuthController', () => {
       );
     });
 
-    it('should set secure cookie in production mode', async () => {
+    it('should set secure cookie when FORCE_HTTPS_COOKIES=true', async () => {
+      const savedEnv = { ...process.env };
+      process.env.FORCE_HTTPS_COOKIES = 'true';
+
       const mockResult = { token: 'jwt-token', user: {} };
       authService.handleOAuthCallback.mockResolvedValue(mockResult);
       configService.get.mockImplementation((key: string) => {
@@ -159,13 +165,52 @@ describe('AuthController', () => {
         'bf_auth_token',
         'jwt-token',
         expect.objectContaining({
-          secure: true, // production mode
+          secure: true,
         }),
       );
+
+      process.env = savedEnv;
+    });
+
+    it('should set secure=false when FORCE_HTTPS_COOKIES is not set', async () => {
+      const savedEnv = { ...process.env };
+      delete process.env.FORCE_HTTPS_COOKIES;
+
+      const mockResult = { token: 'jwt-token', user: {} };
+      authService.handleOAuthCallback.mockResolvedValue(mockResult);
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'cors.origins') return ['https://app.example.com'];
+        if (key === 'nodeEnv') return 'production';
+        return undefined;
+      });
+      const res = mockResponse();
+
+      await controller.weWorkCallback('code', 'state', res);
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(res.cookie).toHaveBeenCalledWith(
+        'bf_auth_token',
+        'jwt-token',
+        expect.objectContaining({
+          secure: false, // no FORCE_HTTPS_COOKIES means HTTP-only
+        }),
+      );
+
+      process.env = savedEnv;
     });
   });
 
   describe('devLogin', () => {
+    let savedEnv: NodeJS.ProcessEnv;
+
+    beforeEach(() => {
+      savedEnv = { ...process.env };
+    });
+
+    afterEach(() => {
+      process.env = savedEnv;
+    });
+
     it('should return login response and set cookie in development mode', async () => {
       const mockResult = {
         token: 'dev-jwt-token',
@@ -198,6 +243,7 @@ describe('AuthController', () => {
     });
 
     it('should throw ForbiddenException in production mode', async () => {
+      delete process.env.ALLOW_DEV_LOGIN;
       configService.get.mockReturnValue('production');
 
       await expect(controller.devLogin(mockResponse())).rejects.toThrow(
@@ -206,11 +252,65 @@ describe('AuthController', () => {
     });
 
     it('should throw ForbiddenException when nodeEnv is undefined', async () => {
+      delete process.env.ALLOW_DEV_LOGIN;
       configService.get.mockReturnValue(undefined);
 
       await expect(controller.devLogin(mockResponse())).rejects.toThrow(
         ForbiddenException,
       );
+    });
+
+    it('should allow access when ALLOW_DEV_LOGIN=true in production', async () => {
+      process.env.ALLOW_DEV_LOGIN = 'true';
+      const mockResult = {
+        token: 'dev-jwt-token',
+        user: {
+          id: 1,
+          weworkId: 'dev-user',
+          name: 'Dev User',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      };
+      authService.devLogin.mockResolvedValue(mockResult);
+      configService.get.mockReturnValue('production');
+      const res = mockResponse();
+
+      const result = await controller.devLogin(res);
+
+      expect(authService.devLogin).toHaveBeenCalled();
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should block access in production when ALLOW_DEV_LOGIN is not set', async () => {
+      delete process.env.ALLOW_DEV_LOGIN;
+      configService.get.mockReturnValue('production');
+
+      await expect(controller.devLogin(mockResponse())).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should still work in development mode without ALLOW_DEV_LOGIN', async () => {
+      delete process.env.ALLOW_DEV_LOGIN;
+      const mockResult = {
+        token: 'dev-jwt-token',
+        user: {
+          id: 1,
+          weworkId: 'dev-user',
+          name: 'Dev User',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      };
+      authService.devLogin.mockResolvedValue(mockResult);
+      configService.get.mockReturnValue('development');
+      const res = mockResponse();
+
+      const result = await controller.devLogin(res);
+
+      expect(authService.devLogin).toHaveBeenCalled();
+      expect(result).toEqual(mockResult);
     });
   });
 
@@ -248,10 +348,11 @@ describe('AuthController', () => {
       expect(result).toEqual(mockLogoutResponse);
     });
 
-    it('should clear auth cookie on logout', async () => {
+    it('should clear auth cookie on logout without FORCE_HTTPS_COOKIES', async () => {
+      const savedEnv = { ...process.env };
+      delete process.env.FORCE_HTTPS_COOKIES;
       const mockLogoutResponse = { message: 'Logged out successfully' };
       authService.logout.mockResolvedValue(mockLogoutResponse);
-      configService.get.mockReturnValue('development');
       const req = mockAuthenticatedRequest();
       const res = mockResponse();
 
@@ -262,12 +363,14 @@ describe('AuthController', () => {
         ...AUTH_COOKIE_OPTIONS,
         secure: false,
       });
+      process.env = savedEnv;
     });
 
-    it('should clear auth cookie with secure flag in production', async () => {
+    it('should clear auth cookie with secure flag when FORCE_HTTPS_COOKIES=true', async () => {
+      const savedEnv = { ...process.env };
+      process.env.FORCE_HTTPS_COOKIES = 'true';
       const mockLogoutResponse = { message: 'Logged out successfully' };
       authService.logout.mockResolvedValue(mockLogoutResponse);
-      configService.get.mockReturnValue('production');
       const req = mockAuthenticatedRequest();
       const res = mockResponse();
 
@@ -278,6 +381,7 @@ describe('AuthController', () => {
         ...AUTH_COOKIE_OPTIONS,
         secure: true,
       });
+      process.env = savedEnv;
     });
 
     it('should handle missing authorization header', async () => {

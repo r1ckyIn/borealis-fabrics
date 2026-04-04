@@ -9,12 +9,18 @@ const validateProductionConfig = () => {
       'COS_SECRET_KEY',
       'COS_BUCKET',
       'COS_REGION',
-      'WEWORK_CORP_ID',
-      'WEWORK_SECRET',
-      'WEWORK_AGENT_ID',
-      'WEWORK_REDIRECT_URI',
       'CORS_ORIGINS',
     ];
+
+    // WeChat Work vars only required when dev login is NOT enabled (Phase B+)
+    if (process.env.ALLOW_DEV_LOGIN !== 'true') {
+      requiredVars.push(
+        'WEWORK_CORP_ID',
+        'WEWORK_SECRET',
+        'WEWORK_AGENT_ID',
+        'WEWORK_REDIRECT_URI',
+      );
+    }
 
     const missing = requiredVars.filter((v) => !process.env[v]);
     if (missing.length > 0) {
