@@ -113,21 +113,20 @@ Plans:
 - [x] 15-03: PWA manifest + Service Worker + accessibility baseline
 
 ### Phase 16: Production Deployment
-**Goal**: System is live on Tencent Cloud with all infrastructure provisioned, and core business flows validated by users via two-phase deployment (IP+HTTP first, domain+HTTPS+OAuth later)
+**Goal**: System is live on Tencent Cloud with all infrastructure provisioned, data migrated, and core business flows validated by users
 **Depends on**: Phase 15 (containerization complete)
 **Requirements**: DEPLOY-01, DEPLOY-02, DEPLOY-03, DEPLOY-04, DEPLOY-05, DEPLOY-06
 **Success Criteria** (what must be TRUE):
   1. Tencent Cloud lightweight server runs the Docker stack with Redis; CDB MySQL instance is connected and schema-migrated
-  2. COS is configured for file storage from day one (STORAGE_MODE=cos)
-  3. SSL certificate is active and auto-renews; all traffic is HTTPS (Phase B, after domain)
-  4. WeChat Work OAuth login works on the production domain (Phase B, after domain)
+  2. COS is configured for file storage; existing local file URLs are migrated to COS paths
+  3. SSL certificate is active and auto-renews; all traffic is HTTPS
+  4. WeChat Work OAuth login works on the production domain
   5. All core business flows (supplier/customer CRUD, fabric/product management, quote creation, order lifecycle, payment voucher upload, Excel import/export) pass manual UAT on production
-**Plans**: 3 plans
+**Plans**: TBD
 
 Plans:
-- [ ] 16-01-PLAN.md — Dockerfiles + Nginx reverse proxy configuration
-- [ ] 16-02-PLAN.md — Phase A auth fixes + docker-compose.prod.yml + env template
-- [ ] 16-03-PLAN.md — Deploy scripts + deployment guide + UAT checklist + Phase B guide
+- [x] 16-01: Backend Dockerfile + Nginx reverse proxy configuration
+- [ ] 16-02: COS file migration + WeChat Work OAuth + production UAT
 
 ## Progress
 
@@ -139,8 +138,8 @@ Plans:
 | 13. Data Safety & Audit | v1.1 | 6/6 | Complete    | 2026-03-31 |
 | 14. Observability & Performance | v1.1 | 3/4 | In progress | - |
 | 15. Containerization & Quality | v1.1 | 4/1 | Complete    | 2026-04-03 |
-| 16. Production Deployment | v1.1 | 0/3 | Not started | - |
+| 16. Production Deployment | v1.1 | 1/2 | In progress | - |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-04-04 (Phase 16 plans created)*
+*Last updated: 2026-04-04 (Phase 16 plan 01 containerization infrastructure complete)*
