@@ -125,7 +125,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 16-01: Tencent Cloud provisioning (server + CDB + Redis + COS + SSL)
+- [x] 16-01: Backend Dockerfile + Nginx reverse proxy configuration
 - [ ] 16-02: COS file migration + WeChat Work OAuth + production UAT
 
 ## Progress
@@ -138,8 +138,8 @@ Plans:
 | 13. Data Safety & Audit | v1.1 | 6/6 | Complete    | 2026-03-31 |
 | 14. Observability & Performance | v1.1 | 3/4 | In progress | - |
 | 15. Containerization & Quality | v1.1 | 4/1 | Complete    | 2026-04-03 |
-| 16. Production Deployment | v1.1 | 0/2 | Not started | - |
+| 16. Production Deployment | v1.1 | 1/2 | In progress | - |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-04-03 (Phase 14 gap closure plan 15-04 added for QUAL-01)*
+*Last updated: 2026-04-04 (Phase 16 plan 01 containerization infrastructure complete)*

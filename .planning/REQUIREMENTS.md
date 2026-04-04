@@ -53,7 +53,7 @@ Requirements for production readiness milestone. Each maps to roadmap phases.
 
 ### Deployment
 
-- [ ] **DEPLOY-01**: Tencent Cloud lightweight server provisioned with Docker, Nginx, Redis
+- [x] **DEPLOY-01**: Tencent Cloud lightweight server provisioned with Docker, Nginx, Redis
 - [ ] **DEPLOY-02**: Tencent CDB MySQL instance configured and connected
 - [ ] **DEPLOY-03**: Tencent COS configured for file storage, existing local file URLs migrated
 - [ ] **DEPLOY-04**: SSL certificate provisioned and auto-renewed (Let's Encrypt or Tencent managed)
@@ -125,7 +125,7 @@ Deferred to future release. Tracked but not in current roadmap.
 | QUAL-01 | Phase 14 | Pending |
 | QUAL-02 | Phase 15 | Pending |
 | QUAL-03 | Phase 15 | Pending |
-| DEPLOY-01 | Phase 16 | Pending |
+| DEPLOY-01 | Phase 16 | Complete |
 | DEPLOY-02 | Phase 16 | Pending |
 | DEPLOY-03 | Phase 16 | Pending |
 | DEPLOY-04 | Phase 16 | Pending |
