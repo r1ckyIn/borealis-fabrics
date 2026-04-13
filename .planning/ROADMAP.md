@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 Supply Chain MVP** — Phases 1-11 (shipped 2026-03-28) — [Archive](milestones/v1.0-ROADMAP.md)
-- ✅ **v1.1 Production Readiness** — Phases 12-16 (Phase A shipped 2026-04-14)
+- 🚧 **v1.1 Production Readiness** — Phases 12-17 (Phase A shipped 2026-04-14, Phase B pending)
 
 ## Phases
 
@@ -130,9 +130,20 @@ Plans:
 - [x] 16-02: docker-compose.prod.yml + Phase A auth (ALLOW_DEV_LOGIN)
 - [x] 16-03: Deploy/rollback scripts + deployment guide + Phase A deployment
 
+### Phase 17: Domain & SSL Launch (Phase B)
+**Goal**: System accessible via domain with HTTPS, WeChat Work OAuth fully functional, dev login removed
+**Depends on**: Phase 16 (Phase A deployed), user purchases domain + completes ICP filing
+**Success Criteria** (what must be TRUE):
+  1. System accessible via `https://<domain>`, HTTP redirects to HTTPS
+  2. SSL certificate active and auto-renews
+  3. WeChat Work OAuth login works: QR scan in browser → callback → JWT cookie → authenticated
+  4. ALLOW_DEV_LOGIN and VITE_ALLOW_DEV_LOGIN removed, dev login button hidden
+  5. FORCE_HTTPS_COOKIES=true, all auth cookies are Secure + HttpOnly
+**Plans**: TBD (blocked on domain + ICP)
+
 ## Progress
 
-**Execution Order:** Phases execute sequentially: 12 -> 13 -> 14 -> 15 -> 16
+**Execution Order:** Phases execute sequentially: 12 -> 13 -> 14 -> 15 -> 16 -> 17
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -141,7 +152,8 @@ Plans:
 | 14. Observability & Performance | v1.1 | 4/4 | Complete    | 2026-04-03 |
 | 15. Containerization & Quality | v1.1 | 3/3 | Complete    | 2026-04-03 |
 | 16. Production Deployment | v1.1 | 3/3 | Phase A live | 2026-04-14 |
+| 17. Domain & SSL Launch | v1.1 | -   | Blocked (域名+ICP) | - |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-04-14 (Phase 16 Phase A deployed and verified)*
+*Last updated: 2026-04-14 (Phase 17 added for domain+SSL launch)*
