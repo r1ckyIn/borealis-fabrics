@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Production Readiness
-status: executing
-stopped_at: "Phase 16 complete — Phase A deployed and verified"
+milestone: v1.2
+milestone_name: Production Launch
+status: planning
+stopped_at: "v1.2 created — Phase 17 blocked on domain+ICP, Phase 18 ready"
 last_updated: "2026-04-14T00:00:00Z"
 last_activity: 2026-04-14 -- Phase A deployed to Tencent Cloud, user verified
 progress:
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 16 — production-deployment (Phase A complete)
+**Current focus:** v1.2 — Production Launch (domain + SSL + gap closure)
 
 ## Current Position
 
-Phase: 16 (production-deployment) — Phase A DEPLOYED
-Plan: 3 of 3 (complete)
-Status: Phase A live at http://119.29.82.146, Phase B pending (domain + SSL + WeChat OAuth)
-Last activity: 2026-04-14 -- User verified deployment, all endpoints working
+Phase: 17 (domain-ssl-launch) — BLOCKED on domain + ICP
+Phase: 18 (bug-fixes-gap-closure) — Ready to plan
+Status: v1.2 created, Phase 17 waiting for domain purchase + ICP filing
+Last activity: 2026-04-14 -- v1.2 milestone created, monitoring stack deployed
 
-Progress: [█████████░] 95% (Phase A done, Phase B = domain + SSL)
+Progress: [░░░░░░░░░░] 0% (2 phases)
 
 ## Performance Metrics
 
