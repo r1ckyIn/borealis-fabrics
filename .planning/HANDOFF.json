@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-13T08:14:41.366Z",
+  "phase": "16",
+  "phase_name": "production-deployment",
+  "phase_dir": ".planning/phases/16-production-deployment",
+  "plan": 3,
+  "task": 3,
+  "total_tasks": 3,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "Deploy and rollback scripts", "status": "done", "commit": "2a36f46"},
+    {"id": 2, "name": "Comprehensive deployment guide", "status": "done", "commit": "1a8bb85"}
+  ],
+  "remaining_tasks": [
+    {"id": 3, "name": "Checkpoint: User provisions cloud and deploys Phase A", "status": "in_progress", "progress": "Cloud resources provisioned, need to deploy application"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [],
+  "decisions": [
+    {"decision": "Use Lighthouse + Lighthouse DB instead of CVM + CDB", "rationale": "PM recommended CVM but user bought Lighthouse DB from promo; Lighthouse ecosystem shares VPC automatically, no CCN needed", "phase": "16"},
+    {"decision": "All resources in Guangzhou region", "rationale": "Lighthouse DB was created in Guangzhou, so COS and server must match", "phase": "16"},
+    {"decision": "MySQL 5.7 instead of 8.0", "rationale": "Lighthouse DB promo only had 5.7; Prisma supports both, no impact", "phase": "16"},
+    {"decision": "ALLOW_DEV_LOGIN for Phase A auth", "rationale": "No domain yet, WeChat OAuth requires domain, dev login bypasses for IP access", "phase": "16"}
+  ],
+  "uncommitted_files": [".planning/STATE.md"],
+  "next_action": "Clone repo on server, create backend/.env with all credentials, build frontend, run docker compose up to deploy Phase A",
+  "context_notes": "Phase 16 execute-phase is at Wave 2, Plan 16-03, Task 3 (checkpoint). Plans 16-01 and 16-02 are complete (Dockerfiles, nginx config, docker-compose.prod.yml, auth fixes). All cloud resources are now provisioned and verified. The next step is the actual deployment: clone repo to server, configure .env, build and deploy with Docker. All credentials are stored in memory/project_server_access.md."
+}
