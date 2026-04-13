@@ -22,6 +22,10 @@ RUN pnpm install --frozen-lockfile
 COPY prisma/ ./prisma/
 RUN npx prisma generate
 
+# Export generated Prisma client to a known path (pnpm symlinks hide it)
+RUN mkdir -p /prisma-client && \
+    cp -rL $(find /app/node_modules -path "*/.prisma/client" -type d | head -1) /prisma-client/
+
 # Copy source code and build
 COPY . .
 RUN pnpm build
@@ -50,7 +54,7 @@ RUN pnpm install --frozen-lockfile --prod
 
 # Copy built artifacts from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /prisma-client/client ./node_modules/.prisma/client
 COPY --from=builder /app/prisma ./prisma
 
 # Create uploads directory for local storage fallback
