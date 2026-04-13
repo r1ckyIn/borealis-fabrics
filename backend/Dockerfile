@@ -22,10 +22,6 @@ RUN pnpm install --frozen-lockfile
 COPY prisma/ ./prisma/
 RUN npx prisma generate
 
-# Export generated Prisma client to a known path (pnpm symlinks hide it)
-RUN mkdir -p /prisma-client && \
-    cp -rL $(find /app/node_modules -path "*/.prisma/client" -type d | head -1) /prisma-client/
-
 # Copy source code and build
 COPY . .
 RUN pnpm build
@@ -46,16 +42,19 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and install ALL deps (prisma generate needs CLI)
 COPY .npmrc package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+# Copy Prisma schema and generate client in production node_modules
+COPY --from=builder /app/prisma ./prisma
+RUN npx prisma generate
+
+# Prune to production dependencies only
+RUN pnpm prune --prod
 
 # Copy built artifacts from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /prisma-client/client ./node_modules/.prisma/client
-COPY --from=builder /app/prisma ./prisma
 
 # Create uploads directory for local storage fallback
 RUN mkdir -p /app/uploads
