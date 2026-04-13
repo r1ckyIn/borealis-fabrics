@@ -114,13 +114,14 @@ export class AuthService {
 
   /**
    * Dev mode login: create/upsert a dev user and return JWT.
-   * Only available when NODE_ENV=development.
+   * Available when NODE_ENV=development OR ALLOW_DEV_LOGIN=true.
    */
   async devLogin(): Promise<LoginResponseDto> {
     const nodeEnv = this.configService.get<string>('nodeEnv');
-    if (nodeEnv !== 'development') {
+    const allowDevLogin = process.env.ALLOW_DEV_LOGIN === 'true';
+    if (nodeEnv !== 'development' && !allowDevLogin) {
       throw new UnauthorizedException(
-        'Dev login is only available in development mode',
+        'Dev login is only available in development mode or when ALLOW_DEV_LOGIN=true',
       );
     }
 

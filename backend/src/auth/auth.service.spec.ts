@@ -301,17 +301,42 @@ describe('AuthService', () => {
       });
     });
 
-    it('should throw UnauthorizedException in production mode', async () => {
+    it('should throw UnauthorizedException in production mode without ALLOW_DEV_LOGIN', async () => {
       configService.get.mockReturnValue('production');
+      delete process.env.ALLOW_DEV_LOGIN;
 
       await expect(service.devLogin()).rejects.toThrow(UnauthorizedException);
       await expect(service.devLogin()).rejects.toThrow(
-        'Dev login is only available in development mode',
+        'Dev login is only available in development mode or when ALLOW_DEV_LOGIN=true',
       );
+    });
+
+    it('should allow dev login in production when ALLOW_DEV_LOGIN=true', async () => {
+      configService.get.mockReturnValue('production');
+      process.env.ALLOW_DEV_LOGIN = 'true';
+
+      const mockUser = {
+        id: 1,
+        weworkId: 'dev-user',
+        name: 'Dev User',
+        avatar: null,
+        mobile: null,
+        deletedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      prismaService.user.upsert.mockResolvedValue(mockUser);
+      jwtService.sign.mockReturnValue('dev-jwt-token');
+
+      const result = await service.devLogin();
+      expect(result.token).toBe('dev-jwt-token');
+
+      delete process.env.ALLOW_DEV_LOGIN;
     });
 
     it('should throw UnauthorizedException when nodeEnv is undefined', async () => {
       configService.get.mockReturnValue(undefined);
+      delete process.env.ALLOW_DEV_LOGIN;
 
       await expect(service.devLogin()).rejects.toThrow(UnauthorizedException);
     });
