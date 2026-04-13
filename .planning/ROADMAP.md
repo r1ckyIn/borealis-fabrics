@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 Supply Chain MVP** — Phases 1-11 (shipped 2026-03-28) — [Archive](milestones/v1.0-ROADMAP.md)
-- 🚧 **v1.1 Production Readiness** — Phases 12-16 (in progress)
+- ✅ **v1.1 Production Readiness** — Phases 12-16 (Phase A shipped 2026-04-14)
 
 ## Phases
 
@@ -29,9 +29,10 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 
 </details>
 
-### 🚧 v1.1 Production Readiness
+### ✅ v1.1 Production Readiness (Phase A shipped 2026-04-14)
 
 **Milestone Goal:** Close all engineering gaps and deploy to Tencent Cloud production.
+**Outcome:** Phase A live at http://119.29.82.146. Phase B (domain+SSL+OAuth) deferred to v1.2.
 
 - [x] **Phase 12: Foundation & Observability Quick Wins** - Correlation ID, soft delete, Sentry integration, ErrorBoundary, tech debt cleanup (completed 2026-03-28)
 - [x] **Phase 13: Data Safety & Audit** - Audit logging (backend + frontend), RBAC, data export, DB backup (completed 2026-03-29)
