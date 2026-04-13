@@ -90,23 +90,37 @@ None - plan executed exactly as written.
 
 None.
 
-## User Setup Required
+## Phase A Deployment (2026-04-14)
 
-**Phase A deployment requires manual Tencent Cloud provisioning.** See [docs/DEPLOY.md](../../docs/DEPLOY.md) for:
-- Lighthouse server creation (2C4G, Ubuntu 22.04)
-- CDB MySQL provisioning + CCN network association
-- COS bucket creation + CORS configuration
-- Environment variable configuration in backend/.env
+Task 3 completed — application deployed to Tencent Cloud and verified by user.
+
+**Infrastructure:**
+- Lighthouse server: 119.29.82.146 (Ubuntu 22.04, 2C4G, Docker 26.1.3)
+- Lighthouse DB: 10.1.0.9:3306 (MySQL 5.7)
+- COS: borealis-files-1421178041 (ap-guangzhou)
+- Node.js 22.22.2 + pnpm 10.33.0 installed on server
+
+**Deployment fixes applied:**
+1. Prisma + pnpm Docker: install all deps → prisma generate → pnpm prune --prod
+2. auth.service.ts: added ALLOW_DEV_LOGIN check (was missing, only controller had it)
+3. LoginPage.tsx: VITE_ALLOW_DEV_LOGIN env var to show Dev Login in production build
+4. BOSS_WEWORK_IDS=dev-user for admin access in Phase A
+
+**Verified:**
+- Health API, Frontend, Dev Login, Auth /me, Suppliers API, System Enums
+- 9/9 Prisma migrations applied
+- User confirmed all 8 sidebar menu items visible (including audit log)
 
 ## Known Stubs
 
 None - all scripts and documentation are complete and functional.
 
-## Next Phase Readiness
-- Task 3 (checkpoint) awaits user provisioning Tencent Cloud infrastructure and running Phase A deployment
-- After Phase A deployment is verified, Phase B guide is ready for when domain + ICP filing completes
-- All deployment automation is in place for ongoing deployments
+## Phase B Remaining
+- Domain + DNS + SSL (Let's Encrypt or Tencent Cloud)
+- WeChat Work OAuth with production domain
+- Remove ALLOW_DEV_LOGIN / VITE_ALLOW_DEV_LOGIN
+- FORCE_HTTPS_COOKIES=true
 
 ---
 *Phase: 16-production-deployment*
-*Completed: 2026-04-04*
+*Plan 03 completed: 2026-04-04 (scripts/docs), Task 3 deployed: 2026-04-14*

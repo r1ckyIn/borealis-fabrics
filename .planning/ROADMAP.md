@@ -37,7 +37,7 @@ See [v1.0-ROADMAP.md](milestones/v1.0-ROADMAP.md) for full details.
 - [x] **Phase 13: Data Safety & Audit** - Audit logging (backend + frontend), RBAC, data export, DB backup (completed 2026-03-29)
 - [ ] **Phase 14: Observability & Performance** - Log aggregation, Redis caching, load testing, Web Vitals, dependency scanning
 - [x] **Phase 15: Containerization & Quality** - Docker, Nginx, CI/CD, PWA, accessibility (completed 2026-04-03)
-- [x] **Phase 16: Production Deployment** - Tencent Cloud setup, COS migration, SSL, OAuth, UAT (completed 2026-04-04)
+- [x] **Phase 16: Production Deployment** - Tencent Cloud setup, Docker deploy, Phase A live (Phase A: 2026-04-14, Phase B: pending domain+SSL)
 
 ## Phase Details
 
@@ -126,7 +126,8 @@ Plans:
 
 Plans:
 - [x] 16-01: Backend Dockerfile + Nginx reverse proxy configuration
-- [x] 16-02: COS file migration + WeChat Work OAuth + production UAT
+- [x] 16-02: docker-compose.prod.yml + Phase A auth (ALLOW_DEV_LOGIN)
+- [x] 16-03: Deploy/rollback scripts + deployment guide + Phase A deployment
 
 ## Progress
 
@@ -136,10 +137,10 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 12. Foundation & Observability Quick Wins | v1.1 | 3/3 | Complete    | 2026-03-28 |
 | 13. Data Safety & Audit | v1.1 | 6/6 | Complete    | 2026-03-31 |
-| 14. Observability & Performance | v1.1 | 3/4 | In progress | - |
-| 15. Containerization & Quality | v1.1 | 4/1 | Complete    | 2026-04-03 |
-| 16. Production Deployment | v1.1 | 3/3 | Complete   | 2026-04-04 |
+| 14. Observability & Performance | v1.1 | 4/4 | Complete    | 2026-04-03 |
+| 15. Containerization & Quality | v1.1 | 3/3 | Complete    | 2026-04-03 |
+| 16. Production Deployment | v1.1 | 3/3 | Phase A live | 2026-04-14 |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-04-04 (Phase 16 plan 01 containerization infrastructure complete)*
+*Last updated: 2026-04-14 (Phase 16 Phase A deployed and verified)*
