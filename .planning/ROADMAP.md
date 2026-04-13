@@ -4,7 +4,6 @@
 
 - ✅ **v1.0 Supply Chain MVP** — Phases 1-11 (shipped 2026-03-28) — [Archive](milestones/v1.0-ROADMAP.md)
 - ✅ **v1.1 Production Readiness** — Phases 12-16 (Phase A shipped 2026-04-14)
-- 🚧 **v1.2 Production Launch** — Phases 17-18 (in progress)
 
 ## Phases
 
@@ -131,40 +130,9 @@ Plans:
 - [x] 16-02: docker-compose.prod.yml + Phase A auth (ALLOW_DEV_LOGIN)
 - [x] 16-03: Deploy/rollback scripts + deployment guide + Phase A deployment
 
-### 🚧 v1.2 Production Launch
-
-**Milestone Goal:** Domain + SSL + WeChat OAuth 正式上线，修复已知缺口。
-
-- [ ] **Phase 17: Domain & SSL Launch** - 域名绑定、SSL 证书、Nginx HTTPS、企业微信 OAuth、移除 dev login
-- [ ] **Phase 18: Bug Fixes & Gap Closure** - /metrics 端点修复、供应商付款入口、生产 UAT
-
-## Phase Details (v1.2)
-
-### Phase 17: Domain & SSL Launch
-**Goal**: System accessible via domain with HTTPS, WeChat Work OAuth fully functional, dev login removed
-**Depends on**: Phase 16 (Phase A deployed), user purchases domain + completes ICP filing
-**Requirements**: DEPLOY-03 (SSL), DEPLOY-04 (OAuth), DEPLOY-06 (production UAT)
-**Success Criteria** (what must be TRUE):
-  1. System accessible via `https://<domain>`, HTTP redirects to HTTPS
-  2. SSL certificate active and auto-renews (Let's Encrypt certbot or Tencent Cloud free cert)
-  3. WeChat Work OAuth login works: QR scan in browser → callback → JWT cookie → authenticated
-  4. ALLOW_DEV_LOGIN and VITE_ALLOW_DEV_LOGIN removed, dev login button hidden
-  5. FORCE_HTTPS_COOKIES=true, all auth cookies are Secure + HttpOnly
-**Plans**: TBD (blocked on domain + ICP)
-
-### Phase 18: Bug Fixes & Gap Closure
-**Goal**: Fix known production issues and close feature gaps
-**Depends on**: Phase 17 (or can run in parallel for non-domain items)
-**Success Criteria** (what must be TRUE):
-  1. `/metrics` endpoint returns Prometheus text format (not JSON-wrapped)
-  2. Supplier payment entry UI exists — users can create initial SupplierPayment records
-  3. Prometheus scrape target shows "up" in Grafana
-  4. Core business flows pass manual UAT on production with real data
-**Plans**: TBD
-
 ## Progress
 
-**Execution Order:** v1.1: 12→16, v1.2: 17→18
+**Execution Order:** Phases execute sequentially: 12 -> 13 -> 14 -> 15 -> 16
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -173,9 +141,7 @@ Plans:
 | 14. Observability & Performance | v1.1 | 4/4 | Complete    | 2026-04-03 |
 | 15. Containerization & Quality | v1.1 | 3/3 | Complete    | 2026-04-03 |
 | 16. Production Deployment | v1.1 | 3/3 | Phase A live | 2026-04-14 |
-| 17. Domain & SSL Launch | v1.2 | -   | Blocked (域名+ICP) | - |
-| 18. Bug Fixes & Gap Closure | v1.2 | -   | Not started | - |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-04-14 (v1.2 milestone created, Phase 17-18 added)*
+*Last updated: 2026-04-14 (Phase 16 Phase A deployed and verified)*
