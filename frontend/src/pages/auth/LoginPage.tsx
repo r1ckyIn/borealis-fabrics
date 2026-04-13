@@ -125,8 +125,8 @@ export default function LoginPage() {
             企业微信登录
           </Button>
 
-          {/* Dev login (development only, tree-shaken in production) */}
-          {import.meta.env.DEV && (
+          {/* Dev login: shown in dev mode or when VITE_ALLOW_DEV_LOGIN=true (Phase A) */}
+          {(import.meta.env.DEV || import.meta.env.VITE_ALLOW_DEV_LOGIN === 'true') && (
             <>
               <Divider style={{ margin: '8px 0' }}>Development Only</Divider>
               <Button
