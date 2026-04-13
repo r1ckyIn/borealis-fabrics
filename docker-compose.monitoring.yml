@@ -53,6 +53,11 @@ services:
         condition: service_started
     restart: unless-stopped
 
+networks:
+  default:
+    external: true
+    name: borealis-fabrics_default
+
 volumes:
   loki_data:
   prometheus_data:
