@@ -1,6 +1,5 @@
 import {
   Controller,
-  ForbiddenException,
   Get,
   Post,
   Query,
@@ -23,7 +22,7 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RequestUser } from './interfaces';
-import { LoginResponseDto, UserResponseDto, LogoutResponseDto } from './dto';
+import { UserResponseDto, LogoutResponseDto } from './dto';
 import { AUTH_COOKIE_NAME, AUTH_COOKIE_OPTIONS } from './constants';
 
 /** Rate limit override for authentication endpoints (5 req/min). */
@@ -36,7 +35,7 @@ interface AuthenticatedRequest extends Request {
 
 /**
  * AuthController handles authentication endpoints including
- * WeWork OAuth flow, user info, and logout.
+ * WeChat Work OAuth flow, user info, and logout.
  */
 @ApiTags('Authentication')
 @Controller('auth')
@@ -50,8 +49,7 @@ export class AuthController {
 
   /**
    * Get cookie options with secure flag controlled by FORCE_HTTPS_COOKIES env var.
-   * In Phase A (HTTP + IP access), FORCE_HTTPS_COOKIES is not set, so secure=false.
-   * In Phase B (HTTPS + domain), set FORCE_HTTPS_COOKIES=true.
+   * Set FORCE_HTTPS_COOKIES=true when SSL is configured.
    */
   private getCookieOptions(): typeof AUTH_COOKIE_OPTIONS & { secure: boolean } {
     const forceHttps = process.env.FORCE_HTTPS_COOKIES === 'true';
@@ -103,36 +101,6 @@ export class AuthController {
         `${frontendUrl}/auth/callback?error=${encodeURIComponent(errorMessage)}`,
       );
     }
-  }
-
-  /**
-   * Dev mode login - bypasses WeWork OAuth for local development.
-   * Available when NODE_ENV=development OR ALLOW_DEV_LOGIN=true (Phase A production).
-   */
-  @Throttle(AUTH_THROTTLE)
-  @Post('dev/login')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Dev mode login (development only)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Dev login successful',
-    type: LoginResponseDto,
-  })
-  @ApiResponse({ status: 403, description: 'Not in development mode' })
-  async devLogin(
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<LoginResponseDto> {
-    const nodeEnv = this.configService.get<string>('nodeEnv');
-    const allowDevLogin = process.env.ALLOW_DEV_LOGIN === 'true';
-    if (nodeEnv !== 'development' && !allowDevLogin) {
-      throw new ForbiddenException(
-        'Dev login is only available in development mode or when ALLOW_DEV_LOGIN=true',
-      );
-    }
-
-    const result = await this.authService.devLogin();
-    res.cookie(AUTH_COOKIE_NAME, result.token, this.getCookieOptions());
-    return result;
   }
 
   /**

@@ -37,9 +37,9 @@ describe('AuthController (e2e)', () => {
   // Mock data
   const mockUser = {
     id: 1,
-    weworkId: 'dev-user',
-    name: 'Dev User',
-    avatar: 'https://avatar.com/dev.png',
+    weworkId: 'test-wework-001',
+    name: 'Test User',
+    avatar: 'https://avatar.com/test.png',
     mobile: '13800138000',
     isActive: true,
     createdAt: new Date('2025-01-01'),
@@ -170,8 +170,8 @@ describe('AuthController (e2e)', () => {
       expect(body.code).toBe(200);
       expect(body.data).toBeDefined();
       expect(body.data.id).toBe(1);
-      expect(body.data.weworkId).toBe('dev-user');
-      expect(body.data.name).toBe('Dev User');
+      expect(body.data.weworkId).toBe('test-wework-001');
+      expect(body.data.name).toBe('Test User');
     });
 
     it('should return 404 when user not found', async () => {
