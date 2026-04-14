@@ -10,7 +10,6 @@ export type {
   PaginatedResult,
   PaginationParams,
   AuthUser,
-  LoginResponse,
   LogoutResponse,
   EnumDefinition,
   SystemEnumsResponse,

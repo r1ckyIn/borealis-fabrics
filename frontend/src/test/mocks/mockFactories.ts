@@ -15,7 +15,7 @@ import type {
   SupplierPayment,
   OrderTimelineEntry,
 } from '@/types/entities.types';
-import type { AuthUser, LoginResponse } from '@/types/api.types';
+import type { AuthUser } from '@/types/api.types';
 import {
   SupplierStatus,
   SettleType,
@@ -163,16 +163,6 @@ export function createMockAuthUser(overrides?: Partial<AuthUser>): AuthUser {
     isAdmin: false,
     createdAt: '2025-01-01T00:00:00.000Z',
     updatedAt: '2025-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-export function createMockLoginResponse(
-  overrides?: Partial<LoginResponse>,
-): LoginResponse {
-  return {
-    token: `mock-jwt-token-${Date.now()}`,
-    user: createMockAuthUser(),
     ...overrides,
   };
 }

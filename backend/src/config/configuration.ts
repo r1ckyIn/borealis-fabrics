@@ -10,6 +10,8 @@ const validateProductionConfig = () => {
       'COS_BUCKET',
       'COS_REGION',
       'CORS_ORIGINS',
+      // HTTPS cookie security (required after SSL is configured)
+      'FORCE_HTTPS_COOKIES',
       // WeChat Work OAuth (always required in production)
       'WEWORK_CORP_ID',
       'WEWORK_SECRET',
