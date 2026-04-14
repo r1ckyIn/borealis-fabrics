@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Readiness
-status: executing
-stopped_at: "Phase 16 complete — Phase A deployed and verified"
-last_updated: "2026-04-14T00:00:00Z"
-last_activity: 2026-04-14 -- Phase A deployed to Tencent Cloud, user verified
+status: verifying
+stopped_at: Completed 17-01-PLAN.md
+last_updated: "2026-04-14T04:32:54.233Z"
+last_activity: 2026-04-14
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 4
   total_plans: 13
-  completed_plans: 13
+  completed_plans: 17
   percent: 95
 ---
 
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 Phase: 16 (production-deployment) — Phase A DEPLOYED
 Plan: 3 of 3 (complete)
-Status: Phase A live at http://119.29.82.146, Phase B pending (domain + SSL + WeChat OAuth)
-Last activity: 2026-04-14 -- User verified deployment, all endpoints working
+Status: Phase complete — ready for verification
+Last activity: 2026-04-14
 
 Progress: [█████████░] 95% (Phase A done, Phase B = domain + SSL)
 
@@ -53,6 +53,7 @@ Progress: [█████████░] 95% (Phase A done, Phase B = domain +
 | Phase 13 P06 | 15min | 4 tasks | 24 files |
 | Phase 15 P02 | 13m | 2 tasks | 15 files |
 | Phase 16 P03 | 7min | 2 tasks | 3 files |
+| Phase 17-domain-ssl-launch P01 | 11min | 2 tasks | 15 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,7 @@ Recent decisions affecting current work:
 - [Phase 16-deploy]: Prisma + pnpm Docker fix: install all deps → generate → prune (not multi-stage copy)
 - [Phase 16-deploy]: ALLOW_DEV_LOGIN + VITE_ALLOW_DEV_LOGIN for Phase A browser login
 - [Phase 16-deploy]: BOSS_WEWORK_IDS=dev-user for admin access in Phase A
+- [Phase 17-domain-ssl-launch]: Renamed dev-user mock weworkId to mock-dev-001 in guards to eliminate all dev-user references
 
 ### Pending Todos
 
@@ -79,9 +81,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T00:00:00Z
-Stopped at: Phase A deployment complete, user verified
-Resume file: none (clean state)
+Last session: 2026-04-14T04:32:54.229Z
+Stopped at: Completed 17-01-PLAN.md
+Resume file: None
 
 ---
 *State initialized: 2026-03-17*
