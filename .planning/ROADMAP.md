@@ -133,13 +133,19 @@ Plans:
 ### Phase 17: Domain & SSL Launch (Phase B)
 **Goal**: System accessible via domain with HTTPS, WeChat Work OAuth fully functional, dev login removed
 **Depends on**: Phase 16 (Phase A deployed), user purchases domain + completes ICP filing
+**Requirements**: DEPLOY-03, DEPLOY-04, DEPLOY-05
 **Success Criteria** (what must be TRUE):
   1. System accessible via `https://<domain>`, HTTP redirects to HTTPS
   2. SSL certificate active and auto-renews
   3. WeChat Work OAuth login works: QR scan in browser → callback → JWT cookie → authenticated
   4. ALLOW_DEV_LOGIN and VITE_ALLOW_DEV_LOGIN removed, dev login button hidden
   5. FORCE_HTTPS_COOKIES=true, all auth cookies are Secure + HttpOnly
-**Plans**: TBD (blocked on domain + ICP)
+**Plans**: 3 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — Dev login complete removal (backend + frontend code, tests, env templates)
+- [x] 17-02-PLAN.md — Nginx HTTPS config + docker-compose SSL volumes + DEPLOY.md Phase B guide
+- [ ] 17-03-PLAN.md — Checkpoint: domain purchase + ICP + Phase B cutover deployment
 
 ## Progress
 
@@ -152,8 +158,8 @@ Plans:
 | 14. Observability & Performance | v1.1 | 4/4 | Complete    | 2026-04-03 |
 | 15. Containerization & Quality | v1.1 | 3/3 | Complete    | 2026-04-03 |
 | 16. Production Deployment | v1.1 | 3/3 | Phase A live | 2026-04-14 |
-| 17. Domain & SSL Launch | v1.1 | -   | Blocked (域名+ICP) | - |
+| 17. Domain & SSL Launch | v1.1 | 1/3 | In Progress|  |
 
 ---
 *Roadmap created: 2026-03-17*
-*Last updated: 2026-04-14 (Phase 17 added for domain+SSL launch)*
+*Last updated: 2026-04-14 (Phase 17 planned: 3 plans in 2 waves)*

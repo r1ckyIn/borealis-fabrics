@@ -12,26 +12,24 @@ import { ProtectedRoute } from '@/routes/ProtectedRoute';
 import LoginPage from '@/pages/auth/LoginPage';
 import OAuthCallback from '@/pages/auth/OAuthCallback';
 import { useAuthStore } from '@/store/authStore';
-import { createMockAuthUser, createMockLoginResponse } from '@/test/mocks/mockFactories';
+import { createMockAuthUser } from '@/test/mocks/mockFactories';
 
 import {
   renderIntegration,
   screen,
   waitFor,
   clearAuthState,
-  userEvent,
 } from './integrationTestUtils';
 
 // Mock at the API module boundary
 vi.mock('@/api/auth.api', () => ({
   getWeworkLoginUrl: vi.fn(() => '/api/v1/auth/wework/login'),
   getCurrentUser: vi.fn(),
-  devLogin: vi.fn(),
   logout: vi.fn(),
 }));
 
 type AuthApiModule = typeof import('@/api/auth.api');
-const { getCurrentUser, devLogin } =
+const { getCurrentUser } =
   vi.mocked(await vi.importMock<AuthApiModule>('@/api/auth.api'));
 
 /**
@@ -126,37 +124,6 @@ describe('Auth Flow Integration', () => {
       });
     });
 
-    it('Dev Login sets auth state and navigates to home', async () => {
-      const mockResponse = createMockLoginResponse();
-      devLogin.mockResolvedValueOnce(mockResponse);
-
-      const user = userEvent.setup();
-      renderAuthRoutes(['/login']);
-
-      await user.click(screen.getByText('Dev Login'));
-
-      await waitFor(() => {
-        const state = useAuthStore.getState();
-        expect(state.user).toEqual(mockResponse.user);
-      });
-
-      await waitFor(() => {
-        expect(screen.getByText('Protected Home')).toBeInTheDocument();
-      });
-    });
-
-    it('Dev Login failure shows error message', async () => {
-      devLogin.mockRejectedValueOnce(new Error('Network error'));
-
-      const user = userEvent.setup();
-      renderAuthRoutes(['/login']);
-
-      await user.click(screen.getByText('Dev Login'));
-
-      await waitFor(() => {
-        expect(screen.getByText('Dev login failed')).toBeInTheDocument();
-      });
-    });
   });
 
   describe('OAuthCallback', () => {

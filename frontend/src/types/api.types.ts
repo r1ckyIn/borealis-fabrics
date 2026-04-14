@@ -51,12 +51,6 @@ export interface AuthUser {
   updatedAt: string;
 }
 
-/** Login response data. */
-export interface LoginResponse {
-  token: string;
-  user: AuthUser;
-}
-
 /** Logout response data. */
 export interface LogoutResponse {
   message: string;
