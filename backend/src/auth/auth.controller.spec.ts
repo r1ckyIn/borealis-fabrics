@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { AuthController } from './auth.controller';
@@ -15,7 +14,6 @@ describe('AuthController', () => {
     handleOAuthCallback: jest.Mock;
     getUserInfo: jest.Mock;
     logout: jest.Mock;
-    devLogin: jest.Mock;
   };
   let configService: { get: jest.Mock };
 
@@ -36,7 +34,6 @@ describe('AuthController', () => {
       handleOAuthCallback: jest.fn(),
       getUserInfo: jest.fn(),
       logout: jest.fn(),
-      devLogin: jest.fn(),
     };
 
     configService = {
@@ -197,120 +194,6 @@ describe('AuthController', () => {
       );
 
       process.env = savedEnv;
-    });
-  });
-
-  describe('devLogin', () => {
-    let savedEnv: NodeJS.ProcessEnv;
-
-    beforeEach(() => {
-      savedEnv = { ...process.env };
-    });
-
-    afterEach(() => {
-      process.env = savedEnv;
-    });
-
-    it('should return login response and set cookie in development mode', async () => {
-      const mockResult = {
-        token: 'dev-jwt-token',
-        user: {
-          id: 1,
-          weworkId: 'dev-user',
-          name: 'Dev User',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      };
-      authService.devLogin.mockResolvedValue(mockResult);
-      configService.get.mockReturnValue('development');
-      const res = mockResponse();
-
-      const result = await controller.devLogin(res);
-
-      expect(authService.devLogin).toHaveBeenCalled();
-      expect(result).toEqual(mockResult);
-      // eslint-disable-next-line @typescript-eslint/unbound-method
-      expect(res.cookie).toHaveBeenCalledWith(
-        'bf_auth_token',
-        'dev-jwt-token',
-        expect.objectContaining({
-          httpOnly: true,
-          sameSite: 'lax',
-          secure: false,
-        }),
-      );
-    });
-
-    it('should throw ForbiddenException in production mode', async () => {
-      delete process.env.ALLOW_DEV_LOGIN;
-      configService.get.mockReturnValue('production');
-
-      await expect(controller.devLogin(mockResponse())).rejects.toThrow(
-        ForbiddenException,
-      );
-    });
-
-    it('should throw ForbiddenException when nodeEnv is undefined', async () => {
-      delete process.env.ALLOW_DEV_LOGIN;
-      configService.get.mockReturnValue(undefined);
-
-      await expect(controller.devLogin(mockResponse())).rejects.toThrow(
-        ForbiddenException,
-      );
-    });
-
-    it('should allow access when ALLOW_DEV_LOGIN=true in production', async () => {
-      process.env.ALLOW_DEV_LOGIN = 'true';
-      const mockResult = {
-        token: 'dev-jwt-token',
-        user: {
-          id: 1,
-          weworkId: 'dev-user',
-          name: 'Dev User',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      };
-      authService.devLogin.mockResolvedValue(mockResult);
-      configService.get.mockReturnValue('production');
-      const res = mockResponse();
-
-      const result = await controller.devLogin(res);
-
-      expect(authService.devLogin).toHaveBeenCalled();
-      expect(result).toEqual(mockResult);
-    });
-
-    it('should block access in production when ALLOW_DEV_LOGIN is not set', async () => {
-      delete process.env.ALLOW_DEV_LOGIN;
-      configService.get.mockReturnValue('production');
-
-      await expect(controller.devLogin(mockResponse())).rejects.toThrow(
-        ForbiddenException,
-      );
-    });
-
-    it('should still work in development mode without ALLOW_DEV_LOGIN', async () => {
-      delete process.env.ALLOW_DEV_LOGIN;
-      const mockResult = {
-        token: 'dev-jwt-token',
-        user: {
-          id: 1,
-          weworkId: 'dev-user',
-          name: 'Dev User',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      };
-      authService.devLogin.mockResolvedValue(mockResult);
-      configService.get.mockReturnValue('development');
-      const res = mockResponse();
-
-      const result = await controller.devLogin(res);
-
-      expect(authService.devLogin).toHaveBeenCalled();
-      expect(result).toEqual(mockResult);
     });
   });
 

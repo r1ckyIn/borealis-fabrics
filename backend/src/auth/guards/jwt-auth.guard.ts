@@ -42,8 +42,8 @@ export class JwtAuthGuard implements CanActivate {
       );
       (request as Request & { user: RequestUser }).user = {
         id: 1,
-        weworkId: 'dev-user',
-        name: 'Dev User',
+        weworkId: 'mock-dev-001',
+        name: 'Mock Developer',
       };
       return true;
     }

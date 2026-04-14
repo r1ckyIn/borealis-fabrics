@@ -113,32 +113,6 @@ export class AuthService {
   }
 
   /**
-   * Dev mode login: create/upsert a dev user and return JWT.
-   * Available when NODE_ENV=development OR ALLOW_DEV_LOGIN=true.
-   */
-  async devLogin(): Promise<LoginResponseDto> {
-    const nodeEnv = this.configService.get<string>('nodeEnv');
-    const allowDevLogin = process.env.ALLOW_DEV_LOGIN === 'true';
-    if (nodeEnv !== 'development' && !allowDevLogin) {
-      throw new UnauthorizedException(
-        'Dev login is only available in development mode or when ALLOW_DEV_LOGIN=true',
-      );
-    }
-
-    const user = await this.upsertUser({
-      userid: 'dev-user',
-      name: 'Dev User',
-    });
-
-    const token = this.generateToken(user);
-
-    return {
-      token,
-      user: this.toUserResponseDto(user),
-    };
-  }
-
-  /**
    * Logout user by blacklisting their token.
    */
   async logout(token: string, user: RequestUser): Promise<LogoutResponseDto> {

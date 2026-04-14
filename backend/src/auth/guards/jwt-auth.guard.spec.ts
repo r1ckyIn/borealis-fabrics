@@ -61,8 +61,8 @@ describe('JwtAuthGuard', () => {
       expect(result).toBe(true);
       expect((request as { user?: unknown }).user).toEqual({
         id: 1,
-        weworkId: 'dev-user',
-        name: 'Dev User',
+        weworkId: 'mock-dev-001',
+        name: 'Mock Developer',
       });
     });
   });
