@@ -1,17 +1,16 @@
 /**
- * Login page for WeWork OAuth authentication.
+ * Login page for WeChat Work OAuth authentication.
  *
- * Displays company branding and WeWork login button.
+ * Displays company branding and WeChat Work login button.
  * Redirects authenticated users to their intended destination.
  */
 
-import { CodeOutlined, WechatWorkOutlined } from '@ant-design/icons';
-import { Button, Card, Divider, Space, Typography, message } from 'antd';
-import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { WechatWorkOutlined } from '@ant-design/icons';
+import { Button, Card, Space, Typography } from 'antd';
+import { Navigate, useLocation } from 'react-router-dom';
 
-import { devLogin, getWeworkLoginUrl } from '@/api/auth.api';
-import { useAuthStore, useIsAuthenticated, useIsInitializing } from '@/store';
+import { getWeworkLoginUrl } from '@/api/auth.api';
+import { useIsAuthenticated, useIsInitializing } from '@/store';
 
 const { Title, Text } = Typography;
 
@@ -21,11 +20,8 @@ interface LocationState {
 
 export default function LoginPage() {
   const location = useLocation();
-  const navigate = useNavigate();
   const isAuthenticated = useIsAuthenticated();
   const isInitializing = useIsInitializing();
-  const setUser = useAuthStore((s) => s.setUser);
-  const [devLoading, setDevLoading] = useState(false);
 
   const state = location.state as LocationState | null;
   const from = state?.from || '/';
@@ -40,19 +36,6 @@ export default function LoginPage() {
 
   const handleLogin = () => {
     window.location.href = getWeworkLoginUrl();
-  };
-
-  const handleDevLogin = async () => {
-    setDevLoading(true);
-    try {
-      const response = await devLogin();
-      setUser(response.user);
-      navigate(from, { replace: true });
-    } catch {
-      message.error('Dev login failed');
-    } finally {
-      setDevLoading(false);
-    }
   };
 
   return (
@@ -124,28 +107,6 @@ export default function LoginPage() {
           >
             企业微信登录
           </Button>
-
-          {/* Dev login: shown in dev mode or when VITE_ALLOW_DEV_LOGIN=true (Phase A) */}
-          {(import.meta.env.DEV || import.meta.env.VITE_ALLOW_DEV_LOGIN === 'true') && (
-            <>
-              <Divider style={{ margin: '8px 0' }}>Development Only</Divider>
-              <Button
-                size="large"
-                icon={<CodeOutlined />}
-                loading={devLoading}
-                onClick={handleDevLogin}
-                style={{
-                  width: '100%',
-                  height: 48,
-                  fontSize: 16,
-                  borderColor: '#fa8c16',
-                  color: '#fa8c16',
-                }}
-              >
-                Dev Login
-              </Button>
-            </>
-          )}
         </Space>
       </Card>
     </div>
