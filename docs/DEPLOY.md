@@ -258,7 +258,7 @@ docker compose -f docker-compose.monitoring.yml down
 | `curl http://<server-ip>/health` | `{"status":"ok","info":{"app":{"status":"up"}}}` |
 | `curl http://<server-ip>/ready` | `{"status":"ok","info":{"database":{"status":"up"},"redis":{"status":"up"}}}` |
 | `http://<server-ip>/` in browser | Frontend loads |
-| Dev login: `POST http://<server-ip>/api/v1/auth/dev/login` | 200 OK, cookie set |
+| WeChat OAuth: Visit `https://<DOMAIN>`, click login | QR scan, cookie set (Phase B only) |
 
 ---
 
@@ -266,121 +266,234 @@ docker compose -f docker-compose.monitoring.yml down
 
 > Phase B can only be completed after the domain is purchased and ICP filing is approved (typically 1-4 weeks).
 
-### 3.1 Domain + ICP Filing
+### 3.1 Prerequisites (Phase B)
 
-1. Purchase a domain from a registrar
-2. Complete ICP filing through Tencent Cloud (Tencent Cloud Console > ICP Filing)
-3. Wait for approval (1-4 weeks)
-4. Point domain A record to Lighthouse public IP:
-   - DNS Console > Add Record > Type A > Value: `<server-ip>`
+Before starting Phase B, ensure the following are complete:
 
-### 3.2 SSL with Let's Encrypt
+- Domain purchased and registered on Tencent Cloud
+- ICP filing approved (typically 1-4 weeks after submission)
+- Port 443 added to Lighthouse firewall:
+  - Tencent Cloud Console > Lighthouse > Instance > Firewall > Add Rule
+  - Protocol: TCP, Port: 443, Source: All, Action: Allow
+- DNS A record pointing to server IP:
+  - Tencent Cloud Console > DNS > Add Record > Type A > Value: `<server-ip>`
+- Wait for DNS propagation (usually 5-30 minutes, up to 48 hours)
+
+### 3.2 Replace Domain Placeholder
+
+On the server, replace all `<DOMAIN>` placeholders in the nginx config:
+
+```bash
+cd /opt/borealis-fabrics
+
+# Replace placeholder with your actual domain
+sed -i 's/<DOMAIN>/your-actual-domain.com/g' nginx/conf.d/default.conf
+
+# Verify the replacement
+grep your-actual-domain.com nginx/conf.d/default.conf
+# Should show multiple matches (server_name, ssl_certificate paths, redirect target)
+```
+
+### 3.3 Install Certbot and Obtain SSL Certificate
+
+Using certbot with webroot plugin for zero-downtime certificate acquisition.
+
+**Step 1: Install certbot on the host** (not in container):
+
+```bash
+apt-get update && apt-get install -y certbot
+```
+
+**Step 2: Create a temporary self-signed certificate** so Nginx can start with the HTTPS server block:
+
+```bash
+DOMAIN="your-actual-domain.com"
+
+mkdir -p /etc/letsencrypt/live/$DOMAIN
+openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+  -keyout /etc/letsencrypt/live/$DOMAIN/privkey.pem \
+  -out /etc/letsencrypt/live/$DOMAIN/fullchain.pem \
+  -subj '/CN=localhost'
+```
+
+**Step 3: Start Nginx with the temporary certificate:**
+
+```bash
+cd /opt/borealis-fabrics
+docker compose -f docker-compose.prod.yml up -d nginx
+```
+
+**Step 4: Find the certbot webroot volume path:**
+
+```bash
+WEBROOT=$(docker volume inspect borealis-fabrics_certbot-webroot --format '{{.Mountpoint}}')
+echo "Certbot webroot: $WEBROOT"
+```
+
+**Step 5: Obtain the real Let's Encrypt certificate:**
+
+```bash
+certbot certonly --webroot -w "$WEBROOT" -d $DOMAIN --agree-tos --email your-email@example.com
+```
+
+**Step 6: Reload Nginx to use the real certificate:**
+
+```bash
+docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+```
+
+**Step 7: Verify SSL:**
+
+```bash
+# Check HTTPS works
+curl -sv https://$DOMAIN/health 2>&1 | grep "SSL certificate verify ok"
+
+# Check HTTP redirects to HTTPS
+curl -sv http://$DOMAIN/ 2>&1 | grep "301"
+```
+
+### 3.4 Set Up Certbot Auto-Renewal
+
+```bash
+# Find the volume path (reuse from above or re-inspect)
+WEBROOT=$(docker volume inspect borealis-fabrics_certbot-webroot --format '{{.Mountpoint}}')
+
+# Create cron job for daily renewal check at 3 AM
+cat > /etc/cron.d/certbot-renew << 'CRON'
+0 3 * * * root certbot renew --webroot -w WEBROOT_PLACEHOLDER --quiet --deploy-hook "cd /opt/borealis-fabrics && docker compose -f docker-compose.prod.yml exec -T nginx nginx -s reload" >> /var/log/certbot-renew.log 2>&1
+CRON
+
+# Replace placeholder with actual volume path
+sed -i "s|WEBROOT_PLACEHOLDER|$WEBROOT|" /etc/cron.d/certbot-renew
+
+# Test renewal (dry run)
+certbot renew --dry-run
+```
+
+### 3.5 Configure WeChat Work OAuth
+
+**Step 1: Download Domain Verification File**
+
+1. Log in to WeChat Work Admin Console: https://work.weixin.qq.com/wework_admin/loginpage_wx
+2. Go to: **App Management (应用管理)** > Select your app
+3. In the **Web Authorization (网页授权)** section, click **Set Trusted Domain (设置可信域名)**
+4. Download the **verification file** (e.g., `WW_verify_xxxxxxxx.txt`)
+5. Place it in the frontend dist directory on the server:
+
+```bash
+scp WW_verify_xxxxxxxx.txt root@<server-ip>:/opt/borealis-fabrics/frontend/dist/
+```
+
+6. Verify it is accessible:
+
+```bash
+curl https://<DOMAIN>/WW_verify_xxxxxxxx.txt
+# Should return the file contents
+```
+
+**Step 2: Set Trusted Domain (设置可信域名)**
+
+1. In the same WeChat Work admin page, enter your domain: `<DOMAIN>` (without `https://`)
+2. Click **Confirm (确认)**
+3. If verification fails: ensure the domain's ICP filing entity matches the WeChat Work enterprise entity
+
+**Step 3: Configure OAuth Callback URL (OAuth2回调域名)**
+
+1. In the app settings, find **OAuth2 Callback URL (OAuth2回调域名)**
+2. Set it to: `<DOMAIN>` (just the domain, no protocol or path)
+3. The full redirect URI is handled by the backend env var `WEWORK_REDIRECT_URI`
+
+**Step 4: IP Whitelist (if required)**
+
+1. In app settings, find **Enterprise Trusted IP (企业可信IP)**
+2. Add your server's public IP: `119.29.82.146`
+
+### 3.6 Update Environment Variables
 
 ```bash
 # SSH into server
+cd /opt/borealis-fabrics/backend
 
-# Install certbot
-apt-get update
-apt-get install -y certbot
+# Edit .env -- make these changes:
 
-# Obtain certificate (stop Nginx temporarily)
-docker compose -f docker-compose.prod.yml stop nginx
-certbot certonly --standalone -d your-domain.com
-docker compose -f docker-compose.prod.yml start nginx
-```
+# 1. Update WeChat Work redirect URI
+WEWORK_REDIRECT_URI="https://<DOMAIN>/api/v1/auth/wework/callback"
 
-Update `nginx/conf.d/default.conf` to add HTTPS:
+# 2. Update CORS origins
+CORS_ORIGINS="https://<DOMAIN>"
 
-```nginx
-# Redirect HTTP to HTTPS
-server {
-    listen 80;
-    server_name your-domain.com;
-    return 301 https://$server_name$request_uri;
-}
+# 3. Update base URL
+BASE_URL="https://<DOMAIN>"
 
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
-
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-
-    # SSL security settings
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-    ssl_prefer_server_ciphers off;
-
-    # HSTS
-    add_header Strict-Transport-Security "max-age=63072000" always;
-
-    # ... (keep existing location blocks from default.conf)
-}
-```
-
-Update `docker-compose.prod.yml` Nginx volumes to mount certificates:
-
-```yaml
-nginx:
-  ports:
-    - "80:80"
-    - "443:443"
-  volumes:
-    - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    - ./nginx/conf.d:/etc/nginx/conf.d:ro
-    - ./frontend/dist:/usr/share/nginx/html:ro
-    - /etc/letsencrypt:/etc/letsencrypt:ro
-```
-
-Set up auto-renewal:
-
-```bash
-# Test renewal
-certbot renew --dry-run
-
-# Add cron job for auto-renewal
-echo "0 3 * * * certbot renew --quiet && docker compose -f /opt/borealis-fabrics/docker-compose.prod.yml restart nginx" | crontab -
-```
-
-### 3.3 WeChat Work OAuth
-
-1. Log in to WeChat Work Admin Console
-2. Configure the trusted domain for your application
-3. Update `backend/.env`:
-
-```bash
-# Update WeChat Work settings
-WEWORK_CORP_ID="<real-corp-id>"
-WEWORK_AGENT_ID="<real-agent-id>"
-WEWORK_SECRET="<real-agent-secret>"
-WEWORK_REDIRECT_URI="https://your-domain.com/api/v1/auth/wework/callback"
-
-# Update CORS for HTTPS domain
-CORS_ORIGINS="https://your-domain.com"
-
-# Update base URL
-BASE_URL="https://your-domain.com"
-
-# Enable HTTPS cookies
+# 4. Enable HTTPS cookies
 FORCE_HTTPS_COOKIES=true
 
-# Disable dev login
-# ALLOW_DEV_LOGIN=true    <-- remove or comment out this line
+# 5. Remove ALLOW_DEV_LOGIN line (code already removed in Plan 17-01)
+
+# 6. Set real BOSS_WEWORK_IDS (replace dev-user with actual boss weworkId)
+BOSS_WEWORK_IDS="<real-boss-wework-id>"
 ```
 
-4. Update COS bucket CORS:
-   - Change AllowOrigin from `*` to `https://your-domain.com`
+Update COS bucket CORS:
+- Tencent Cloud Console > COS > Bucket > Security Management > CORS
+- Change AllowOrigin from `*` to `https://<DOMAIN>`
 
-### 3.4 Redeploy
+### 3.7 Deploy Phase B
 
 ```bash
-./deploy/deploy.sh --skip-migrate
+cd /opt/borealis-fabrics
+
+# Pull latest code (includes dev login removal + nginx SSL config)
+git pull origin main
+
+# Rebuild frontend (dev login button removed)
+cd frontend && pnpm install && pnpm build && cd ..
+
+# Restart services
+docker compose -f docker-compose.prod.yml up -d --build
+
+# Verify
+curl -sv https://<DOMAIN>/health
+curl -sv http://<DOMAIN>/ 2>&1 | grep "301"
+curl -sv http://119.29.82.146/ 2>&1 | grep "301"
 ```
 
-Verify:
-- `https://your-domain.com/` loads with valid SSL certificate
-- WeChat Work OAuth login redirects and authenticates correctly
-- Cookies are set with `Secure` flag
+### 3.8 Enable HSTS (After Verification)
+
+> **Warning:** Only enable HSTS after confirming HTTPS works correctly. A misconfigured HSTS header can lock users out of the site.
+
+1. After confirming HTTPS works for at least 1 day
+2. SSH into server and edit `nginx/conf.d/default.conf`
+3. Uncomment the Phase 1 HSTS line:
+
+```nginx
+add_header Strict-Transport-Security "max-age=86400" always;
+```
+
+4. Reload Nginx:
+
+```bash
+docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+```
+
+5. After 1 more day of successful operation, update to production value:
+
+```nginx
+add_header Strict-Transport-Security "max-age=63072000" always;
+```
+
+6. Reload Nginx again.
+
+### 3.9 Verify Phase B
+
+| Check | Command | Expected |
+|-------|---------|----------|
+| HTTPS works | `curl -sv https://<DOMAIN>/health` | 200 OK with valid cert |
+| HTTP redirects | `curl -sv http://<DOMAIN>/` | 301 to https |
+| IP redirects | `curl -sv http://119.29.82.146/` | 301 to https://<DOMAIN> |
+| OAuth login | Open browser, click login | QR scan works, redirects back |
+| Secure cookies | Check browser DevTools | auth cookie has Secure + HttpOnly |
+| COS CORS | Upload a file | No CORS errors |
 
 ---
 
@@ -392,7 +505,7 @@ Perform this checklist on the production environment after deployment. All categ
 
 | # | Test Item | Pass? |
 |---|-----------|-------|
-| 1 | Dev login works (Phase A) / WeChat OAuth works (Phase B) | [ ] |
+| 1 | WeChat Work OAuth login (QR scan -> callback -> authenticated) | [ ] |
 | 2 | Logout clears session (cookie removed) | [ ] |
 | 3 | Session persists across page refresh | [ ] |
 | 4 | Unauthorized access redirects to login | [ ] |
@@ -925,7 +1038,7 @@ docker compose -f docker-compose.monitoring.yml down
 | `curl http://<server-ip>/health` | `{"status":"ok","info":{"app":{"status":"up"}}}` |
 | `curl http://<server-ip>/ready` | `{"status":"ok","info":{"database":{"status":"up"},"redis":{"status":"up"}}}` |
 | 浏览器访问 `http://<server-ip>/` | 前端正常加载 |
-| 开发登录：`POST http://<server-ip>/api/v1/auth/dev/login` | 200 OK，cookie 已设置 |
+| 企业微信 OAuth：访问 `https://<DOMAIN>`，点击登录 | 扫码登录，cookie 已设置（仅阶段 B） |
 
 ---
 
@@ -933,121 +1046,234 @@ docker compose -f docker-compose.monitoring.yml down
 
 > 阶段 B 只能在域名购买和 ICP 备案通过后完成（通常需要 1-4 周）。
 
-### 3.1 域名 + ICP 备案
+### 3.1 前置条件（阶段 B）
 
-1. 从注册商购买域名
-2. 通过腾讯云进行 ICP 备案（腾讯云控制台 > ICP 备案）
-3. 等待审批（1-4 周）
-4. 将域名 A 记录指向轻量应用服务器公网 IP：
-   - DNS 控制台 > 添加记录 > 类型 A > 值：`<server-ip>`
+开始阶段 B 前，确保以下条件已满足：
 
-### 3.2 使用 Let's Encrypt 配置 SSL
+- 域名已在腾讯云购买并注册
+- ICP 备案已通过（提交后通常需要 1-4 周）
+- 端口 443 已添加到轻量应用服务器防火墙：
+  - 腾讯云控制台 > 轻量应用服务器 > 实例 > 防火墙 > 添加规则
+  - 协议：TCP，端口：443，来源：所有，操作：允许
+- DNS A 记录已指向服务器 IP：
+  - 腾讯云控制台 > DNS 解析 > 添加记录 > 类型 A > 值：`<server-ip>`
+- 等待 DNS 生效（通常 5-30 分钟，最长 48 小时）
+
+### 3.2 替换域名占位符
+
+在服务器上，将 nginx 配置中的所有 `<DOMAIN>` 占位符替换为实际域名：
+
+```bash
+cd /opt/borealis-fabrics
+
+# 替换占位符为实际域名
+sed -i 's/<DOMAIN>/your-actual-domain.com/g' nginx/conf.d/default.conf
+
+# 验证替换结果
+grep your-actual-domain.com nginx/conf.d/default.conf
+# 应显示多个匹配项（server_name、ssl_certificate 路径、重定向目标）
+```
+
+### 3.3 安装 Certbot 并获取 SSL 证书
+
+使用 certbot webroot 插件实现零停机证书获取。
+
+**步骤 1：在宿主机上安装 certbot**（不是在容器内）：
+
+```bash
+apt-get update && apt-get install -y certbot
+```
+
+**步骤 2：创建临时自签名证书**，使 Nginx 的 HTTPS 服务器块能够启动：
+
+```bash
+DOMAIN="your-actual-domain.com"
+
+mkdir -p /etc/letsencrypt/live/$DOMAIN
+openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+  -keyout /etc/letsencrypt/live/$DOMAIN/privkey.pem \
+  -out /etc/letsencrypt/live/$DOMAIN/fullchain.pem \
+  -subj '/CN=localhost'
+```
+
+**步骤 3：使用临时证书启动 Nginx：**
+
+```bash
+cd /opt/borealis-fabrics
+docker compose -f docker-compose.prod.yml up -d nginx
+```
+
+**步骤 4：查找 certbot webroot 卷路径：**
+
+```bash
+WEBROOT=$(docker volume inspect borealis-fabrics_certbot-webroot --format '{{.Mountpoint}}')
+echo "Certbot webroot: $WEBROOT"
+```
+
+**步骤 5：获取真正的 Let's Encrypt 证书：**
+
+```bash
+certbot certonly --webroot -w "$WEBROOT" -d $DOMAIN --agree-tos --email your-email@example.com
+```
+
+**步骤 6：重新加载 Nginx 以使用真实证书：**
+
+```bash
+docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+```
+
+**步骤 7：验证 SSL：**
+
+```bash
+# 检查 HTTPS 是否正常
+curl -sv https://$DOMAIN/health 2>&1 | grep "SSL certificate verify ok"
+
+# 检查 HTTP 是否重定向到 HTTPS
+curl -sv http://$DOMAIN/ 2>&1 | grep "301"
+```
+
+### 3.4 设置 Certbot 自动续期
+
+```bash
+# 查找卷路径（复用上面的或重新查询）
+WEBROOT=$(docker volume inspect borealis-fabrics_certbot-webroot --format '{{.Mountpoint}}')
+
+# 创建每天凌晨 3 点检查续期的 cron 任务
+cat > /etc/cron.d/certbot-renew << 'CRON'
+0 3 * * * root certbot renew --webroot -w WEBROOT_PLACEHOLDER --quiet --deploy-hook "cd /opt/borealis-fabrics && docker compose -f docker-compose.prod.yml exec -T nginx nginx -s reload" >> /var/log/certbot-renew.log 2>&1
+CRON
+
+# 用实际路径替换占位符
+sed -i "s|WEBROOT_PLACEHOLDER|$WEBROOT|" /etc/cron.d/certbot-renew
+
+# 测试续期（干运行）
+certbot renew --dry-run
+```
+
+### 3.5 配置企业微信 OAuth
+
+**步骤 1：下载域名验证文件**
+
+1. 登录企业微信管理后台：https://work.weixin.qq.com/wework_admin/loginpage_wx
+2. 进入：**应用管理** > 选择你的应用
+3. 在 **网页授权** 部分，点击 **设置可信域名**
+4. 下载 **验证文件**（如 `WW_verify_xxxxxxxx.txt`）
+5. 将验证文件放到服务器的前端 dist 目录：
+
+```bash
+scp WW_verify_xxxxxxxx.txt root@<server-ip>:/opt/borealis-fabrics/frontend/dist/
+```
+
+6. 验证文件是否可访问：
+
+```bash
+curl https://<DOMAIN>/WW_verify_xxxxxxxx.txt
+# 应返回文件内容
+```
+
+**步骤 2：设置可信域名**
+
+1. 在同一企业微信管理页面，输入你的域名：`<DOMAIN>`（不带 `https://`）
+2. 点击 **确认**
+3. 如果验证失败：确保域名的 ICP 备案主体与企业微信认证主体一致
+
+**步骤 3：配置 OAuth2 回调域名**
+
+1. 在应用设置中，找到 **OAuth2回调域名**
+2. 设置为：`<DOMAIN>`（只填域名，不带协议或路径）
+3. 完整的重定向 URI 由后端环境变量 `WEWORK_REDIRECT_URI` 控制
+
+**步骤 4：IP 白名单（如需要）**
+
+1. 在应用设置中，找到 **企业可信IP**
+2. 添加服务器公网 IP：`119.29.82.146`
+
+### 3.6 更新环境变量
 
 ```bash
 # SSH 登录服务器
+cd /opt/borealis-fabrics/backend
 
-# 安装 certbot
-apt-get update
-apt-get install -y certbot
+# 编辑 .env -- 做以下更改：
 
-# 获取证书（临时停止 Nginx）
-docker compose -f docker-compose.prod.yml stop nginx
-certbot certonly --standalone -d your-domain.com
-docker compose -f docker-compose.prod.yml start nginx
-```
+# 1. 更新企业微信重定向 URI
+WEWORK_REDIRECT_URI="https://<DOMAIN>/api/v1/auth/wework/callback"
 
-更新 `nginx/conf.d/default.conf` 添加 HTTPS：
+# 2. 更新 CORS 来源
+CORS_ORIGINS="https://<DOMAIN>"
 
-```nginx
-# 将 HTTP 重定向到 HTTPS
-server {
-    listen 80;
-    server_name your-domain.com;
-    return 301 https://$server_name$request_uri;
-}
+# 3. 更新基础 URL
+BASE_URL="https://<DOMAIN>"
 
-server {
-    listen 443 ssl http2;
-    server_name your-domain.com;
-
-    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
-
-    # SSL 安全设置
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
-    ssl_prefer_server_ciphers off;
-
-    # HSTS
-    add_header Strict-Transport-Security "max-age=63072000" always;
-
-    # ...（保留 default.conf 中现有的 location 块）
-}
-```
-
-更新 `docker-compose.prod.yml` 的 Nginx volumes 以挂载证书：
-
-```yaml
-nginx:
-  ports:
-    - "80:80"
-    - "443:443"
-  volumes:
-    - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    - ./nginx/conf.d:/etc/nginx/conf.d:ro
-    - ./frontend/dist:/usr/share/nginx/html:ro
-    - /etc/letsencrypt:/etc/letsencrypt:ro
-```
-
-设置自动续期：
-
-```bash
-# 测试续期
-certbot renew --dry-run
-
-# 添加 cron 定时任务自动续期
-echo "0 3 * * * certbot renew --quiet && docker compose -f /opt/borealis-fabrics/docker-compose.prod.yml restart nginx" | crontab -
-```
-
-### 3.3 配置企业微信 OAuth
-
-1. 登录企业微信管理后台
-2. 为应用配置可信域名
-3. 更新 `backend/.env`：
-
-```bash
-# 更新企业微信配置
-WEWORK_CORP_ID="<真实 corp-id>"
-WEWORK_AGENT_ID="<真实 agent-id>"
-WEWORK_SECRET="<真实 agent-secret>"
-WEWORK_REDIRECT_URI="https://your-domain.com/api/v1/auth/wework/callback"
-
-# 更新 CORS 为 HTTPS 域名
-CORS_ORIGINS="https://your-domain.com"
-
-# 更新基础 URL
-BASE_URL="https://your-domain.com"
-
-# 启用 HTTPS Cookies
+# 4. 启用 HTTPS Cookies
 FORCE_HTTPS_COOKIES=true
 
-# 禁用开发登录
-# ALLOW_DEV_LOGIN=true    <-- 删除或注释掉此行
+# 5. 删除 ALLOW_DEV_LOGIN 行（代码已在 Plan 17-01 中移除）
+
+# 6. 设置真实的 BOSS_WEWORK_IDS（将 dev-user 替换为实际的 boss weworkId）
+BOSS_WEWORK_IDS="<real-boss-wework-id>"
 ```
 
-4. 更新 COS 存储桶 CORS：
-   - 将 AllowOrigin 从 `*` 改为 `https://your-domain.com`
+更新 COS 存储桶 CORS：
+- 腾讯云控制台 > COS > 存储桶 > 安全管理 > 跨域访问 CORS
+- 将 AllowOrigin 从 `*` 改为 `https://<DOMAIN>`
 
-### 3.4 重新部署
+### 3.7 部署阶段 B
 
 ```bash
-./deploy/deploy.sh --skip-migrate
+cd /opt/borealis-fabrics
+
+# 拉取最新代码（包含开发登录移除 + nginx SSL 配置）
+git pull origin main
+
+# 重新构建前端（开发登录按钮已移除）
+cd frontend && pnpm install && pnpm build && cd ..
+
+# 重启服务
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 验证
+curl -sv https://<DOMAIN>/health
+curl -sv http://<DOMAIN>/ 2>&1 | grep "301"
+curl -sv http://119.29.82.146/ 2>&1 | grep "301"
 ```
 
-验证：
-- `https://your-domain.com/` 加载时显示有效 SSL 证书
-- 企业微信 OAuth 登录重定向并成功认证
-- Cookie 设置了 `Secure` 标志
+### 3.8 启用 HSTS（验证后）
+
+> **警告：** 只有在确认 HTTPS 正常工作后才启用 HSTS。错误配置的 HSTS 头可能导致用户无法访问网站。
+
+1. 确认 HTTPS 正常工作至少 1 天后
+2. SSH 登录服务器，编辑 `nginx/conf.d/default.conf`
+3. 取消注释阶段 1 的 HSTS 行：
+
+```nginx
+add_header Strict-Transport-Security "max-age=86400" always;
+```
+
+4. 重新加载 Nginx：
+
+```bash
+docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+```
+
+5. 再运行 1 天正常后，更新为生产值：
+
+```nginx
+add_header Strict-Transport-Security "max-age=63072000" always;
+```
+
+6. 再次重新加载 Nginx。
+
+### 3.9 验证阶段 B
+
+| 检查项 | 命令 | 预期结果 |
+|--------|------|---------|
+| HTTPS 正常 | `curl -sv https://<DOMAIN>/health` | 200 OK，证书有效 |
+| HTTP 重定向 | `curl -sv http://<DOMAIN>/` | 301 到 https |
+| IP 重定向 | `curl -sv http://119.29.82.146/` | 301 到 https://<DOMAIN> |
+| OAuth 登录 | 打开浏览器，点击登录 | 扫码成功，正常跳转 |
+| 安全 Cookie | 检查浏览器开发者工具 | auth cookie 有 Secure + HttpOnly |
+| COS CORS | 上传一个文件 | 无 CORS 错误 |
 
 ---
 
@@ -1059,7 +1285,7 @@ FORCE_HTTPS_COOKIES=true
 
 | # | 测试项 | 通过？ |
 |---|--------|--------|
-| 1 | 开发登录可用（阶段 A）/ 企业微信 OAuth 可用（阶段 B） | [ ] |
+| 1 | 企业微信 OAuth 登录（扫码 -> 回调 -> 认证成功） | [ ] |
 | 2 | 登出清除会话（cookie 已删除） | [ ] |
 | 3 | 刷新页面后会话保持 | [ ] |
 | 4 | 未授权访问重定向到登录页 | [ ] |
