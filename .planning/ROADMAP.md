@@ -144,7 +144,7 @@ Plans:
 
 Plans:
 - [ ] 17-01-PLAN.md — Dev login complete removal (backend + frontend code, tests, env templates)
-- [ ] 17-02-PLAN.md — Nginx HTTPS config + docker-compose SSL volumes + DEPLOY.md Phase B guide
+- [x] 17-02-PLAN.md — Nginx HTTPS config + docker-compose SSL volumes + DEPLOY.md Phase B guide
 - [ ] 17-03-PLAN.md — Checkpoint: domain purchase + ICP + Phase B cutover deployment
 
 ## Progress
@@ -158,7 +158,7 @@ Plans:
 | 14. Observability & Performance | v1.1 | 4/4 | Complete    | 2026-04-03 |
 | 15. Containerization & Quality | v1.1 | 3/3 | Complete    | 2026-04-03 |
 | 16. Production Deployment | v1.1 | 3/3 | Phase A live | 2026-04-14 |
-| 17. Domain & SSL Launch | v1.1 | 0/3 | Planning complete | - |
+| 17. Domain & SSL Launch | v1.1 | 1/3 | In Progress|  |
 
 ---
 *Roadmap created: 2026-03-17*

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Production Readiness
-status: "Phase A live at http://119.29.82.146, Phase B pending (domain + SSL + WeChat OAuth)"
-stopped_at: Phase 17 context gathered
-last_updated: "2026-04-14T03:50:10.744Z"
-last_activity: 2026-04-14 -- User verified deployment, all endpoints working
+status: executing
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-04-14T04:26:37.617Z"
+last_activity: 2026-04-14
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 13
-  completed_plans: 16
+  total_plans: 16
+  completed_plans: 17
   percent: 95
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** All business documents importable, trackable, and queryable in one place
-**Current focus:** Phase 16 — production-deployment (Phase A complete)
+**Current focus:** Phase 17 — domain-ssl-launch
 
 ## Current Position
 
-Phase: 16 (production-deployment) — Phase A DEPLOYED
-Plan: 3 of 3 (complete)
-Status: Phase A live at http://119.29.82.146, Phase B pending (domain + SSL + WeChat OAuth)
-Last activity: 2026-04-14 -- User verified deployment, all endpoints working
+Phase: 17 (domain-ssl-launch) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-14
 
 Progress: [█████████░] 95% (Phase A done, Phase B = domain + SSL)
 
@@ -53,6 +53,7 @@ Progress: [█████████░] 95% (Phase A done, Phase B = domain +
 | Phase 13 P06 | 15min | 4 tasks | 24 files |
 | Phase 15 P02 | 13m | 2 tasks | 15 files |
 | Phase 16 P03 | 7min | 2 tasks | 3 files |
+| Phase 17 P02 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,7 @@ Recent decisions affecting current work:
 - [Phase 16-deploy]: Prisma + pnpm Docker fix: install all deps → generate → prune (not multi-stage copy)
 - [Phase 16-deploy]: ALLOW_DEV_LOGIN + VITE_ALLOW_DEV_LOGIN for Phase A browser login
 - [Phase 16-deploy]: BOSS_WEWORK_IDS=dev-user for admin access in Phase A
+- [Phase 17]: Certbot webroot plugin for zero-downtime SSL; HSTS gradual rollout (86400 -> 63072000); OCSP stapling excluded (LE ended support Aug 2025)
 
 ### Pending Todos
 
@@ -79,9 +81,9 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-14T03:50:10.736Z
-Stopped at: Phase 17 context gathered
-Resume file: .planning/phases/17-domain-ssl-launch/17-CONTEXT.md
+Last session: 2026-04-14T04:26:37.612Z
+Stopped at: Completed 17-02-PLAN.md
+Resume file: None
 
 ---
 *State initialized: 2026-03-17*
