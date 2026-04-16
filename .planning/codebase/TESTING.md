@@ -1,494 +1,508 @@
 # Testing Patterns
 
-**Analysis Date:** 2026-03-17
+**Analysis Date:** 2026-04-16
 
-## Test Framework
+## Test Framework Stack
 
-**Runner:**
-- Backend: **Jest** 30.0.0
-  - Config: Embedded in `backend/package.json` (no separate jest.config.js)
-  - Root directory: `src/`
-  - Test regex: `.*\.spec\.ts$`
-  - Transform: `ts-jest`
+**Backend:**
+- Runner: Jest (via `ts-jest`)
+- HTTP assertions: SuperTest
+- Config: `package.json#jest` (unit), `backend/test/jest-e2e.json` (E2E)
+- Unit test regex: `.*\.spec\.ts$` under `rootDir: src`
+- E2E test regex: `.e2e-spec.ts$` under `rootDir: .` (project root)
 
-- Frontend: **Vitest** 4.0.18
-  - Config: `frontend/vite.config.ts`
-  - Environment: `jsdom`
-  - Setup file: `frontend/src/test/setup.ts`
-  - Test timeout: 15000ms (for slower async operations)
-
-**Assertion Library:**
-- Backend: Jest's built-in assertions
-- Frontend: `@testing-library/react` + `@testing-library/jest-dom`
+**Frontend:**
+- Runner: Vitest (config embedded in `frontend/vite.config.ts`)
+- DOM environment: jsdom
+- Component testing: React Testing Library (`@testing-library/react`)
+- User events: `@testing-library/user-event`
+- Setup file: `frontend/src/test/setup.ts`
+- Global timeout: `testTimeout: 15000`
 
 **Run Commands:**
 ```bash
-# Backend
-cd backend && pnpm test              # Run all unit tests
-cd backend && pnpm test:watch        # Watch mode
-cd backend && pnpm test:cov          # Coverage report
-cd backend && pnpm test:e2e          # Run E2E tests
+# Backend unit tests
+cd backend && pnpm test
+cd backend && pnpm test:watch
+cd backend && pnpm test:cov
 
-# Frontend
-cd frontend && pnpm test             # Run all tests (passWithNoTests by default)
-cd frontend && pnpm test:watch       # Watch mode
-cd frontend && pnpm test:cov         # Coverage report
+# Backend E2E tests
+cd backend && pnpm test:e2e
+cd backend && pnpm test:e2e -- --testPathPattern=supplier
+
+# Frontend tests
+cd frontend && pnpm test
+cd frontend && pnpm test:coverage
 ```
 
 ## Test File Organization
 
-**Location:**
-- Backend: Co-located with source (e.g., `customer.service.ts` → `customer.service.spec.ts`)
-- Frontend: Tests in `__tests__/` subdirectory alongside components
-  - Example: `components/common/AmountDisplay.tsx` → `components/common/__tests__/AmountDisplay.test.tsx`
-  - Integration tests: `src/test/integration/` (e.g., `auth-flow.integration.test.tsx`)
-
-**Naming:**
-- Backend: `{name}.spec.ts` (e.g., `customer.service.spec.ts`, `jwt.strategy.spec.ts`)
-- Frontend: `{name}.test.tsx` (e.g., `AmountDisplay.test.tsx`, `CustomerSelector.test.tsx`)
-
-**Structure:**
+**Backend unit tests:** Co-located with source, same directory.
 ```
-backend/
-├── src/
-│   ├── customer/
-│   │   ├── customer.service.ts
-│   │   └── customer.service.spec.ts
-│   └── auth/
-│       ├── guards/
-│       │   ├── jwt-auth.guard.ts
-│       │   └── jwt-auth.guard.spec.ts
-│
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── common/
-│   │   │   ├── AmountDisplay.tsx
-│   │   │   └── __tests__/
-│   │   │       └── AmountDisplay.test.tsx
-│   └── test/
-│       ├── setup.ts
-│       ├── testUtils.tsx
-│       └── integration/
-│           └── auth-flow.integration.test.tsx
+backend/src/supplier/
+├── supplier.controller.ts
+├── supplier.controller.spec.ts    # controller unit test
+├── supplier.service.ts
+├── supplier.service.spec.ts       # service unit test
+└── supplier.module.ts
 ```
 
-## Test Structure
+**Backend E2E tests:** Separate `backend/test/` directory.
+```
+backend/test/
+├── supplier.e2e-spec.ts
+├── auth.e2e-spec.ts
+├── order.e2e-spec.ts
+├── quote.e2e-spec.ts
+└── helpers/
+    └── mock-builders.ts           # shared test utilities
+```
 
-**Backend Suite Organization:**
+**Frontend tests:** `__tests__/` subdirectory within each feature folder.
+```
+frontend/src/
+├── components/forms/__tests__/FabricForm.test.tsx
+├── components/layout/__tests__/Header.test.tsx
+├── pages/suppliers/__tests__/SupplierDetailPage.test.tsx
+├── utils/__tests__/statusHelpers.test.ts
+└── test/
+    ├── setup.ts                   # global jsdom setup
+    ├── testUtils.tsx              # renderWithProviders helper
+    ├── mocks/mockFactories.ts     # entity factory functions
+    └── integration/
+        ├── integrationTestUtils.tsx       # renderIntegration helper
+        ├── auth-flow.integration.test.tsx
+        ├── fabric-crud.integration.test.tsx
+        ├── order-status.integration.test.tsx
+        ├── payment-flow.integration.test.tsx
+        └── quote-convert.integration.test.tsx
+```
+
+## Backend Unit Test Structure
+
+**Service tests** — inject mock providers via `Test.createTestingModule`:
+
 ```typescript
-describe('CustomerService', () => {
-  let service: CustomerService;
-  let prisma: PrismaService;
+// backend/src/supplier/supplier.service.spec.ts
+describe('SupplierService', () => {
+  let service: SupplierService;
 
-  // Setup mocks before each test
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CustomerService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
-    }).compile();
-
-    service = module.get<CustomerService>(CustomerService);
-  });
-
-  describe('create', () => {
-    it('should create a customer successfully', async () => {
-      // Arrange
-      const dto = { companyName: 'XYZ Co.' };
-
-      // Act
-      const result = await service.create(dto);
-
-      // Assert
-      expect(result).toEqual({ id: 1, companyName: 'XYZ Co.' });
-    });
-
-    it('should throw ConflictException if company name exists', async () => {
-      // Test conflict handling
-      expect(async () => {
-        await service.create({ companyName: 'Existing Co.' });
-      }).rejects.toThrow(ConflictException);
-    });
-  });
-});
-```
-
-**Frontend Test Structure:**
-```typescript
-describe('AmountDisplay', () => {
-  describe('Null/undefined/empty handling', () => {
-    it('renders "-" for null value', () => {
-      render(<AmountDisplay value={null} />);
-      expect(screen.getByText('-')).toBeInTheDocument();
-    });
-  });
-
-  describe('Valid number rendering', () => {
-    it('renders number with default currency symbol ¥', () => {
-      render(<AmountDisplay value={100} />);
-      expect(screen.getByText('¥100.00')).toBeInTheDocument();
-    });
-  });
-
-  describe('Combined options', () => {
-    it('renders with all options combined', () => {
-      const { container } = render(
-        <AmountDisplay
-          value={1234.5}
-          prefix="$"
-          showSign
-          colorize
-        />
-      );
-      expect(screen.getByText('+$1,234.50')).toBeInTheDocument();
-      expect(container.querySelector('.ant-typography-success')).toBeInTheDocument();
-    });
-  });
-});
-```
-
-**Patterns:**
-- AAA pattern (Arrange, Act, Assert) consistently used
-- Nested describe blocks for feature organization
-- One assertion per test preferred for clarity
-- Setup and teardown via `beforeEach()`/`afterEach()`
-
-## Mocking
-
-**Backend Framework:** Jest mocks via `jest.fn()` and `jest.spyOn()`
-
-**Patterns:**
-```typescript
-// 1. Service-level mocking (most common)
-const mockPrismaService = {
-  customer: {
+  const supplierMock = {
     create: jest.fn(),
-    findUnique: jest.fn(),
     findFirst: jest.fn(),
     findMany: jest.fn(),
     count: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
-  },
-  $transaction: jest.fn().mockImplementation((callback: CallableFunction) =>
-    callback({
-      customer: customerMock,
-      // Pass mocks into transaction
-    }),
-  ),
-};
+  };
 
-// 2. Inject mocks into TestingModule
-const module: TestingModule = await Test.createTestingModule({
+  const mockPrismaService = {
+    supplier: supplierMock,
+    $transaction: jest.fn().mockImplementation((callback: CallableFunction) =>
+      callback({ supplier: supplierMock, ... }),
+    ),
+    $raw: { supplier: rawSupplierMock },
+  };
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      providers: [
+        SupplierService,
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: CacheService, useValue: mockCacheService },
+      ],
+    }).compile();
+    service = module.get<SupplierService>(SupplierService);
+    jest.clearAllMocks();
+  });
+
+  describe('create', () => {
+    it('should create a supplier successfully', async () => {
+      supplierMock.findFirst.mockResolvedValue(null);
+      supplierMock.create.mockResolvedValue(mockSupplier);
+      const result = await service.create(createDto);
+      expect(result).toEqual(mockSupplier);
+    });
+  });
+});
+```
+
+**Controller tests** — override guards, inject mock service:
+
+```typescript
+// backend/src/supplier/supplier.controller.spec.ts
+const module = await Test.createTestingModule({
+  controllers: [SupplierController],
   providers: [
-    CustomerService,
-    { provide: PrismaService, useValue: mockPrismaService },
+    { provide: SupplierService, useValue: mockSupplierService },
+    { provide: ClsService, useValue: { get: () => ({ id: 1, weworkId: 'test' }) } },
   ],
-}).compile();
-
-// 3. Return values for test scenarios
-jest.fn().mockResolvedValue(data);  // For async methods
-jest.fn().mockImplementation(...);   // For custom behavior
-jest.fn().mockRejectedValue(error);  // For error cases
-
-// 4. Verify mock calls
-expect(mockPrisma.customer.findFirst).toHaveBeenCalledWith({
-  where: { id: 1, isActive: true },
-});
+})
+  .overrideGuard(JwtAuthGuard).useValue({ canActivate: () => true })
+  .overrideGuard(RolesGuard).useValue({ canActivate: () => true })
+  .compile();
 ```
 
-**Frontend Framework:** Vitest with `vi` utilities
+## Backend E2E Test Pattern
 
-**Patterns:**
+**Module composition rule:** Import only the specific feature module (never `AppModule`). `AppModule` loads `ScheduleModule` and cron jobs that prevent the test worker from exiting.
+
 ```typescript
-// 1. Use renderWithProviders from testUtils
-import { renderWithProviders, screen } from '@/test/testUtils';
+// backend/test/supplier.e2e-spec.ts — correct minimal composition
+const moduleFixture = await Test.createTestingModule({
+  imports: [SupplierModule],
+})
+  .overrideProvider(PrismaService)
+  .useValue(mockPrismaService)
+  .compile();
 
-// 2. Mock fetch/API calls (if needed)
-global.fetch = vi.fn().mockResolvedValue({
-  json: async () => ({ success: true }),
-});
-
-// 3. Test user interactions
-import { userEvent } from '@/test/testUtils';
-
-const user = userEvent.setup();
-await user.click(screen.getByRole('button'));
-
-// 4. Mock timers for debounce/throttle
-vi.useFakeTimers();
-vi.advanceTimersByTime(300); // Advance debounce delay
-vi.runAllTimers();           // Or run all pending timers
+app = moduleFixture.createNestApplication();
+// Apply same pipes/filters as in AppModule
+app.useGlobalPipes(new ValidationPipe({
+  whitelist: true, forbidNonWhitelisted: true,
+  transform: true, transformOptions: { enableImplicitConversion: true },
+}));
+app.useGlobalFilters(new AllExceptionsFilter(createMockCls()));
+app.useGlobalInterceptors(new TransformInterceptor());
+await app.init();
 ```
 
-**What to Mock:**
-- External API calls (fetch, axios)
-- Database calls (PrismaService in backend)
-- Third-party services (Redis, JWT, OAuth)
-- Expensive operations (file uploads, encryption)
-
-**What NOT to Mock:**
-- Core business logic (pure functions, validators)
-- Domain models and entities
-- Utility functions from source code (test them directly)
-- Standard library functions (JSON, dates, etc.)
-
-## Fixtures and Factories
-
-**Backend Test Data:**
+When a module requires Redis (e.g. `AuthModule`, `QuoteModule`): also override `RedisService`:
 ```typescript
-// Mock objects defined at top of spec file
-const customerMock = {
-  create: jest.fn(),
-  findUnique: jest.fn(),
-  findFirst: jest.fn(),
-  findMany: jest.fn(),
-  count: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
+.overrideProvider(RedisService).useValue(mockRedisService)
+```
+
+**HTTP assertions via SuperTest:**
+```typescript
+// backend/test/supplier.e2e-spec.ts
+const response = await request(app.getHttpServer())
+  .post('/api/v1/suppliers')
+  .send({ companyName: 'ABC Textiles' })
+  .expect(201);
+
+const body = response.body as ApiSuccessResponse<SupplierData>;
+expect(body.code).toBe(201);
+expect(body.message).toBe('success');
+expect(body.data.companyName).toBe('ABC Textiles');
+```
+
+Always type-cast `response.body` for safe property access:
+```typescript
+interface ApiSuccessResponse<T> { code: number; message: string; data: T; }
+interface ApiErrorResponse { code: number; message: string; path: string; timestamp: string; }
+```
+
+## Auth Cookie Testing (Phase 13+)
+
+Auth uses **HttpOnly cookies** — no Bearer token in request body/header from browser. Cookie name: `bf_auth_token`.
+
+**Controller unit test** — mock `res.cookie` directly:
+```typescript
+// backend/src/auth/auth.controller.spec.ts
+const mockResponse = () => {
+  const res: Partial<Response> = {
+    redirect: jest.fn(),
+    cookie: jest.fn(),
+    clearCookie: jest.fn(),
+  };
+  return res as Response;
 };
 
-// Used in test scenarios
-customerMock.findFirst.mockResolvedValue({
-  id: 1,
-  companyName: 'Test Co.',
-  isActive: true,
-});
-```
-
-**Frontend Test Utilities:**
-- Location: `src/test/testUtils.tsx`
-- Provides: `renderWithProviders()`, `userEvent`, custom async helpers
-- Re-exports: All testing-library utilities for convenience
-
-```typescript
-// Custom test utils
-export function renderWithProviders(ui: ReactElement, options?: RenderOptions) {
-  return render(ui, {
-    wrapper: TestProviders,  // Provides Ant Design config + locale
-    ...options,
-  });
-}
-
-export async function waitForAsync(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-export function flushTimers(): void {
-  vi.runAllTimers();
-}
-```
-
-**Usage:**
-```typescript
-import { renderWithProviders, screen, userEvent } from '@/test/testUtils';
-
-it('handles form submission', async () => {
-  renderWithProviders(<CustomerForm onSubmit={onSubmit} />);
-  const input = screen.getByLabelText('Company Name');
-
-  const user = userEvent.setup();
-  await user.type(input, 'New Company');
-  await user.click(screen.getByRole('button', { name: 'Submit' }));
-
-  expect(onSubmit).toHaveBeenCalledWith({ companyName: 'New Company' });
-});
-```
-
-## Coverage
-
-**Requirements:**
-- Backend: No explicit threshold enforcement in jest config
-- Frontend: Thresholds in `vite.config.ts`:
-  - Statements: 80%
-  - Branches: 80%
-  - Functions: 80%
-  - Lines: 80%
-  - Coverage provider: v8
-  - Coverage only for critical files (auth, API client, utils)
-
-**View Coverage:**
-```bash
-# Backend
-cd backend && pnpm test:cov
-
-# Frontend
-cd frontend && pnpm test:cov
-```
-
-## Test Types
-
-**Unit Tests:**
-- Backend: Service methods tested in isolation with mocked dependencies
-  - Example: `customer.service.spec.ts` tests all CRUD operations
-  - Focus: Business logic, error handling, validation
-  - Mocks: PrismaService, external services
-
-- Frontend: Components tested with mocked props and API calls
-  - Example: `AmountDisplay.test.tsx` tests all display scenarios
-  - Focus: Rendering logic, user interactions, conditional rendering
-  - Mocks: API calls, custom hooks
-
-**Integration Tests:**
-- Frontend: End-to-end flows across multiple components
-  - Location: `src/test/integration/`
-  - Examples: `auth-flow.integration.test.tsx`, `quote-convert.integration.test.tsx`
-  - Scope: Auth login → redirect → protected routes
-  - Pattern: Tests complete user workflows
-
-- Backend: E2E tests via SuperTest
-  - Location: `test/jest-e2e.json` config points to `*.e2e-spec.ts`
-  - Pattern: Full HTTP request/response testing
-  - Note: E2E tests may require minimal module setup (avoid ScheduleModule that adds cron workers)
-
-**E2E Tests (Backend):**
-- Configured in `test/jest-e2e.json`
-- Naming: `*.e2e-spec.ts`
-- Full application testing with HTTP calls
-- Can take longer due to database operations
-
-## Common Patterns
-
-**Async Testing (Backend):**
-```typescript
-// Using async/await (preferred)
-it('should find a customer by ID', async () => {
-  customerMock.findFirst.mockResolvedValue({ id: 1, companyName: 'Test' });
-
-  const result = await service.findOne(1);
-
-  expect(result.id).toBe(1);
-  expect(customerMock.findFirst).toHaveBeenCalledWith({
-    where: { id: 1, isActive: true },
-  });
-});
-
-// Mocking promises
-jest.fn().mockResolvedValue(data);      // Resolves to data
-jest.fn().mockRejectedValue(error);     // Rejects with error
-jest.fn().mockResolvedValueOnce(data1).mockResolvedValueOnce(data2);  // Multiple calls
-```
-
-**Async Testing (Frontend):**
-```typescript
-// Vitest integration with React Testing Library
-it('loads and displays data', async () => {
-  const { container } = renderWithProviders(<MyComponent />);
-
-  // Wait for async state updates
-  await screen.findByText('Loaded Data');
-
-  // Or use userEvent.setup() for consistent async handling
-  const user = userEvent.setup();
-  await user.click(screen.getByRole('button'));
-
-  expect(screen.getByText('Result')).toBeInTheDocument();
-});
-
-// Using waitFor for polling
-import { waitFor } from '@testing-library/react';
-
-await waitFor(() => {
-  expect(screen.queryByText('Loading')).not.toBeInTheDocument();
-});
-```
-
-**Error Testing (Backend):**
-```typescript
-it('should throw NotFoundException for missing supplier', async () => {
-  supplierMock.findFirst.mockResolvedValue(null);
-
-  await expect(service.findOne(999)).rejects.toThrow(
-    NotFoundException,
-  );
-});
-
-// With message checking
-await expect(service.findOne(999)).rejects.toThrow(
-  'Supplier with ID 999 not found',
+// Assert cookie was set with HttpOnly
+expect(res.cookie).toHaveBeenCalledWith(
+  'bf_auth_token',
+  'jwt-token',
+  expect.objectContaining({ httpOnly: true, sameSite: 'lax' }),
 );
 ```
 
-**Error Testing (Frontend):**
+**Secure flag environment test** — override `process.env.FORCE_HTTPS_COOKIES`:
 ```typescript
-// Error boundary testing
-it('displays error when component throws', () => {
-  const ThrowError = () => {
-    throw new Error('Test error');
-  };
-
-  const { container } = renderWithProviders(
-    <ErrorBoundary>
-      <ThrowError />
-    </ErrorBoundary>
-  );
-
-  expect(container.textContent).toContain('Something went wrong');
-});
-
-// API error simulation
-it('displays error message on API failure', async () => {
-  vi.mocked(fetchData).mockRejectedValue(new Error('Network error'));
-
-  renderWithProviders(<MyComponent />);
-
-  await screen.findByText('Failed to load data');
-});
+const savedEnv = { ...process.env };
+process.env.FORCE_HTTPS_COOKIES = 'true';
+// ... test assertions ...
+process.env = savedEnv;
 ```
 
-## Test Setup & Configuration
-
-**Backend Setup:**
-- Testing module created per spec file using `@nestjs/testing`
-- Mocks created at top of describe block for reusability
-- Transaction mock allows callback-based testing
-- Global fetch mocked for OAuth tests
-
-**Frontend Setup (`src/test/setup.ts`):**
+**Frontend E2E tests** — verify `withCredentials: true` on axios client:
 ```typescript
-// Ant Design responsive support
-Object.defineProperty(window, 'matchMedia', {
-  writable: true,
-  value: (query: string) => ({
-    matches: false,
-    media: query,
-    addEventListener: () => {},
-    removeEventListener: () => {},
-    // ... other methods
-  }),
-});
+// frontend/src/api/__tests__/client.test.ts
+expect(mockCreate).toHaveBeenCalledWith(
+  expect.objectContaining({ withCredentials: true }),
+);
+```
 
-// Ant Design ResizeObserver
+## Shared E2E Helpers
+
+`backend/test/helpers/mock-builders.ts` provides:
+
+```typescript
+// Typed mock auth request for controller tests
+export function createMockAuthRequest(userId = 1): AuthenticatedRequest { ... }
+
+// Minimal ClsService mock (required by AllExceptionsFilter)
+export function createMockCls(): ClsService {
+  return { getId: () => 'test-correlation-id' } as unknown as ClsService;
+}
+
+// Buffer cast for ExcelJS under Node 22
+export async function loadTestWorkbook(buffer: Buffer): Promise<ExcelJS.Workbook> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
+  return workbook;
+}
+```
+
+## Frontend Unit Test Setup
+
+**jsdom setup** (`frontend/src/test/setup.ts`):
+```typescript
+import '@testing-library/jest-dom';
+
+// Required: Ant Design responsive components
+Object.defineProperty(window, 'matchMedia', { ... });
+
+// Required: Ant Design layout components
 globalThis.ResizeObserver = class ResizeObserver {
-  observe() {}
-  unobserve() {}
-  disconnect() {}
+  observe() {} unobserve() {} disconnect() {}
 };
 ```
 
-**Vitest Config (`vite.config.ts`):**
+**Custom render with Ant Design locale** (`frontend/src/test/testUtils.tsx`):
 ```typescript
-test: {
-  globals: true,              // Use global test functions
-  environment: 'jsdom',       // Browser-like DOM
-  setupFiles: './src/test/setup.ts',  // Run setup before tests
-  testTimeout: 15000,         // Allow 15s for slow tests
-  coverage: {
-    provider: 'v8',
-    reporter: ['text', 'text-summary'],
-    include: [...],           // Only these files counted
-    thresholds: {             // Enforce coverage minimums
-      statements: 80,
-      branches: 80,
-      functions: 80,
-      lines: 80,
-    },
-  },
+export function renderWithProviders(ui: ReactElement, options?: RenderOptions): RenderResult {
+  return render(ui, { wrapper: TestProviders, ...options });
 }
+// TestProviders wraps with <ConfigProvider locale={zhCN}>
+```
+
+## Frontend Integration Test Pattern
+
+Integration tests in `frontend/src/test/integration/` keep TanStack Query, Zustand, and React Router alive while mocking only the API layer.
+
+**The `mockModule` + `vi.hoisted()` pattern** (required for Vitest module mock hoisting):
+
+```typescript
+// frontend/src/test/integration/fabric-crud.integration.test.tsx
+const { mockModule } = vi.hoisted(() => {
+  function mockModule(fns: string[], nsKey: string): Record<string, unknown> {
+    const mocks: Record<string, unknown> = {};
+    for (const fn of fns) mocks[fn] = vi.fn();
+    mocks[nsKey] = { ...mocks };
+    return mocks;
+  }
+  return { mockModule };
+});
+
+vi.mock('@/api/fabric.api', () => mockModule(
+  ['getFabrics', 'getFabric', 'createFabric', 'updateFabric', 'deleteFabric'],
+  'fabricApi',
+));
+
+type FabricApiModule = typeof import('@/api/fabric.api');
+const { fabricApi } =
+  vi.mocked(await vi.importMock<FabricApiModule>('@/api/fabric.api'));
+
+// Usage in test
+fabricApi.getFabrics.mockResolvedValue(createPaginatedResponse(mockFabrics));
+```
+
+**`renderIntegration` helper** (`frontend/src/test/integration/integrationTestUtils.tsx`):
+```typescript
+renderIntegration(
+  <Routes>
+    <Route path="/products/fabrics" element={<FabricListPage />} />
+  </Routes>,
+  { initialEntries: ['/products/fabrics'], withAuth: true },
+);
+```
+
+`withAuth: true` pre-populates Zustand authStore via `setupAuthenticatedState()`.
+
+**Isolated QueryClient per test** — retries disabled, cache cleared immediately:
+```typescript
+export function createTestQueryClient(): QueryClient {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+}
+```
+
+## Mock Factories
+
+`frontend/src/test/mocks/mockFactories.ts` — factory functions with auto-incrementing IDs and `overrides` support:
+
+```typescript
+export function createMockFabric(overrides?: Partial<Fabric>): Fabric {
+  const id = overrides?.id ?? getNextId();
+  return { id, fabricCode: `FAB-${String(id).padStart(4, '0')}`, ... , ...overrides };
+}
+export function createMockFabrics(count: number): Fabric[] {
+  return Array.from({ length: count }, () => createMockFabric());
+}
+export function resetIdCounter(): void { idCounter = 1; }
+```
+
+Always call `resetIdCounter()` in `beforeEach` when using factories. Available factories: `createMockFabric`, `createMockSupplier`, `createMockCustomer`, `createMockOrder`, `createMockOrderItem`, `createMockQuote`, `createMockQuoteItem`, `createMockSupplierPayment`, `createMockAuthUser`.
+
+## Coverage
+
+**Backend:** No enforced threshold. Run with `pnpm test:cov` → reports to `backend/coverage/`.
+
+**Frontend:** Coverage enforced for specific utility files only (`frontend/vite.config.ts`):
+```typescript
+coverage: {
+  include: [
+    'src/utils/statusHelpers.ts',
+    'src/utils/format.ts',
+    'src/utils/validation.ts',
+    'src/api/client.ts',
+    'src/store/authStore.ts',
+  ],
+  thresholds: { statements: 80, branches: 80, functions: 80, lines: 80 },
+}
+```
+Run with `pnpm test:coverage`.
+
+## Test Types
+
+**Backend unit tests (`*.spec.ts`):**
+- Scope: single service or controller method
+- Mocks: all dependencies (PrismaService, CacheService, ClsService)
+- Location: co-located with source file
+
+**Backend E2E tests (`*.e2e-spec.ts`):**
+- Scope: full HTTP request/response cycle including validation pipeline
+- Mocks: only external dependencies (PrismaService, RedisService)
+- Module: minimal module composition (never AppModule)
+- Location: `backend/test/`
+
+**Frontend unit tests (`*.test.tsx`):**
+- Scope: single component or hook
+- Mocks: hooks via `vi.mock`, navigate via `vi.mock('react-router-dom', ...)`
+- Location: `__tests__/` co-located with component directory
+
+**Frontend integration tests (`*.integration.test.tsx`):**
+- Scope: multi-component flows (list + form + navigation)
+- Mocks: only API layer (`vi.mock('@/api/xxx.api', ...)`)
+- Keeps real: TanStack Query, Zustand stores, React Router, component tree
+- Location: `frontend/src/test/integration/`
+
+## Ant Design Testing Gotchas
+
+**1. Tabs render all panels simultaneously**
+
+Ant Design `Tabs` renders all tab panel content into the DOM at once. Use `getAllByText` when expecting duplicates, or `within()` to scope:
+
+```typescript
+// Tabs example — assert tab labels exist
+expect(screen.getByText('基本信息')).toBeInTheDocument();
+expect(screen.getByText('关联面料')).toBeInTheDocument();
+
+// For content that appears in multiple places
+expect(screen.getAllByText('东莞纺织有限公司').length).toBeGreaterThan(0);
+```
+
+**2. Modal footer OK button — use `document.querySelector`**
+
+`screen.getByRole('button', { name: '确认' })` fails for Ant Design Modal primary buttons. Use CSS selector instead:
+
+```typescript
+// frontend/src/test/integration/payment-flow.integration.test.tsx
+const modalFooter = document.querySelector('.ant-modal-footer');
+const okButton = modalFooter!.querySelector('.ant-btn-primary') as HTMLButtonElement;
+await user.click(okButton);
+
+// For danger button (e.g. delete confirm)
+const dangerButton = modalFooter!.querySelector('.ant-btn-dangerous') as HTMLButtonElement;
+```
+
+**3. Chinese two-character button spacing in jsdom**
+
+Ant Design inserts a zero-width space between two Chinese characters in `<Button>` text (e.g. `取 消`). Use regex matcher:
+
+```typescript
+// ✅ Works in jsdom
+expect(screen.getByRole('button', { name: /取.*消/ })).toBeInTheDocument();
+expect(screen.getByText(/取.*消/)).toBeInTheDocument();
+
+// ❌ Fails — exact text match
+expect(screen.getByText('取消')).toBeInTheDocument();
+```
+
+**4. Ant Design message mock in unit tests**
+
+```typescript
+vi.mock('antd', async () => {
+  const actual = await vi.importActual('antd');
+  return {
+    ...actual,
+    message: { success: vi.fn(), error: vi.fn() },
+  };
+});
+```
+
+**5. Ant Design icons / anticon**
+
+Assert icon presence via CSS class:
+```typescript
+expect(document.querySelector('.anticon-exclamation-circle')).toBeInTheDocument();
+```
+
+**6. `window.matchMedia` and `ResizeObserver`**
+
+Both must be mocked globally in `frontend/src/test/setup.ts`. Without them, Ant Design components throw in jsdom. Already configured — do not remove.
+
+## Async Test Patterns
+
+**Wait for data load:**
+```typescript
+await waitFor(() => {
+  expect(screen.getByText(mockFabrics[0].fabricCode)).toBeInTheDocument();
+});
+```
+
+**Timer-based navigation (e.g. redirect after login):**
+```typescript
+vi.useFakeTimers({ shouldAdvanceTime: true });
+// ... trigger action ...
+vi.advanceTimersByTime(600);
+await waitFor(() => {
+  expect(screen.getByText('Protected Home')).toBeInTheDocument();
+});
+vi.useRealTimers();
+```
+
+**Error boundary / rejected promise:**
+```typescript
+getCurrentUser.mockRejectedValueOnce(new Error('Authorization failed'));
+renderAuthRoutes(['/auth/callback?success=true']);
+await waitFor(() => {
+  expect(screen.getByText('登录失败')).toBeInTheDocument();
+});
+```
+
+## Mock Reset Pattern
+
+Use `jest.clearAllMocks()` / `vi.clearAllMocks()` in `beforeEach` — not `afterEach`. Some factories also require `resetIdCounter()`:
+
+```typescript
+// Backend
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+// Frontend integration
+beforeEach(() => {
+  clearAuthState();
+  resetIdCounter();
+  vi.clearAllMocks();
+});
 ```
 
 ---
 
-*Testing analysis: 2026-03-17*
+*Testing analysis: 2026-04-16*

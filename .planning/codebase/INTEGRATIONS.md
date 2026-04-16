@@ -1,181 +1,166 @@
 # External Integrations
 
-**Analysis Date:** 2026-03-17
+**Analysis Date:** 2026-04-16
 
 ## APIs & External Services
 
-**Authentication & Identity:**
-- WeChat Work (WeWork) OAuth2.0 - Enterprise SSO
-  - SDK/Client: Native HTTPS requests (no SDK)
-  - Auth: `WEWORK_CORP_ID`, `WEWORK_AGENT_ID`, `WEWORK_SECRET`, `WEWORK_REDIRECT_URI`
-  - Flow: Authorization code → user info retrieval → JWT token issuance
-  - Implementation: `backend/src/auth/auth.service.ts` (lines 46-80, handles OAuth URL building)
-  - Endpoint: `https://open.weixin.qq.com/connect/oauth2/authorize`
-  - Callback: `/api/v1/auth/wework/callback`
+**WeChat Work (企业微信) OAuth:**
+- Purpose: Employee SSO — only auth method in production (dev login was removed in Phase 17)
+- Flow: redirect-based OAuth 2.0 via `https://open.weixin.qq.com/connect/oauth2/authorize`
+- Token exchange: `https://qyapi.weixin.qq.com/cgi-bin/gettoken`
+- User info: `https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo` + `https://qyapi.weixin.qq.com/cgi-bin/user/get`
+- Implementation: `backend/src/auth/auth.service.ts` (custom fetch-based, no SDK)
+- Auth controller: `backend/src/auth/auth.controller.ts`
+  - `GET /api/v1/auth/wework/login` — redirects to WeWork authorization page
+  - `GET /api/v1/auth/wework/callback` — exchanges code for JWT, sets HttpOnly cookie
+  - `POST /api/v1/auth/logout` — clears cookie, blacklists token in Redis
+- CSRF protection: random state stored in Redis (`oauth:state:{state}` key, TTL controlled by `OAUTH_STATE_TTL`)
+- Required env vars: `WEWORK_CORP_ID`, `WEWORK_SECRET`, `WEWORK_AGENT_ID`, `WEWORK_REDIRECT_URI`
+
+**Sentry Error Tracking:**
+- Backend: `@sentry/nestjs` 10, initialized in `backend/src/instrument.ts` (imported before app bootstrap)
+- Frontend: `@sentry/react` 10
+- Configuration: `SENTRY_DSN` env var — SDK disabled entirely if unset
+- Filtering: 400/401/403/404 errors are not reported; PII (email, phone) scrubbed from events
+- Trace sample rate: 20% in production, 100% in development
 
 ## Data Storage
 
-**Databases:**
-- MySQL 8.0
-  - Connection: `DATABASE_URL` env var (e.g., `mysql://user:password@localhost:3306/borealis`)
-  - Client: Prisma ORM 6.19.2
-  - Schema: `backend/prisma/schema.prisma` (387 lines, 14 main models)
-  - Models: User, Fabric, FabricImage, File, Supplier, Customer, Order, OrderItem, Quote, Logistics, SupplierPayment, PaymentRecord, OrderTimeline, CustomerPricing, FabricSupplier
+**Primary Database — MySQL 8.0:**
+- Provider: Tencent Cloud CDB (managed MySQL, external to Docker Compose)
+- Connection: `DATABASE_URL` env var
+- ORM: Prisma 6.19 (`backend/prisma/schema.prisma`)
+- Migrations: `npx prisma migrate deploy` (production), `npx prisma migrate dev` (development)
+- Slow query logging: queries exceeding `SLOW_QUERY_THRESHOLD_MS` (default 200ms) logged via nestjs-pino
+- Soft-delete: `deletedAt` field on User, Fabric, Supplier, Customer, Product, ProductBundle via `prisma-extension-soft-delete`
+- Raw client: `prisma.$raw` (bypasses soft-delete extension for admin queries)
 
-**Caching:**
-- Redis 7-alpine
-  - Connection: `REDIS_URL` env var
-  - Client: ioredis 5.9.2
-  - Service: `backend/src/common/services/redis.service.ts` (graceful fallback support)
-  - Use cases:
-    - OAuth state token storage (15-minute TTL)
-    - Token blacklist management
-    - Session caching
-    - Rate limiting counters
-  - Fallback: Gracefully degrades if Redis unavailable (logs warnings but continues)
+**Cache / Session — Redis 7:**
+- Deployment: `redis:7-alpine` container in `docker-compose.prod.yml` (128MB, allkeys-lru)
+- Connection: `REDIS_URL` env var, client in `backend/src/common/services/redis.service.ts`
+- Client library: `ioredis` 5 (graceful degradation when unavailable)
+- Key namespaces:
+  - `seq:{CodePrefix}:{YYMM}` — atomic sequence counters for business code generation
+  - `oauth:state:{state}` — OAuth CSRF state tokens (short TTL)
+  - `token:blacklist:{hash}` — logout token blacklist (TTL = remaining JWT lifetime)
+  - `cache:{key}` — cache-aside pattern via `backend/src/common/services/cache.service.ts`
+- Business code format: `{PREFIX}-{YYMM}-{4-digit seq}`, e.g. `QT-2601-0042`
+- Fallback: DB-based sequence count when Redis unavailable (with `UNIQUE` constraint safety net)
 
-**File Storage:**
-- MVP: Local filesystem (development/MVP only)
-  - Directory: `./uploads` (configurable via `UPLOAD_DIR`)
-  - Implementation: `backend/src/file/file.service.ts`
-  - Security: File path traversal protection, filename sanitization, extension whitelist
-  - URL generation: `{BASE_URL}/uploads/{uuid}.{ext}`
-
-- Production: Tencent Cloud COS (planned, not yet implemented)
-  - Bucket: `COS_BUCKET` env var (format: `bucket-name-appid`)
-  - Region: `COS_REGION` (default: ap-shanghai)
-  - Auth: `COS_SECRET_ID`, `COS_SECRET_KEY`
-  - Note: TODO comment in `backend/src/file/file.service.ts` (line 138) indicates replacement needed
+**File Storage — Tencent Cloud COS:**
+- SDK: `cos-nodejs-sdk-v5` 2 (`backend/src/file/storage/cos.storage.ts`)
+- Required env vars: `COS_SECRET_ID`, `COS_SECRET_KEY`, `COS_BUCKET`, `COS_REGION`
+- Upload size limit: 10MB (enforced by Nginx `client_max_body_size 10m`)
+- Allowed extensions: defined in `backend/src/common/constants/file.constants.ts`
+- Filename sanitization: path traversal, null bytes, special chars stripped in `backend/src/file/file.service.ts`
+- Storage provider interface: `backend/src/file/storage/storage.interface.ts`
+- Local provider (dev): `backend/src/file/storage/local.storage.ts` (serves from `/uploads/` static path)
+- Provider injection token: `STORAGE_PROVIDER` in `backend/src/file/storage/index.ts`
 
 ## Authentication & Identity
 
-**Auth Provider:**
-- Custom: WeChat Work OAuth2.0 + JWT
-  - Implementation: NestJS Passport with JWT strategy
-  - Module: `backend/src/auth/auth.module.ts`
-  - Service: `backend/src/auth/auth.service.ts`
-  - Strategy: `backend/src/auth/strategies/jwt.strategy.ts`
-  - Guard: `backend/src/auth/guards/jwt-auth.guard.ts`
-
-**Token Storage (Frontend):**
-- HttpOnly Cookies (secure, not accessible from JavaScript)
-  - Backend: Sets cookie via `Set-Cookie` header
-  - Frontend: Automatic cookie transmission via `axios` with `withCredentials: true`
-  - Implementation: `frontend/src/api/client.ts` (line 23)
-  - Frontend state: Only stores `user` object in `authStore` (Zustand), not the token
-
-**Logout & Token Blacklist:**
-- Redis-based token blacklist
-- Implementation: `backend/src/auth/auth.service.ts`
-- Prefix: `TOKEN_BLACKLIST_PREFIX` constant
+**Auth Provider: WeChat Work (企业微信) OAuth 2.0**
+- No third-party auth library (passport-oauth2 is a devDependency but the flow uses raw fetch)
+- JWT signed with `JWT_SECRET` (min 32 chars in production), default expiry `7d`
+- Token delivery: HttpOnly cookie named `AUTH_COOKIE_NAME` (defined in `backend/src/auth/constants/`)
+- `secure` flag: controlled by `FORCE_HTTPS_COOKIES=true` env var (required in production after SSL)
+- Frontend storage: JWT NOT in localStorage; `authStore` (`frontend/src/store/authStore.ts`) stores only the user object (persisted to `localStorage` key `bf_auth` for UI state only)
+- Axios client: `withCredentials: true` so cookies are sent automatically (`frontend/src/api/client.ts`)
+- Token blacklisting: on logout, remaining TTL stored in Redis under `token:blacklist:{sha256(token)}`
+- Admin role: determined by `BOSS_WEWORK_IDS` and `DEV_WEWORK_IDS` env vars (comma-separated WeWork user IDs)
+- JWT strategy: `backend/src/auth/strategies/jwt.strategy.ts` (reads from both `Authorization: Bearer` header and cookie)
 
 ## Monitoring & Observability
 
-**Error Tracking:**
-- Not detected (no error tracking service like Sentry)
+**Metrics — Prometheus + Grafana:**
+- Metrics endpoint: `GET /metrics` (excluded from `api/v1` prefix, no auth)
+- Provider: `@willsoto/nestjs-prometheus` 6 + `prom-client` 15 — `backend/src/metrics/metrics.module.ts`
+- Custom histogram: `http_request_duration_seconds` with `method`, `route`, `status` labels
+- Default Node.js metrics enabled (GC, event loop, memory)
+- Prometheus scrape config: `prometheus/prometheus.yml` (scrapes `nestjs:3000` every 15s)
+- Grafana: port 3001 (mapped from internal 3000), provisioned datasources in `grafana/provisioning/datasources/datasources.yml`
+  - Prometheus datasource: `http://prometheus:9090` (default)
+  - Loki datasource: `http://loki:3100`
+- Admin password: `GRAFANA_ADMIN_PASSWORD` env var
 
-**Logs:**
-- Structured logging with Pino
-  - Implementation: nestjs-pino 4.5.0
-  - Format: JSON in production, pretty-printed in development
-  - Level: `info` in production, `debug` in development
-  - Module: `backend/src/app.module.ts` (lines 35-44)
-  - Log levels: Error, warn, info, debug
-  - HTTP logging: pino-http integrated
+**Logs — Loki:**
+- Version: Loki 3.4.3, config in `loki/loki-config.yml`
+- Push transport: `pino-loki` 3 — batch push every 5s when `LOKI_HOST` env var is set
+- Labels: `{ app: 'borealis-backend' }`
+- Storage: filesystem (`/loki/chunks`), TSDB schema v13
+- `unordered_writes: true` to handle batched out-of-order log lines from pino-loki
+- Loki port: 3100
+
+**Error Tracking — Sentry:**
+- Initialized before NestJS bootstrap in `backend/src/instrument.ts`
+- DSN via `SENTRY_DSN` env var (optional, graceful no-op if absent)
 
 **Health Checks:**
-- NestJS Terminus module
-  - Endpoint: `/health` (excluded from `/api/v1` prefix)
-  - Also exposed: `/ready` endpoint
-  - Module: `backend/src/common/health/health.controller.ts`
+- `GET /health` — app liveness (always returns `up`)
+- `GET /ready` — readiness: checks MySQL (`SELECT 1`) + Redis (`PING`) via `@nestjs/terminus`
+- Both endpoints excluded from `api/v1` global prefix
+
+**Correlation IDs:**
+- `nestjs-cls` + `ClsModule` generates `X-Correlation-ID` per request (UUID or from request header)
+- Bound to pino logger so all log lines for a request share the same correlation ID
+
+## SSL/Domain
+
+**Certificate Authority:** Let's Encrypt (certbot webroot challenge)
+- Certificate path: `/etc/letsencrypt/live/<DOMAIN>/fullchain.pem` and `privkey.pem`
+- Mounted into Nginx container from host `/etc/letsencrypt`
+- ACME challenge served from `certbot-webroot` Docker volume at `/.well-known/acme-challenge/`
+- TLS protocols: TLSv1.2 + TLSv1.3 (Mozilla Intermediate profile)
+- OCSP stapling explicitly NOT configured (Let's Encrypt ended OCSP support Aug 2025)
+- Nginx config: `nginx/conf.d/default.conf`
+
+**Nginx Routing:**
+- Port 80: redirects all traffic to HTTPS (`301`)
+- Port 80 (default_server): IP direct access redirects to domain
+- Port 443: HTTPS main server
+  - `/` — serves React SPA static files from `/usr/share/nginx/html` (frontend build)
+  - `/api/` — proxied to `nestjs:3000` (backend)
+  - `/(health|ready|metrics)` — proxied to backend (no `/api/v1` prefix)
+  - Static assets (`*.js`, `*.css`, etc.) — 1-year cache with `immutable`
+- Security headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`
+- HSTS: configured in NestJS `helmet` (1 year, includeSubDomains) — Nginx HSTS header commented out pending testing
+
+**Docker Network:**
+- Business stack: `borealis-fabrics_default` (created by `docker-compose.prod.yml`)
+- Monitoring stack: uses `external: true` network `borealis-fabrics_default` (same network as business stack, enabling Prometheus to scrape `nestjs:3000` by service name)
 
 ## CI/CD & Deployment
 
-**Hosting:**
-- Tencent Cloud (target platform)
-  - Lightweight Server (backend)
-  - CDB (MySQL database)
-  - Redis
-  - COS (object storage for files)
-  - CDN (likely for frontend)
+**Hosting:** Tencent Cloud 轻量服务器 (manual SSH deployment)
 
-**CI Pipeline:**
-- Not detected in codebase (no GitHub Actions, GitLab CI, etc.)
+**CI Pipeline:** GitHub Actions — `.github/workflows/ci.yml`
+- Runs on push to `main`/`develop` and PR to `main`
+- No automated deployment step — deployment is manual
 
-**Local Development:**
-- Docker Compose: `backend/docker-compose.yml`
-  - MySQL 8.0 service
-  - Redis 7-alpine service
-  - Volume: `mysql_data` for persistence
+**Deployment Commands:**
+```bash
+# Business stack
+docker compose -f docker-compose.prod.yml up -d
 
-## Environment Configuration
-
-**Required env vars (Production):**
-From `backend/.env.production.example`:
-- `NODE_ENV="production"`
-- `PORT`
-- `DATABASE_URL`
-- `REDIS_URL`
-- `JWT_SECRET` (minimum 32 characters, not "dev-secret")
-- `JWT_EXPIRES_IN`
-- `WEWORK_CORP_ID`
-- `WEWORK_AGENT_ID`
-- `WEWORK_SECRET`
-- `WEWORK_REDIRECT_URI`
-- `COS_SECRET_ID`
-- `COS_SECRET_KEY`
-- `COS_BUCKET`
-- `COS_REGION`
-- `CORS_ORIGINS`
-- `MYSQL_ROOT_PASSWORD` (if using docker-compose)
-- `MYSQL_DATABASE`
-
-**Secrets location:**
-- Development: `.env` file (gitignored)
-- Production: Environment variables injected at deployment time (never committed)
-- Validation: `backend/src/config/configuration.ts` (lines 1-38) enforces required vars in production
+# Monitoring stack
+docker-compose -f docker-compose.monitoring.yml up -d
+```
 
 ## Webhooks & Callbacks
 
 **Incoming:**
-- OAuth callback: `/api/v1/auth/wework/callback`
-  - Receives: `code`, `state` query parameters
-  - Returns: JWT token (as HttpOnly cookie), redirects to frontend
+- `GET /api/v1/auth/wework/callback` — WeChat Work OAuth redirect callback (receives `code` + `state` query params)
 
 **Outgoing:**
-- Not detected (no outbound webhook integrations)
+- None detected
 
-## API Integrations
+## Scheduled Jobs
 
-**Frontend to Backend:**
-- Base URL: `http://localhost:3000/api/v1` (configurable via `VITE_API_BASE_URL`)
-- HTTP Client: Axios 1.13.4
-- Implementation: `frontend/src/api/client.ts`
-- Features:
-  - Automatic response unwrapping (ApiResponse.data extraction)
-  - 401 error handling with redirect to login
-  - Credentials forwarding (cookies sent automatically)
-  - Timeout: 30 seconds (API_TIMEOUT constant)
-
-**Data Flow:**
-- Backend wraps all responses in `ApiResponse<T>` format
-  - Frontend interceptor extracts `.data` field automatically
-  - Blob responses (file downloads) bypass unwrapping
-
-## Database Integration
-
-**ORM:**
-- Prisma 6.19.2
-  - Schema file: `backend/prisma/schema.prisma`
-  - Database provider: MySQL
-  - Client generation: `@prisma/client`
-  - Usage: PrismaService injected into all business modules
-
-**Service Layer:**
-- Implementation: `backend/src/prisma/prisma.service.ts`
-- Module: `backend/src/prisma/prisma.module.ts`
-- Injected into: Every business module that needs database access
+**QuoteExpirationJob:**
+- Runs hourly via `@nestjs/schedule` (cron)
+- Marks expired quotes (`status → expired`)
+- Implementation: `backend/src/quote/` module
 
 ---
 
-*Integration audit: 2026-03-17*
+*Integration audit: 2026-04-16*

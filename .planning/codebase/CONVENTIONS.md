@@ -1,237 +1,324 @@
 # Coding Conventions
 
-**Analysis Date:** 2026-03-17
+**Analysis Date:** 2026-04-16
 
-## Naming Patterns
+## Code Comments
+
+All code comments must be in **pure English**. No Chinese, no bilingual, no exceptions.
+Rule source: `.claude/rules/02-standards/code-comments.md` and `.claude/rules/00-project/coding-standards.md`.
+
+```typescript
+// ✅ Correct
+// Create user with validation
+// ❌ Wrong
+// 创建用户
+```
+
+## Formatting
+
+**Backend (`.prettierrc`):**
+```json
+{ "singleQuote": true, "trailingComma": "all" }
+```
+ESLint config: `backend/eslint.config.mjs` — uses `typescript-eslint recommendedTypeChecked` + prettier plugin.
+Key rules: `@typescript-eslint/no-explicit-any: off` globally, `warn` in spec files.
+Line ending: `"prettier/prettier": ["error", { "endOfLine": "auto" }]`
+
+**Frontend (`package.json#prettier`):**
+```json
+{ "singleQuote": true, "trailingComma": "all", "printWidth": 80, "semi": true, "tabWidth": 2 }
+```
+ESLint config: `frontend/eslint.config.js` — uses `tseslint.configs.recommended` + `reactHooks.configs.flat.recommended`.
+
+## TypeScript Strict Mode
+
+**Backend** (`backend/tsconfig.json`): `"strict": true`
+
+**Frontend** (`frontend/tsconfig.app.json`): `"strict": true` plus:
+- `"noUnusedLocals": true`
+- `"noUnusedParameters": true`
+- `"erasableSyntaxOnly": true` — TypeScript `enum` declarations are **forbidden**; use `as const` objects instead
+
+Frontend enum pattern required by `erasableSyntaxOnly`:
+```typescript
+// frontend/src/types/enums.types.ts — the mandatory pattern
+export const OrderItemStatus = {
+  INQUIRY: 'INQUIRY',
+  PENDING: 'PENDING',
+} as const;
+export type OrderItemStatus = (typeof OrderItemStatus)[keyof typeof OrderItemStatus];
+```
+
+**Backend uses native TypeScript enums** (no `erasableSyntaxOnly`):
+```typescript
+// backend/src/supplier/dto/create-supplier.dto.ts
+export enum SupplierStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  ELIMINATED = 'eliminated',
+}
+```
+
+## Naming Conventions
 
 **Files:**
-- Classes/Services: `kebab-case.ts` (e.g., `customer.service.ts`, `supplier.controller.ts`)
-- DTOs: `kebab-case.dto.ts` (e.g., `create-customer.dto.ts`, `query-supplier.dto.ts`)
-- Modules: `kebab-case.module.ts` (e.g., `customer.module.ts`)
-- Specs: `kebab-case.spec.ts` (e.g., `customer.service.spec.ts`)
-- Test files (Frontend): `kebab-case.test.tsx` (e.g., `AmountDisplay.test.tsx`) in `__tests__/` subdirectories
-- Components: `PascalCase.tsx` (e.g., `CustomerSelector.tsx`, `PageContainer.tsx`)
-- Utils/Utilities: `kebab-case.ts` (e.g., `pagination.ts`, `decimal.ts`)
-- Constants: `kebab-case.constants.ts` (e.g., `auth.constants.ts`, `file.constants.ts`)
 
-**Functions:**
-- camelCase for all functions (e.g., `buildPaginationArgs`, `findSupplierFabrics`)
-- Async functions: same camelCase convention (e.g., `async findOne()`, `async create()`)
-- Callback/handler functions: descriptive camelCase (e.g., `formatCustomerLabel`, `extractPrismaErrorCode`)
-- React components: PascalCase (e.g., `CustomerSelector`, `LoadingSpinner`)
-- React hooks (custom): `useXxx` pattern (e.g., `useAsync`, `useDebounce`)
+| Type | Pattern | Example |
+|------|---------|---------|
+| NestJS Module | `<name>.module.ts` | `supplier.module.ts` |
+| NestJS Service | `<name>.service.ts` | `supplier.service.ts` |
+| NestJS Controller | `<name>.controller.ts` | `supplier.controller.ts` |
+| DTO | `<action>-<name>.dto.ts` | `create-supplier.dto.ts` |
+| Test (unit) | `<name>.<type>.spec.ts` | `supplier.service.spec.ts` |
+| Test (E2E) | `<name>.e2e-spec.ts` | `supplier.e2e-spec.ts` |
+| React Component | `PascalCase.tsx` | `FabricList.tsx` |
+| React Hook | `use<Name>.ts` | `useFabrics.ts` |
+| API module | `<name>.api.ts` | `fabric.api.ts` |
+| Type file | `<name>.types.ts` | `fabric.types.ts` |
 
-**Variables:**
-- camelCase for all variables (e.g., `supplierId`, `fabricSuppliers`, `customerMock`)
-- Constants: UPPER_SNAKE_CASE (e.g., `DEBOUNCE_DELAY`, `CREDIT_TYPE_CONFIG`)
-- Boolean flags: prefix with `is`, `has`, or `can` (e.g., `isActive`, `hasRelations`, `canDelete`)
-- Collection variables: plural form (e.g., `suppliers`, `fabricSuppliers`, `items`)
+**Identifiers:**
 
-**Types:**
-- Interfaces: PascalCase, prefixed with `I` or descriptive suffix (e.g., `CustomerSelectorProps`, `PaginatedResult<T>`)
-- Enums: PascalCase (e.g., `CreditType`, `OrderStatus`)
-- Type aliases: PascalCase (e.g., `SupplierFabricItem`)
-- Discriminator unions: descriptive PascalCase (e.g., `CreateCustomerDto`, `UpdateCustomerDto`)
+| Kind | Rule | Example |
+|------|------|---------|
+| Class/Interface | PascalCase | `SupplierService` |
+| Method/Variable | camelCase | `findById` |
+| Constant | SCREAMING_SNAKE_CASE | `MAX_PAGE_SIZE` |
+| DTO property | camelCase | `supplierName` |
+| Backend enum value | SCREAMING_SNAKE_CASE | `OrderItemStatus.PENDING` |
+| Frontend const-enum value | SCREAMING_SNAKE_CASE | `OrderItemStatus.PENDING` |
 
-**Backend (NestJS):**
-- Services: `{Resource}Service` (e.g., `SupplierService`, `CustomerService`)
-- Controllers: `{Resource}Controller` (e.g., `SupplierController`)
-- Modules: `{Resource}Module` (e.g., `SupplierModule`)
-- Guards: `{Name}Guard` (e.g., `JwtAuthGuard`)
-- Strategies: `{Name}Strategy` (e.g., `JwtStrategy`)
-- Filters: `{Name}Filter` (e.g., `AllExceptionsFilter`)
-- DTOs: `Create{Resource}Dto`, `Update{Resource}Dto`, `Query{Resource}Dto` (e.g., `CreateSupplierDto`)
+**Database columns:** camelCase via Prisma (maps to snake_case in MySQL).
 
-**Frontend (React):**
-- Page components: `{ResourceType}Page.tsx` (e.g., `CustomerListPage.tsx`, `FabricDetailPage.tsx`)
-- Form components: `{Resource}Form.tsx` (e.g., `CustomerForm.tsx`, `OrderForm.tsx`)
-- Business components: Descriptive name (e.g., `AddressManager.tsx`, `ImportResultModal.tsx`)
-- Common/layout components: Functional name (e.g., `PageContainer.tsx`, `ErrorBoundary.tsx`)
-- Stores/state: `{domain}Store.ts` (e.g., `authStore.ts`)
-- API client: `client.ts`
-- Types: `{domain}.types.ts` (e.g., `entities.types.ts`, `enums.types.ts`)
-- Utilities: `{domain}.ts` (e.g., `format.ts`, `validation.ts`)
+**API paths:** `GET /api/v1/suppliers`, `PATCH /api/v1/suppliers/:id`. Prefix is always `/api/v1` — never `/api`.
+Confirmed in `frontend/src/utils/constants.ts`:
+```typescript
+export const API_BASE_URL = '/api/v1';
+```
 
-## Code Style
+## DTO Patterns
 
-**Formatting:**
-- Tool: **Prettier** (ESLint plugin configured)
-- Key settings:
-  - Single quotes: `true`
-  - Trailing commas: `all`
-  - Print width: 80 (frontend), default (backend)
-  - Tab width: 2
-  - Semicolons: `true` (frontend)
+Three standard DTO types per module:
 
-**Linting:**
-- Backend: **ESLint 9** with `typescript-eslint`
-  - Config: `eslint.config.mjs`
-  - Flat config format (ESLint 9+)
-  - Rules: TypeScript recommended + prettier/recommended
-  - Disabled rules: `@typescript-eslint/no-explicit-any` (off), `@typescript-eslint/no-floating-promises` (warn)
+```typescript
+// Create DTO — uses class-validator decorators
+// backend/src/supplier/dto/create-supplier.dto.ts
+export class CreateSupplierDto {
+  @Transform(trimTransform)      // always trim strings first
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(200)
+  companyName!: string;
 
-- Frontend: **ESLint 9** with React plugins
-  - Config: `eslint.config.js`
-  - Includes: `react-hooks`, `react-refresh` plugins
-  - Target: ES2020, browser environment
+  @IsOptional()
+  @IsEnum(SupplierStatus)
+  status?: SupplierStatus = SupplierStatus.ACTIVE;
+}
 
-## Import Organization
+// Update DTO — always PartialType(Create)
+// backend/src/supplier/dto/update-supplier.dto.ts
+export class UpdateSupplierDto extends PartialType(CreateSupplierDto) {}
 
-**Order (Backend):**
-1. NestJS framework imports (e.g., `@nestjs/common`)
-2. NestJS feature-specific imports (e.g., `@nestjs/swagger`)
-3. Third-party imports (e.g., `@prisma/client`, `class-validator`)
-4. Local absolute imports (e.g., `../prisma/prisma.service`)
-5. Relative imports (only within same module)
+// Query DTO — always extends PaginationDto
+// backend/src/supplier/dto/query-supplier.dto.ts
+export class QuerySupplierDto extends PaginationDto { ... }
+```
 
-**Order (Frontend):**
-1. React core imports (e.g., `react`, `react-dom`)
-2. Antd imports (e.g., `antd`, `@ant-design/icons`)
-3. Third-party imports (e.g., `zustand`, `axios`)
-4. Alias imports (e.g., `@/types/entities.types`, `@/utils/format`)
-5. Relative imports (only for local component organization)
+**Mandatory string transform:**
+```typescript
+// backend/src/common/transforms/index.ts
+export const trimTransform = ({ value }: { value: unknown }): string | undefined =>
+  typeof value === 'string' ? value.trim() : undefined;
+```
+Apply `@Transform(trimTransform)` to every string DTO field before `@IsString()`.
 
-**Path Aliases:**
-- Backend: `@/` → Configured in `tsconfig.json` (baseUrl: `./`)
-- Frontend: `@/` → Configured in `vite.config.ts` (resolves to `./src`)
+**Boolean query param transform** — query params arrive as strings:
+```typescript
+@Transform(({ value }: { value: unknown }) => value === 'true' || value === true)
+@IsBoolean()
+includeDeleted?: boolean;
+```
+
+**Address as nested JSON** (`backend/src/customer/dto/create-customer.dto.ts`):
+```typescript
+@IsArray()
+@ValidateNested({ each: true })
+@Type(() => AddressDto)
+addresses?: AddressDto[];
+```
+Stored as JSON column in MySQL. Frontend type: `Address` interface in `frontend/src/types/entities.types.ts`.
+
+**PaginationDto base** (`backend/src/common/utils/pagination.ts`): provides `page`, `pageSize`, `sortBy`, `sortOrder`. All query DTOs extend this.
+
+**Whitelist sort fields** — always define a `SortField` enum and `@IsEnum(SortField)` on `sortBy` to prevent arbitrary column injection.
+
+**ValidationPipe config** (applied globally in `main.ts` and E2E setup):
+```typescript
+new ValidationPipe({
+  whitelist: true,
+  forbidNonWhitelisted: true,
+  transform: true,
+  transformOptions: { enableImplicitConversion: true },
+})
+```
+
+## isActive vs status
+
+**Two separate concepts — never conflate:**
+
+- `isActive` / `deletedAt` = soft delete marker. `isActive: false` means the record is archived. Managed by `prisma-extension-soft-delete` on the `deletedAt` field. Soft-deletable models: User, Fabric, Supplier, Customer, Product, ProductBundle.
+- `status` = business workflow state (e.g. `OrderItemStatus.PENDING`, `SupplierStatus.ACTIVE`).
+
+**Soft delete via Prisma extension** (`backend/src/prisma/prisma.service.ts`):
+```typescript
+// Normal queries auto-filter deletedAt != null via extension
+this.prisma.supplier.findMany(...)  // excludes deleted
+
+// Admin queries bypass via $raw
+this.prisma.$raw.supplier.findMany(...)  // includes deleted
+```
+
+**Physical delete with soft-delete fallback pattern:**
+- No relations → physical delete (`supplier.delete()` — extension intercepts to set `deletedAt`)
+- Has relations + `force=false` → throw `ConflictException`
+- Has relations + `force=true` → soft delete
 
 ## Error Handling
 
-**Patterns:**
-- NestJS exceptions: Use built-in exceptions from `@nestjs/common`
-  - `NotFoundException` for missing records (HTTP 404)
-  - `ConflictException` for constraint violations (HTTP 409)
-  - `BadRequestException` for validation errors (HTTP 400)
-  - `UnauthorizedException` for auth failures (HTTP 401)
+**NestJS standard exceptions only:**
+```typescript
+throw new NotFoundException('Supplier with ID 999 not found');
+throw new ConflictException('Supplier with company name "X" already exists');
+throw new BadRequestException('Invalid input');
+```
 
-- Service-level error handling:
-  ```typescript
-  // Check existence first
-  const existing = await this.prisma.supplier.findFirst({
-    where: { id, isActive: true },
-  });
-  if (!existing) {
-    throw new NotFoundException(`Supplier with ID ${id} not found`);
-  }
+**Global exception filter** (`backend/src/common/filters/http-exception.filter.ts`):
+- Catches all exceptions including Prisma errors (P2002/P2003/P2025)
+- In production: sanitizes error details
+- Attaches `correlationId` from CLS to every error response header and body
+- Captures to Sentry via `@SentryExceptionCaptured()`
+- Error response shape: `{ code, message, errors?, correlationId, path, timestamp }`
 
-  // Handle conflicts in transactions
-  const conflict = await tx.supplier.findFirst({
-    where: { companyName: updateSupplierDto.companyName },
-  });
-  if (conflict && conflict.id !== id) {
-    throw new ConflictException(
-      `Supplier with company name "${updateSupplierDto.companyName}" already exists`,
-    );
-  }
-  ```
+**Success response shape** (via `TransformInterceptor` in `backend/src/common/interceptors/transform.interceptor.ts`):
+```typescript
+{ code: number, message: 'success', data: T }
+```
 
-- Controller-level documentation:
-  - Use `@ApiResponse()` decorators to document all status codes
-  - Include `description` for each response (e.g., "Validation error", "Company name already exists")
+## Audit Logging
 
-- Frontend error handling:
-  - Use optional chaining for API responses (e.g., `response?.data`)
-  - Handle Promise rejections in async operations
-  - Wrap async operations in try-catch in integration tests
+Apply `@Audited()` decorator on every CUD controller method. Decorator defined in `backend/src/audit/decorators/audited.decorator.ts`:
 
-- Global error filter: `AllExceptionsFilter` in `src/common/filters/http-exception.filter.ts`
-  - Catches all exceptions
-  - Returns standardized error response: `{ code, message, errors?, path, timestamp }`
-  - Hides sensitive details in production (uses `getSafeErrorMessage()`)
-  - Logs unhandled exceptions at error level
+```typescript
+// backend/src/supplier/supplier.controller.ts
+@Post()
+@Audited({ entityType: 'Supplier', action: 'create' })
+create(@Body() dto: CreateSupplierDto) { ... }
+
+@Patch(':id')
+@Audited({ entityType: 'Supplier', action: 'update' })
+update(@Param('id', ParseIntPipe) id: number, ...) { ... }
+
+@Delete(':id')
+@Audited({ entityType: 'Supplier', action: 'delete' })
+remove(@Param('id', ParseIntPipe) id: number, ...) { ... }
+
+@Patch(':id/restore')
+@Audited({ entityType: 'Supplier', action: 'restore' })
+restore(@Param('id', ParseIntPipe) id: number) { ... }
+```
+
+`AuditInterceptor` (`backend/src/audit/audit.interceptor.ts`) is registered globally in AppModule after `UserClsInterceptor`. It captures before/after state automatically. Audit writes are fire-and-forget — never block main request.
 
 ## Logging
 
-**Framework:** `nestjs-pino` (NestJS) + console/standard logging (Frontend)
-
-**Patterns:**
-- Backend: Injected logger from `@nestjs/common` or pino integration
-- Frontend: Simple `console.log` in development (no logging framework)
-- Error logging: Use logger.error() with stack traces in error handlers
-- Exception filter logs unhandled exceptions with full stack
-
-## Comments
-
-**When to Comment:**
-- Complex business logic (e.g., transaction handling, validation rules)
-- Non-obvious algorithmic decisions
-- Workarounds or temporary solutions
-- API constraints or third-party integration requirements
-
-**JSDoc/TSDoc:**
-- Used extensively for service methods (e.g., `/**\n * Create a new supplier.\n * Uses transaction to prevent race conditions...\n */`)
-- Used for DTO properties via `@ApiProperty()` decorators in NestJS
-- Frontend components use JSDoc for props interfaces
-- Consistent style: descriptive comments above methods/functions
-
-**Example from codebase:**
+**Backend:** `nestjs-pino` via `LoggerModule` in `backend/src/app.module.ts`. Services use NestJS `Logger` class:
 ```typescript
-/**
- * Create a new supplier.
- * Uses transaction to prevent race conditions on companyName uniqueness check.
- * Throws ConflictException if companyName already exists.
- */
-async create(createSupplierDto: CreateSupplierDto): Promise<Supplier> {
-  // ...
-}
-
-/**
- * Customer selector component with search support.
- * Uses debounced search and displays customer info.
- */
-export function CustomerSelector(props: CustomerSelectorProps) {
-  // ...
-}
+private readonly logger = new Logger(SupplierService.name);
+this.logger.log('Some info message');
+this.logger.error('Failed to write audit log', error);
 ```
 
-## Function Design
+In production: logs ship to Grafana Loki via `pino-loki`. In development: `pino-pretty`.
+Slow query detection (`backend/src/prisma/prisma.service.ts`): queries over `SLOW_QUERY_THRESHOLD_MS` (default 200ms) emit a warn log tagged `SlowQuery`.
 
-**Size:** Service methods typically 15-50 lines; kept focused on single responsibility
+## Encoding Format
 
-**Parameters:**
-- Avoid long parameter lists; use DTOs for complex inputs
-- Type all parameters explicitly
-- Use proper NestJS decorators (`@Body()`, `@Param()`, `@Query()`) in controllers
-- Optional parameters: use `?` or provide defaults
+Business entity codes: `BF-YYMM-NNNN` (4-digit sequence). Generated via Redis INCR with DB UNIQUE as fallback in `backend/src/common/services/code-generator.service.ts`.
 
-**Return Values:**
-- Explicit type annotations on all functions
-- Use DTOs for consistent API responses
-- Service methods return domain entities (e.g., `Supplier`, `Customer`)
-- Use generics for reusable patterns (e.g., `PaginatedResult<T>`)
-- Async functions explicitly return `Promise<T>`
+## Chinese Labels (User-Facing Text)
 
-**Example:**
+All user-facing text in React uses Chinese. Each enum has a companion label map:
+
 ```typescript
-async findAll(query: QuerySupplierDto): Promise<PaginatedResult<Supplier>> {
-  // Build where, pagination, sorting
-  const [items, total] = await Promise.all([
-    this.prisma.supplier.findMany({ where, ...paginationArgs, orderBy }),
-    this.prisma.supplier.count({ where }),
-  ]);
-  return buildPaginatedResult(items, total, query);
-}
+// frontend/src/types/enums.types.ts
+export const ORDER_ITEM_STATUS_LABELS: Record<OrderItemStatus, string> = {
+  [OrderItemStatus.INQUIRY]: '询价中',
+  [OrderItemStatus.PENDING]: '待下单',
+  [OrderItemStatus.ORDERED]: '已下单',
+  // ...
+};
+export const SUPPLIER_STATUS_LABELS: Record<SupplierStatus, string> = {
+  [SupplierStatus.ACTIVE]: '活跃',
+  // ...
+};
 ```
 
-## Module Design
+Helper: `getStatusLabel(status)` from `frontend/src/utils/statusHelpers.ts`.
+Ant Design locale: `<ConfigProvider locale={zhCN}>` in all test providers and app root.
 
-**Exports:**
-- NestJS modules export services via `@Module()` exports
-- Barrel exports (index.ts) not consistently used; imports reference specific files
-- Frontend utilities exported as named exports from utility files (e.g., `export function buildPaginationArgs()`)
+When adding a new enum status: add entry to the label map immediately. Tests assert Chinese label text.
 
-**Barrel Files:**
-- Used in `dto/` directories (e.g., `dto/index.ts` exports all DTO classes)
-- Used in service/constant directories (e.g., `services/index.ts`)
-- Reduces import clutter: `import { CreateSupplierDto, QuerySupplierDto } from './dto'`
+## Import Organization (Frontend)
 
-**Dependency Injection:**
-- Backend: Constructor injection with explicit service dependencies
-  ```typescript
-  constructor(private readonly prisma: PrismaService) {}
-  ```
-- Frontend: Props-based dependencies for components; custom hooks for shared logic
+Path alias: `@/` maps to `frontend/src/`. Configured in `frontend/tsconfig.app.json` and `frontend/vite.config.ts`.
+
+```typescript
+// 1. External packages
+import { useState } from 'react';
+import { Table } from 'antd';
+// 2. Internal types and utils
+import type { Fabric } from '@/types';
+import { API_BASE_URL } from '@/utils/constants';
+// 3. Internal components and hooks
+import { FabricForm } from '@/components/forms/FabricForm';
+import { useFabrics } from '@/hooks/queries/useFabrics';
+```
+
+## Excel Import Conflict Rule
+
+When importing Excel data, skip records that already exist — never overwrite. Applies to all import strategies in `backend/src/import/strategies/`.
+
+## Validation Commands
+
+Must all pass before committing:
+
+**Backend:**
+```bash
+cd backend && pnpm build && pnpm test && pnpm lint && npx tsc --noEmit
+```
+
+**Frontend:**
+```bash
+cd frontend && pnpm build && pnpm test && pnpm lint && pnpm typecheck
+```
+
+`npx tsc --noEmit` is mandatory — local `pnpm build` may pass while CI fails.
+
+## CI TypeScript Pitfalls
+
+1. **Node 22 Buffer generics**: `Buffer.from(arrayBuffer)` returns `Buffer<ArrayBufferLike>`. Cast with `buffer as unknown as ArrayBuffer`. See `backend/test/helpers/mock-builders.ts:loadTestWorkbook`.
+2. **Constructor changes**: After modifying a constructor signature, run `grep -r "new ClassName"` to find all call sites.
+3. **DTO mock desync**: After adding a DTO field, run `grep -r "MockDto\|: DtoName ="` to find all mock objects needing update.
+4. **async→sync refactor**: After changing a service method from async to sync, grep for `await service.method` and `mockResolvedValue` — both must be updated in tests and controllers.
+
+## Commit Format
+
+Format enforced by GSD community hook (`hooks.community: true` in `.planning/config.json`):
+```
+<type>(<phase>-<plan>): <description>
+```
+Example: `feat(17-1): add HTTPS cookie flag environment variable`
+Co-Authored-By trailers are blocked by `.claude/hooks/validate-commit-msg.sh`.
 
 ---
 
-*Convention analysis: 2026-03-17*
+*Convention analysis: 2026-04-16*
