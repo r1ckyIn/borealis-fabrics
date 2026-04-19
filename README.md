@@ -18,6 +18,14 @@
 
 ---
 
+## Demo
+
+![Demo](assets/demo.gif)
+
+Placeholder color-band frame; live UI recording pending (project is behind WeChat Work OAuth — full interactive demo requires controlled recording session).
+
+---
+
 ## English
 
 ### Problem
@@ -54,24 +62,9 @@ Borealis Fabrics is a production supply chain platform that digitizes the full f
 
 ### Architecture
 
-```
-WeChat Work / Browser
-    |
-    +-- React Frontend (Ant Design)
-    |       Desktop-first B2B interface
-    |       Role-based views (admin, sales, warehouse)
-    |
-    +-- NestJS Backend (Modular Monolith)
-    |       9-state order engine
-    |       Dual-side payment tracking (supplier + customer)
-    |       Prisma ORM with MySQL
-    |       Redis caching layer
-    |       WeChat Work OAuth 2.0
-    |
-    +-- Tencent Cloud
-            MySQL (CDB) + Redis + COS (file storage)
-            CI/CD pipeline via GitHub Actions
-```
+![Architecture](assets/architecture.svg)
+
+Source: [architecture.excalidraw](assets/architecture.excalidraw) — drag to [excalidraw.com](https://excalidraw.com) to edit.
 
 ### AI-Augmented Development
 
@@ -127,6 +120,10 @@ borealis-fabrics/
 │   └── src/               # Source code
 └── .github/workflows/     # CI/CD pipeline
 ```
+
+### Why Story
+
+borealis-fabrics was the U2 Living supply-chain platform: 500+ monthly orders, 400+ commits, production since 2024. The challenge was coordinating WeChat Work as the front-line communication channel (the only tool field operators would use) with a structured NestJS backend that the finance team needed. Modular monolith beat microservices for a 3-person team — we shipped more and debugged less. Prisma + MySQL on Tencent Cloud kept the ops surface tight; a 9-state order machine and dual-side payment tracking (supplier + customer) took the accounting complexity out of spreadsheets and into invariants the code enforces. The story is about pragmatic full-stack for B2B workflows, not a portfolio showpiece.
 
 ---
 
